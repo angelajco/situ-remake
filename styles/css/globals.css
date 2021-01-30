@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer components {
+    /*****INICIO DE SESION*****/
+    .cuadro-login {
+        width: 50%
+    }
+    /*****REGISTRO DE USUARIO*****/
+    .tooltip-pass>.tooltip-inner {
+        max-width: 100%;
+    }
+    .datepicker-anio-registro .react-datepicker-wrapper {
+        display: block;
+    }
+    .pass-form-registro::-ms-reveal,
+    .pass-form-registro::-ms-clear{
+        display: none;
+    }
+}
