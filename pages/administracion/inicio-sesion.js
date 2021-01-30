@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Footer from '../../components/Footer'
 import Header from '../../components/Header'
 import ModalComponent from '../../components/ModalComponent';
+import Head from 'next/head'
 
 export default function InicioSesion() {
 
@@ -69,6 +70,9 @@ export default function InicioSesion() {
 
     return (
         <>
+            <Head>
+                <title>Inicio de sesión</title>
+            </Head>
             <ModalComponent
                 show={show}
                 datos={datosModal}
