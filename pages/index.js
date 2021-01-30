@@ -1,12 +1,16 @@
 import Footer from '../components/Footer'
 import Header from '../components/Header'
 import Menu from '../components/Menu'
+import Head from 'next/head'
 
 import { Carousel, Container } from 'react-bootstrap'
 
 export default function Home() {
   return (
     <>
+      <Head>
+        <title>SITU</title>
+      </Head>
       <Header/>
       <Menu/>
       <main>
