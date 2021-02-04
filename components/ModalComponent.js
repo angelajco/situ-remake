@@ -4,11 +4,20 @@ export default function ModalComponent(props) {
      return (
           <>
                <Modal show={props.show} onHide={() => props.onHide()}>
-                    <Modal.Header closeButton>
-                         <Modal.Title>
-                              {props.datos.title}
-                         </Modal.Title>
-                    </Modal.Header>
+                    {
+                         (props.redireccion != undefined) ?
+                              <Modal.Header>
+                                   <Modal.Title>
+                                        {props.datos.title}
+                                   </Modal.Title>
+                              </Modal.Header>
+                              :
+                              <Modal.Header closeButton>
+                                   <Modal.Title>
+                                        {props.datos.title}
+                                   </Modal.Title>
+                              </Modal.Header>
+                    }
 
                     <Modal.Body>
                          {props.datos.body}
@@ -22,8 +31,7 @@ export default function ModalComponent(props) {
                                    <Button variant="primary" onClick={() => props.onClick()}  >Aceptar</Button>
                          }
                     </Modal.Footer>
-
                </Modal>
-          </ >
+          </>
      )
 }

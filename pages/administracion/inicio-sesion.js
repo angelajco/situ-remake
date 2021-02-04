@@ -35,24 +35,23 @@ export default function InicioSesion() {
 
     //Funcion a ejecutar al darle el boton de iniciar sesion
     const onSubmit = async () => {
-        //conexion con la api, donde verifica que los campos existan
-        axios.get(`http://172.16.117.11/wa/catInstituto`, {
+        //Conexion con la api, donde verifica que los campos existan
+        axios.get(`http://172.16.117.11/wa/showUsers`, {
             params: {
                 email: refEmail.current,
                 contrasena: refContrasena.current
             }
         })
-            //si se logro la conexion
+            //Si se logro la conexion
             .then(response => {
                 console.log(response.data);
-                //usuario encontrado
+                //Usuario encontrado
                 if (response.data.length > 0) {
-                    console.log("exito2");
                     // window.location.href = "/"
                 }
-                //usuario no encontrado
+                //Usuario no encontrado
                 else {
-                    //cambiamos show a true
+                    //Cambiamos show a true
                     handleShow();
                     //Datos a enviar al modal si el usuario es incorrecto
                     setDatosModal({
@@ -61,9 +60,9 @@ export default function InicioSesion() {
                     })
                 }
             })
-            //no se logro la conexion
+            //No se logro la conexion
             .catch(error => {
-                console.log("no se logro la conexion")
+                console.log("No se logro la conexion")
                 console.log(error);
             })
     }
@@ -73,13 +72,16 @@ export default function InicioSesion() {
             <Head>
                 <title>Inicio de sesión</title>
             </Head>
+
             <ModalComponent
                 show={show}
                 datos={datosModal}
                 onHide={handleClose}
-                onClick={handleClose} />
+                onClick={handleClose}
+            />
 
             <Header />
+
             <Navbar bg="light" expand="lg" className="tw-text-center">
                 <Container>
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />

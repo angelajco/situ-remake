@@ -11,6 +11,12 @@ import ModalComponent from '../../components/ModalComponent';
 
 export default function Registro() {
 
+    //Datos para crear el form
+    const { register, handleSubmit, watch, clearErrors, setError ,errors } = useForm();
+
+    //Boton submit
+    const [botonDesabilitar, setBotonDesabilitar] = useState(false);
+
     //Datos para el modal
     const [show, setShow] = useState(false);
     const [datosModal, setDatosModal] = useState(
@@ -21,8 +27,8 @@ export default function Registro() {
     );
 
     //Estados para mostrar el modal
-    const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
+    const handleClose = () => setShow(false);
 
     //Renderiza el tooltip
     const renderTooltip = (props) => (
@@ -38,8 +44,26 @@ export default function Registro() {
         </Tooltip>
     );
 
-    //Datos para crear el form
-    const { register, handleSubmit, watch, errors, rules } = useForm();
+    //Validar correo
+    const validarNivel = () =>{
+        if(refRol.current == "1" || refRol.current == "2"){
+            setBotonDesabilitar(true);
+            const validacionCorreo = refEmail.current.match(/\b@sedatu.gob.mx\b/gi);
+            if(validacionCorreo){
+                clearErrors("id_rol");
+                setBotonDesabilitar(false);
+            }
+            else{
+                setError("id_rol",{
+                    message: "El correo no corresponde al nivel seleccionado"
+                });
+            }
+        }
+        else{
+            clearErrors("id_rol");
+            setBotonDesabilitar(false);
+        }
+    }
 
     //Mostrar ocultar contraseña
     const [passwordShown, setPasswordShown] = useState(false);
@@ -47,28 +71,28 @@ export default function Registro() {
     const handleClickPass = () => {
         setPasswordShown(passwordShown ? false : true);
     };
-
     const handleClickConfPass = () => {
         setConfPasswordShown(confPasswordShown ? false : true);
     }
 
     //A donde va a mandar el modal a darle aceptar
     const redireccion = () => {
-        return window.location.href = "/inicio-sesion"
+        return window.location.href = "/administracion/inicio-sesion"
     }
 
     //Watch ve en tiempo real lo que tienen los inputs
     const refContrasena = useRef();
     refContrasena.current = watch("contrasena", "");
     const refEmail = useRef();
-    refEmail.current = watch("correo", "");
+    refEmail.current = watch("email", "");
     const refEntidad = useRef();
     refEntidad.current = watch("id_entidad", "");
+    const refRol = useRef();
+    refRol.current = watch("id_rol", "")
 
     //Funcion a ejecutar al darle el boton de iniciar sesion
     const onSubmit = async (data) => {
-        console.log(data);
-        // envio de informacion
+        //Envio de informacion
         let datosFormulario = JSON.stringify(data);
         let config = {
             method: "post",
@@ -81,24 +105,33 @@ export default function Registro() {
 
         axios(config)
             .then(function (response) {
-                console.log(response.data);
-                //cambiamos show a true
-                handleShow();
-                //Datos a enviar al modal si el usuario es incorrecto
-                setDatosModal({
-                    title: 'Registro correcto',
-                    body: 'Para terminar el registro de la cuenta, hemos enviado un correo ' + refEmail.current + ' para verificar su cuenta de correo electrónico”'
-                })
+                if (response.data["success-boolean"]) {
+                    //Registro exitoso
+                    //Cambiamos el modal de show a true
+                    handleShow();
+                    //Datos a enviar al modal si el usuario es incorrecto
+                    setDatosModal({
+                        title: 'Registro correcto',
+                        body: 'Para terminar el registro de la cuenta, hemos enviado un correo a ' + refEmail.current + ' para verificar su cuenta de correo electrónico'
+                    })
+                }
+                else {
+                    //Registro no exitoso
+                    console.log("Error interno")
+                }
             })
             .catch(function (error) {
+                //Ocurrio algun error
                 console.log(error);
             });
     }
 
+    //Fechas para año de nacimiento
     const fechaActual = new Date().getFullYear();
     const fechaMinima = fechaActual - 100;
     const fechaMaxima = fechaActual - 15;
 
+    //Estados para guardar los catalogos
     const [institutos, setInstitutos] = useState([]);
     const [entidades, setEntidades] = useState([]);
     const [municipios, setMunicipios] = useState([]);
@@ -107,7 +140,7 @@ export default function Registro() {
 
 
     useEffect(() => {
-        //institutos
+        //Institutos
         fetch("http://172.16.117.11/wa/catInstitutos")
             .then(response => {
                 return response.json()
@@ -121,7 +154,7 @@ export default function Registro() {
                 console.log(error);
             })
 
-        // entidades
+        //Entidades
         fetch("http://172.16.117.11/wa/catEntidades")
             .then(response => {
                 return response.json()
@@ -135,7 +168,7 @@ export default function Registro() {
                 console.log(error);
             })
 
-        //roles
+        //Roles
         fetch("http://172.16.117.11/wa/catRoles")
             .then(response => {
                 return response.json()
@@ -149,7 +182,7 @@ export default function Registro() {
                 console.log(error);
             })
 
-        //ambitos
+        //Ambitos
         fetch("http://172.16.117.11/wa/catAmbito")
             .then(response => {
                 return response.json()
@@ -165,7 +198,7 @@ export default function Registro() {
     }, []);
 
     const municipoCambio = () => {
-        //municipios
+        //Municipios
         fetch("http://172.16.117.11/wa/catMunicipios")
             .then(response => {
                 return response.json()
@@ -192,30 +225,64 @@ export default function Registro() {
                 datos={datosModal}
                 onHide={handleClose}
                 onClick={handleClose}
-                redireccion={redireccion} />
+                redireccion={redireccion}
+            />
 
             <Header />
+
             <Menu />
+
             <div className="container">
                 <div className="row">
                     <div className="col-12">
+
                         <Form onSubmit={handleSubmit(onSubmit)}>
 
                             {/* <div className="g-recaptcha" data-sitekey="YOURSITEKEY"></div> */}
 
+                            <input type="text" name="firstName" ref={register} />
+                            <p>{errors.firstName?.message}</p>
+
                             <Form.Group controlId="nombre">
                                 <Form.Label className="tw-text-red-600">Nombre</Form.Label>
-                                <Form.Control name="nombre" type="text" required ref={register} />
+                                <Form.Control name="nombre" type="text" required ref={
+                                    register({
+                                        pattern:
+                                        {
+                                            value: /^[a-zA-ZÁáÉeÍíÓóÚúÑñ]+$/,
+                                            message: "Nombre incorrecto"
+                                        }
+                                    })
+                                } />
+                                <p>{errors.nombre && errors.nombre.message}</p>
                             </Form.Group>
 
                             <Form.Group controlId="apellido_paterno">
                                 <Form.Label className="tw-text-red-600">Apellido 1</Form.Label>
-                                <Form.Control name="apellido_paterno" type="text" required ref={register} />
+                                <Form.Control name="apellido_paterno" type="text" required ref={
+                                    register({
+                                        pattern:
+                                        {
+                                            value: /^[a-zA-ZÁáÉeÍíÓóÚú]+$/,
+                                            message: "Apellido incorrecto"
+                                        }
+                                    })
+                                }
+                                />
                             </Form.Group>
 
                             <Form.Group controlId="apellido_materno">
                                 <Form.Label>Apellido 2</Form.Label>
-                                <Form.Control name="apellido_materno" type="text" ref={register} />
+                                <Form.Control name="apellido_materno" type="text" ref={
+                                    register({
+                                        pattern:
+                                        {
+                                            value: /^[a-zA-ZÁáÉeÍíÓóÚú]+$/,
+                                            message: "Apellido incorrecto"
+                                        }
+                                    })
+                                }
+                                />
                             </Form.Group>
 
                             <Form.Group controlId="anio_nacimiento">
@@ -226,7 +293,7 @@ export default function Registro() {
 
                             <Form.Group controlId="email">
                                 <Form.Label className="tw-text-red-600">Correo electrónico</Form.Label>
-                                <Form.Control name="email" type="email" required ref={
+                                <Form.Control name="email" type="email" required onChange={validarNivel} ref={
                                     register({
                                         pattern:
                                         {
@@ -338,7 +405,7 @@ export default function Registro() {
 
                             <Form.Group controlId="id_rol">
                                 <Form.Label className="tw-text-red-600">Nivel de usuario solicitado</Form.Label>
-                                <Form.Control as="select" name="id_rol" required ref={register}>
+                                <Form.Control as="select" name="id_rol" required onChange={validarNivel} ref={register}>
                                     <option value=""></option>
                                     {roles.map((value, index) => (
                                         <option key={index} value={value.id_rol}>
@@ -346,6 +413,7 @@ export default function Registro() {
                                         </option>
                                     ))}
                                 </Form.Control>
+                                <p>{errors.id_rol && errors.id_rol.message}</p>
                             </Form.Group>
 
                             <Form.Group controlId="id_ambito_actuacion">
@@ -360,9 +428,9 @@ export default function Registro() {
                                 </Form.Control>
                             </Form.Group>
 
-                            <input type="submit" />
-
+                            <input type="submit"  disabled={botonDesabilitar}/>
                         </Form>
+
                     </div>
                 </div>
             </div>
