@@ -1,4 +1,3 @@
-
 import Footer from '../../components/Footer'
 import Header from '../../components/Header'
 import Menu from '../../components/Menu'
@@ -35,47 +34,73 @@ export default function AnalisisGeografico() {
         const numEntidad = split[0];
         const nombreEntidad = split[1];
 
-        const owsrootUrl = 'https://ide.sedatu.gob.mx:8080/ows';
-        const defaultParameters1 = {
-            service: 'WFS',
-            version: '2.0',
-            request: 'GetFeature',
-            //sedatu:
-            typeName: 'geonode:inegi_00mun_4326',
-            outputFormat: 'text/javascript',
-            format_options: 'callback:getJson',
-            cql_filter: 'CVE_ENT=' + numEntidad
-        };
-        var parameters1 = L.Util.extend(defaultParameters1);
-        var url = owsrootUrl + L.Util.getParamString(parameters1);
-        $.ajax({
-            jsonpCallback: 'getJson',
-            url: url,
-            dataType: 'jsonp',
-            success: function (response) {
-                response["num_entidad"] = numEntidad;
-                response["nom_entidad"] = nombreEntidad;
-                response["habilitado"] = true;
+        //Si es la capa
+        if (numEntidad > 32) {
+            //Arreglo para guardar los datos de la capa
+            const capaWMS = {};
+            //Se guardan los datos de la capa
+            capaWMS["attribution"] = 'Localidades Urbanas (Miguel Angel Ferrer Martinez)'
+            capaWMS["url"] = "https://ide.sedatu.gob.mx:8080/ows"
+            capaWMS["layers"] = "geonode:inegi_00l_ua_4326"
+            capaWMS["format"] = "image/png"
+            capaWMS["transparent"] = "true"
+            capaWMS["tipo"] = "wms"
+            capaWMS["nom_entidad"] = nombreEntidad;
+            capaWMS["num_entidad"] = numEntidad;
+            capaWMS["habilitado"] = true;
+            capaWMS["filtro"] = "CVE_ENT=30"
 
-                if (datosEntidades.some(ent => ent.num_entidad === numEntidad)) {
-                    return;
+            setDatosEntidades([...datosEntidades, capaWMS])
+        }
+        //Es una entidad
+        else {
+            const owsrootUrl = 'https://ide.sedatu.gob.mx:8080/ows';
+            const defaultParameters1 = {
+                service: 'WFS',
+                version: '2.0',
+                request: 'GetFeature',
+                //sedatu:
+                typeName: 'geonode:inegi_00mun_4326',
+                outputFormat: 'text/javascript',
+                format_options: 'callback:getJson',
+                cql_filter: 'CVE_ENT=' + numEntidad
+            };
+            var parameters1 = L.Util.extend(defaultParameters1);
+            var url = owsrootUrl + L.Util.getParamString(parameters1);
+            //Hace la petición para traer los datos de la entidad
+            $.ajax({
+                jsonpCallback: 'getJson',
+                url: url,
+                dataType: 'jsonp',
+                success: function (response) {
+                    response["num_entidad"] = numEntidad;
+                    response["nom_entidad"] = nombreEntidad;
+                    response["habilitado"] = true;
+                    response['tipo'] = "geojson";
+
+                    if (datosEntidades.some(ent => ent.num_entidad === numEntidad)) {
+                        return;
+                    }
+                    else {
+                        //Se envian los datos a mapa para que los procese como geojson
+                        setDatosEntidades([
+                            ...datosEntidades,
+                            response
+                        ])
+                    }
                 }
-                else {
-                    //se envian los datos a mapa para que los procese como geojson
-                    setDatosEntidades([
-                        ...datosEntidades,
-                        response
-                    ])
-                }
-            }
-        });
+            });
+        }
     }
 
+    //Funcion para cambiar el estado del checkbox
     const cambiaCheckbox = (event) => {
         const numeroEntidadChecked = event.target.value;
-
+        //Hace copia a otro arreglo para volver a sobreescribir datosEntidades
         const datosEntidadesActualizado = datosEntidades.map((valor) => {
+            //Si es igual a la entidad que se envia, se cambia el checkbox
             if (valor.num_entidad == numeroEntidadChecked) {
+                //Si esta habilitado se desabilita, de manera igual en caso contrario
                 if (valor.habilitado) {
                     valor.habilitado = false;
                     return valor;
@@ -85,13 +110,19 @@ export default function AnalisisGeografico() {
                     return valor;
                 }
             }
-            return valor;
+            //Si no es igual a la entidad que se envia, se envia con los mismos valores
+            else {
+                return valor;
+            }
         });
         setDatosEntidades(datosEntidadesActualizado);
     }
 
+    //Funcion para ordenar los nuevos datos
     function handleOnDragEnd(result) {
-        if (!result.destination) return
+        if (!result.destination){
+            return
+        }
         const items = Array.from(datosEntidades)
         const [reorderedItem] = items.splice(result.source.index, 1)
         items.splice(result.destination.index, 0, reorderedItem)
@@ -117,6 +148,7 @@ export default function AnalisisGeografico() {
                                     <option value="24|San Luis Potosí">San Luis Potosí</option>
                                     <option value="26|Sonora">Sonora</option>
                                     <option value="27|Tabasco">Tabasco</option>
+                                    <option value="33|Localidades urbanas">Localidades urbanas</option>
                                 </Form.Control>
                             </Form.Group>
                             <input type="submit" />
