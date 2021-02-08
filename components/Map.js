@@ -1,5 +1,5 @@
-import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet'
-import { useState, useEffect } from 'react'
+import { MapContainer, TileLayer, GeoJSON, WMSTileLayer } from 'react-leaflet'
+// import { useState, useEffect } from 'react'
 
 //Si no es necesario cargar los marcadores
 import "leaflet/dist/leaflet.css"
@@ -35,25 +35,35 @@ const Map = (props) => {
     //     fillColor: "#FF0000",
     // }
 
+    console.log(props.datos)
+
     return (
         <>
             <MapContainer center={[19.380964227121666, -99.16353656125003]} zoom={6} scrollWheelZoom={false} style={{ height: 400, width: "100%" }}>
+                <TileLayer
+                    attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
                 {/* {datosGeoJson &&
                     <GeoJSON data={datosGeoJson} style={estilos} />
                 } */}
                 {
                     props.datos.map((capa, index) => {
                         if (capa.habilitado) {
-                            return (
-                                <GeoJSON data={capa} style={estilos} key={index} />
-                            )
+                            if(capa.tipo == "geojson"){
+                                return (
+                                    <GeoJSON data={capa} style={estilos} key={index} />
+                                )
+                            }
+                            if(capa.tipo == "wms"){
+                                return (
+                                    <WMSTileLayer attribution={capa.attribution} url={capa.url} layers={capa.layers} format={capa.format} transparent={capa.transparent} />
+                                )
+                            }
+                            
                         }
                     })
                 }
-                <TileLayer
-                    attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
             </MapContainer>
         </>
     )

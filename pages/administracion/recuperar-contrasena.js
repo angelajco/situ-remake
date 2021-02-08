@@ -27,10 +27,10 @@ export default function RecuperarContrasena() {
 
     //Watch ve los cambios del input correo
     const refEmail = useRef();
-    refEmail.current = watch("correo", "");
+    refEmail.current = watch("email", "");
 
     //a donde va a mandar el modal a darle aceptar
-    const redireccion = () =>{
+    const redireccion = () => {
         return window.location.href = "/administracion/inicio-sesion"
     }
 
@@ -58,15 +58,29 @@ export default function RecuperarContrasena() {
             <div className="container">
                 <div className="row">
                     <div className="col-12">
+
                         <Form onSubmit={handleSubmit(onSubmit)}>
+
                             <Form.Group controlId="email">
-                                <Form.Label className="tw-text-red-600">Correo electrónico</Form.Label>
-                                <Form.Control name="correo" type="email" placeholder="" required ref={register} />
+                                <Form.Label>Correo electrónico</Form.Label>
+                                <Form.Control name="email" type="email" required ref={
+                                    register({
+                                        pattern:
+                                        {
+                                            value: /^([a-z]+[0-9_-]*)+(\.[a-z0-9_-]+)*@([a-z0-9]+\.)+[a-z]+$/i,
+                                            message: "Correo incorrecto"
+                                        }
+                                    })
+                                } />
+                                <p>{errors.email && errors.email.message}</p>
                             </Form.Group>
+
                             <Button variant="primary" type="submit">
                                 Recuperar mi contraseña
                                 </Button>
+
                         </Form>
+
                     </div>
                 </div>
             </div>
