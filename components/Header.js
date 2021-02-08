@@ -12,7 +12,7 @@ export default function Header() {
                     {
                         enlaces.map((link, index) => (
                             <li className="tw-px-4" key={index}>
-                                <a href="#" className="tw-text-white tw-text-2xl tw-font-semibold hover:tw-text-inst-dorado">{link.enlace}</a>
+                                <a href="#" className="tw-text-white tw-text-2xl tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">{link.enlace}</a>
                             </li>
                         ))
                     }
