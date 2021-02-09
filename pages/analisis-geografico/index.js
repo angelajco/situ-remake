@@ -1,7 +1,7 @@
 import Footer from '../../components/Footer'
 import Header from '../../components/Header'
 import Menu from '../../components/Menu'
-
+import axios from 'axios'
 import { useState } from "react"
 import { useForm } from "react-hook-form";
 import { Form } from 'react-bootstrap'
@@ -10,7 +10,33 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import dynamic from 'next/dynamic'
 import $ from 'jquery'
 
+import Cookies from 'universal-cookie'
+const cookies = new Cookies()
+
 export default function AnalisisGeografico() {
+
+    // Estado para guardar el token
+    const [tokenSesion, setTokenSesion] = useState(false)
+    const token = cookies.get('SessionToken')
+    console.log(token)
+    // Configuracion para verificar el token
+    var config = {
+        method: 'get',
+        url: 'http://172.16.117.11:8080/SITU-API-1.0/acceso',
+        headers: {
+            'Authorization': `Bearer ${token}` 
+        },
+    };
+    axios(config)
+        .then(response=> response.data)
+        .then(
+            (datosSesion)=>{
+            setTokenSesion(datosSesion['success-boolean'])
+            },
+            (error)=>{
+                console.log(error)
+            }
+        )
 
     //Importa dinamicamente el mapa
     const Map = dynamic(
@@ -120,7 +146,7 @@ export default function AnalisisGeografico() {
 
     //Funcion para ordenar los nuevos datos
     function handleOnDragEnd(result) {
-        if (!result.destination){
+        if (!result.destination) {
             return
         }
         const items = Array.from(datosEntidades)

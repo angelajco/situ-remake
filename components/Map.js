@@ -35,8 +35,6 @@ const Map = (props) => {
     //     fillColor: "#FF0000",
     // }
 
-    console.log(props.datos)
-
     return (
         <>
             <MapContainer center={[19.380964227121666, -99.16353656125003]} zoom={6} scrollWheelZoom={false} style={{ height: 400, width: "100%" }}>

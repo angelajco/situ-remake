@@ -54,8 +54,8 @@ export default function InicioSesion() {
             .then(response => {
                 //Usuario encontrado
                 if (response.status === 200) {
-                    cookies.set('SessionToken', response.data.token)
-                    window.location.href = "/analisis-geografico/"
+                    cookies.set('SessionToken', response.data.token, {path:"/"})
+                    window.location.href = "/analisis-geografico"
                 }
                 //Usuario no encontrado
                 else {
