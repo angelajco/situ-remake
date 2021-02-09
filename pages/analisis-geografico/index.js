@@ -4,7 +4,7 @@ import Menu from '../../components/Menu'
 import axios from 'axios'
 import { useState } from "react"
 import { useForm } from "react-hook-form";
-import { Form } from 'react-bootstrap'
+import { Form, Container } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 
 import dynamic from 'next/dynamic'
@@ -18,23 +18,25 @@ export default function AnalisisGeografico() {
     // Estado para guardar el token
     const [tokenSesion, setTokenSesion] = useState(false)
     const token = cookies.get('SessionToken')
-    console.log(token)
+
     // Configuracion para verificar el token
     var config = {
         method: 'get',
         url: 'http://172.16.117.11:8080/SITU-API-1.0/acceso',
         headers: {
-            'Authorization': `Bearer ${token}` 
+            'Authorization': `Bearer ${token}`
         },
     };
     axios(config)
-        .then(response=> response.data)
+        .then(response => response.data)
         .then(
-            (datosSesion)=>{
-            setTokenSesion(datosSesion['success-boolean'])
+            (datosSesion) => {
+                setTokenSesion(datosSesion['success-boolean'])
             },
-            (error)=>{
+            (error) => {
                 console.log(error)
+                cookies.remove('SessionToken', { path: "/" })
+                window.location.href = "/"
             }
         )
 
@@ -159,58 +161,79 @@ export default function AnalisisGeografico() {
         <>
             <Header />
             <Menu />
-
-            <div className="container">
-                <div className="row">
-
-                    <div className="col-12">
-                        <div>Informacion de rasgos</div>
-
-                        <Form onSubmit={handleSubmit(onSubmit)}>
-                            <Form.Group controlId="entidad">
-                                <Form.Label className="tw-text-red-600">Entidad</Form.Label>
-                                <Form.Control as="select" name="entidad" required ref={register}>
-                                    <option value=""></option>
-                                    <option value="24|San Luis Potosí">San Luis Potosí</option>
-                                    <option value="26|Sonora">Sonora</option>
-                                    <option value="27|Tabasco">Tabasco</option>
-                                    <option value="33|Localidades urbanas">Localidades urbanas</option>
-                                </Form.Control>
-                            </Form.Group>
-                            <input type="submit" />
-                        </Form>
-
-                    </div>
-
-                    <div className="col-12">
-                        <p>Capas</p>
-                        <DragDropContext onDragEnd={handleOnDragEnd}>
-                            <Droppable droppableId="entidades">
-                                {(provided) => (
-                                    <div {...provided.droppableProps} ref={provided.innerRef}>
-                                        {
-                                            datosEntidades.map((capa, index) => (
-                                                <Draggable key={capa.nom_entidad} draggableId={capa.nom_entidad} index={index}>
-                                                    {(provided) => (
-                                                        <Form.Group {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                            <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_entidad} onChange={cambiaCheckbox} value={capa.num_entidad} />
-                                                        </Form.Group>
-                                                    )}
-                                                </Draggable>
-                                            )
+            {
+                tokenSesion
+                    ?
+                    <>
+                        <div className="container">
+                            <div className="row">
+                                <div className="col-12">
+                                    <div>Informacion de rasgos</div>
+                                    <Form onSubmit={handleSubmit(onSubmit)}>
+                                        <Form.Group controlId="entidad">
+                                            <Form.Label className="tw-text-red-600">Entidad</Form.Label>
+                                            <Form.Control as="select" name="entidad" required ref={register}>
+                                                <option value=""></option>
+                                                <option value="24|San Luis Potosí">San Luis Potosí</option>
+                                                <option value="26|Sonora">Sonora</option>
+                                                <option value="27|Tabasco">Tabasco</option>
+                                                <option value="33|Localidades urbanas">Localidades urbanas</option>
+                                            </Form.Control>
+                                        </Form.Group>
+                                        <input type="submit" />
+                                    </Form>
+                                </div>
+                                <div className="col-12">
+                                    <p>Capas</p>
+                                    <DragDropContext onDragEnd={handleOnDragEnd}>
+                                        <Droppable droppableId="entidades">
+                                            {(provided) => (
+                                                <div {...provided.droppableProps} ref={provided.innerRef}>
+                                                    {
+                                                        datosEntidades.map((capa, index) => (
+                                                            <Draggable key={capa.nom_entidad} draggableId={capa.nom_entidad} index={index}>
+                                                                {(provided) => (
+                                                                    <Form.Group {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                                                        <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_entidad} onChange={cambiaCheckbox} value={capa.num_entidad} />
+                                                                    </Form.Group>
+                                                                )}
+                                                            </Draggable>
+                                                        )
+                                                        )}
+                                                    {provided.placeholder}
+                                                </div>
                                             )}
-                                        {provided.placeholder}
+                                        </Droppable>
+                                    </DragDropContext>
+                                </div>
+                                <div className="col-12">
+                                    <Map datos={datosEntidades} />
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                    :
+                    (typeof window !== 'undefined') &&
+                    <>
+                        <Container>
+                            <div className="tw-py-20">
+                                <div className="tw-border tw-bg-inst-verde-fuerte tw-shadow tw-rounded-md tw-p-4 tw-max-w-sm tw-w-full tw-mx-auto">
+                                    <div className="tw-animate-pulse tw-flex tw-space-x-4">
+                                        <div className="tw-rounded-full tw-bg-inst-dorado tw-h-12 tw-w-12"></div>
+                                        <div className="tw-flex-1 tw-space-y-4 tw-py-1">
+                                            <div className="tw-h-4 tw-bg-inst-verde-fuerte tw-rounded tw-w-3/4"></div>
+                                            <div className="tw-space-y-2">
+                                                <div className="tw-h-4 tw-bg-inst-dorado tw-rounded"></div>
+                                            </div>
+                                            <div className="tw-h-4 tw-bg-inst-dorado tw-rounded tw-w-5/6"></div>
+                                        </div>
                                     </div>
-                                )}
-                            </Droppable>
-                        </DragDropContext>
-                    </div>
-
-                    <div className="col-12">
-                        <Map datos={datosEntidades} />
-                    </div>
-                </div>
-            </div>
+                                    <p>hola</p>
+                                </div>
+                            </div>
+                        </Container>
+                    </>
+            }
             <Footer />
         </>
     )

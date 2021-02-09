@@ -9,9 +9,7 @@ export default function Menu() {
     // Estado para guardar el token
     const [tokenSesion, setTokenSesion] = useState(false)
     const token = cookies.get('SessionToken')
-    console.log(token)
     if (token != undefined) {
-        console.log('dentro del if')
         // Configuracion para verificar el token
         var config = {
             method: 'get',
@@ -37,7 +35,6 @@ export default function Menu() {
         window.location.href = "/administracion/inicio-sesion"
     }
 
-
     return (
         <Navbar expand="lg" className="tw-text-center tw-bg-inst-verde-claro">
             <Container>
@@ -49,16 +46,16 @@ export default function Menu() {
                         <Link href="/">
                             <a className="tw-text-white tw-font-semibold hover:tw-text-inst-dorado">INICIO</a>
                         </Link>
-                        <Link href="!#">
+                        <Link href="/construccion">
                             <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado">PLANEACIÓN MUNICIPAL</a>
                         </Link>
                         <Link href="/analisis-geografico/">
                             <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado">ANÁLISIS GEOGRÁFICO</a>
                         </Link>
-                        <Link href="!#">
+                        <Link href="/construccion">
                             <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado">INDICADORES ESTADÍSTICOS</a>
                         </Link>
-                        <Link href="!#">
+                        <Link href="/construccion">
                             <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado">CONSULTA DOCUMENTAL</a>
                         </Link>
                     </Nav>
