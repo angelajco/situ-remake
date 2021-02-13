@@ -1,14 +1,13 @@
-import Footer from '../../components/Footer'
-import Header from '../../components/Header'
-import Menu from '../../components/Menu'
-import axios from 'axios'
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
-import { Form, Container } from 'react-bootstrap'
+import { Form } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 
 import dynamic from 'next/dynamic'
+import axios from 'axios'
 import $ from 'jquery'
+
+import Router from 'next/router'
 
 import Cookies from 'universal-cookie'
 const cookies = new Cookies()
@@ -17,30 +16,34 @@ export default function AnalisisGeografico() {
 
     // Estado para guardar el token
     const [tokenSesion, setTokenSesion] = useState(false)
-    const token = cookies.get('SessionToken')
 
-    // Configuracion para verificar el token
-    var config = {
-        method: 'get',
-        url: 'http://172.16.117.11:8080/SITU-API-1.0/acceso',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        },
-    };
-    axios(config)
-        .then(response => response.data)
-        .then(
-            (datosSesion) => {
-                setTokenSesion(datosSesion['success-boolean'])
-            },
-            (error) => {
-                console.log(error)
-                cookies.remove('SessionToken', { path: "/" })
-                window.location.href = "/"
-            }
-        )
+    useEffect(() => {
+        const token = cookies.get('SessionToken')
+        if (token != undefined) {
+            // Configuracion para verificar el token
+            var config = {
+                method: 'get',
+                url: 'http://172.16.117.11:8080/SITU-API-1.0/acceso',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+            };
+            axios(config)
+                .then(function (response) {
+                    setTokenSesion(response.data['success-boolean'])
+                })
+                .catch(function (error) {
+                    console.log(error)
+                    cookies.remove('SessionToken', { path: "/" })
+                    Router.push("/administracion/inicio-sesion")
+                })
+        }
+        else {
+            Router.push('/administracion/inicio-sesion')
+        }
+    }, [])
 
-    //Importa dinamicamente el mapa
+    //Importa dinámicamente el mapa
     const Map = dynamic(
         () => import('../../components/Map'),
         {
@@ -48,6 +51,9 @@ export default function AnalisisGeografico() {
             ssr: false
         }
     )
+
+    //Importar dinamicamente el loader
+    const Loader = dynamic(() => import('../../components/Loader'));
 
     //Acciones del formulario
     const { register, handleSubmit } = useForm();
@@ -159,12 +165,10 @@ export default function AnalisisGeografico() {
 
     return (
         <>
-            <Header />
-            <Menu />
             {
                 tokenSesion
                     ?
-                    <>
+                    (
                         <div className="container">
                             <div className="row">
                                 <div className="col-12">
@@ -211,30 +215,13 @@ export default function AnalisisGeografico() {
                                 </div>
                             </div>
                         </div>
-                    </>
+                    )
                     :
                     (typeof window !== 'undefined') &&
-                    <>
-                        <Container>
-                            <div className="tw-py-20">
-                                <div className="tw-border tw-bg-inst-verde-fuerte tw-shadow tw-rounded-md tw-p-4 tw-max-w-sm tw-w-full tw-mx-auto">
-                                    <div className="tw-animate-pulse tw-flex tw-space-x-4">
-                                        <div className="tw-rounded-full tw-bg-inst-dorado tw-h-12 tw-w-12"></div>
-                                        <div className="tw-flex-1 tw-space-y-4 tw-py-1">
-                                            <div className="tw-h-4 tw-bg-inst-verde-fuerte tw-rounded tw-w-3/4"></div>
-                                            <div className="tw-space-y-2">
-                                                <div className="tw-h-4 tw-bg-inst-dorado tw-rounded"></div>
-                                            </div>
-                                            <div className="tw-h-4 tw-bg-inst-dorado tw-rounded tw-w-5/6"></div>
-                                        </div>
-                                    </div>
-                                    <p>hola</p>
-                                </div>
-                            </div>
-                        </Container>
-                    </>
+                    (
+                        <Loader />
+                    )
             }
-            <Footer />
         </>
     )
 }

@@ -1,6 +1,3 @@
-import Footer from '../components/Footer'
-import Header from '../components/Header'
-import Menu from '../components/Menu'
 import Head from 'next/head'
 import { Carousel, Container } from 'react-bootstrap'
 
@@ -8,11 +5,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
         <title>SITU</title>
-      </Head> 
-      <Header/>
-      <Menu/>
+      </Head>
       <main>
         <section>
           <Carousel>
@@ -73,14 +67,14 @@ export default function Home() {
             <div className="tw-w-4/12 md:tw-w-full">
               <Carousel>
                 <Carousel.Item>
-                <img
-                  className="d-block w-100"
-                  src="/images/index/sliderSecundario.jpg"
-                  alt="First slide"
-                />
-                <Carousel.Caption>
-                  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                </Carousel.Caption>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/sliderSecundario.jpg"
+                    alt="First slide"
+                  />
+                  <Carousel.Caption>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                  </Carousel.Caption>
                 </Carousel.Item>
                 <Carousel.Item>
                   <img
@@ -128,32 +122,31 @@ export default function Home() {
         <section className="tw-pb-10">
           <Container>
             <div className="tw-grid tw-grid-rows-3 tw-grid-flow-col tw-gap-2 md:tw-flex md:tw-flex-wrap">
-              
+
               <div className="tw-row-span-3 tw-py-60 md:tw-w-full md:tw-py-20 tw-bg-yellow-700 tw-cursor-pointer">
                 <h2 className="tw-px-5 tw-text-white">Mapa digital de México</h2>
                 <p className="tw-p-5 tw-text-white tw-text-lg tw-font-bold">INEGI</p>
               </div>
-              
+
               <div className="tw-col-span-2 md:tw-w-full tw-bg-green-500 tw-cursor-pointer">
                 <h2 className="tw-p-5 tw-text-white">The National Map</h2>
                 <p className="tw-p-5 tw-text-white tw-text-lg tw-font-bold">USGS</p>
               </div>
-              
+
               <div className="tw-row-span-2 md:tw-w-full tw-bg-blue-500 tw-cursor-pointer">
                 <h2 className="tw-p-5 tw-text-white">Geoportal</h2>
                 <p className="tw-p-5 tw-text-white tw-text-lg tw-font-bold">CHILE</p>
               </div>
-              
+
               <div className="tw-row-span-2 md:tw-w-full tw-bg-yellow-400 tw-cursor-pointer">
                 <h2 className="tw-p-5 tw-text-white">Visor Urbano</h2>
                 <p className="tw-p-5 tw-text-white tw-text-lg tw-font-bold">JALISCO</p>
               </div>
-            
+
             </div>
           </Container>
         </section>
       </main>
-      <Footer/>
     </>
   )
 }

@@ -4,14 +4,15 @@ import { useForm } from "react-hook-form";
 import axios from 'axios'
 
 import Link from 'next/link'
-import Footer from '../../components/Footer'
-import Header from '../../components/Header'
 import ModalComponent from '../../components/ModalComponent';
 import Head from 'next/head'
-import Menu from "../../components/Menu";
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 
 // Para guardar valiables de estado (token, nombre, apellido)
 import Cookies from 'universal-cookie'
+import Router from "next/router";
 const cookies = new Cookies()
 
 export default function InicioSesion() {
@@ -42,47 +43,36 @@ export default function InicioSesion() {
     const onSubmit = async (data) => {
         //Conexion con la api, donde verifica que los campos existan
         var config = {
-        method: 'post',
-        url: 'http://172.16.117.11/wa/login',
-        headers: { 
-            'Content-Type': 'application/json'
-        },
-        data : data
+            method: 'post',
+            url: 'http://172.16.117.11/wa/login',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: data
         };
         axios(config)
             //Si se logro la conexion
-            .then(response => {
+            .then(function (response) {
                 //Usuario encontrado
-                if (response.status === 200) {
-                    cookies.set('SessionToken', response.data.token, {path:"/"})
-                    window.location.href = "/analisis-geografico"
-                }
-                //Usuario no encontrado
-                else {
-                    handleShow();
-                    setDatosModal({
-                        title: 'Información incorrecta',
-                        body: 'La información ingresada es incorrecta, favor de verificar'
-                    })
-                }
+                //Se agrega la cookie
+                cookies.set('SessionToken', response.data.token, { path: "/" })
+                //Se redirecciona
+                Router.push("/analisis-geografico")
             })
-            //No se logro la conexion
-            .catch(error => {
-                //Cambiamos show a true
+            .catch(function (error) {
                 handleShow();
-                    //Datos a enviar al modal si el usuario es incorrecto
-                    setDatosModal({
-                        title: 'Información incorrecta',
-                        body: 'La información ingresada es incorrecta, favor de verificar'
-                    })
-                console.log(error);
+                setDatosModal({
+                    title: 'Información incorrecta',
+                    body: 'La información ingresada es incorrecta, favor de verificar'
+                })
+                console.log(error)
             })
+
     }
-    
+
     return (
         <>
             <Head>
-                <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
                 <title>Inicio de sesión</title>
             </Head>
             <ModalComponent
@@ -91,8 +81,7 @@ export default function InicioSesion() {
                 onHide={handleClose}
                 onClick={handleClose}
             />
-            <Header />
-            <Menu />
+
             <main>
                 <div className="container">
                     <div className="row">
@@ -111,10 +100,10 @@ export default function InicioSesion() {
                                     <Form.Group>
                                         <label htmlFor="password">Contraseña</label>
                                         <InputGroup>
-                                            <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} ref={register}/>
+                                            <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} ref={register} />
                                             <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
                                                 <InputGroup.Text>
-                                                    {passwordShown ? <i className="fas fa-eye-slash"></i> : <i className="fas fa-eye"></i>}
+                                                    {passwordShown ? <FontAwesomeIcon icon={faEyeSlash}/> : <FontAwesomeIcon icon={faEye} />}
                                                 </InputGroup.Text>
                                             </InputGroup.Append>
                                         </InputGroup>
@@ -129,7 +118,7 @@ export default function InicioSesion() {
                                             </Link>
                                         </div>
                                         <div className="col-6">
-                                            <input className="tw-float-right" type="submit" />
+                                            <input className="tw-float-right" type="submit" value="Iniciar sesión" />
                                         </div>
                                     </div>
                                 </Form>
@@ -138,7 +127,6 @@ export default function InicioSesion() {
                     </div>
                 </div>
             </main>
-            <Footer />
         </>
     )
 }

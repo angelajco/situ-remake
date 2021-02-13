@@ -1,11 +1,17 @@
 import { Modal, Button } from 'react-bootstrap';
 
 export default function ModalComponent(props) {
-     return (
+
+     //A donde va a mandar el modal a darle aceptar en caso de que haya un direccionamiento
+     const redireccion = (valor) => {
+          return window.location.href = valor;
+     }
+
+     return (        
           <>
                <Modal show={props.show} onHide={() => props.onHide()}>
                     {
-                         (props.redireccion != undefined) ?
+                         (props.datos.ruta != undefined) ?
                               <Modal.Header>
                                    <Modal.Title>
                                         {props.datos.title}
@@ -26,9 +32,9 @@ export default function ModalComponent(props) {
                     <Modal.Footer>
                          {
                               //Verifica si existen una redireccion, en caso contrario solo cierra el modal
-                              (props.redireccion != undefined) ?
-                                   <Button variant="primary" onClick={() => props.redireccion()}  >Aceptar</Button> :
-                                   <Button variant="primary" onClick={() => props.onClick()}  >Aceptar</Button>
+                              (props.datos.ruta != undefined) ?
+                                   <Button variant="primary" onClick={() => redireccion(props.datos.ruta)}>Ruta</Button> :
+                                   <Button variant="primary" onClick={() => props.onClick()}>Aceptar</Button>
                          }
                     </Modal.Footer>
                </Modal>

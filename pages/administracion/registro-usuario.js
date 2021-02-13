@@ -4,10 +4,10 @@ import { useForm } from "react-hook-form";
 import axios from 'axios'
 
 import Head from 'next/head'
-import Header from '../../components/Header'
-import Menu from '../../components/Menu'
-import Footer from '../../components/Footer'
 import ModalComponent from '../../components/ModalComponent';
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 
 export default function Registro() {
 
@@ -22,17 +22,15 @@ export default function Registro() {
     const [datosModal, setDatosModal] = useState(
         {
             title: '',
-            body: ''
+            body: '',
+            ruta: undefined
         }
     );
 
     //Estados para mostrar el modal
     const handleShow = () => setShow(true);
     const handleClose = () => setShow(false);
-    //A donde va a mandar el modal a darle aceptar
-    const redireccion = () => {
-        return window.location.href = "/administracion/inicio-sesion"
-    }
+
 
     //Renderiza el tooltip
     const renderTooltip = (props) => (
@@ -51,18 +49,32 @@ export default function Registro() {
     //Validar correo
     const validarNivel = () => {
         if (refRol.current == "1" || refRol.current == "2") {
+            //Se crea una bandera para validar los errores
+            var banderaCorreo = true;
             setBotonDesabilitar(true);
-            const validacionCorreo = refEmail.current.match(/\b@sedatu.gob.mx\b/gi);
-            if (validacionCorreo) {
-                clearErrors("id_rol");
-                setBotonDesabilitar(false);
-            }
-            else {
+            //Se recorre el arreglo de correos para validarlo con el correo que se escribio
+            correos.map(valCorreo => {
+                //Expresion regular
+                var expReg = new RegExp("\\b" + valCorreo.dominio_correo + "\\b", 'gi')
+                const validacionCorreo = refEmail.current.match(expReg);
+                //Si el correo existe dentro del arreglo
+                if (validacionCorreo != null) {
+                    banderaCorreo = false;
+                    setBotonDesabilitar(false);
+                }
+            })
+            //La bandera no cambio y se pone error
+            if (banderaCorreo == true) {
                 setError("id_rol", {
                     message: "El correo no corresponde al nivel seleccionado"
                 });
             }
+            //La bandera cambio y se quita error
+            else {
+                clearErrors("id_rol");
+            }
         }
+        //Si existe algun error lo limpia y activa el boton en caso de que se cambie de rol
         else {
             clearErrors("id_rol");
             setBotonDesabilitar(false);
@@ -106,22 +118,26 @@ export default function Registro() {
             .then(function (response) {
                 if (response.data["success-boolean"]) {
                     //Registro exitoso
-                    //Cambiamos el modal de show a true
-                    handleShow();
-                    //Datos a enviar al modal si el usuario es incorrecto
+                    //Datos a enviar al modal si el usuario es correcto
                     setDatosModal({
                         title: 'Registro correcto',
-                        body: 'Para terminar el registro de la cuenta, hemos enviado un correo a ' + refEmail.current + ' para verificar su cuenta de correo electrónico'
+                        body: 'Para terminar el registro de la cuenta, hemos enviado un correo a ' + refEmail.current + ' para verificar su cuenta de correo electrónico',
+                        ruta: "/administracion/inicio-sesion"
                     })
-                }
-                else {
-                    //Registro no exitoso
-                    console.log("Error interno")
+                    //Cambiamos el modal de show a true
+                    handleShow();
                 }
             })
             .catch(function (error) {
-                //Ocurrio algun error
-                console.log(error);
+                //Registro no exitoso
+                //Cambiamos el modal de show a true
+                handleShow();
+                //Datos a enviar al modal si el usuario es incorrecto
+                setDatosModal({
+                    title: 'Registro incorrecto',
+                    body: 'Favor de verificar la información',
+                    ruta: '/'
+                });
             });
     }
 
@@ -136,15 +152,15 @@ export default function Registro() {
     const [municipios, setMunicipios] = useState([]);
     const [roles, setRoles] = useState([]);
     const [ambitos, setAmbitos] = useState([]);
+    const [correos, setCorreos] = useState([]);
 
     useEffect(() => {
+
         //Institutos
         fetch("http://172.16.117.11/wa/catInstitutos")
             .then(res => res.json())
             .then(
-                (data) => {
-                    return setInstitutos(data)
-                },
+                (data) => setInstitutos(data),
                 (error) => console.log(error)
             )
 
@@ -158,53 +174,43 @@ export default function Registro() {
 
         //Roles
         fetch("http://172.16.117.11/wa/catRoles")
-            .then(response => {
-                return response.json()
-            })
+            .then(res => res.json())
             .then(
-                (data) => {
-                    return setRoles(data)
-                })
-            .catch(error => {
-                console.log("No se logro la conexion")
-                console.log(error);
-            })
+                (data) => setRoles(data),
+                (error) => console.log(error)
+            )
 
         //Ambitos
         fetch("http://172.16.117.11/wa/catAmbito")
-            .then(response => {
-                return response.json()
-            })
+            .then(res => res.json())
             .then(
-                (data) => {
-                    return setAmbitos(data)
-                })
-            .catch(error => {
-                console.log("No se logro la conexion")
-                console.log(error);
-            })
+                (data) => setAmbitos(data),
+                (error) => console.log(error)
+            )
+
+        //Correos
+        fetch("http://172.16.117.11/wa/catDominios")
+            .then(res => res.json())
+            .then(
+                (data) => setCorreos(data),
+                (error) => console.log(error)
+            )
+
     }, []);
 
     const municipoCambio = () => {
         //Municipios
         fetch("http://172.16.117.11/wa/catMunicipios")
-            .then(response => {
-                return response.json()
-            })
+            .then(res => res.json())
             .then(
-                (data) => {
-                    setMunicipios(data)
-                })
-            .catch(error => {
-                console.log("No se logro la conexion")
-                console.log(error);
-            })
+                (data) => setMunicipios(data),
+                (error) => console.log(error)
+            )
     }
 
     return (
         <>
             <Head>
-                <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
                 <title>Registro de usuario</title>
             </Head>
 
@@ -213,12 +219,7 @@ export default function Registro() {
                 datos={datosModal}
                 onHide={handleClose}
                 onClick={handleClose}
-                redireccion={redireccion}
             />
-
-            <Header />
-
-            <Menu />
 
             <div className="container tw-flex tw-justify-center tw-mt-4">
                 <div className="row">
@@ -321,7 +322,7 @@ export default function Registro() {
                             />
                             <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
                                 <InputGroup.Text>
-                                    {passwordShown ? <i className="fas fa-eye-slash"></i> : <i className="fas fa-eye"></i>}
+                                    {passwordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
                                 </InputGroup.Text>
                             </InputGroup.Append>
                         </InputGroup>
@@ -342,7 +343,7 @@ export default function Registro() {
                             />
                             <InputGroup.Append onClick={handleClickConfPass} className="tw-cursor-pointer">
                                 <InputGroup.Text>
-                                    {confPasswordShown ? <i className="fas fa-eye-slash"></i> : <i className="fas fa-eye"></i>}
+                                    {confPasswordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
                                 </InputGroup.Text>
                             </InputGroup.Append>
                         </InputGroup>
@@ -421,12 +422,7 @@ export default function Registro() {
 
                     <input className="col-6" type="submit" disabled={botonDesabilitar} />
                 </Form>
-
-
-
             </div>
-
-            <Footer />
         </>
     )
 }

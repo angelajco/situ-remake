@@ -2,9 +2,6 @@ import { useRef, useState } from "react";
 import { Form, Button } from 'react-bootstrap'
 import { useForm } from "react-hook-form";
 
-import Footer from '../../components/Footer'
-import Header from '../../components/Header'
-import Menu from '../../components/Menu'
 import ModalComponent from '../../components/ModalComponent';
 
 export default function RecuperarContrasena() {
@@ -53,8 +50,6 @@ export default function RecuperarContrasena() {
                 onClick={handleClose}
                 redireccion={redireccion} />
 
-            <Header />
-            <Menu />
             <div className="container">
                 <div className="row">
                     <div className="col-12">
@@ -84,7 +79,6 @@ export default function RecuperarContrasena() {
                     </div>
                 </div>
             </div>
-            <Footer />
         </>
     )
 }

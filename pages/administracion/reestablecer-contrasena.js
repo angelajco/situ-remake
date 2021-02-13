@@ -2,9 +2,6 @@ import { useRef, useState } from "react";
 import { Form, Button, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { useForm } from "react-hook-form";
 
-import Header from '../../components/Header'
-import Menu from '../../components/Menu'
-import Footer from '../../components/Footer'
 import ModalComponent from '../../components/ModalComponent';
 
 export default function ReestablecerContrasena() {
@@ -59,9 +56,6 @@ export default function ReestablecerContrasena() {
 
     return (
         <>
-            <Header />
-            <Menu />
-
             <ModalComponent
                 show={show}
                 datos={datosModal}
@@ -117,8 +111,6 @@ export default function ReestablecerContrasena() {
                     </div>
                 </div>
             </div>
-
-            <Footer />
 
         </>
     )
