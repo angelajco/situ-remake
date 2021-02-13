@@ -46,7 +46,7 @@ export default function Menu() {
                         <Link href="/">
                             <a className="tw-text-white tw-font-semibold hover:tw-text-inst-dorado">INICIO</a>
                         </Link>
-                        <Link href="/construccion">
+                        <Link href="/planeacion">
                             <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado">PLANEACIÓN MUNICIPAL</a>
                         </Link>
                         <Link href="/analisis-geografico/">
