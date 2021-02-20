@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Form, InputGroup } from 'react-bootstrap'
+import { Form, InputGroup, Button } from 'react-bootstrap'
 import { useForm } from "react-hook-form";
 import axios from 'axios'
 
@@ -44,28 +44,47 @@ export default function InicioSesion() {
         //Conexion con la api, donde verifica que los campos existan
         var config = {
             method: 'post',
-            url: 'http://172.16.117.11/wa/login',
+            url: 'http://172.16.117.11/wa/publico/login',
             headers: {
                 'Content-Type': 'application/json'
             },
             data: data
         };
+
         axios(config)
             //Si se logro la conexion
             .then(function (response) {
                 //Usuario encontrado
-                //Se agrega la cookie
-                cookies.set('SessionToken', response.data.token, { path: "/" })
-                //Se redirecciona
-                Router.push("/analisis-geografico")
+                if (response.data.token == undefined) {
+                    handleShow();
+                    setDatosModal({
+                        title: response.data['message-subject'],
+                        body: response.data['message']
+                    })
+                }
+                else {
+                    // Se agrega la cookie
+                    cookies.set('SessionToken', response.data.token, { path: "/" })
+                    //Se redirecciona
+                    Router.push("/analisis-geografico")
+                }
             })
             .catch(function (error) {
-                handleShow();
-                setDatosModal({
-                    title: 'Información incorrecta',
-                    body: 'La información ingresada es incorrecta, favor de verificar'
-                })
-                console.log(error)
+                console.log(error);
+                if (error.response) {
+                    handleShow();
+                    setDatosModal({
+                        title: error.response.data['message-subject'],
+                        body: error.response.data['message']
+                    })
+                }
+                else {
+                    handleShow();
+                    setDatosModal({
+                        title: "Conexión no establecida",
+                        body: "El tiempo de respuesta se ha agotado, favor de intentar más tarde."
+                    })
+                }
             })
 
     }
@@ -83,47 +102,46 @@ export default function InicioSesion() {
             />
 
             <main>
-                <div className="container">
-                    <div className="row">
-                        <div className="col-12">
-                            <div>
-                                <p className="tw-text-center">Bienvenido</p>
-                                <p className="tw-text-justify">El Sistema de Información Territorial y Urbana <b>(SITU)</b> se concibe como una herramienta que permite recopilar, organizar, integrar, difundir y actualizar la información geográfica documental así como indicadores sobre el ordenamiento territorial agrario, el desarrollo urbano y vivienda de México.</p>
-                                <p className="tw-text-justify">El SITU se integrá por información e indicadores generados por los tres órdenes del gobierno, instancias de gobernanza metropolitana, así como otros registros e inventario del territorio derivados de actividades científicas, academicas o de cualquier índole en materia de ordenamiento territorial y desarrollo urbano.</p>
-                            </div>
-                            <div className="m-auto cuadro-login">
-                                <Form onSubmit={handleSubmit(onSubmit)}>
-                                    <Form.Group controlId="email">
-                                        <Form.Label className="">Correo electrónico</Form.Label>
-                                        <Form.Control name="email" type="email" required ref={register} />
-                                    </Form.Group>
-                                    <Form.Group>
-                                        <label htmlFor="password">Contraseña</label>
-                                        <InputGroup>
-                                            <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} ref={register} />
-                                            <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
-                                                <InputGroup.Text>
-                                                    {passwordShown ? <FontAwesomeIcon icon={faEyeSlash}/> : <FontAwesomeIcon icon={faEye} />}
-                                                </InputGroup.Text>
-                                            </InputGroup.Append>
-                                        </InputGroup>
-                                    </Form.Group>
-                                    <div className="row">
-                                        <div className="col-6">
-                                            <Link href="/administracion/registro-usuario">
-                                                <a className="tw-block">Crear una cuenta</a>
-                                            </Link>
-                                            <Link href="/administracion/recuperar-contrasena">
-                                                <a>¿Olvidaste tu contraseña?</a>
-                                            </Link>
-                                        </div>
-                                        <div className="col-6">
-                                            <input className="tw-float-right" type="submit" value="Iniciar sesión" />
-                                        </div>
-                                    </div>
-                                </Form>
+                <div className="container tw-my-12">
+                    <div className="row shadow">
+
+                        <div className="col-6 tw-text-center">
+                            <div className="tw-p-12">
+                                <img src="/images/logo.png" alt="logo" className="img-fluid"/>
                             </div>
                         </div>
+
+                        <div className="col-6 tw-bg-inst-gris-claro tw-p-12">
+                            <h1 className="titulo-h1">Inicio de sesión</h1>
+
+
+                            <Form onSubmit={handleSubmit(onSubmit)}>
+                                <Form.Group controlId="email">
+                                    <Form.Control name="email" type="email" required ref={register} placeholder="Correo electrónico" />
+                                </Form.Group>
+                                <Form.Group>
+                                    <InputGroup>
+                                        <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} ref={register} placeholder="Contraseña" />
+                                        <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
+                                            <InputGroup.Text>
+                                                {passwordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
+                                            </InputGroup.Text>
+                                        </InputGroup.Append>
+                                    </InputGroup>
+                                </Form.Group>
+
+                                <Link href="/administracion/registro-usuario">
+                                    <a className="tw-block tw-text-inst-verde-claro">Crear cuenta</a>
+                                </Link>
+                                <Link href="/administracion/olvide-contrasena">
+                                    <a className="tw-block tw-text-inst-verde-claro">Olvide mi contraseña</a>
+                                </Link>
+                                <div className="tw-text-center tw-pt-6">
+                                    <Button variant="outline-secondary" className="tw-bg-white tw-rounded-full" type="submit">INICIAR SESIÓN</Button>
+                                </div>
+                            </Form>
+                        </div>
+
                     </div>
                 </div>
             </main>

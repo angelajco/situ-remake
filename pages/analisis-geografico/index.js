@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
 import { Form } from 'react-bootstrap'
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
+import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
 
 import dynamic from 'next/dynamic'
 import axios from 'axios'
@@ -14,18 +14,23 @@ const cookies = new Cookies()
 
 export default function AnalisisGeografico() {
 
-    // Estado para guardar el token
+    //Cuando se renderiza el lado del servidor (SSR). Garantiza que el estado del contexto no persista en varias representaciones en el servidor, lo que provocaría discrepancias en las marcas de cliente / servidor después de que se presenten varias solicitudes en el servidor
+    resetServerContext();
+
+    // Estado para guardar el web token que se pide a la API
     const [tokenSesion, setTokenSesion] = useState(false)
 
+    // Guarda el token que viene en la cookie para verificar que la tenga
+    const tokenCookie = cookies.get('SessionToken')
+
     useEffect(() => {
-        const token = cookies.get('SessionToken')
-        if (token != undefined) {
+        if (tokenCookie != undefined) {
             // Configuracion para verificar el token
             var config = {
                 method: 'get',
-                url: 'http://172.16.117.11:8080/SITU-API-1.0/acceso',
+                url: 'http://172.16.117.11/wa/prot/acceso',
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${tokenCookie}`
                 },
             };
             axios(config)
@@ -41,7 +46,7 @@ export default function AnalisisGeografico() {
         else {
             Router.push('/administracion/inicio-sesion')
         }
-    }, [])
+    }, [tokenCookie])
 
     //Importa dinámicamente el mapa
     const Map = dynamic(
@@ -154,12 +159,17 @@ export default function AnalisisGeografico() {
 
     //Funcion para ordenar los nuevos datos
     function handleOnDragEnd(result) {
+        // Si el destino existe, esto es para evitar cuando se arrastra fuera del contenedor
         if (!result.destination) {
             return
         }
+        // Se crea una copia de datosEntidades
         const items = Array.from(datosEntidades)
+        // Lo eliminamos de acuerdo al index que le pasa
         const [reorderedItem] = items.splice(result.source.index, 1)
+        // Se usa destination.index para agregar ese valor a su nuevo destino
         items.splice(result.destination.index, 0, reorderedItem)
+        // Actualizamos datos entidades
         setDatosEntidades(items)
     }
 
@@ -189,13 +199,15 @@ export default function AnalisisGeografico() {
                                 </div>
                                 <div className="col-12">
                                     <p>Capas</p>
+                                    {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
                                     <DragDropContext onDragEnd={handleOnDragEnd}>
                                         <Droppable droppableId="entidades">
                                             {(provided) => (
+                                                // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
                                                 <div {...provided.droppableProps} ref={provided.innerRef}>
                                                     {
                                                         datosEntidades.map((capa, index) => (
-                                                            <Draggable key={capa.nom_entidad} draggableId={capa.nom_entidad} index={index}>
+                                                            <Draggable key={capa.num_entidad} draggableId={capa.num_entidad} index={index}>
                                                                 {(provided) => (
                                                                     <Form.Group {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
                                                                         <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_entidad} onChange={cambiaCheckbox} value={capa.num_entidad} />
@@ -204,6 +216,7 @@ export default function AnalisisGeografico() {
                                                             </Draggable>
                                                         )
                                                         )}
+                                                    {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
                                                     {provided.placeholder}
                                                 </div>
                                             )}

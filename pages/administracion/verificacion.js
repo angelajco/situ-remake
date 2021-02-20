@@ -3,44 +3,127 @@ import Router, { useRouter } from 'next/router'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 
+import ModalComponent from '../../components/ModalComponent';
+
 export default function Verificacion() {
+  //Datos para el modal
+  const [show, setShow] = useState(false);
+  const [datosModal, setDatosModal] = useState(
+    {
+      title: '',
+      body: ''
+    }
+  );
+  //Estados para mostrar el modal
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
 
+  //Para ver la URL
   const router = useRouter()
-  // console.log(router.query['permalink'])
 
+  //Para guardar los mensajes que vienen del API
   const [datosPeticion, setDatosPeticion] = useState([])
 
+  //Para guardar el correo
+  const [correo, setCorreo] = useState()
+
+  //Para guardar los mensajes del front
+  var mensaje = [];
+
   useEffect(() => {
-    // if (router.query['permalink'] != undefined) {
+    if (router.query['permalink'] !== undefined) {
+
+      var config = {
+        method: 'get',
+        url: 'http://172.16.117.11/wa/publico/verifyEmail',
+        params: {
+          permalink: router.query['permalink']
+        },
+      };
+
+      axios(config)
+        .then(function (response) {
+          if (response.data['message-type'] == 1) {
+            setCorreo(response.data['message-subject'])
+          }
+          setDatosPeticion(response.data);
+        })
+        .catch(function (error) {
+          console.log(error.response)
+          mensaje['message'] = "El tiempo de respuesta se ha agotado, favor de intentar más tarde."
+          setDatosPeticion(mensaje)
+        });
+    }
+    else {
+      mensaje['message'] = "No tiene permisos para ver esta página."
+      setDatosPeticion(mensaje)
+    }
+
+  }, [router.query['permalink']])
+
+  const reenviaCorreo = () => {
+
+    const correoTemp = { 'email': 'vodka@maildrop.ccf' }
+    console.log(correoTemp)
+
     var config = {
-      method: 'get',
-      url: 'http://172.16.117.11/wa/verifyEmail',
-      params: {
-        permalink: 'GjoSkxGGwP5J6yPgeGZoR166mmbv08NYrTYefe/srg4qakUvfgil9VF6YWznogMg1eaUo02DAfmJ+ESOJX4wAZE4SwjA4JX803L3mAN7mT/qwD4VMphCU/SxeLlVS3Uz9ONi+6HjQNtxafzTqR0qQKTWvdJfnIh3b55ibuuTPrcpTFntBlkIFmHJGdvAHjG5zDiea8tMxjIHGKyBuOgSH10GvWmj4o6GSqXPuIrxKJfekfKLgrP/4VXarnP/bl/3hlf9VkUi8qo98QPxoasXKzNNukKzEhoYEDhSIixxGTOPsfyvpx9HIgp1qZPulamfDK8JiDPA/Yf+131GxstvgA='
+      method: 'post',
+      url: 'http://172.16.117.11/wa/publico/sendNewEmail',
+      headers: {
+        'Content-Type': 'application/json'
       },
+      data: correoTemp
     };
+
+    console.log(config)
 
     axios(config)
       .then(function (response) {
-        console.log("exito")
-        console.log(response)
-        setDatosPeticion(response.data);
+        handleShow();
+        setDatosModal({
+          title: response.data['message-subject'],
+          body: response.data['message']
+        })
       })
       .catch(function (error) {
         console.log(error)
-        Router.push('/')
-      });
-  }, [])
+        handleShow();
+        setDatosModal({
+          title: "Conexión no establecida",
+          body: "El tiempo de respuesta se ha agotado, favor de intentar más tarde."
+        })
+      })
+  }
 
   return (
     <>
-      <div className="container tw-text-center">
-        <div className="row">
-          <div className="col-12">
-            <p>{datosPeticion['message-subject']}</p>
+      <ModalComponent
+        show={show}
+        datos={datosModal}
+        onHide={handleClose}
+        onClick={handleClose}
+      />
+
+      <main>
+        <div className="container tw-text-center">
+          <div className="row">
+            <div className="col-12">
+              {
+                datosPeticion['message-type'] == 1
+                  ?
+                  (
+                    <>
+                      {datosPeticion['message']}
+                      <button onClick={reenviaCorreo}> Reenviar correo</button>
+                    </>
+                  )
+                  :
+                  datosPeticion['message']
+              }
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     </>
   )
 }
