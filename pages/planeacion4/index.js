@@ -116,7 +116,7 @@ class SeccionModelo {
 // creando un nuevo objeto nucleo
 var nucleo = new Nucleo()
 // haciendo la peticion al modelo XML
-nucleo.descargaModelo('http://172.16.117.11/demos/modelos/MetaModeloHPM_01.xml')
+nucleo.descargaModelo(`${process.env.ruta}/demos/modelos/MetaModeloHPM_01.xml`)
 
 var listaEntidades = false
 var listaMunicipios = false
