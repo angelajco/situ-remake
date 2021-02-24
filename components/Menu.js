@@ -39,7 +39,7 @@ export default function Menu() {
     }
 
     return (
-        <Navbar expand="lg" className="tw-text-center tw-bg-inst-verde-claro">
+        <Navbar expand="lg" className="tw-text-center tw-bg-menu">
             <Container>
                 <div className="tw-flex tw-justify-end tw-w-full">
                     <Navbar.Toggle aria-controls="basic-navbar-nav" className="" />
@@ -47,27 +47,27 @@ export default function Menu() {
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="mr-auto tw-py-2">
                         <Link href="/">
-                            <a className="tw-text-white tw-font-semibold hover:tw-text-inst-dorado">INICIO</a>
+                            <a className="tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">INICIO</a>
                         </Link>
-                        <Link href="/planeacion">
-                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado">PLANEACIÓN MUNICIPAL</a>
+                        <Link href="/planeacion4">
+                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">PLANEACIÓN MUNICIPAL</a>
                         </Link>
                         <Link href="/analisis-geografico">
-                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado">ANÁLISIS GEOGRÁFICO</a>
+                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">ANÁLISIS GEOGRÁFICO</a>
                         </Link>
                         <Link href="/construccion">
-                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado">INDICADORES ESTADÍSTICOS</a>
+                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">INDICADORES ESTADÍSTICOS</a>
                         </Link>
                         <Link href="/construccion">
-                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado">CONSULTA DOCUMENTAL</a>
+                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">CONSULTA DOCUMENTAL</a>
                         </Link>
                         {
                             tokenSesion
                                 ?
-                                <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado" href="/administracion/inicio-sesion" onClick={cerrarSesion}>CERRAR SESIÓN</a>
+                                <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline" href="/administracion/inicio-sesion" onClick={cerrarSesion}>CERRAR SESIÓN</a>
                                 :
                                 <Link href="/administracion/inicio-sesion">
-                                    <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado">INICIAR SESIÓN</a>
+                                    <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">INICIAR SESIÓN</a>
                                 </Link>
                         }
                     </Nav>

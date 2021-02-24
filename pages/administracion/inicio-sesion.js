@@ -66,7 +66,7 @@ export default function InicioSesion() {
                     // Se agrega la cookie
                     cookies.set('SessionToken', response.data.token, { path: "/" })
                     //Se redirecciona
-                    Router.push("/analisis-geografico")
+                    Router.push("/")
                 }
             })
             .catch(function (error) {

@@ -24,3 +24,36 @@
 .tooltip-pass>.tooltip-inner {
     max-width: 100%;
 }
+
+/* Backgrounds index */
+
+.bg-curvas-1 {
+    background-image: url('/images/index/curvas_nivel.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.bg-curvas-2 {
+    background-image: url('/images/index/curvas_nivel2.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.bg-curvas-3 {
+    background-image: url('/images/index/curvas_nivel4.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.bg-curvas-4 {
+    background-image: url('/images/index/curvas_nivel3.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.border-gris::after {
+    content: '';
+    background-color: #98989a;
+    width: 0.5rem;
+    padding: 0.5rem;
+}

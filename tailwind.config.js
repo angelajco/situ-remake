@@ -7,6 +7,8 @@ module.exports = {
     },
     extend: {
       colors: {
+        'titulo': '#276C6F',
+        'menu': '#65A79F',
         inst: {
           'crema': '#ddc9a3',
           'dorado': '#bc955c',

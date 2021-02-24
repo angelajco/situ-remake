@@ -1,12 +1,42 @@
-import { useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Form } from 'react-bootstrap'
-// import $ from 'jquery'
+import { useForm } from "react-hook-form";
+import Head from 'next/head'
+import dynamic from 'next/dynamic'
+// import Router, { useRouter } from 'next/router'
 
 export default function index() {
 
-  // States
-  // const [titulo, setTitulo] = useState('')
-  // const [secciones, setSecciones] = useState([])
+  //Importa dinámicamente el mapa
+  const Map = dynamic(
+    () => import('../../components/MapPlaneacion'),
+    {
+      loading: () => <p>El mapa está cargando</p>,
+      ssr: false
+    }
+  )
+
+  //Para ver la URL
+  // const router = useRouter()
+  // let  municipio = router.query.id_municipio
+  // let entidad = router.query.id_entidad
+  // let  municipio = '00000'
+  // let entidad = 'sin nombre'
+  // console.log(refEntidad.current)
+  // console.log(refMunicipio.current)
+  // Para el formulario
+  const { register, handleSubmit, watch, clearErrors, setError, errors } = useForm();
+  
+  const refEntidad = useRef();
+  refEntidad.current = watch("id_entidad", "");
+  const refMunicipio = useRef();
+  refMunicipio.current = watch("id_municipio", "");
+  // municipio = refMunicipio.current
+  console.log(refEntidad.current)
+  console.log(refMunicipio.current)
+
+  // console.log(entidades)
+  // console.log(municipios)
 
   class Nucleo {
     constructor() {
@@ -17,9 +47,9 @@ export default function index() {
       // La peticion se hizo con un resultado exitoso o no exitoso
       this.modeloCargado = false;
 
-      this.claveMun = '00000';
+      this.claveMun = '';
 
-      this.nombreMun = 'sin nombre'
+      this.nombreMun = '';
     }
 
     descargaModelo(rutaXml) {
@@ -34,7 +64,7 @@ export default function index() {
         .then(result => {
           let parser = new DOMParser();
           let xmlDoc = parser.parseFromString(result, "text/xml")
-          console.log(xmlDoc)
+          // console.log(xmlDoc)
           this.procesaModelo(xmlDoc)
         })
         .catch(error => {
@@ -47,7 +77,7 @@ export default function index() {
       this.modelo = new ModeloContenido(xmlDoc, this)
       this.modeloCargado = true;
       this.modeloValido = true;
-      console.log(this.modelo)
+      // console.log(this.modelo)
     }
 
     traduceVariable(cadena) {
@@ -74,7 +104,11 @@ export default function index() {
       } else {
         return cadena
       }
-      return
+    }
+    
+    actualizaDatos(idMun, nombreMun) {
+      this.claveMun = idMun;
+      this.nombreMun = nombreMun;
     }
 
   }
@@ -124,7 +158,11 @@ export default function index() {
     }
 
     render() {
-      return { __html: `<h3>${this.nucleo.traduceVariable(this.titulo)}</h3>` }
+      let salida = `<h3>${this.nucleo.traduceVariable(this.titulo)}</h3>`
+      if (this.tipo==='mapaBase') {
+        salida = salida + `<div id="map">Mapa aqui</div>`
+      }
+      return { __html: salida }
     }
 
   }
@@ -139,10 +177,21 @@ export default function index() {
   //Para las secciones
   const [seccionesModelo, setSeccionesModelo] = useState([])
 
+  // Para desplegar el mapa
+  const [ponerMapa, setPonerMapa] = useState(false)
+
   function desplegarDatos() {
     // console.log(nucleo.modeloCargado)
     // console.log(nucleo.modelo.titulo)
+    // console.log(municipios)
+    console.log('Antes del ref municipios')
+    console.log(refMunicipio.current)
+    municipios.filter(mun => mun.id_municipios == refMunicipio.current).map((munFiltrado, index) => ( 
+      nucleo.actualizaDatos(munFiltrado.id_municipios, munFiltrado.nombre_municipio)
+    ))
+
     setTituloModelo(nucleo.modelo.titulo)
+    setPonerMapa(true)
 
     let dummy = []
 
@@ -150,46 +199,75 @@ export default function index() {
       dummy.push(nucleo.modelo.secciones[i].render())
     }
 
-    console.log(dummy)
+    // console.log(dummy)
     setSeccionesModelo(dummy)
   }
 
-  // console.log(seccionesModelo)
+  const [entidades, setEntidades] = useState([]);
+  const [municipios, setMunicipios] = useState([]);
+
+  useEffect(() => {
+    //Entidades
+    fetch("http://172.16.117.11/wa/publico/catEntidades")
+      .then(res => res.json())
+      .then(
+        (data) => setEntidades(data),
+        (error) => console.log(error)
+      )
+  }, [])
+
+  const municipoCambio = () => {
+    //Municipios
+    fetch("http://172.16.117.11/wa/publico/catMunicipios")
+      .then(res => res.json())
+      .then(
+        (data) => setMunicipios(data),
+        (error) => console.log(error)
+      )
+  }
+
+  // console.log(entidades)
+  console.log(municipios)
+  // console.log(router.query)
+  // console.log(router.query.id_municipio)
+  // console.log(router.query.id_entidad)
 
   return (
     <>
+      <Head>
+        <title>Planeación Municipal</title>
+      </Head>
       <div className="tw-flex tw-mx-5 tw-my-8">
-        <section className="tw-w-1/2">
-          AQUI VA EL MAPA
-        </section>
-        <section className="tw-w-1/2">
+        <section className="tw-w-full">
           <div>
-            <Form.Group controlId="id_entidad">
-              <Form.Label className="tw-text-red-600">Entidad</Form.Label>
-              <Form.Control as="select" name="id_entidad">
-                <option value=""></option>
-                {/* {entidades.map((value, index) => (
-                  <option key={index} value={value.id_entidades}>
-                    {value.nombre_entidad}
-                  </option>
-                ))} */}
-              </Form.Control>
-            </Form.Group>
-            <Form.Group controlId="id_municipio">
-              <Form.Label className="tw-text-red-600">Municipio base</Form.Label>
-              <Form.Control as="select" name="id_municipio">
-                {/* <option value=""></option>
-                {
-                  municipios.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
-                    <option key={index} value={munFiltrado.id_municipios}>
-                      {munFiltrado.nombre_municipio}
+            <Form onSubmit={handleSubmit(desplegarDatos)}>
+              <Form.Group controlId="id_entidad">
+                <Form.Control as="select" name="id_entidad" required ref={register} onChange={municipoCambio}>
+                  <option value="" hidden>Entidad</option>
+                  {entidades.map((value, index) => (
+                    <option key={index} value={value.id_entidades}>
+                      {value.nombre_entidad}
                     </option>
-                  )
-                  )
-                } */}
-              </Form.Control>
-              <button onClick={desplegarDatos} >Enviar</button>
-            </Form.Group>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+
+              <Form.Group controlId="id_municipio">
+                <Form.Control as="select" name="id_municipio" required ref={register}>
+                  <option value="" hidden>Municipio</option>
+                  {
+                    municipios.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
+                      <option key={index} value={munFiltrado.id_municipios}>
+                        {munFiltrado.nombre_municipio}
+                      </option>
+                    )
+                    )
+                  }
+                </Form.Control>
+              </Form.Group>
+              <input type="submit" value="Enviar" />
+              {/* <input type="submit" value="Enviar" onClick={desplegarDatos}/> */}
+            </Form>
           </div>
           <section className="tw-mt-5">
             {
