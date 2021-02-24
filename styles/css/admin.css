@@ -1,0 +1,31 @@
+.pass-form-registro::-ms-reveal, .pass-form-registro::-ms-clear {
+    /*Esconder el ojito por default*/
+    display: none;
+}
+
+.loader {
+    /*Hacer el loader pantalla completa*/
+    position: initial !important;
+}
+
+.titulo-h1 {
+    font-size: 21pt;
+    font-weight: bold;
+    @apply tw-pb-6;
+    @apply tw-text-inst-verde-claro;
+}
+
+.btn-admin {
+    font-weight: 600;
+    font-size: 16pt;
+    background-color: #fff;
+    @apply tw-rounded-full;
+    padding: .375rem 2rem;
+}
+
+.mensajes-admin{
+    font-size: 21pt;
+    font-weight: bold;
+    @apply tw-text-center;
+    @apply tw-text-guia-gris54;
+}

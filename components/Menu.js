@@ -16,7 +16,7 @@ export default function Menu() {
             // Configuracion para verificar el token
             var config = {
                 method: 'get',
-                url: 'http://172.16.117.11/wa/prot/acceso',
+                url: `${process.env.ruta}/wa/prot/acceso`,
                 headers: {
                     'Authorization': `Bearer ${tokenCookie}`
                 },

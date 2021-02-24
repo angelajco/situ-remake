@@ -44,7 +44,7 @@ export default function InicioSesion() {
         //Conexion con la api, donde verifica que los campos existan
         var config = {
             method: 'post',
-            url: 'http://172.16.117.11/wa/publico/login',
+            url: `${process.env.ruta}/wa/publico/login`,
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -105,13 +105,13 @@ export default function InicioSesion() {
                 <div className="container tw-my-12">
                     <div className="row shadow">
 
-                        <div className="col-6 tw-text-center">
+                        <div className="col-12 col-md-6 tw-text-center">
                             <div className="tw-p-12">
                                 <img src="/images/logo.png" alt="logo" className="img-fluid"/>
                             </div>
                         </div>
 
-                        <div className="col-6 tw-bg-inst-gris-claro tw-p-12">
+                        <div className="col-12 col-md-6 tw-p-12 tw-bg-guia-grisf6">
                             <h1 className="titulo-h1">Inicio de sesión</h1>
 
 
@@ -121,7 +121,7 @@ export default function InicioSesion() {
                                 </Form.Group>
                                 <Form.Group>
                                     <InputGroup>
-                                        <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} ref={register} placeholder="Contraseña" />
+                                        <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} ref={register}/>
                                         <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
                                             <InputGroup.Text>
                                                 {passwordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
@@ -137,7 +137,7 @@ export default function InicioSesion() {
                                     <a className="tw-block tw-text-inst-verde-claro">Olvide mi contraseña</a>
                                 </Link>
                                 <div className="tw-text-center tw-pt-6">
-                                    <Button variant="outline-secondary" className="tw-bg-white tw-rounded-full" type="submit">INICIAR SESIÓN</Button>
+                                    <Button variant="outline-secondary" className="btn-admin" type="submit">INICIAR SESIÓN</Button>
                                 </div>
                             </Form>
                         </div>
