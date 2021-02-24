@@ -14,14 +14,15 @@ module.exports = {
           'dorado': '#bc955c',
           'guinda': '#691c32',
           'rojo': '#9f2241',
-          gris: {
-            'claro': '#98989a',
-            'fuerte': '#6f7271',
-          },
-          verde: {
-            "claro": "#325b4e",
-            "fuerte": "#10312b"
-          }
+          'gris-claro': '#98989a',
+          'gris-fuerte': '#6f7271',
+          "verde-claro": "#325b4e",
+          "verde-fuerte": "#10312b"
+        },
+        guia: {
+          "grisf6": "#f6f6f6",
+          "grisdd": "#dddddd",
+          'gris54': '#545454'
         }
       }
     },

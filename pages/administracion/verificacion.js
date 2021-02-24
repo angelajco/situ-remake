@@ -1,7 +1,9 @@
-import Router, { useRouter } from 'next/router'
+import { useRouter } from 'next/router'
 
 import axios from 'axios'
 import { useEffect, useState } from 'react'
+
+import {Button} from 'react-bootstrap'
 
 import ModalComponent from '../../components/ModalComponent';
 
@@ -35,7 +37,7 @@ export default function Verificacion() {
 
       var config = {
         method: 'get',
-        url: 'http://172.16.117.11/wa/publico/verifyEmail',
+        url: `${process.env.ruta}/wa/publico/verifyEmail`,
         params: {
           permalink: router.query['permalink']
         },
@@ -63,19 +65,16 @@ export default function Verificacion() {
 
   const reenviaCorreo = () => {
 
-    const correoTemp = { 'email': 'vodka@maildrop.ccf' }
-    console.log(correoTemp)
+    const correoDatos = { 'email': correo }
 
     var config = {
       method: 'post',
-      url: 'http://172.16.117.11/wa/publico/sendNewEmail',
+      url: `${process.env.ruta}/wa/publico/sendNewEmail`,
       headers: {
         'Content-Type': 'application/json'
       },
-      data: correoTemp
+      data: correoDatos
     };
-
-    console.log(config)
 
     axios(config)
       .then(function (response) {
@@ -105,22 +104,35 @@ export default function Verificacion() {
       />
 
       <main>
-        <div className="container tw-text-center">
-          <div className="row">
-            <div className="col-12">
-              {
-                datosPeticion['message-type'] == 1
-                  ?
-                  (
-                    <>
-                      {datosPeticion['message']}
-                      <button onClick={reenviaCorreo}> Reenviar correo</button>
-                    </>
-                  )
-                  :
-                  datosPeticion['message']
-              }
+        <div className="container tw-my-12">
+          <div className="row shadow">
+
+            <div className="col-12 col-md-6 tw-text-center">
+              <div className="tw-p-12">
+                <img src="/images/logo.png" alt="logo" className="img-fluid" />
+              </div>
             </div>
+
+            <div className="col-12 col-md-6 tw-p-12 tw-bg-guia-grisf6">
+              <h1 className="titulo-h1">Verificación de correo electrónico</h1>
+              <div className="mensajes-admin">
+                {
+                  datosPeticion['message-type'] == 1
+                    ?
+                    (
+                      <>
+                        {datosPeticion['message']}
+                        <div className="tw-pt-6">
+                          <Button variant="outline-secondary" className="btn-admin" onClick={reenviaCorreo}>REENVIAR CORREO</Button>
+                        </div>
+                      </>
+                    )
+                    :
+                    datosPeticion['message']
+                }
+              </div>
+            </div>
+
           </div>
         </div>
       </main>

@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { Form, OverlayTrigger, Tooltip, InputGroup } from 'react-bootstrap'
+import { Form, OverlayTrigger, Tooltip, InputGroup, Button } from 'react-bootstrap'
 import { useForm } from "react-hook-form";
 import axios from 'axios'
 
@@ -101,11 +101,12 @@ export default function Registro() {
 
     //Funcion a ejecutar al darle el boton de iniciar sesion
     const onSubmit = async (data) => {
+        console.log(data)
         //Envio de informacion
         let datosFormulario = JSON.stringify(data);
         let config = {
             method: "post",
-            url: "http://172.16.117.11/wa/publico/createUser",
+            // url: `${process.env.ruta}/wa/publico/createUser`,
             headers: {
                 "Content-Type": "application/json"
             },
@@ -127,7 +128,7 @@ export default function Registro() {
                 }
             })
             .catch(function (error) {
-                console.log(error.response)
+                console.log(error)
                 //Registro no exitoso
                 //Cambiamos el modal de show a true
                 handleShow();
@@ -141,11 +142,25 @@ export default function Registro() {
 
     //Fechas para año de nacimiento
     const fechaActual = new Date().getFullYear();
-    const fechaMinima = fechaActual - 100;
-    const fechaMaxima = fechaActual - 15;
+    const fechaMinima = (fechaActual - 100) + "-01-01";
+    const fechaMaxima = (fechaActual - 15) + "-12-31";
+
+    //Cambia el tipo del input de fecha
+    const cambiarTipoFecha = (event) => {
+        console.log(event.target)
+        event.target.type = "date"
+    }
+
+    //Verifica si ha sido borrada y la pone por default
+    const verificarFecha = (event) => {
+        if (event.target.value == "") {
+            event.target.value = ""
+            event.target.type = "text"
+        }
+    }
 
     //Estados para guardar los catalogos
-    const [institutos, setInstitutos] = useState([]);
+    const [generos, setGeneros] = useState([]);
     const [entidades, setEntidades] = useState([]);
     const [municipios, setMunicipios] = useState([]);
     const [roles, setRoles] = useState([]);
@@ -153,17 +168,16 @@ export default function Registro() {
     const [correos, setCorreos] = useState([]);
 
     useEffect(() => {
-
         //Institutos
-        fetch("http://172.16.117.11/wa/publico/catInstitutos")
+        fetch(`${process.env.ruta}/wa/publico/catGeneros`)
             .then(res => res.json())
             .then(
-                (data) => setInstitutos(data),
+                (data) => setGeneros(data),
                 (error) => console.log(error)
             )
 
         //Entidades
-        fetch("http://172.16.117.11/wa/publico/catEntidades")
+        fetch(`${process.env.ruta}/wa/publico/catEntidades`)
             .then(res => res.json())
             .then(
                 (data) => setEntidades(data),
@@ -171,7 +185,7 @@ export default function Registro() {
             )
 
         //Roles
-        fetch("http://172.16.117.11/wa/publico/catRoles")
+        fetch(`${process.env.ruta}/wa/publico/catRoles`)
             .then(res => res.json())
             .then(
                 (data) => setRoles(data),
@@ -179,7 +193,7 @@ export default function Registro() {
             )
 
         //Ambitos
-        fetch("http://172.16.117.11/wa/publico/catAmbito")
+        fetch(`${process.env.ruta}/wa/publico/catAmbito`)
             .then(res => res.json())
             .then(
                 (data) => setAmbitos(data),
@@ -187,7 +201,7 @@ export default function Registro() {
             )
 
         //Correos
-        fetch("http://172.16.117.11/wa/publico/catDominios")
+        fetch(`${process.env.ruta}/wa/publico/catDominios`)
             .then(res => res.json())
             .then(
                 (data) => setCorreos(data),
@@ -198,7 +212,7 @@ export default function Registro() {
 
     const municipoCambio = () => {
         //Municipios
-        fetch("http://172.16.117.11/wa/publico/catMunicipios")
+        fetch(`${process.env.ruta}/wa/publico/catMunicipios`)
             .then(res => res.json())
             .then(
                 (data) => setMunicipios(data),
@@ -219,204 +233,213 @@ export default function Registro() {
                 onClick={handleClose}
             />
 
-            <div className="container tw-my-12">
-                <div className="row shadow">
+            <main>
+                <div className="container tw-my-12">
+                    <div className="row shadow">
 
-                    <div className="col-6 tw-text-center">
-                        <div className="tw-p-12">
-                            <img src="/images/logo.png" alt="logo" className="img-fluid" />
+                        <div className="col-12 col-md-6 tw-text-center">
+                            <div className="tw-p-12">
+                                <img src="/images/logo.png" alt="logo" className="img-fluid" />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="col-6 tw-bg-inst-gris-claro tw-p-12">
-                        <h1 className="titulo-h1">REGISTRO DE USUARIO</h1>
-                        <Form onSubmit={handleSubmit(onSubmit)}>
+                        <div className="col-12 col-md-6 tw-p-12 tw-bg-guia-grisf6">
+                            <h1 className="titulo-h1">Registro de usuario</h1>
+                            <Form onSubmit={handleSubmit(onSubmit)}>
 
-                            <Form.Group controlId="nombre">
-                                <Form.Control name="nombre" type="text" required placeholder="Nombre *"
-                                    ref={
-                                        register({
-                                            pattern:
-                                            {
-                                                value: /^[a-záéíóúñ]+(\s?[a-záéíóúñ])*$/i,
-                                                message: "Nombre incorrecto"
-                                            }
-                                        })
-                                    } />
-                                <p>{errors.nombre && errors.nombre.message}</p>
-                            </Form.Group>
-
-                            <Form.Group controlId="apellido_paterno">
-                                <Form.Control name="apellido_paterno" type="text" required placeholder="Apellido 1 *"
-                                    ref={
-                                        register({
-                                            pattern:
-                                            {
-                                                value: /^[a-záéíóúñ]+(\s?[a-záéíóúñ])*$/i,
-                                                message: "Apellido incorrecto"
-                                            }
-                                        })
-                                    }
-                                />
-                            </Form.Group>
-
-                            <Form.Group controlId="apellido_materno">
-                                <Form.Control name="apellido_materno" type="text" placeholder="Apellido 2"
-                                    ref={
-                                        register({
-                                            pattern:
-                                            {
-                                                value: /^[a-záéíóúñ]+(\s?[a-záéíóúñ])*$/i,
-                                                message: "Apellido incorrecto"
-                                            }
-                                        })
-                                    }
-                                />
-                            </Form.Group>
-
-                            <Form.Group controlId="anio_nacimiento">
-                                <Form.Control name="anio_nacimiento" type="number" pattern="[0-9]*" placeholder={"Año de nacimiento (" + fechaMinima + "-" + fechaMaxima + ")"} ref={register} min={fechaMinima} max={fechaMaxima} />
-                                <p>{errors.anio_nacimiento && errors.anio_nacimiento.message}</p>
-                            </Form.Group>
-
-                            <Form.Group controlId="email">
-                                <Form.Control name="email" type="email" required onChange={validarNivel} placeholder="Correo electrónico *"
-                                    ref={
-                                        register({
-                                            pattern:
-                                            {
-                                                value: /^([a-z]+[0-9_-]*)+(\.[a-z0-9_-]+)*@([a-z0-9]+\.)+[a-z]+$/i,
-                                                message: "Correo incorrecto"
-                                            }
-                                        })
-                                    } />
-                                <p>{errors.email && errors.email.message}</p>
-                            </Form.Group>
-
-                            <Form.Group controlId="celular">
-                                <Form.Control name="celular" type="number" pattern="[0-9]*{10}" placeholder="Número de teléfono" ref={register} />
-                                <p>{errors.celular && errors.celular.message}</p>
-                            </Form.Group>
-
-                            <Form.Group controlId="id_instituto">
-                                <Form.Control as="select" name="id_instituto" required ref={register}>
-                                    <option value="" hidden>Institución u organismo *</option>
-                                    {institutos.map((value, index) => (
-                                        <option key={index} value={value.id_instituto}>
-                                            {value.nombre_instituto}
-                                        </option>
-                                    ))}
-                                </Form.Control>
-                            </Form.Group>
-
-                            <Form.Group controlId="id_entidad">
-                                <Form.Control as="select" name="id_entidad" required ref={register} onChange={municipoCambio}>
-                                    <option value="" hidden>Entidad *</option>
-                                    {entidades.map((value, index) => (
-                                        <option key={index} value={value.id_entidades}>
-                                            {value.nombre_entidad}
-                                        </option>
-                                    ))}
-                                </Form.Control>
-                            </Form.Group>
-
-                            <Form.Group controlId="id_municipio">
-                                <Form.Control as="select" name="id_municipio" required ref={register}>
-                                    <option value="" hidden>Municipio base *</option>
-                                    {
-                                        municipios.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
-                                            <option key={index} value={munFiltrado.id_municipios}>
-                                                {munFiltrado.nombre_municipio}
-                                            </option>
-                                        )
-                                        )
-                                    }
-                                </Form.Control>
-                            </Form.Group>
-
-                            <Form.Group controlId="id_rol">
-                                <Form.Control as="select" name="id_rol" required onChange={validarNivel} ref={register}>
-                                    <option value="" hidden>Usuario solicitado *</option>
-                                    {roles.map((value, index) => (
-                                        <option key={index} value={value.id_rol}>
-                                            {value.rol}
-                                        </option>
-                                    ))}
-                                </Form.Control>
-                                <p>{errors.id_rol && errors.id_rol.message}</p>
-                            </Form.Group>
-
-                            <Form.Group controlId="id_ambito_actuacion">
-                                <Form.Control as="select" name="id_ambito_actuacion" required ref={register}>
-                                    <option value="" hidden>Área general de estudios *</option>
-                                    {ambitos.map((value, index) => (
-                                        <option key={index} value={value.id_ambito_actuacion}>
-                                            {value.ambito_actuacion}
-                                        </option>
-                                    ))}
-                                </Form.Control>
-                            </Form.Group>
-
-                            <Form.Group>
-                                <label htmlFor="contrasena" className="tw-text-red-600">
-                                    <OverlayTrigger placement="right" overlay={renderTooltip}>
-                                        <FontAwesomeIcon icon={faQuestionCircle} />
-                                    </OverlayTrigger>
-                                </label>
-                                <InputGroup>
-                                    <Form.Control name="contrasena" required id="contrasena" placeholder="Crear contraseña *" className="pass-form-registro"
-                                        type={passwordShown ? "text" : "password"}
+                                <Form.Group controlId="nombre">
+                                    <Form.Control name="nombre" type="text" required placeholder="Nombre(s) *"
                                         ref={
                                             register({
-                                                minLength: {
-                                                    value: 8,
-                                                    message: 'Longitud minima 8 caracteres',
-                                                },
                                                 pattern:
                                                 {
-                                                    value: /^(?=.*\d)(?=.*[-!@#$/(){}=.,;:])(?=.*[A-Z])(?=.*[a-z])(?!.*[+^"'´%&¿?*~|\\])(?!.*(012|123|234|345|456|567|678|789))(?!.*(000|111|222|333|444|555|666|777|888|999))\S{8,}$/,
-                                                    message: "Contraseña incorrecta"
+                                                    value: /^[a-záéíóúñ]+(\s?[a-záéíóúñ])*$/i,
+                                                    message: "Nombre incorrecto"
+                                                }
+                                            })
+                                        } />
+                                    <p>{errors.nombre && errors.nombre.message}</p>
+                                </Form.Group>
+
+                                <Form.Group controlId="apellido_paterno">
+                                    <Form.Control name="apellido_paterno" type="text" required placeholder="Apellido 1 *"
+                                        ref={
+                                            register({
+                                                pattern:
+                                                {
+                                                    value: /^[a-záéíóúñ]+(\s?[a-záéíóúñ])*$/i,
+                                                    message: "Apellido incorrecto"
                                                 }
                                             })
                                         }
                                     />
-                                    <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
-                                        <InputGroup.Text>
-                                            {passwordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
-                                        </InputGroup.Text>
-                                    </InputGroup.Append>
-                                </InputGroup>
-                                <p>{errors.contrasena && errors.contrasena.message}</p>
-                            </Form.Group>
+                                </Form.Group>
 
-                            <Form.Group>
-                                <InputGroup>
-                                    <Form.Control name="confirmar_contrasena" id="confirmar_contrasena" required placeholder="Confirmar contraseña *" className="pass-form-registro"
-                                        type={confPasswordShown ? "text" : "password"}
+                                <Form.Group controlId="apellido_materno">
+                                    <Form.Control name="apellido_materno" type="text" placeholder="Apellido 2"
                                         ref={
                                             register({
-                                                validate: value =>
-                                                    value === refContrasena.current || "Las contraseñas no coinciden"
+                                                pattern:
+                                                {
+                                                    value: /^[a-záéíóúñ]+(\s?[a-záéíóúñ])*$/i,
+                                                    message: "Apellido incorrecto"
+                                                }
                                             })
                                         }
                                     />
-                                    <InputGroup.Append onClick={handleClickConfPass} className="tw-cursor-pointer">
-                                        <InputGroup.Text>
-                                            {confPasswordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
-                                        </InputGroup.Text>
-                                    </InputGroup.Append>
-                                </InputGroup>
-                                <p>{errors.confirmar_contrasena && errors.confirmar_contrasena.message}</p>
-                            </Form.Group>
+                                </Form.Group>
 
-                             {/* <div className="g-recaptcha" data-sitekey="YOURSITEKEY"></div> */}
+                                <Form.Group controlId="id_genero">
+                                    <Form.Control as="select" name="id_genero" ref={register}>
+                                        <option value="">Género con el que te identificas</option>
+                                        {generos.map((value, index) => (
+                                            <option key={index} value={value.id_genero}>
+                                                {value.genero}
+                                            </option>
+                                        ))}
+                                    </Form.Control>
+                                </Form.Group>
 
-                            <input className="col-6" type="submit" disabled={botonDesabilitar} />
-                        </Form>
+                                <Form.Group controlId="fecha_nacimiento">
+                                    <Form.Control name="fecha_nacimiento" type="text" placeholder="Fecha de nacimiento **" ref={register} min={fechaMinima} max={fechaMaxima} onFocus={cambiarTipoFecha} onBlur={verificarFecha} />
+                                    <p>{errors.fecha_nacimiento && errors.fecha_nacimiento.message}</p>
+                                </Form.Group>
+
+                                <Form.Group controlId="email">
+                                    <Form.Control name="email" type="email" required onChange={validarNivel} placeholder="Correo electrónico *"
+                                        ref={
+                                            register({
+                                                pattern:
+                                                {
+                                                    value: /^([a-z]+[0-9_-]*)+(\.[a-z0-9_-]+)*@([a-z0-9]+\.)+[a-z]+$/i,
+                                                    message: "Correo incorrecto"
+                                                }
+                                            })
+                                        } />
+                                    <p>{errors.email && errors.email.message}</p>
+                                </Form.Group>
+
+                                <Form.Group controlId="celular">
+                                    <Form.Control name="celular" type="number" pattern="[0-9]*{10}" placeholder="Número de teléfono" ref={register} />
+                                    <p>{errors.celular && errors.celular.message}</p>
+                                </Form.Group>
+
+                                <Form.Group controlId="instituto">
+                                    <Form.Control name="instituto" type="text" placeholder="Institución u organismo **" ref={register}>
+                                    </Form.Control>
+                                </Form.Group>
+
+                                <Form.Group controlId="id_entidad">
+                                    <Form.Control as="select" name="id_entidad" ref={register} onChange={municipoCambio}>
+                                        <option value="">Entidad **</option>
+                                        {entidades.map((value, index) => (
+                                            <option key={index} value={value.id_entidades}>
+                                                {value.nombre_entidad}
+                                            </option>
+                                        ))}
+                                    </Form.Control>
+                                </Form.Group>
+
+                                <Form.Group controlId="id_municipio">
+                                    <Form.Control as="select" name="id_municipio" ref={register}>
+                                        <option value="">Municipio base **</option>
+                                        {
+                                            municipios.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
+                                                <option key={index} value={munFiltrado.id_municipios}>
+                                                    {munFiltrado.nombre_municipio}
+                                                </option>
+                                            )
+                                            )
+                                        }
+                                    </Form.Control>
+                                </Form.Group>
+
+                                <Form.Group controlId="id_rol">
+                                    <Form.Control as="select" name="id_rol" required onChange={validarNivel} ref={register}>
+                                        <option value="" hidden>Usuario solicitado *</option>
+                                        {roles.map((value, index) => (
+                                            <option key={index} value={value.id_rol}>
+                                                {value.rol}
+                                            </option>
+                                        ))}
+                                    </Form.Control>
+                                    <p>{errors.id_rol && errors.id_rol.message}</p>
+                                </Form.Group>
+
+                                <Form.Group controlId="id_ambito_actuacion">
+                                    <Form.Control as="select" name="id_ambito_actuacion" ref={register}>
+                                        <option value="">Área general de estudios **</option>
+                                        {ambitos.map((value, index) => (
+                                            <option key={index} value={value.id_ambito_actuacion}>
+                                                {value.ambito_actuacion}
+                                            </option>
+                                        ))}
+                                    </Form.Control>
+                                </Form.Group>
+
+                                <Form.Group>
+                                    <label htmlFor="contrasena" className="tw-text-red-600">
+                                        <OverlayTrigger placement="right" overlay={renderTooltip}>
+                                            <FontAwesomeIcon icon={faQuestionCircle} />
+                                        </OverlayTrigger>
+                                    </label>
+                                    <InputGroup>
+                                        <Form.Control name="contrasena" required id="contrasena" className="pass-form-registro" placeholder="Crear contraseña *"
+                                            type={passwordShown ? "text" : "password"}
+                                            ref={
+                                                register({
+                                                    minLength: {
+                                                        value: 8,
+                                                        message: 'Longitud minima 8 caracteres',
+                                                    },
+                                                    pattern:
+                                                    {
+                                                        value: /^(?=.*\d)(?=.*[-!@#$/(){}=.,;:])(?=.*[A-Z])(?=.*[a-z])(?!.*[+^"'´%&¿?*~|\\])(?!.*(012|123|234|345|456|567|678|789))(?!.*(000|111|222|333|444|555|666|777|888|999))\S{8,}$/,
+                                                        message: "Contraseña incorrecta"
+                                                    }
+                                                })
+                                            }
+                                        />
+                                        <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
+                                            <InputGroup.Text>
+                                                {passwordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
+                                            </InputGroup.Text>
+                                        </InputGroup.Append>
+                                    </InputGroup>
+                                    <p>{errors.contrasena && errors.contrasena.message}</p>
+                                </Form.Group>
+
+                                <Form.Group>
+                                    <InputGroup>
+                                        <Form.Control name="confirmar_contrasena" className="pass-form-registro" id="confirmar_contrasena" required placeholder="Confirmar contraseña *"
+                                            type={confPasswordShown ? "text" : "password"}
+                                            ref={
+                                                register({
+                                                    validate: value =>
+                                                        value === refContrasena.current || "Las contraseñas no coinciden"
+                                                })
+                                            }
+                                        />
+                                        <InputGroup.Append onClick={handleClickConfPass} className="tw-cursor-pointer">
+                                            <InputGroup.Text>
+                                                {confPasswordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
+                                            </InputGroup.Text>
+                                        </InputGroup.Append>
+                                    </InputGroup>
+                                    <p>{errors.confirmar_contrasena && errors.confirmar_contrasena.message}</p>
+                                </Form.Group>
+
+                                {/* <div className="g-recaptcha" data-sitekey="YOURSITEKEY"></div> */}
+
+                                <div className="tw-text-center tw-pt-6">
+                                    <Button variant="outline-secondary" className="btn-admin" type="submit" disabled={botonDesabilitar}>REGISTRAR</Button>
+                                </div>
+                            </Form>
+                        </div>
+
                     </div>
-
                 </div>
-            </div>
+            </main>
         </>
     )
 }

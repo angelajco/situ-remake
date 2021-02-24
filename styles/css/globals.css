@@ -1,25 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;1,600&display=swap');
 @tailwind utilities;
-/*****GENERAL*****/
-
-/*Esconder el ojito por default*/
-
-.pass-form-registro::-ms-reveal, .pass-form-registro::-ms-clear {
-    display: none;
-}
-
-/*Hacer el loader pantalla completa*/
-
-.loader {
-    position: initial !important;
-}
-
-.titulo-h1 {
-    @apply tw-text-inst-verde-fuerte;
-    @apply tw-pb-6;
-}
-
-/*****REGISTRO DE USUARIO*****/
+/***** ANALISIS GEOGRAFICO *****/
 
 .tooltip-pass>.tooltip-inner {
     max-width: 100%;

@@ -36,7 +36,7 @@ export default function OlvideContrasena() {
     const onSubmit = async (data) => {
         var config = {
             method: 'post',
-            url: 'http://172.16.117.11/wa/publico/recoverPassword',
+            url: `${process.env.ruta}/wa/publico/recoverPassword`,
             headers: {
                 "Content-Type": "application/json"
             },
@@ -76,13 +76,13 @@ export default function OlvideContrasena() {
             <div className="container tw-my-12">
                 <div className="row shadow">
 
-                    <div className="col-6 tw-text-center">
+                    <div className="col-12 col-md-6 tw-text-center">
                         <div className="tw-p-12">
                             <img src="/images/logo.png" alt="logo" className="img-fluid" />
                         </div>
                     </div>
 
-                    <div className="col-6 tw-bg-inst-gris-claro tw-p-12">
+                    <div className="col-12 col-md-6 tw-p-12 tw-bg-guia-grisf6">
                         <h1 className="titulo-h1">Olvide mi contraseña</h1>
 
                         <Form onSubmit={handleSubmit(onSubmit)}>
@@ -102,7 +102,7 @@ export default function OlvideContrasena() {
                             </Form.Group>
 
                             <div className="tw-text-center tw-pt-6">
-                                <Button variant="outline-secondary" className="tw-bg-white tw-rounded-full" type="submit">
+                                <Button variant="outline-secondary" className="btn-admin" type="submit">
                                     Recuperar mi contraseña </Button>
                             </div>
 
