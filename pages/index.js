@@ -10,88 +10,90 @@ export default function Home() {
         <title>SITU</title>
       </Head>
       <main>
-        <section className="tw-flex md:tw-flex-wrap tw-w-full tw-mt-12">
-          <div className="tw-mx-24 tw-my-6 md:tw-mx-10">
-            <img
-              src="/images/logo.png"
-              alt="logo SITUs"
-            />
-          </div>
-          <div className="">
-            <Carousel indicators={false} >
-              <Carousel.Item>
-                <img
-                  className="d-block w-100"
-                  src="/images/index/slidesHome1.jpg"
-                  alt="First slide"
-                />
-              </Carousel.Item>
-              <Carousel.Item>
-                <img
-                  className="d-block w-100"
-                  src="/images/index/slidesHome2.jpg"
-                  alt="second slide"
-                />
-              </Carousel.Item>
-              <Carousel.Item>
-                <img
-                  className="d-block w-100"
-                  src="/images/index/slidesHome3.jpg"
-                  alt="Third slide"
-                />
-              </Carousel.Item>
-              <Carousel.Item>
-                <img
-                  className="d-block w-100"
-                  src="/images/index/slidesHome4.jpg"
-                  alt="Third slide"
-                />
-              </Carousel.Item>
-              <Carousel.Item>
-                <img
-                  className="d-block w-100"
-                  src="/images/index/slidesHome5.jpg"
-                  alt="Third slide"
-                />
-              </Carousel.Item>
-              <Carousel.Item>
-                <img
-                  className="d-block w-100"
-                  src="/images/index/slidesHome6.jpg"
-                  alt="Third slide"
-                />
-              </Carousel.Item>
-              <Carousel.Item>
-                <img
-                  className="d-block w-100"
-                  src="/images/index/slidesHome7.jpg"
-                  alt="Third slide"
-                />
-              </Carousel.Item>
-              <Carousel.Item>
-                <img
-                  className="d-block w-100"
-                  src="/images/index/slidesHome8.jpg"
-                  alt="Third slide"
-                />
-              </Carousel.Item>
-              <Carousel.Item>
-                <img
-                  className="d-block w-100"
-                  src="/images/index/slidesHome9.jpg"
-                  alt="Third slide"
-                />
-              </Carousel.Item>
-              <Carousel.Item>
-                <img
-                  className="d-block w-100"
-                  src="/images/index/slidesHome10.jpg"
-                  alt="Third slide"
-                />
-              </Carousel.Item>
-            </Carousel>
-          </div>
-        </section>
+        <Container>
+          <section className="tw-flex md:tw-flex-wrap tw-w-full tw-mt-12">
+            <div className="tw-mx-2 md:tw-mx-10">
+              <img
+                src="/images/logo.png"
+                alt="logo SITUs"
+              />
+            </div>
+            <div>
+              <Carousel indicators={false} >
+                <Carousel.Item>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/slidesHome1.jpg"
+                    alt="First slide"
+                  />
+                </Carousel.Item>
+                <Carousel.Item>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/slidesHome2.jpg"
+                    alt="second slide"
+                  />
+                </Carousel.Item>
+                <Carousel.Item>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/slidesHome3.jpg"
+                    alt="Third slide"
+                  />
+                </Carousel.Item>
+                <Carousel.Item>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/slidesHome4.jpg"
+                    alt="Third slide"
+                  />
+                </Carousel.Item>
+                <Carousel.Item>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/slidesHome5.jpg"
+                    alt="Third slide"
+                  />
+                </Carousel.Item>
+                <Carousel.Item>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/slidesHome6.jpg"
+                    alt="Third slide"
+                  />
+                </Carousel.Item>
+                <Carousel.Item>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/slidesHome7.jpg"
+                    alt="Third slide"
+                  />
+                </Carousel.Item>
+                <Carousel.Item>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/slidesHome8.jpg"
+                    alt="Third slide"
+                  />
+                </Carousel.Item>
+                <Carousel.Item>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/slidesHome9.jpg"
+                    alt="Third slide"
+                  />
+                </Carousel.Item>
+                <Carousel.Item>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/slidesHome10.jpg"
+                    alt="Third slide"
+                  />
+                </Carousel.Item>
+              </Carousel>
+            </div>
+          </section>
+        </Container>
         <section className="tw-flex tw-my-10">
           <div className="md:tw-hidden">
             <img

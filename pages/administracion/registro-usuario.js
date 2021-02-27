@@ -106,7 +106,7 @@ export default function Registro() {
         let datosFormulario = JSON.stringify(data);
         let config = {
             method: "post",
-            // url: `${process.env.ruta}/wa/publico/createUser`,
+            url: `${process.env.ruta}/wa/publico/createUser`,
             headers: {
                 "Content-Type": "application/json"
             },
@@ -115,6 +115,7 @@ export default function Registro() {
 
         axios(config)
             .then(function (response) {
+                console.log(response)
                 if (response.data["success-boolean"]) {
                     //Registro exitoso
                     //Datos a enviar al modal si el usuario es correcto
