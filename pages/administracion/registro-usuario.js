@@ -114,7 +114,6 @@ export default function Registro() {
 
         axios(config)
             .then(function (response) {
-                console.log(response)
                 if (response.data["success-boolean"]) {
                     //Registro exitoso
                     //Datos a enviar al modal si el usuario es correcto
