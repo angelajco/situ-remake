@@ -25,16 +25,15 @@ export default function InicioSesion() {
             body: ''
         }
     );
+    //Estados para mostrar el modal
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
 
     //Mostrar ocultar contraseña
     const [passwordShown, setPasswordShown] = useState(false);
     const handleClickPass = () => {
         setPasswordShown(passwordShown ? false : true);
     };
-
-    //Estados para mostrar el modal
-    const handleClose = () => setShow(false);
-    const handleShow = () => setShow(true);
 
     //Para construir el formulario
     const { register, handleSubmit } = useForm();
@@ -55,7 +54,7 @@ export default function InicioSesion() {
             //Si se logro la conexion
             .then(function (response) {
                 //Usuario encontrado
-                if (response.data.token == undefined) {
+                if (response.data.jwtResponse == undefined) {
                     handleShow();
                     setDatosModal({
                         title: response.data['message-subject'],
@@ -64,7 +63,7 @@ export default function InicioSesion() {
                 }
                 else {
                     // Se agrega la cookie
-                    cookies.set('SessionToken', response.data.token, { path: "/" })
+                    cookies.set('SessionToken', response.data.jwtResponse['token'], { path: "/" })
                     //Se redirecciona
                     Router.push("/")
                 }
@@ -121,7 +120,7 @@ export default function InicioSesion() {
                                 </Form.Group>
                                 <Form.Group>
                                     <InputGroup>
-                                        <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} ref={register}/>
+                                        <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} required ref={register}/>
                                         <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
                                             <InputGroup.Text>
                                                 {passwordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
@@ -131,10 +130,10 @@ export default function InicioSesion() {
                                 </Form.Group>
 
                                 <Link href="/administracion/registro-usuario">
-                                    <a className="tw-block tw-text-inst-verde-claro">Crear cuenta</a>
+                                    <a className="tw-block tw-text-inst-verdec hover:tw-text-inst-verdef">Crear cuenta</a>
                                 </Link>
                                 <Link href="/administracion/olvide-contrasena">
-                                    <a className="tw-block tw-text-inst-verde-claro">Olvide mi contraseña</a>
+                                    <a className="tw-block tw-text-inst-verdec hover:tw-text-inst-verdef">Olvide mi contraseña</a>
                                 </Link>
                                 <div className="tw-text-center tw-pt-6">
                                     <Button variant="outline-secondary" className="btn-admin" type="submit">INICIAR SESIÓN</Button>

@@ -101,12 +101,11 @@ export default function Registro() {
 
     //Funcion a ejecutar al darle el boton de iniciar sesion
     const onSubmit = async (data) => {
-        console.log(data)
         //Envio de informacion
         let datosFormulario = JSON.stringify(data);
         let config = {
             method: "post",
-            // url: `${process.env.ruta}/wa/publico/createUser`,
+            url: `${process.env.ruta}/wa/publico/createUser`,
             headers: {
                 "Content-Type": "application/json"
             },
@@ -147,7 +146,6 @@ export default function Registro() {
 
     //Cambia el tipo del input de fecha
     const cambiarTipoFecha = (event) => {
-        console.log(event.target)
         event.target.type = "date"
     }
 

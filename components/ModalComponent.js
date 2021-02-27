@@ -12,13 +12,13 @@ export default function ModalComponent(props) {
                <Modal show={props.show} onHide={() => props.onHide()}>
                     {
                          (props.datos.ruta != undefined) ?
-                              <Modal.Header>
+                              <Modal.Header className="tw-bg-inst-verdec tw-text-white">
                                    <Modal.Title>
                                         {props.datos.title}
                                    </Modal.Title>
                               </Modal.Header>
                               :
-                              <Modal.Header closeButton>
+                              <Modal.Header className="tw-bg-inst-verdec tw-text-white" closeButton>
                                    <Modal.Title>
                                         {props.datos.title}
                                    </Modal.Title>
@@ -29,12 +29,12 @@ export default function ModalComponent(props) {
                          {props.datos.body}
                     </Modal.Body>
 
-                    <Modal.Footer>
+                    <Modal.Footer className="tw-border-none">
                          {
                               //Verifica si existen una redireccion, en caso contrario solo cierra el modal
                               (props.datos.ruta != undefined) ?
-                                   <Button variant="primary" onClick={() => redireccion(props.datos.ruta)}>Ruta</Button> :
-                                   <Button variant="primary" onClick={() => props.onClick()}>Aceptar</Button>
+                                   <Button variant="outline-danger" onClick={() => redireccion(props.datos.ruta)}>Aceptar</Button> :
+                                   <Button variant="outline-danger" onClick={() => props.onClick()}>Aceptar</Button>
                          }
                     </Modal.Footer>
                </Modal>
