@@ -1,6 +1,6 @@
 export default function Footer() {
     return (
-    <footer className="tw-bg-inst-verde-fuerte tw-text-white">
+    <footer className="tw-bg-inst-verdef tw-text-white">
         <div className="container tw-py-12 tw-flex tw-justify-between tw-flex-wrap">
                 <div className="tw-w-3/12 md:tw-w-full">Logo</div>
                 <div className="tw-w-3/12 md:tw-w-full">

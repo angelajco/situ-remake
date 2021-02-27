@@ -6,7 +6,7 @@ export default function Header() {
     ]
 
     return (
-        <div className="container-fluid tw-bg-inst-verde-fuerte tw-py-5">
+        <div className="container-fluid tw-bg-inst-verdef tw-py-5">
             <div className="container">
                 <ul className="tw-w-full tw-flex tw-justify-end tw-mb-0">
                     {

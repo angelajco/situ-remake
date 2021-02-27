@@ -12,7 +12,7 @@
     font-size: 21pt;
     font-weight: bold;
     @apply tw-pb-6;
-    @apply tw-text-inst-verde-claro;
+    @apply tw-text-inst-verdec;
 }
 
 .btn-admin {
