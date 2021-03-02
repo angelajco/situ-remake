@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Form } from 'react-bootstrap'
 import { useForm } from "react-hook-form";
 import SeccionPm from '../../components/SeccionPm'
+
 // Aqui van las clases afuera de la funcion export para que solo se ejecuten una sola vez
 class Nucleo {
   constructor() {
@@ -50,9 +51,9 @@ class Nucleo {
         let c = palabras[index].substr(-1)
         // console.log(c)
         final = ''
-        if (c=== ',' || c === '.' || c=== ':' || c=== ';' || c=== '>' || c=== '-' || c=== '_') {
+        if (c === ',' || c === '.' || c === ':' || c === ';' || c === '>' || c === '-' || c === '_') {
           final = c
-          palabras[index] = palabras[index].substr(0, palabras[index].length-1)
+          palabras[index] = palabras[index].substr(0, palabras[index].length - 1)
         }
         if (palabras[index].charAt(0) === '@') {
           if (palabras[index] === '@claveMun') {
@@ -82,7 +83,15 @@ class Nucleo {
     }
   }
 
-}
+  encabezadoColumna(identificador) {
+    return this.modelo.encabezadoColumna(identificador)
+  }
+
+  yaTengoDatos(tabla) {
+    this.modelo.yaTengoDatos(tabla)
+  }
+
+} // Fin de la clase Nucleo
 
 class ModeloContenido {
   constructor(xmlDoc, padre) {
@@ -90,6 +99,7 @@ class ModeloContenido {
     this.secciones = []
     this.nucleo = padre
     this.tablas = []
+
     let nodos = xmlDoc.documentElement.childNodes
     for (let i = 0; i < nodos.length; i++) {
       if (nodos[i].nodeName == 'titulo') {
@@ -103,7 +113,7 @@ class ModeloContenido {
           }
         }
       }
-      else if(nodos[i].nodeName === 'tablas'){
+      else if (nodos[i].nodeName === 'tablas') {
         for (let j = 0; j < nodos[i].childNodes.length; j++) {
           if (nodos[i].childNodes[j].nodeName === 'tabla') {
             let nuevo = new TablaDatos(nodos[i].childNodes[j], this.nucleo)
@@ -115,19 +125,53 @@ class ModeloContenido {
     console.log(this.tablas)
   }
 
-  reiniciaDatos(){
+  reiniciaDatos() {
     for (let index = 0; index < this.tablas.length; index++) {
       this.tablas[index].reinicia()
     }
   }
 
-  cargaInformacion(){
+  cargaInformacion() {
     for (let index = 0; index < this.tablas.length; index++) {
       this.tablas[index].cargaDatos()
     }
   }
 
-}
+  encabezadoColumna(identificador) {
+    for (let index = 0; index < this.tablas.length; index++) {
+      console.log('buscando columna en tabla', this.tablas[index])
+      for (let i = 0; i < this.tablas[index].columnas.length; i++) {
+        if (this.tablas[index].columnas[i].id === identificador) {
+          return this.tablas[index].columnas[i].encabezado ?? this.tablas[index].columnas[i].nombre
+        }
+      }
+    }
+  }
+
+  yaTengoDatos(tabla) {
+
+    console.log('Ya tengo datos modelo,', tabla)
+
+    for (let index = 0; index < this.secciones.length; index++) {
+      this.secciones[index].contenedores.forEach(contenedor => {
+        if (contenedor.contenido.tipoComponente === 'Tabular') {
+
+          for (let index = 0; index <  contenedor.contenido.columnas.length; index++) {
+            if (contenedor.contenido.columnas[index].includes(tabla.etiquetaID)) {
+              contenedor.contenido.datosDisponibles = true
+              console.log('Refescando tabular', contenedor.contenido)
+              contenedor.contenido.refrescarContenido()
+              return
+            }
+          }
+
+        }
+      });
+    }
+
+  }
+
+} // Modelo Contenido
 
 class SeccionModelo {
   constructor(nodoXml, nucleo) {
@@ -136,9 +180,17 @@ class SeccionModelo {
     this.titulo = ''
     this.nucleo = nucleo
     this.tipo = nodoXml.getAttribute('tipo')
+    this.contenedores = []
+    this.refrescarContenido = null
+
     for (let index = 0; index < nodoXml.childNodes.length; index++) {
       if (nodoXml.childNodes[index].nodeName === 'titulo') {
         this.titulo = nodoXml.childNodes[index].firstChild.nodeValue
+      } else if (nodoXml.childNodes[index].nodeName === 'contenedor') {
+
+        let nuevo = new Contenedor(nodoXml.childNodes[index], this.nucleo)
+        this.contenedores.push(nuevo)
+
       }
     }
   }
@@ -147,13 +199,6 @@ class SeccionModelo {
     return this.nucleo.traduceVariable(this.titulo)
   }
 
-  render() {
-    let salida = `<h3>${this.nucleo.traduceVariable(this.titulo)}</h3>`
-    if (this.tipo === 'mapaBase') {
-      salida = salida + `<div id="map">Mapa aqui</div>`
-    }
-    return { __html: salida }
-  }
 } // SECCION MODELO
 
 // Tabla datos
@@ -164,18 +209,44 @@ class TablaDatos {
     this.nucleo = padre
     this.columnas = null
     this.datos = []
+    this.tituloTabla = ''
+    this.etiquetaID = null
+    console.log('el padre es', this.nucleo)
   }
-
-  reinicia(){
-    this.columnas= null
+  
+  reinicia() {
+    this.columnas = null
     this.datos = []
   }
 
-  cargaDatos(){
+  cargaDatos() {
     let filtro = `${this.configuracion.filtroMun}='${this.nucleo.claveMun}'`
 
-    let cuerpo = { etiqFunc: this.configuracion.etiqueta , columnas: this.configuracion.columnas, filtro: filtro }
-    console.log('parametro de consulta',cuerpo)
+    let cuerpo = { etiqFunc: this.configuracion.etiqueta, columnas: this.configuracion.columnas, filtro: filtro }
+    console.log('parametro de consulta', cuerpo)
+
+    let req = new XMLHttpRequest();
+    
+    req.tablaPadre = this
+
+    req.open("POST", "http://172.16.117.11/wa0/cons_catalogada", true);
+    req.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded');
+
+    req.onreadystatechange = function () {
+      if (req.readyState == 4 && req.status == 200) {
+        //aqui obtienes la respuesta de tu peticion
+        // alert(req.responseText);
+        let respuesta = JSON.parse(req.responseText)
+        this.tablaPadre.tituloTabla = respuesta.nombreTabla
+        this.tablaPadre.columnas = respuesta.columnas
+        this.tablaPadre.datos = respuesta.datos
+        this.tablaPadre.etiquetaID = respuesta.etiqFunc
+        // console.log('Listo para avisar a nucleo', this, this.nucleo)
+        this.tablaPadre.nucleo.yaTengoDatos(this.tablaPadre)
+      }
+    }
+    req.send('parametros=' + JSON.stringify(cuerpo));
+
   }
 
 }
@@ -187,7 +258,7 @@ class DefinicionTabla {
     this.etiqueta = nodo.getAttribute('etiqueta')
     this.filtroMun = nodo.getAttribute('fltroMun')
     this.columnas = []
-    console.log('contructor definicion',nodo.firstChild.nodeName)
+    console.log('contructor definicion', nodo.firstChild.nodeName)
     for (let i = 0; i < nodo.childNodes.length; i++) {
       if (nodo.childNodes[i].nodeName === 'columnas') {
         for (let index = 0; index < nodo.childNodes[i].childNodes.length; index++) {
@@ -197,18 +268,64 @@ class DefinicionTabla {
         }
       }
     }
-    // if (nodo.firstChild.nodeName === 'columnas') {
-    //   let columna = nodo.firstChild.childNodes
-    //   console.log('nodos de columna:',columna)
-    //   for (let index = 0; index < columna.length; index++) {
-    //     if (columna.childNodes[index].nodeName === 'columna') {
-    //       this.columnas.push(columna.childNodes[index].firstChild.nodeValue)
-    //     }
-    //   }
-    // }
+  }
+}
+
+class Contenedor {
+
+  constructor(nodoXml, padre) {
+    this.ancho = nodoXml.getAttribute('ancho') ?? '100%'
+    this.titulo = ''
+    this.contenido = null
+    this.padre = padre
+
+    for (let index = 0; index < nodoXml.childNodes.length; index++) {
+      if (nodoXml.childNodes[index].nodeName === 'titulo') {
+        this.titulo = nodoXml.childNodes[index].firstChild.nodeValue
+      }else if(nodoXml.childNodes[index].nodeName === 'tabular') {
+        this.contenido = new DespliegueTabular(nodoXml.childNodes[index], this.padre)
+        console.log('tabular detectado', this.contenido)
+      }
+    }
+
   }
 
-}
+  EstilosCSSReact() {
+
+    return {
+      width: this.ancho,
+      backgroundColor: 'red',
+    }
+  }
+
+} // clase Contenedor
+
+class DespliegueTabular {
+
+  constructor(nodoXml, padre) {
+    this.tipoComponente = 'Tabular'
+    this.columnas = []
+    this.nucleo = padre
+    this.datosDisponibles = false
+
+    for (let index = 0; index < nodoXml.childNodes.length; index++) {
+      if (nodoXml.childNodes[index].nodeName === 'columnas') {
+        
+        for (let i = 0; i < nodoXml.childNodes[index].childNodes.length; i++) {
+          if (nodoXml.childNodes[index].childNodes[i].nodeName === 'columna') {
+            this.columnas.push(nodoXml.childNodes[index].childNodes[i].firstChild.nodeValue)
+          }
+        }
+        
+      }
+    } 
+  }
+
+  encabezadoColumna(identificador) {
+    return this.nucleo.encabezadoColumna(identificador)
+  }
+}// clase tabular
+
 
 // creando un nuevo objeto nucleo
 let nucleo = new Nucleo()
@@ -278,6 +395,11 @@ export default function index() {
 
   const [secciones, setSecciones] = useState([])
 
+  // const [tablas, setTablas] = useState([])
+
+  // const [columnas, setColumnas] = useState([])
+
+  // console.log(columnas)
 
   function desplegarDatos() {
     // console.log('Desplegando datos para', refMunicipio.current)
@@ -286,13 +408,14 @@ export default function index() {
       nombreMun = munFiltrado.nombre_municipio
     ))
     let nombreEntidad = ''
-    entidades.map((entidad, index)=>{
+    entidades.map((entidad, index) => {
       if (entidad.id_entidades === refEntidad.current) {
         nombreEntidad = entidad.nombre_entidad
       }
     })
     nucleo.actualizaDatos(nombreEntidad, refMunicipio.current, nombreMun)
     setSecciones(nucleo.modelo.secciones)
+    // setColumnas(nucleo.modelo.columnas)
     setContador(contador + 1)
   }
 
@@ -331,6 +454,9 @@ export default function index() {
             <SeccionPm key={index} seccion={seccion} />
           ))
         }
+      </div>
+      <div>
+        
       </div>
     </>
   )
