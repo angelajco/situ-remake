@@ -44,9 +44,15 @@ export default function Registro() {
         </Tooltip>
     );
 
+    //Watch ve en tiempo real lo que tienen los inputs
+    const refContrasena = watch("contrasena", "");
+    const refEntidad = watch("id_entidad", "");
+
     //Validar correo
     const validarNivel = () => {
-        if (refRol.current == "1" || refRol.current == "2") {
+        const refEmail = watch("email", "");
+        const refRol = watch("id_rol")
+        if (refRol == "1" || refRol == "2") {
             //Se crea una bandera para validar los errores
             var banderaCorreo = true;
             setBotonDesabilitar(true);
@@ -54,7 +60,7 @@ export default function Registro() {
             correos.map(valCorreo => {
                 //Expresion regular
                 var expReg = new RegExp("\\b" + valCorreo.dominio_correo + "\\b", 'gi')
-                const validacionCorreo = refEmail.current.match(expReg);
+                const validacionCorreo = refEmail.match(expReg);
                 //Si el correo existe dentro del arreglo
                 if (validacionCorreo != null) {
                     banderaCorreo = false;
@@ -89,16 +95,6 @@ export default function Registro() {
         setConfPasswordShown(confPasswordShown ? false : true);
     }
 
-    //Watch ve en tiempo real lo que tienen los inputs
-    const refContrasena = useRef();
-    refContrasena.current = watch("contrasena", "");
-    const refEmail = useRef();
-    refEmail.current = watch("email", "");
-    const refEntidad = useRef();
-    refEntidad.current = watch("id_entidad", "");
-    const refRol = useRef();
-    refRol.current = watch("id_rol", "")
-
     //Funcion a ejecutar al darle el boton de iniciar sesion
     const onSubmit = async (data) => {
         //Envio de informacion
@@ -119,7 +115,7 @@ export default function Registro() {
                     //Datos a enviar al modal si el usuario es correcto
                     setDatosModal({
                         title: 'Registro correcto',
-                        body: 'Para terminar el registro de la cuenta, hemos enviado un correo a ' + refEmail.current + ' para verificar su cuenta de correo electrónico',
+                        body: 'Para terminar el registro de la cuenta, hemos enviado un correo a ' + datosFormulario.email + ' para verificar su cuenta de correo electrónico',
                         ruta: "/administracion/inicio-sesion"
                     })
                     //Cambiamos el modal de show a true
@@ -249,6 +245,10 @@ export default function Registro() {
                                     <Form.Control name="nombre" type="text" required placeholder="Nombre(s) *"
                                         ref={
                                             register({
+                                                maxLength: {
+                                                    value: 30,
+                                                    message: 'Longitud máxima 30 caracteres',
+                                                },
                                                 pattern:
                                                 {
                                                     value: /^[a-záéíóúñ]+(\s?[a-záéíóúñ])*$/i,
@@ -263,6 +263,10 @@ export default function Registro() {
                                     <Form.Control name="apellido_paterno" type="text" required placeholder="Apellido 1 *"
                                         ref={
                                             register({
+                                                maxLength: {
+                                                    value: 30,
+                                                    message: 'Longitud máxima 30 caracteres',
+                                                },
                                                 pattern:
                                                 {
                                                     value: /^[a-záéíóúñ]+(\s?[a-záéíóúñ])*$/i,
@@ -271,12 +275,17 @@ export default function Registro() {
                                             })
                                         }
                                     />
+                                    <p>{errors.apellido_paterno && errors.apellido_paterno.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="apellido_materno">
                                     <Form.Control name="apellido_materno" type="text" placeholder="Apellido 2"
                                         ref={
                                             register({
+                                                maxLength: {
+                                                    value: 30,
+                                                    message: 'Longitud máxima 30 caracteres',
+                                                },
                                                 pattern:
                                                 {
                                                     value: /^[a-záéíóúñ]+(\s?[a-záéíóúñ])*$/i,
@@ -285,6 +294,7 @@ export default function Registro() {
                                             })
                                         }
                                     />
+                                    <p>{errors.apellido_materno && errors.apellido_materno.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="id_genero">
@@ -300,13 +310,16 @@ export default function Registro() {
 
                                 <Form.Group controlId="fecha_nacimiento">
                                     <Form.Control name="fecha_nacimiento" type="text" placeholder="Fecha de nacimiento **" ref={register} min={fechaMinima} max={fechaMaxima} onFocus={cambiarTipoFecha} onBlur={verificarFecha} />
-                                    <p>{errors.fecha_nacimiento && errors.fecha_nacimiento.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="email">
                                     <Form.Control name="email" type="email" required onChange={validarNivel} placeholder="Correo electrónico *"
                                         ref={
                                             register({
+                                                maxLength: {
+                                                    value: 250,
+                                                    message: 'Longitud máxima 250 caracteres',
+                                                },
                                                 pattern:
                                                 {
                                                     value: /^([a-z]+[0-9_-]*)+(\.[a-z0-9_-]+)*@([a-z0-9]+\.)+[a-z]+$/i,
@@ -318,13 +331,32 @@ export default function Registro() {
                                 </Form.Group>
 
                                 <Form.Group controlId="celular">
-                                    <Form.Control name="celular" type="number" pattern="[0-9]*{10}" placeholder="Número de teléfono" ref={register} />
+                                    <Form.Control name="celular" type="text" placeholder="Número de teléfono" ref={
+                                        register({
+                                            pattern: {
+                                                value: /^[0-9]{10}$/,
+                                                message: "Solo campo númerico, de 10 caracteres"
+                                            }
+                                        })
+                                    } />
                                     <p>{errors.celular && errors.celular.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="instituto">
-                                    <Form.Control name="instituto" type="text" placeholder="Institución u organismo **" ref={register}>
-                                    </Form.Control>
+                                    <Form.Control name="instituto" type="text" placeholder="Institución u organismo de adscripción **" ref={
+                                        register({
+                                            maxLength: {
+                                                value: 250,
+                                                message: 'Longitud máxima 30 caracteres',
+                                            },
+                                            pattern:
+                                            {
+                                                value: /^[a-záéíóúñ0-9]+(\s?[a-záéíóúñ0-9])*$/i,
+                                                message: "Instituto incorrecto"
+                                            }
+                                        })
+                                    } />
+                                    <p>{errors.instituto && errors.instituto.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="id_entidad">
@@ -340,38 +372,41 @@ export default function Registro() {
 
                                 <Form.Group controlId="id_municipio">
                                     <Form.Control as="select" name="id_municipio" ref={register}>
-                                        <option value="">Municipio base **</option>
+                                        <option value="">Municipio **</option>
                                         {
-                                            municipios.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
+                                            municipios.filter(mun => mun.cve_ent == refEntidad).map((munFiltrado, index) => (
                                                 <option key={index} value={munFiltrado.id_municipios}>
                                                     {munFiltrado.nombre_municipio}
                                                 </option>
-                                            )
-                                            )
+                                            ))
                                         }
                                     </Form.Control>
                                 </Form.Group>
 
                                 <Form.Group controlId="id_rol">
                                     <Form.Control as="select" name="id_rol" required onChange={validarNivel} ref={register}>
-                                        <option value="" hidden>Usuario solicitado *</option>
-                                        {roles.map((value, index) => (
-                                            <option key={index} value={value.id_rol}>
-                                                {value.rol}
-                                            </option>
-                                        ))}
+                                        <option value="" hidden>Perfil de usuario *</option>
+                                        {
+                                            roles.map((value, index) => (
+                                                <option key={index} value={value.id_rol}>
+                                                    {value.rol}
+                                                </option>
+                                            ))
+                                        }
                                     </Form.Control>
                                     <p>{errors.id_rol && errors.id_rol.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="id_ambito_actuacion">
                                     <Form.Control as="select" name="id_ambito_actuacion" ref={register}>
-                                        <option value="">Área general de estudios **</option>
-                                        {ambitos.map((value, index) => (
-                                            <option key={index} value={value.id_ambito_actuacion}>
-                                                {value.ambito_actuacion}
-                                            </option>
-                                        ))}
+                                        <option value="">Ámbito de competencia **</option>
+                                        {
+                                            ambitos.map((value, index) => (
+                                                <option key={index} value={value.id_ambito_actuacion}>
+                                                    {value.ambito_actuacion}
+                                                </option>
+                                            ))
+                                        }
                                     </Form.Control>
                                 </Form.Group>
 
@@ -380,6 +415,9 @@ export default function Registro() {
                                         <OverlayTrigger placement="right" overlay={renderTooltip}>
                                             <FontAwesomeIcon icon={faQuestionCircle} />
                                         </OverlayTrigger>
+                                        <span className="tw-text-sm">
+                                            &nbsp;Condiciones para contraseña
+                                        </span>
                                     </label>
                                     <InputGroup>
                                         <Form.Control name="contrasena" required id="contrasena" className="pass-form-registro" placeholder="Crear contraseña *"
@@ -414,7 +452,7 @@ export default function Registro() {
                                             ref={
                                                 register({
                                                     validate: value =>
-                                                        value === refContrasena.current || "Las contraseñas no coinciden"
+                                                        value === refContrasena || "Las contraseñas no coinciden"
                                                 })
                                             }
                                         />
@@ -428,6 +466,22 @@ export default function Registro() {
                                 </Form.Group>
 
                                 {/* <div className="g-recaptcha" data-sitekey="YOURSITEKEY"></div> */}
+
+                                <Form.Group controlId="terminos">
+                                    <Form.Check type="checkbox" required feedback="Acepta los términos y condiciones" label={
+                                        <a href="https://www.gob.mx/terminos" target="_blank" className="tw-text-inst-verdec hover:tw-text-inst-verdef">He leído y acepto los Términos y Condiciones</a>
+                                    } />
+                                </Form.Group>
+
+                                <Form.Group controlId="privacidad">
+                                    <Form.Check type="checkbox" required feedbackTooltip="Acepta el aviso de privacidad" label={
+                                        <a href="https://www.gob.mx/terminos" target="_blank" className="tw-text-inst-verdec hover:tw-text-inst-verdef">He leído y acepto Aviso de Privacidad</a>
+                                    } />
+                                </Form.Group>
+
+                                <p className="tw-text-inst-verdec">S/* Campo libre</p>
+                                <p className="tw-text-inst-verdec">* Campo obligatorio</p>
+                                <p className="tw-text-inst-verdec">** Campo sugerido</p>
 
                                 <div className="tw-text-center tw-pt-6">
                                     <Button variant="outline-secondary" className="btn-admin" type="submit" disabled={botonDesabilitar}>REGISTRAR</Button>

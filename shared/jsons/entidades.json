@@ -1,0 +1,130 @@
+[
+    {
+        "id": "01",
+        "entidad": "Aguascalientes"
+    },
+    {
+        "id": "02",
+        "entidad": "Baja California"
+    },
+    {
+        "id": "03",
+        "entidad": "Baja California Sur"
+    },
+    {
+        "id": "04",
+        "entidad": "Campeche"
+    },
+    {
+        "id": "05",
+        "entidad": "Coahuila"
+    },
+    {
+        "id": "06",
+        "entidad": "Colima"
+    },
+    {
+        "id": "07",
+        "entidad": "Chiapas"
+    },
+    {
+        "id": "08",
+        "entidad": "Chihuahua"
+    },
+    {
+        "id": "09",
+        "entidad": "Ciudad de México"
+    },
+    {
+        "id": "10",
+        "entidad": "Durango"
+    },
+    {
+        "id": "11",
+        "entidad": "Guanajuato"
+    },
+    {
+        "id": "12",
+        "entidad": "Guerrero"
+    },
+    {
+        "id": "13",
+        "entidad": "Hidalgo"
+    },
+    {
+        "id": "14",
+        "entidad": "Jalisco"
+    },
+    {
+        "id": "15",
+        "entidad": "México"
+    },
+    {
+        "id": "16",
+        "entidad": "Michoacan"
+    },
+    {
+        "id": "17",
+        "entidad": "Morelos"
+    },
+    {
+        "id": "18",
+        "entidad": "Nayarit"
+    },
+    {
+        "id": "19",
+        "entidad": "Nuevo León"
+    },
+    {
+        "id": "20",
+        "entidad": "Oaxaca"
+    },
+    {
+        "id": "21",
+        "entidad": "Puebla"
+    },
+    {
+        "id": "22",
+        "entidad": "Queretaro"
+    },
+    {
+        "id": "23",
+        "entidad": "Quintana Roo"
+    },
+    {
+        "id": "24",
+        "entidad": "San Luis Potosi"
+    },
+    {
+        "id": "25",
+        "entidad": "Sinaloa"
+    },
+    {
+        "id": "26",
+        "entidad": "Sonora"
+    },
+    {
+        "id": "27",
+        "entidad": "Tabasco"
+    },
+    {
+        "id": "28",
+        "entidad": "Tamaulipas"
+    },
+    {
+        "id": "29",
+        "entidad": "Tlaxcala"
+    },
+    {
+        "id": "30",
+        "entidad": "Veracruz"
+    },
+    {
+        "id": "31",
+        "entidad": "Yucatán"
+    },
+    {
+        "id": "32",
+        "entidad": "Zacatecas"
+    }
+]

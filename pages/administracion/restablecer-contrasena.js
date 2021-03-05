@@ -146,6 +146,9 @@ export default function RestablecerContrasena() {
                                                         <OverlayTrigger placement="right" overlay={renderTooltip}>
                                                             <FontAwesomeIcon icon={faQuestionCircle} />
                                                         </OverlayTrigger>
+                                                        <span className="tw-text-sm">
+                                                            &nbsp;Condiciones para contraseña
+                                                            </span>
                                                     </label>
                                                     <InputGroup>
                                                         <Form.Control name="password" required className="pass-form-registro" placeholder="Crear contraseña *"

@@ -22,11 +22,7 @@ export default function OlvideContrasena() {
     const handleShow = () => setShow(true);
 
     //Para construir el formulario
-    const { register, handleSubmit, watch, errors } = useForm();
-
-    //Watch ve los cambios del input correo
-    const refEmail = useRef();
-    refEmail.current = watch("email", "");
+    const { register, handleSubmit, errors } = useForm();
 
     //a donde va a mandar el modal a darle aceptar
     const redireccion = () => {
@@ -45,13 +41,20 @@ export default function OlvideContrasena() {
 
         axios(config)
             .then(function (response) {
-                //cambiamos show a true
+                if (response.data['message-type'] == 3) {
+                    //Datos a enviar al modal si el usuario es incorrecto
+                    setDatosModal({
+                        title: response.data["message-subject"],
+                        body: 'Se ha enviado un correo a ' + data.email + ' para recuperar tu contraseña'
+                    })
+                } else {
+                    setDatosModal({
+                        title: response.data["message-subject"],
+                        body: response.data['message']
+                    })
+                }
+                //cambiamos show a true para mostrar el modal
                 handleShow();
-                //Datos a enviar al modal si el usuario es incorrecto
-                setDatosModal({
-                    title: 'Recuperar contraseña',
-                    body: 'Se ha enviado un correo a ' + refEmail.current + ' para recuperar tu contraseña'
-                })
             })
             .catch(function (error) {
                 //cambiamos show a true
@@ -59,7 +62,7 @@ export default function OlvideContrasena() {
                 //Datos a enviar al modal si el usuario es incorrecto
                 setDatosModal({
                     title: 'Recuperar contraseña',
-                    body: 'No se ha podido enviar el correo a la dirección ' + refEmail.current + 'verifique de nuevo'
+                    body: 'No se ha podido enviar el correo a la dirección ' + refEmail + 'verifique de nuevo'
                 })
             });
     }

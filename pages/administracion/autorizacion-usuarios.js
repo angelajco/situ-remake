@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Table, Tabs, Tab } from 'react-bootstrap'
+import { Tabs, Tab } from 'react-bootstrap'
 
 import dynamic from 'next/dynamic'
 import Router from 'next/router'
@@ -11,9 +11,11 @@ import { faEye, faCheckCircle, faTimesCircle } from '@fortawesome/free-solid-svg
 
 import 'react-bootstrap-table2-filter/dist/react-bootstrap-table2-filter.min.css';
 import 'react-bootstrap-table2-toolkit/dist/react-bootstrap-table2-toolkit.min.css';
+import 'react-bootstrap-table2-paginator/dist/react-bootstrap-table2-paginator.min.css';
 import BootstrapTable from 'react-bootstrap-table-next';
 import filterFactory, { selectFilter } from 'react-bootstrap-table2-filter';
 import ToolkitProvider, { Search } from 'react-bootstrap-table2-toolkit';
+import paginationFactory from 'react-bootstrap-table2-paginator';
 
 import ModalComponent from '../../components/ModalComponent';
 
@@ -32,9 +34,6 @@ export default function AutorizacionUsuarios() {
     const [noUsuarios, setNoUsuarios] = useState([])
     //Variable para guardar los datos de un solo usuario
     const [infoUsuario, setInfoUsuario] = useState()
-
-    //Variable para guardar los estados de los usuarios
-    const [roles, setRoles] = useState([])
 
     //Datos para el modal
     const [show, setShow] = useState(false);
@@ -71,17 +70,17 @@ export default function AutorizacionUsuarios() {
                     Router.push("/administracion/inicio-sesion")
                 })
 
-            fetch(`${process.env.ruta}/wa/publico/showByRol?idRol=1,2`)
+            fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=10&id_rol=1,2`)
                 .then(res => res.json())
                 .then(
                     (data) => setUsuarios(data),
                     (error) => console.log(error)
                 )
 
-            fetch(`${process.env.ruta}/wa/publico/catRoles`)
+            fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=99`)
                 .then(res => res.json())
                 .then(
-                    (data) => setRoles(data),
+                    (data) => setNoUsuarios(data),
                     (error) => console.log(error)
                 )
         }
@@ -99,43 +98,30 @@ export default function AutorizacionUsuarios() {
             )
     }
 
-    const autoriza = () => {
-        alert("se muestra la informacion del usuario");
+    const autoriza = (email) => {
+        console.log(email);
     }
 
-    const rechazar = () => {
-        alert("se muestra la informacion del usuario");
+    const rechaza = (email) => {
+        console.log(email);
     }
 
     const completaNombre = (cell, row) => {
-        return (
-            <>
-                {row.nombre + " " + row.apellidoPaterno + " " + row.apellidoMaterno}
-            </>
-        )
+        return row.nombre + " " + row.apellido_paterno + " " + row.apellido_materno
     }
 
     const acciones = (cell, row) => {
         return (
             <>
-                <FontAwesomeIcon onClick={() => muestraInfo(row.email)} icon={faEye}></FontAwesomeIcon>
-                <FontAwesomeIcon className="tw-text-inst-verdec" icon={faCheckCircle}></FontAwesomeIcon>
-                <FontAwesomeIcon className="tw-text-inst-rojo" icon={faTimesCircle}></FontAwesomeIcon>
+                <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer" onClick={() => muestraInfo(row.email)} icon={faEye}></FontAwesomeIcon>
+                <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer tw-text-inst-verdec" onClick={() => autoriza(row.id_usuario)} icon={faCheckCircle}></FontAwesomeIcon>
+                <FontAwesomeIcon className="tw-cursor-pointer tw-text-inst-rojo" onClick={() => rechaza(row.id_usuario)} icon={faTimesCircle}></FontAwesomeIcon>
             </>
         )
     }
 
-    const obtenerNivel = (cell) => {
-        var rolValor = roles.find(rol => cell === rol.id_rol)
-        return rolValor["rol"]
-    }
-
-    const opcionesRoles = {
-        1: 'Equipo Técnico del Sistema',
-        2: 'Funcionario SEDATU'
-    };
-
     const { SearchBar } = Search;
+    const { SearchBarNo } = Search
 
     const columns = [
         {
@@ -153,13 +139,8 @@ export default function AutorizacionUsuarios() {
             formatter: cell => moment(cell).format('DD-MM-YYYY')
         },
         {
-            dataField: 'idRol',
+            dataField: 'rol',
             text: 'Nivel de usuario solicitado',
-            formatter: obtenerNivel,
-            filter: selectFilter({
-                options: opcionesRoles,
-                placeholder: 'Nivel de usuario'
-            })
         },
         {
             dataField: 'acciones',
@@ -167,6 +148,12 @@ export default function AutorizacionUsuarios() {
             formatter: acciones
         }
     ];
+
+    const pagination = paginationFactory({
+        sizePerPage: 5,
+        alwaysShowAllBtns: true,
+        sizePerPageList: []
+    });
 
     return (
         <>
@@ -188,15 +175,20 @@ export default function AutorizacionUsuarios() {
                                     <Tabs defaultActiveKey="autorizados">
                                         <Tab eventKey="autorizados" title="Autorizar usuarios">
 
-                                            <ToolkitProvider keyField="id" data={usuarios} columns={columns} search>
+                                            <ToolkitProvider keyField="id_usuario" data={usuarios} columns={columns} search>
                                                 {
                                                     props => (
                                                         <>
-                                                            <SearchBar {...props.searchProps} />
+                                                            <SearchBar
+                                                                {...props.searchProps}
+                                                                placeholder="Buscar"
+                                                                tableId="autorizar"
+                                                            />
                                                             <BootstrapTable
                                                                 {...props.baseProps}
                                                                 filter={filterFactory()}
                                                                 noDataIndication="No hay resultados de la búsqueda"
+                                                                pagination={pagination}
                                                             />
                                                         </>
                                                     )
@@ -252,7 +244,7 @@ export default function AutorizacionUsuarios() {
                                                                 </div>
                                                                 <div>
                                                                     <span>Nivel de usuario solicitado</span>
-                                                                    <input value={infoUsuario.idRol ? obtenerNivel(infoUsuario.idRol) : ""} disabled></input>
+                                                                    <input value={infoUsuario.idRol} disabled></input>
                                                                 </div>
                                                                 <div>
                                                                     <span>Ambito de actuación</span>
@@ -265,8 +257,31 @@ export default function AutorizacionUsuarios() {
                                             }
 
                                         </Tab>
+
                                         <Tab eventKey="no-autorizados" title="Usuarios no autorizados">
+
+                                            <ToolkitProvider keyField="id_usuario" data={noUsuarios} columns={columns} search>
+                                                {
+                                                    props => (
+                                                        <>
+                                                            <SearchBar
+                                                                {...props.searchProps}
+                                                                placeholder="Buscar"
+                                                                tableId="no-autorizados"
+                                                            />
+                                                            <BootstrapTable
+                                                                {...props.baseProps}
+                                                                filter={filterFactory()}
+                                                                noDataIndication="No hay resultados de la búsqueda"
+                                                                pagination={pagination}
+                                                            />
+                                                        </>
+                                                    )
+                                                }
+                                            </ToolkitProvider>
+
                                         </Tab>
+
                                     </Tabs>
 
                                 </div>

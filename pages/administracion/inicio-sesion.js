@@ -1,19 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Form, InputGroup, Button } from 'react-bootstrap'
 import { useForm } from "react-hook-form";
 import axios from 'axios'
 
 import Link from 'next/link'
-import ModalComponent from '../../components/ModalComponent';
 import Head from 'next/head'
+import Router from "next/router";
+import ModalComponent from '../../components/ModalComponent';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 
 // Para guardar valiables de estado (token, nombre, apellido)
 import Cookies from 'universal-cookie'
-import Router from "next/router";
 const cookies = new Cookies()
+
 
 export default function InicioSesion() {
 
@@ -85,7 +86,6 @@ export default function InicioSesion() {
                     })
                 }
             })
-
     }
 
     return (
@@ -99,14 +99,13 @@ export default function InicioSesion() {
                 onHide={handleClose}
                 onClick={handleClose}
             />
-
             <main>
                 <div className="container tw-my-12">
                     <div className="row shadow">
 
                         <div className="col-12 col-md-6 tw-text-center">
                             <div className="tw-p-12">
-                                <img src="/images/logo.png" alt="logo" className="img-fluid"/>
+                                <img src="/images/logo.png" alt="logo" className="img-fluid" />
                             </div>
                         </div>
 
@@ -120,7 +119,7 @@ export default function InicioSesion() {
                                 </Form.Group>
                                 <Form.Group>
                                     <InputGroup>
-                                        <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} required ref={register}/>
+                                        <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} placeholder="Contraseña" required ref={register} />
                                         <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
                                             <InputGroup.Text>
                                                 {passwordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
@@ -129,7 +128,7 @@ export default function InicioSesion() {
                                     </InputGroup>
                                 </Form.Group>
 
-                                <Link href="/administracion/registro-usuario">
+                                <Link href="/administracion/registro-usuario" locale="en">
                                     <a className="tw-block tw-text-inst-verdec hover:tw-text-inst-verdef">Crear cuenta</a>
                                 </Link>
                                 <Link href="/administracion/olvide-contrasena">

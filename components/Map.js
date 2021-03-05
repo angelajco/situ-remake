@@ -45,12 +45,12 @@ const Map = (props) => {
                         if (capa.habilitado) {
                             if (capa.tipo == "geojson") {
                                 return (
-                                    <GeoJSON data={capa} style={estilos} key={index} onEachFeature={onEachFeature} />
+                                    <GeoJSON key={index} data={capa} style={estilos} onEachFeature={onEachFeature} />
                                 )
                             }
                             if (capa.tipo == "wms") {
                                 return (
-                                    <WMSTileLayer attribution={capa.attribution} url={capa.url} layers={capa.layers} format={capa.format} transparent={capa.transparent} />
+                                    <WMSTileLayer key={index} attribution={capa.attribution} url={capa.url} layers={capa.layers} format={capa.format} transparent={capa.transparent} />
                                 )
                             }
 
