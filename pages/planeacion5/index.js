@@ -1,3 +1,4 @@
+import { parse } from 'postcss';
 import React, { useState, useRef, useEffect } from 'react'
 import { Form } from 'react-bootstrap'
 import { useForm } from "react-hook-form";
@@ -12,11 +13,8 @@ class Nucleo {
     this.modeloValido = false;
     // La peticion se hizo con un resultado exitoso o no exitoso
     this.modeloCargado = false;
-
     this.claveMun = '';
-
     this.nombreMun = '';
-
     this.nombreEnt = '';
   }
   descargaModelo(rutaXml) {
@@ -29,6 +27,7 @@ class Nucleo {
       .then(result => {
         let parser = new DOMParser();
         let xmlDoc = parser.parseFromString(result, "text/xml")
+        // console.log(xmlDoc)
         this.procesaModelo(xmlDoc)
       })
       .catch(error => {
@@ -36,11 +35,13 @@ class Nucleo {
         console.log('error', error)
       });
   }
+
   procesaModelo(xmlDoc) {
     this.modelo = new ModeloContenido(xmlDoc, this)
     this.modeloCargado = true;
     this.modeloValido = true;
   }
+
   traduceVariable(cadena) {
     if (cadena.includes('@')) {
       let palabras = cadena.split(' ')
@@ -89,6 +90,10 @@ class Nucleo {
     this.modelo.yaTengoDatos(tabla)
   }
 
+  resuelveVariable(variable) {
+    this.modelo.resuelveVariable(variable)
+  }
+
 } // Fin de la clase Nucleo
 
 class ModeloContenido {
@@ -97,8 +102,15 @@ class ModeloContenido {
     this.secciones = []
     this.nucleo = padre
     this.tablas = []
+    this.variables = []
+    this.paraCalculo = []
+
+    if (xmlDoc === null || xmlDoc.documentElement === null) {
+      return
+    }
 
     let nodos = xmlDoc.documentElement.childNodes
+
     for (let i = 0; i < nodos.length; i++) {
       if (nodos[i].nodeName == 'titulo') {
         this.titulo = nodos[i].firstChild.nodeValue
@@ -118,11 +130,19 @@ class ModeloContenido {
             this.tablas.push(nuevo)
           }
         }
+      } else if (nodos[i].nodeName === 'variables') {
+        for (let j = 0; j < nodos[i].childNodes.length; j++) {
+          if (nodos[i].childNodes[j].nodeName === 'variable') {
+            let nuevo = new Variable(nodos[i].childNodes[j])
+            this.variables.push(nuevo)
+          }
+        }
       }
     }
   }
 
   reiniciaDatos() {
+
     for (let index = 0; index < this.tablas.length; index++) {
       this.tablas[index].reinicia()
     }
@@ -130,7 +150,6 @@ class ModeloContenido {
     for (let index = 0; index < this.secciones.length; index++) {
       this.secciones[index].reiniciaDatos()
     }
-
   }
 
   cargaInformacion() {
@@ -140,53 +159,121 @@ class ModeloContenido {
   }
 
   encabezadoColumna(identificador) {
+    let idTabla = null
+    let columna = ''
+
+    if (identificador.includes('.')) {
+      let partes = identificador.split('.')
+      idTabla = partes[0]
+      columna = partes[1]
+    } else {
+      return ''
+    }
+
     for (let index = 0; index < this.tablas.length; index++) {
-      for (let i = 0; i < this.tablas[index].columnas.length; i++) {
-        if (this.tablas[index].columnas[i].id === identificador) {
-          return this.tablas[index].columnas[i].encabezado ?? this.tablas[index].columnas[i].nombre
+      if (idTabla === this.tablas[index].id) {
+        for (let i = 0; i < this.tablas[index].columnas.length; i++) {
+          if (this.tablas[index].columnas[i].id === columna) {
+            return this.tablas[index].columnas[i].encabezado ?? this.tablas[index].columnas[i].nombre
+          }
         }
       }
     }
   }
 
   yaTengoDatos(tabla) {
+    for (let index = 0; index < this.variables.length; index++) {
+      this.variables[index].calcula(this)
+    }
+
     for (let index = 0; index < this.secciones.length; index++) {
       this.secciones[index].contenedores.forEach(contenedor => {
         if (contenedor.contenido.tipoComponente === 'Tabular') {
-          for (let index = 0; index < contenedor.contenido.columnas.length; index++) {
-            if (contenedor.contenido.columnas[index].includes(tabla.etiquetaID)) {
-              contenedor.contenido.datosDisponibles = true
-              contenedor.contenido.indiceTabla = index
-              contenedor.contenido.refrescarContenido()
+
+          let tabular = contenedor.contenido
+
+          for (let index = 0; index < tabular.columnas.length; index++) {
+            if (tabular.columnas[index].indexOf(tabla.id) === 0) {
+              tabular.datosDisponibles = true
+              tabular.indiceTabla = index
+              tabular.refrescarContenido()
               return
             }
           }
+        }else if(contenedor.contenido.tipoComponente === 'Grafica'){
+
+          contenedor.contenido.calcula(this)
+
         }
       });
     }
 
+    console.log('elementos para calculo', this.paraCalculo)
+  } // metodo ya tengo datos
+
+  resolverVariable(variable) {
+    if (variable.includes('.')) {
+      let idTabla = null
+      let columna = ''
+      let partes = variable.split('.')
+      idTabla = partes[0]
+      columna = partes[1]
+
+      for (let index = 0; index < this.tablas.length; index++) {
+        if (idTabla === this.tablas[index].id) {
+          for (let i = 0; i < this.tablas[index].columnas.length; i++) {
+            if (this.tablas[index].columnas[i].id === columna) {
+              if (this.tablas[index].datos.length > 0) {
+                if (this.tablas[index].columnas[i].tipo.includes('int')) {
+                  return parseInt(this.tablas[index].datos[0][i])
+                }
+                return this.tablas[index].datos[0][i]
+              }
+              return null
+            }
+          }
+        }
+      }
+    } else if (variable[0] == '@') {
+      let id = variable.substr(1, variable.length - 1)
+      for (let index = 0; index < this.variables.length; index++) {
+
+        if (this.variables[index].nombre == id) {
+          return this.variables[index].valor
+        }
+
+      }
+    } else {
+      return null
+    }
   }
 
 } // Modelo Contenido
 
 class SeccionModelo {
+
   constructor(nodoXml, nucleo) {
-    this.ID = nodoXml.getAttribute('id')
+    this.ID = ''
     this.claseCSS = ''
     this.titulo = ''
     this.nucleo = nucleo
-    this.tipo = nodoXml.getAttribute('tipo')
+    this.tipo = ''
     this.contenedores = []
     this.refrescarContenido = null
+
+    if (nodoXml === null || nodoXml.childNodes === null) {
+      return
+    }
+
+    this.ID = nodoXml.getAttribute('id')
+    this.tipo = nodoXml.getAttribute('tipo')
 
     for (let index = 0; index < nodoXml.childNodes.length; index++) {
       if (nodoXml.childNodes[index].nodeName === 'titulo') {
         this.titulo = nodoXml.childNodes[index].firstChild.nodeValue
       } else if (nodoXml.childNodes[index].nodeName === 'contenedor') {
-
         let nuevo = new Contenedor(nodoXml.childNodes[index], this.nucleo)
         this.contenedores.push(nuevo)
-
       }
     }
   }
@@ -196,7 +283,6 @@ class SeccionModelo {
   }
 
   reiniciaDatos() {
-    console.log('Reiniciando seccion')
     for (let index = 0; index < this.contenedores.length; index++) {
       this.contenedores[index].reiniciaDatos()
     }
@@ -215,19 +301,22 @@ class TablaDatos {
     this.datos = []
     this.tituloTabla = ''
     this.etiquetaID = null
+    if (nodo === null || nodo.firstChild === null) {
+      return
+    }
+    this.id = nodo.getAttribute('id')
   }
+
   reinicia() {
     this.columnas = null
     this.datosDisponibles = false
     this.datos = []
   }
-  
+
   cargaDatos() {
     let filtro = `${this.configuracion.filtroMun}='${this.nucleo.claveMun}'`
     let cuerpo = { etiqFunc: this.configuracion.etiqueta, columnas: this.configuracion.columnas, filtro: filtro }
     let req = new XMLHttpRequest();
-    
-    // console.log('cargando datos para', this.nucleo.claveMun)
 
     req.tablaPadre = this
     req.open("POST", "http://172.16.117.11/wa0/cons_catalogada", true);
@@ -246,11 +335,9 @@ class TablaDatos {
       }
     }
     req.send('parametros=' + JSON.stringify(cuerpo));
-
   }
 
   obtenCelda(fila, id) {
-
     if (fila <= datos.length) {
       for (let index = 0; index < this.columnas.length; index++) {
         if (this.columnas[index].id === id) {
@@ -263,13 +350,20 @@ class TablaDatos {
   }
 
   indiceColumna(id) {
+    if (id.includes('.')) {
+      let partes = id.split('.')
+      if (partes[0] !== this.id) {
+        return -1
+      }
+      id = partes[1]
+    }
+
     for (let index = 0; index < this.columnas.length; index++) {
       if (this.columnas[index].id === id) {
-        // console.log('Columna encontrada', index)
         return index
       }
     }
-    return null
+    return -1
   }
 
 } // Clase Tabla Datos
@@ -290,24 +384,31 @@ class DefinicionTabla {
       }
     }
   }
-}
+} //Clase Definicion Tabla
 
 class Contenedor {
 
   constructor(nodoXml, padre) {
-    this.ancho = nodoXml.getAttribute('ancho') ?? '100%'
+    this.ancho = '100%'
     this.titulo = ''
-    this.contenido = null
+    this.contenido = new ContenidoBase()
     this.padre = padre
 
+    if (nodoXml === null || nodoXml.childNodes === null) {
+      return
+    }
+    this.ancho = nodoXml.getAttribute('ancho') ?? '100%'
     for (let index = 0; index < nodoXml.childNodes.length; index++) {
       if (nodoXml.childNodes[index].nodeName === 'titulo') {
         this.titulo = nodoXml.childNodes[index].firstChild.nodeValue
       } else if (nodoXml.childNodes[index].nodeName === 'tabular') {
         this.contenido = new DespliegueTabular(nodoXml.childNodes[index], this.padre)
+      } else if (nodoXml.childNodes[index].nodeName === 'grafica') {
+        let nuevo = new Grafica(nodoXml.childNodes[index], padre)
+        this.contenido = nuevo
+        
       }
     }
-
   }
 
   EstilosCSSReact() {
@@ -318,7 +419,6 @@ class Contenedor {
   }
 
   reiniciaDatos() {
-    console.log('Reiniciar contenedor')
     if (this.contenido !== null) {
       this.contenido.reiniciaDatos()
     }
@@ -326,9 +426,18 @@ class Contenedor {
 
 } // clase Contenedor
 
+class ContenidoBase {
+  constructor() {
+    this.tipoComponente = 'Básico'
+  }
+  reiniciaDatos() {
+  }
+} // clase contenido Base
+
 class DespliegueTabular {
 
   constructor(nodoXml, padre) {
+    // super.constructor()
     this.tipoComponente = 'Tabular'
     this.columnas = []
     this.nucleo = padre
@@ -336,7 +445,6 @@ class DespliegueTabular {
 
     for (let index = 0; index < nodoXml.childNodes.length; index++) {
       if (nodoXml.childNodes[index].nodeName === 'columnas') {
-
         for (let i = 0; i < nodoXml.childNodes[index].childNodes.length; i++) {
           if (nodoXml.childNodes[index].childNodes[i].nodeName === 'columna') {
             this.columnas.push(nodoXml.childNodes[index].childNodes[i].firstChild.nodeValue)
@@ -352,8 +460,6 @@ class DespliegueTabular {
   }
 
   contenidoTabla() {
-    // console.log('Conenido tabla', this.indiceTabla)
-
     let salida = []
     let posCol = []
     let tope = (this.nucleo.modelo.tablas[this.indiceTabla].datos ?? []).length
@@ -361,16 +467,12 @@ class DespliegueTabular {
     if (tope === 0) {
       return salida
     }
-
     for (let index = 0; index < this.columnas.length; index++) {
       let pos = this.nucleo.modelo.tablas[this.indiceTabla].indiceColumna(this.columnas[index])
       if (pos !== null) {
         posCol.push(pos)
       }
     }
-
-    // console.log('mapa', posCol)
-
     for (let index = 0; index < tope; index++) {
       let fila = []
       for (let i = 0; i < this.columnas.length; i++) {
@@ -383,10 +485,248 @@ class DespliegueTabular {
 
   reiniciaDatos() {
     this.datosDisponibles = false
-    console.log("Reiniciando Tabular")
   }
 
 }// clase Tabular
+
+class Variable {
+
+  constructor(nodoXml) {
+    this.nombre = ''
+    this.valor = null
+    this.etiqueta = ''
+    this.formula = []
+
+    if (nodoXml == null || nodoXml.childNodes == null) {
+      return
+    }
+    this.nombre = nodoXml.getAttribute('id')
+    this.etiqueta = nodoXml.getAttribute('etiqueta')
+
+    let formula = []
+    let formulacion = nodoXml.firstChild.nodeValue
+    let palabra = ''
+    let car = ''
+
+    function agregarVariable() {
+      if (palabra !== '') {
+        formula.push({ 'tipo': 'variable', 'valor': palabra.trim() })
+        palabra = ''
+      }
+    }
+
+    for (let index = 0; index < formulacion.length; index++) {
+      car = formulacion[index]
+
+      if (car == '+' || car == '-') {
+        agregarVariable()
+        formula.push({ 'tipo': 'operador', 'valor': car })
+      } else if (car >= ' ') {
+        palabra = palabra + car
+      }
+    }
+
+    agregarVariable()
+    this.formula = formula
+  }
+
+  calcula(modelo) {
+    this.valor = null
+    let calculado = null
+    let operador = null
+
+    for (let index = 0; index < this.formula.length; index++) {
+      if (this.formula[index].tipo == 'operador') {
+        operador = this.formula[index].valor
+      } else if (this.formula[index].tipo == 'variable') {
+        let valor = modelo.resolverVariable(this.formula[index].valor)
+
+        if (valor == null) {
+          this.valor = null
+          return
+        }
+
+        console.log('Calculando ', this.nombre, ' ', calculado, operador, valor)
+        if (calculado == null) {
+          calculado = valor
+        } else if (operador == '+') {
+          calculado = calculado + valor
+        } else if (operador == '-') {
+          calculado = calculado - valor
+        }
+        console.log('=', calculado)
+      }
+    }
+    this.valor = calculado
+    console.log(this.valor)
+  }
+} //Clase variable
+
+class DatoGrafica {
+
+  constructor(nodoXml) {
+    this.etiqueta = ''
+    this.valor = null
+    this.definicion = null
+    this.color = 'red'
+
+    if (nodoXml == null || nodoXml.nodeName == null) {
+      return
+    }
+
+    this.etiqueta = nodoXml.getAttribute('etiqueta')
+    this.definicion = new Formulacion(nodoXml.getAttribute('valor'))
+    this.color = nodoXml.getAttribute('color')
+  }
+
+  calcula(modelo) {
+    this.definicion.calcula(modelo)
+    this.valor= this.definicion.valor
+  }
+
+}// Clase Dato Grafica
+
+class Grafica {
+
+  constructor(nodoXml, padre) {
+    this.datos = []
+    this.nombre = ''
+    this.tipo = "pay"
+    this.ancho = '350'
+    this.alto = '350'
+    this.radioExterno = '150'
+    this.nucleo = padre
+    this.tipoComponente = 'Grafica'
+    this.datosDisponibles = false
+    this.refrescarContenido = null
+
+    if (nodoXml == null || nodoXml.childNodes == null) {
+      return
+    }
+    this.nombre = nodoXml.getAttribute('id')
+    this.tipo = nodoXml.getAttribute('tipo') ?? this.tipo
+    this.ancho = nodoXml.getAttribute('ancho') ?? this.ancho
+    this.alto = nodoXml.getAttribute('alto') ?? this.alto
+    this.radioExterno = nodoXml.getAttribute('radioExterno') ?? this.radioExterno
+
+    for (let index = 0; index < nodoXml.childNodes.length; index++) {
+      if (nodoXml.childNodes[index].nodeName === 'dato') {
+        let nuevo = new DatoGrafica(nodoXml.childNodes[index])
+        this.datos.push(nuevo)
+      }
+    }
+
+  }
+
+  reiniciaDatos() {
+    for (let index = 0; index < this.datos.length; index++) {
+      this.datos[index].valor = null
+    }
+  }
+
+  calcula(modelo) {
+    for (let index = 0; index < this.datos.length; index++) {
+      console.log('Calculando en grafica dato', index)
+      this.datos[index].calcula(modelo)
+    }
+    this.datosDisponibles = true
+    this.refrescarContenido()
+  }
+
+  generaDatos() {
+    // const data = [
+    //   { name: 'Group A', value: 400 },
+    //   { name: 'Group B', value: 300 },
+    //   { name: 'Group C', value: 300 },
+    //   { name: 'Group D', value: 200 },
+    // ];
+
+    let salida = []
+
+    for (let index = 0; index < this.datos.length; index++) {
+      let dato = {name:this.datos[index].etiqueta, value: this.datos[index].valor}
+      salida.push(dato)
+    }
+    return salida
+  }
+
+  tablaColores() {
+    let salida = []
+
+    for (let index = 0; index < this.datos.length; index++) {
+      salida.push(this.datos[index].color)
+    }
+    return salida
+  }
+
+} // Clase Grafica
+
+class Formulacion {
+
+  constructor(cadena) {
+    this.formula = []
+    this.valor = null
+
+    let formula = []
+    let palabra = ''
+    let car = ''
+
+    function agregarVariable() {
+      if (palabra !== '') {
+        formula.push({ 'tipo': 'variable', 'valor': palabra.trim() })
+        palabra = ''
+      }
+    }
+
+    for (let index = 0; index < cadena.length; index++) {
+      car = cadena[index]
+
+      if (car == '+' || car == '-') {
+        agregarVariable()
+        formula.push({ 'tipo': 'operador', 'valor': car })
+      } else if (car >= ' ') {
+        palabra = palabra + car
+      }
+    }
+
+    agregarVariable()
+    this.formula = formula
+  }
+
+  calcula(modelo) {
+    this.valor = null
+    let calculado = null
+    let operador = null
+
+    for (let index = 0; index < this.formula.length; index++) {
+      if (this.formula[index].tipo == 'operador') {
+        operador = this.formula[index].valor
+      } else if (this.formula[index].tipo == 'variable') {
+        let valor = modelo.resolverVariable(this.formula[index].valor)
+
+        if (valor == null) {
+          this.valor = null
+          return
+        }
+
+        console.log('Calculando ', this.formula[index].valor, ' ', calculado, operador, valor)
+        
+        if (calculado == null) {
+          calculado = valor
+        } else if (operador == '+') {
+          calculado = calculado + valor
+        } else if (operador == '-') {
+          calculado = calculado - valor
+        }
+        console.log('=', calculado)
+      }
+    }
+    this.valor = calculado
+    console.log(this.valor)
+  }
+
+
+} //
 
 
 // creando un nuevo objeto nucleo
@@ -394,6 +734,8 @@ let nucleo = new Nucleo()
 // haciendo la peticion al modelo XML
 nucleo.descargaModelo(`${process.env.ruta}/demos/modelos/MetaModeloHPM_01.xml`)
 
+
+// Funcion de React
 export default function index() {
 
   // Hooks para rederizar estados y municipios
@@ -402,7 +744,7 @@ export default function index() {
   // Hook oculto para que que el cambio se haga en tiempo real
   const [contador, setContador] = useState(0)
 
-  const { register, handleSubmit, watch, clearErrors, setError, errors } = useForm();
+  const { register, watch } = useForm();
 
   const refEntidad = useRef();
   refEntidad.current = watch("id_entidad", "");
@@ -447,7 +789,7 @@ export default function index() {
 
     setSecciones(nucleo.modelo.secciones)
     setContador(contador + 1)
-  
+
   }
 
   return (
@@ -485,9 +827,6 @@ export default function index() {
             <SeccionPm key={index} seccion={seccion} />
           ))
         }
-      </div>
-      <div>
-
       </div>
     </>
   )

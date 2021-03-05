@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 // import MapPlaneacion from './MapPlaneacion'
 import dynamic from 'next/dynamic'
-import ContenedorPM from './ContenedorPM'
+import Tabular from './Tabular'
+import GraficaPM from './GraficaPM'
 
 export default function SeccionPm(props) {
 
@@ -22,10 +23,11 @@ export default function SeccionPm(props) {
       ssr: false
     }
   )
-
+  
   seccion.refrescarContenido = cambia
   // console.log('Componente PM', seccion)
 
+  
 
   return (
     <section className="tw-my-6 tw-bg-gray-300">
@@ -43,7 +45,7 @@ export default function SeccionPm(props) {
               (seccion.contenedores.length > 0)
                 ?
                 seccion.contenedores.map((contenedor, index) => (
-                  <div key={index}>
+                  <div key={index} style={contenedor.EstilosCSSReact()} >
                     {
                       (contenedor.titulo !== null)
                         ?
@@ -51,7 +53,24 @@ export default function SeccionPm(props) {
                         :
                         null
                     }
-                    <ContenedorPM contenido = {contenedor.contenido} />
+                    {
+                      (contenedor.contenido.tipoComponente ?? 'nada' === 'Tabular')
+                        ?
+                        <>
+                          {console.log('Desplegando tabular')}
+                          <Tabular tabular={contenedor.contenido} />
+                        </>
+                        :
+                          (contenedor.contenido.tipoComponente ?? 'nada' === 'Grafica')
+                          ?
+                            <>
+                            {console.log('desplegando grafica')}
+                            <h1>Estoy poniendo una grafica</h1>
+                            {/* <GraficaPM grafica = {contenedor.contenido} /> */}
+                            </>
+                          :
+                            <h1>No hay contenido</h1>
+                    }
                   </div>
                 ))
                 :
