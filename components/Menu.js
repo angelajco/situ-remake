@@ -63,7 +63,7 @@ export default function Menu() {
                         <Link href="/">
                             <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">INICIO</a>
                         </Link>
-                        <Link href="/planeacion4">
+                        <Link href="/planeacion5">
                             <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">PLANEACIÓN<br></br>MUNICIPAL</a>
                         </Link>
                         <Link href="/analisis-geografico">
