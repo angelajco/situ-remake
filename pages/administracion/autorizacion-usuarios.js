@@ -13,7 +13,6 @@ import 'react-bootstrap-table2-filter/dist/react-bootstrap-table2-filter.min.css
 import 'react-bootstrap-table2-toolkit/dist/react-bootstrap-table2-toolkit.min.css';
 import 'react-bootstrap-table2-paginator/dist/react-bootstrap-table2-paginator.min.css';
 import BootstrapTable from 'react-bootstrap-table-next';
-import filterFactory from 'react-bootstrap-table2-filter';
 import ToolkitProvider, { Search } from 'react-bootstrap-table2-toolkit';
 import paginationFactory from 'react-bootstrap-table2-paginator';
 
@@ -64,8 +63,6 @@ export default function AutorizacionUsuarios() {
 
     //Importar dinamicamente el loader
     const Loader = dynamic(() => import('../../components/Loader'));
-
-    console.log(nivelRolCookie);
     
     useEffect(() => {
         if (nivelRolCookie != undefined) {
@@ -366,7 +363,6 @@ export default function AutorizacionUsuarios() {
                                                             </div>
                                                             <BootstrapTable
                                                                 {...props.baseProps}
-                                                                filter={filterFactory()}
                                                                 noDataIndication="No hay resultados de la búsqueda"
                                                                 pagination={pagination}
                                                                 headerClasses="tabla-usuarios-header"
@@ -394,7 +390,6 @@ export default function AutorizacionUsuarios() {
                                                             </div>
                                                             <BootstrapTable
                                                                 {...props.baseProps}
-                                                                filter={filterFactory()}
                                                                 noDataIndication="No hay resultados de la búsqueda"
                                                                 pagination={pagination}
                                                                 headerClasses="tabla-usuarios-header"
@@ -440,7 +435,7 @@ export default function AutorizacionUsuarios() {
                                                                 </div>
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Genero con el que te identificas</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.idGenero ? infoUsuario.idGenero : ""} disabled></input>
+                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.genero} disabled></input>
                                                                 </div>
                                                             </div>
                                                             <div className="col-12 col-md-6">
@@ -454,19 +449,19 @@ export default function AutorizacionUsuarios() {
                                                                 </div>
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Entidad</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.idEntidad} disabled></input>
+                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.nombre_entidad} disabled></input>
                                                                 </div>
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Municipio</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.idMunicipio} disabled></input>
+                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.nombre_municipio} disabled></input>
                                                                 </div>
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Nivel de usuario solicitado</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.idRol} disabled></input>
+                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.rol} disabled></input>
                                                                 </div>
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Ambito de actuación</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.idAmbitoActuacion ? infoUsuario.idAmbitoActuacion : ""} disabled></input>
+                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.ambito_actuacion} disabled></input>
                                                                 </div>
                                                             </div>
                                                             <div className="col-12 tw-text-center tw-mt-6">

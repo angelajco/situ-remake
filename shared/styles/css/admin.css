@@ -54,6 +54,9 @@
 .tab-tabla .react-bootstrap-table-pagination-list{
     margin-top: 15px;
 }
+.tab-tabla .react-bootstrap-table-pagination-list a{
+    @apply tw-text-titulo;
+}
 .tab-tabla .react-bootstrap-table-pagination-list .active a{
     border-color: inherit !important;
     @apply tw-bg-titulo;
