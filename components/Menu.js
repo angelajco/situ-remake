@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap'
+import { useRouter } from 'next/router'
 
 import Link from 'next/link'
 
@@ -12,11 +13,39 @@ import { useTranslation } from "react-i18next"
 
 export default function Menu() {
 
-    const {i18n} = useTranslation();
+    const { i18n } = useTranslation();
 
     // Estado para guardar el token
     const [tokenSesion, setTokenSesion] = useState(false)
     const tokenCookie = cookies.get('SessionToken')
+
+
+    //Para ver la URL
+    const router = useRouter();
+
+    // console.log(router.pathname);
+    let ruta = router.pathname
+
+    let isActiveInicio = 'tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline'
+    let isActiveSesion = 'tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline'
+    let isActivePlaneacion = 'tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline'
+
+    // Deshabilitar el boton del menu donde se encuentra el usuario
+    let deshabilitarInicio = false
+    let deshabilitarSesion = false
+    let deshabilitarPlaneacion = false
+
+    if (ruta === '/') {
+        isActiveInicio += ' tw-text-green-400'
+        deshabilitarInicio = true
+    } else if (ruta === '/administracion/inicio-sesion') {
+        isActiveSesion += ' tw-text-green-400'
+        deshabilitarSesion = true
+    } else if (ruta === '/planeacion5') {
+        isActivePlaneacion += ' tw-text-green-400'
+        deshabilitarPlaneacion = true
+    }
+
 
     useEffect(() => {
         if (tokenCookie != undefined) {
@@ -60,11 +89,11 @@ export default function Menu() {
                             <NavDropdown.Item onClick={() => changeLanguage('es')}>Español</NavDropdown.Item>
                             <NavDropdown.Item onClick={() => changeLanguage('en')}>Inglés</NavDropdown.Item>
                         </NavDropdown>
-                        <Link href="/">
-                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">INICIO</a>
+                        <Link href={deshabilitarInicio ? "#" : "/"}>
+                            <a className={isActiveInicio}>INICIO</a>
                         </Link>
-                        <Link href="/planeacion5">
-                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">PLANEACIÓN<br></br>MUNICIPAL</a>
+                        <Link href={deshabilitarPlaneacion ? "#" : "/planeacion6"}>
+                            <a className={isActivePlaneacion} >PLANEACIÓN<br></br>MUNICIPAL</a>
                         </Link>
                         <Link href="/analisis-geografico">
                             <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">ANÁLISIS<br></br>GEOGRÁFICO</a>
@@ -80,8 +109,8 @@ export default function Menu() {
                                 ?
                                 <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline" href="/administracion/inicio-sesion" onClick={cerrarSesion}>CERRAR<br></br>SESIÓN</a>
                                 :
-                                <Link href="/administracion/inicio-sesion">
-                                    <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">INICIO DE<br></br>SESIÓN</a>
+                                <Link href={deshabilitarSesion ? "#" : "/administracion/inicio-sesion" }>
+                                    <a className={isActiveSesion} >INICIO DE<br></br>SESIÓN</a>
                                 </Link>
                         }
                     </Nav>

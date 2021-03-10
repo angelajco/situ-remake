@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { MapContainer, TileLayer, GeoJSON, ScaleControl, useMap } from 'react-leaflet'
+import { useEffect, useState } from 'react'
+import { MapContainer, TileLayer, GeoJSON, ScaleControl } from 'react-leaflet'
 
 //Si no es necesario cargar los marcadores
 import "leaflet/dist/leaflet.css"
@@ -18,12 +18,16 @@ const MapPlaneacion = (props) => {
 
   const cambia = () => {
     setRefresca(refresca + 1)
-    console.log('Valor de iteracion: ', refresca)
+    console.log('VAlor de iteracion: ', refresca)
   }
 
   if (seccion != null) {
     seccion.refrescarContenido = cambia
   }
+
+  useEffect(() => {
+    console.log('Despliegue mapa terminado', seccion.capas)
+  }, [seccion])
 
   return (
     <>

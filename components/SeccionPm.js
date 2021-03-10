@@ -5,7 +5,13 @@ import ContenedorPM from './ContenedorPM'
 
 export default function SeccionPm(props) {
 
+  
+
   const { seccion } = props
+  const { cl } = props
+
+  // console.log('Seccion PM props', cl)
+  // console.log('Seccion PM', capturaL)
 
   const [refresca, setRefresca] = useState(0)
 
@@ -36,14 +42,14 @@ export default function SeccionPm(props) {
       {
         (seccion.tipo === 'mapaBase')
           ?
-          <MapPlaneacion />
+          <MapPlaneacion seccion={seccion} cl={cl} />
           :
-          <div className="tw-flex tw-w-full">
+          <div className="tw-flex tw-w-full tw-justify-between tw-flex-wrap">
             {
               (seccion.contenedores.length > 0)
                 ?
                 seccion.contenedores.map((contenedor, index) => (
-                  <div key={index}>
+                  <div key={index} className="tw-px-6">
                     {
                       (contenedor.titulo !== null)
                         ?

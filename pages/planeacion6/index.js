@@ -15,7 +15,6 @@ function municipioElegidoPorUsuario() {
 }
 
 function recibeJSONcapa(datos) {
-  console.log("He sido llamado con: ", datos);
   if (datos != null) {
     capaReceptora.geoJson = datos
   }
@@ -27,17 +26,14 @@ var disparaRefrescaMapa = null
 var L2 = {}
 
 function capaArecibir(cual) {
-  console.log('Dentro de capa a recibir', cual)
   capaReceptora = cual;
 }
 
 function capturaL(objeto) {
-  console.log('L capturado', L)
   L2 = objeto
-  if (nucleo.modelo.seccionMapa == null) {
-    nucleo.modelo.cargaAsincronaDatosCapas()
-  } else if (nucleo.modelo.seccionMapa.capas[0].geoJson == null) {
-    nucleo.modelo.cargaAsincronaDatosCapas()
+  console.log('Capturando L', objeto)
+  if (!(nucleo.modelo.contextos[nucleo.modelo.contextos.length - 1].capasCargadas)) {
+    nucleo.modelo.iniciaDescargaGeoJson()
   }
 }
 
@@ -64,8 +60,9 @@ class Nucleo {
       .then(result => {
         let parser = new DOMParser();
         let xmlDoc = parser.parseFromString(result, "text/xml")
-        // console.log(xmlDoc)
         this.procesaModelo(xmlDoc)
+        this.modelo.indCapas = -1
+        this.modelo.cargaAsincronaDatosCapas()
       })
       .catch(error => {
         console.log('Error en el modelo')
@@ -145,6 +142,9 @@ class ModeloContenido {
     this.indTabla = -1
     this.indCapas = -1
     this.capas = []
+    this.datosCapasCargados = false
+    this.contadorModelo = 0
+    this.contextos = []
 
     if (xmlDoc === null || xmlDoc.documentElement === null) {
       return
@@ -168,7 +168,6 @@ class ModeloContenido {
         for (let j = 0; j < nodos[i].childNodes.length; j++) {
           if (nodos[i].childNodes[j].nodeName === 'tabla') {
             let nuevo = new TablaDatos(nodos[i].childNodes[j], this.nucleo)
-            console.log('Tabla creada', nuevo);
             this.tablas.push(nuevo)
           }
         }
@@ -195,9 +194,17 @@ class ModeloContenido {
   }
 
   cargaInformacion() {
-    for (let index = 0; index < this.tablas.length; index++) {
-      this.tablas[index].cargaDatos()
+    this.indTabla = -1
+    this.contadorModelo++
+
+    let contexto = {
+      id: this.contadorModelo,
+      tablasCargadas: false,
+      capasCargadas: false,
     }
+
+    this.contextos.push(contexto)
+    this.cargaAsincrona()
   }
 
   encabezadoColumna(identificador) {
@@ -255,9 +262,13 @@ class ModeloContenido {
       let partes = variable.split('.')
       idTabla = partes[0]
       columna = partes[1]
+      console.log('REsolviendo variable: ', variable)
 
       for (let index = 0; index < this.tablas.length; index++) {
         if (idTabla === this.tablas[index].id) {
+
+          console.log('Tabla ubicada: ', this.tablas[index].id, this.tablas[index].datos, this.nucleo.claveMun)
+
           for (let i = 0; i < this.tablas[index].columnas.length; i++) {
             if (this.tablas[index].columnas[i].id === columna) {
               if (this.tablas[index].datos.length > 0) {
@@ -286,63 +297,70 @@ class ModeloContenido {
       return this.nucleo.claveMun
     }
     else {
-      console.log('variable no resuelta', variable)
       return null
     }
   }
 
   cargaAsincrona() {
     this.indTabla++
+    if (this.indTabla == 0) {
+      console.log('Iniciando carga tablas ', this.contadorModelo)
+    }
     if (this.indTabla < this.tablas.length) {
       this.tablas[this.indTabla].cargaDatos()
       return
     }
+
+    this.contextos[this.contextos.length - 1].tablasCargadas = true
+
     this.indCapas = -1
     // this.cargaAsincronaDatosCapas()
+    console.log('Carga de tablas concluida: ', this.contadorModelo)
     this.yaTengoDatos()
+    // this.iniciaDescargaGeoJson()
+    // this.descargaAsincronaGeoJson()
   }
 
   cargaAsincronaDatosCapas() {
+    // identificar seccion que contiene el mapa (Esta seccion se considera solo un mapa por pagina)
+    this.datosCapasCargados = true
     if (this.indCapas == -1) {
-
       for (let index = 0; index < this.secciones.length; index++) {
         if (this.secciones[index].tipo === 'mapaBase') {
           this.seccionMapa = this.secciones[index]
         }
       }
-
     }
 
-    this.capaEnCarga += 1;
     this.indCapas++
 
     if (this.indCapas < this.seccionMapa.capas.length) {
       this.seccionMapa.capas[this.indCapas].cargaDatosCapa(this);
     } else {
       this.indCapas = -1;
-      // this.yaTengoDatos()
-      this.descargaAsincronaGeoJson();
     }
+  }
+
+  iniciaDescargaGeoJson() {
+    this.indCapas = -1
+    this.descargaAsincronaGeoJson()
   }
 
   descargaAsincronaGeoJson() {
-    let contador = 0
 
-    for (let index = 0; index < this.seccionMapa.capas.length; index++) {
-      if (this.seccionMapa.capas[index].geoJson == null) {
-        this.seccionMapa.capas[index].descargaGeoJson(this)
-        return
-      } else {
-        contador++
-      }
+    this.indCapas++
+    if (this.indCapas == 0) {
+      console.log('Iniciando descarga de geoJson ', this.contadorModelo)
     }
-    if (contador >= this.seccionMapa.capas.length) {
-      console.log('REFRESCANDO CONTENIDO')
+
+    if (this.indCapas < this.seccionMapa.capas.length) {
+      this.seccionMapa.capas[this.indCapas].descargaGeoJson(this)
+    } else {
+      console.log('Carga de capas terminada: ', this.contadorModelo)
+      this.contextos[this.contextos.length - 1].capasCargadas = true
       this.seccionMapa.refrescarContenido();
     }
   }
-
-
 } // Modelo Contenido
 
 class SeccionModelo {
@@ -414,7 +432,6 @@ class TablaDatos {
     }
     this.id = nodo.getAttribute('id')
     let def = new DefinicionTabla(nodo)
-    // console.log('DEFINICION TABLA: ', def)
     this.configuracion = def
   }
 
@@ -488,7 +505,6 @@ class DefinicionTabla {
     this.etiqueta = nodo.getAttribute('etiqueta')
     this.filtroMun = nodo.getAttribute('fltroMun')
     this.columnas = []
-    // console.log('Definidcion tabla', nodo)
     for (let i = 0; i < nodo.childNodes.length; i++) {
       if (nodo.childNodes[i].nodeName === 'columnas') {
         for (let index = 0; index < nodo.childNodes[i].childNodes.length; index++) {
@@ -852,16 +868,14 @@ class CapaSimple {
     this.marcaExt = false;
     this.geoJson = null;
 
-    // console.log("Constructor capa: ", nodoXML);
     if (nodoXML.nodeName != "capa") {
-
       return
     }
     this.idCapa = nodoXML.getAttribute("id");
     this.filtro = nodoXML.getAttribute("filtro");
     this.marcaExt = nodoXML.getAttribute("marcaExt") == 'si';
+    this.titulo = nodoXML.getAttribute("titulo")
 
-    // console.log(nodoXML.firstChild.nodeValue);
     for (let i = 0; i < nodoXML.childNodes.length; i++) {
       if (nodoXML.childNodes[i].nodeName == "simbologia") {
 
@@ -887,7 +901,6 @@ class CapaSimple {
       if (req.readyState == 4 && req.status == 200) {
         //aqui obtienes la respuesta de tu peticion
         this.cliente.configuracion = JSON.parse(req.responseText);
-        // console.log("Respuesta config: ", this.cliente.configuracion);
         this.modelo.cargaAsincronaDatosCapas();
       } else if (req.status >= 400) {
         console.log("Error en el servidor", req);
@@ -908,7 +921,6 @@ class CapaSimple {
 
     //Procesar el filtro de la capa si lo hubiese
     let elFiltro = "";
-    // console.log("cargando capa", this);
     if (this.filtro > "") {
       //Recorrer para buscar variables
       let variables = [];
@@ -935,7 +947,6 @@ class CapaSimple {
       if (precedente != "" || variable != "") {
         variables.push({ precedente: precedente, variable: variable });
       }
-      // console.log("Variables encontradas: ", variables)
       //Construir el filtro=
       for (let i = 0; i < variables.length; i++) {
         if (variables[i].precedente > "") {
@@ -945,8 +956,6 @@ class CapaSimple {
           elFiltro = elFiltro + modelo.resolverVariable(variables[i].variable);
         }
       }
-
-      // console.log("Filtro obtenido: ", elFiltro);
     }
 
     let parametrosLL = {
@@ -966,9 +975,7 @@ class CapaSimple {
     var parameters1 = L2.Util.extend(parametrosLL);
     var paramURL = L2.Util.getParamString(parameters1);
 
-    console.log('Peticion de Json', paramURL)
     //Hacer petición AJAX
-
     capaArecibir(this);
     $.ajax({
       jsonpCallback: 'getJson',
@@ -976,7 +983,6 @@ class CapaSimple {
       dataType: 'jsonp',
       capa: this,
       success: function (response) {
-        console.log("GeoJson descargado", response)
         this.capa.geoJson = response
         this.capa.nucleo.modelo.descargaAsincronaGeoJson()
       }
@@ -984,7 +990,6 @@ class CapaSimple {
   } //generaCapaLeaflet
 
   reiniciaDatos() {
-    console.log('Limpiando capa')
     this.geoJson = null
   }
 } //Clase Capa Simple
@@ -1048,50 +1053,43 @@ export default function index() {
       }
     })
 
-  nucleo.actualizaDatos(refEntidad.current, nombreEntidad, refMunicipio.current, nombreMun)
+    nucleo.actualizaDatos(refEntidad.current, nombreEntidad, refMunicipio.current, nombreMun)
 
-  setSecciones(nucleo.modelo.secciones)
-  setContador(contador + 1)
+    setSecciones(nucleo.modelo.secciones)
+    setContador(contador + 1)
 
-}
-
-function refrescarDatos() {
-  if (nucleo.modelo != null && nucleo.modelo.seccionMapa != null) {
-    console.log('Refrescando el mapa');
-    nucleo.modelo.seccionMapa.refrescarContenido()
   }
-}
 
   return (
     <>
-      <div className="tw-container tw-mx-8 tw-mt-8">
-        <Form.Group controlId="id_entidad">
-          <Form.Control as="select" name="id_entidad" required ref={register}>
-            <option value="" hidden>Entidad</option>
-            {entidades.map((value, index) => (
-              <option key={index} value={value.id_entidades}>
-                {value.nombre_entidad}
-              </option>
-            ))}
-          </Form.Control>
-        </Form.Group>
-        <Form.Group controlId="id_municipio">
-          <Form.Control as="select" name="id_municipio" required ref={register}>
-            <option value="" hidden>Municipio</option>
-            {
-              municipios.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
-                <option key={index} value={munFiltrado.id_municipios}>
-                  {munFiltrado.nombre_municipio}
+      <div>
+        <div className="tw-mx-8 tw-mt-8 tw-relative tw-w-80">
+          <Form.Group controlId="id_entidad">
+            <Form.Control as="select" name="id_entidad" required ref={register}>
+              <option value="" hidden>Entidad</option>
+              {entidades.map((value, index) => (
+                <option key={index} value={value.id_entidades}>
+                  {value.nombre_entidad}
                 </option>
-              )
-              )
-            }
-          </Form.Control>
-        </Form.Group>
-        <button onClick={desplegarDatos}>Enviar</button>
-        {/* <button onClick={refrescarDatos}>Refrescar</button> */}
+              ))}
+            </Form.Control>
+          </Form.Group>
+          <Form.Group controlId="id_municipio">
+            <Form.Control as="select" name="id_municipio" required ref={register}>
+              <option value="" hidden>Municipio</option>
+              {
+                municipios.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
+                  <option key={index} value={munFiltrado.id_municipios}>
+                    {munFiltrado.nombre_municipio}
+                  </option>
+                )
+                )
+              }
+            </Form.Control>
+          </Form.Group>
+          <button onClick={desplegarDatos}>Enviar</button>
+        </div>
       </div>
-
       <div className="invisible">{contador}</div>
       <div className="tw-container tw-mx-8">
         {
@@ -1099,6 +1097,8 @@ function refrescarDatos() {
             <SeccionPm key={index} seccion={seccion} cl={capturaL} />
           ))
         }
+      </div>
+      <div className="tw-pb-40">
       </div>
     </>
   )
