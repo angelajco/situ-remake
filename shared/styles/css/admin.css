@@ -23,9 +23,44 @@
     padding: .375rem 2rem;
 }
 
-.mensajes-admin{
+.mensajes-admin {
     font-size: 21pt;
     font-weight: bold;
     @apply tw-text-center;
     @apply tw-text-guia-gris54;
 }
+
+/********** AUTORIZACION DE USUARIOS **********/
+
+.tabs-autorizacion .active {
+    color: white !important;
+    @apply tw-bg-titulo !important;
+}
+
+.tabs-autorizacion a {
+    width: 50%;
+    text-align: center;
+    color: white;
+    @apply tw-bg-menu;
+}
+.tab-tabla .table{
+    margin-bottom: 0;
+}
+.tab-tabla .react-bootstrap-table{
+    border: 1px solid #000;
+    padding: 15px;
+}
+
+.tab-tabla .react-bootstrap-table-pagination-list{
+    margin-top: 15px;
+}
+.tab-tabla .react-bootstrap-table-pagination-list .active a{
+    border-color: inherit !important;
+    @apply tw-bg-titulo;
+}
+.tabla-usuarios-header{
+    text-align: center;
+    color: #fff;
+    @apply tw-bg-inst-grisc;
+}
+

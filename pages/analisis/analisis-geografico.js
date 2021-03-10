@@ -3,11 +3,12 @@ import { useForm } from "react-hook-form";
 import { Form } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
 
+import Router from 'next/router'
 import dynamic from 'next/dynamic'
 import axios from 'axios'
 import $ from 'jquery'
 
-import Router from 'next/router'
+import catalogoEntidades from "../../shared/jsons/entidades.json";
 
 import Cookies from 'universal-cookie'
 const cookies = new Cookies()
@@ -29,10 +30,10 @@ export default function AnalisisGeografico() {
     //Acciones del formulario
     const { register, handleSubmit } = useForm();
 
-    //Para guardar los datos del geojson
-    const [datosEntidades, setDatosEntidades] = useState([])
-    //Para guardar los datos de la capa
-    const [datosCapasWms, setDatosCapasWms] = useState([])
+    //Para guardar las capas que se van a mostrar
+    const [capasVisualizadas, setCapasVisualizadas] = useState([])
+    //Para guardar los datos de la capas
+    const [datosCapas, setDatosCapas] = useState([])
 
     useEffect(() => {
         if (tokenCookie != undefined) {
@@ -61,7 +62,7 @@ export default function AnalisisGeografico() {
         fetch(`${process.env.ruta}/wa0/lista_capas01`)
             .then(res => res.json())
             .then(
-                (data) => setDatosCapasWms(data),
+                (data) => construyeCatalogo(data),
                 (error) => console.log(error)
             )
 
@@ -78,43 +79,21 @@ export default function AnalisisGeografico() {
 
     //Al seleccionar y añadir una entidad
     const onSubmit = (data) => {
-        var split = data.entidad.split("|");
-        //Parametros para hacer una peticion a la IDE
-        const numEntidad = split[0];
-        const nombreEntidad = split[1];
+        let indice = parseInt(data.entidad)
+        let capa = datosCapas[indice]
 
-        //Si es la capa
-        if (numEntidad > 32) {
-            //Arreglo para guardar los datos de la capa
-            const capaWMS = {};
-            //Se guardan los datos de la capa
-            capaWMS["attribution"] = 'Localidades Urbanas (Miguel Angel Ferrer Martinez)'
-            capaWMS["url"] = "https://ide.sedatu.gob.mx:8080/ows"
-            capaWMS["layers"] = "geonode:inegi_00l_ua_4326"
-            capaWMS["format"] = "image/png"
-            capaWMS["transparent"] = "true"
-            capaWMS["tipo"] = "wms"
-            capaWMS["nom_entidad"] = nombreEntidad;
-            capaWMS["num_entidad"] = numEntidad;
-            capaWMS["habilitado"] = true;
-            capaWMS["filtro"] = "CVE_ENT=30"
-
-            setDatosEntidades([...datosEntidades, capaWMS])
-        }
-        //Es una entidad
-        else {
-            const owsrootUrl = 'https://ide.sedatu.gob.mx:8080/ows';
+        if (capa.tipo == "filtrada") {
+            const owsrootUrl = capa.url;
             const defaultParameters1 = {
                 service: 'WFS',
                 version: '2.0',
                 request: 'GetFeature',
                 //sedatu:
-                typeName: 'geonode:inegi_00mun_4326',
+                typeName: capa.capa,
                 outputFormat: 'text/javascript',
                 format_options: 'callback:getJson',
-                cql_filter: 'CVE_ENT=' + numEntidad
+                cql_filter: capa.filtro_entidad + "=" + "'" + capa.valor_filtro + "'"
             };
-            console.log(defaultParameters1);
             var parameters1 = L.Util.extend(defaultParameters1);
             var url = owsrootUrl + L.Util.getParamString(parameters1);
             //Hace la petición para traer los datos de la entidad
@@ -123,33 +102,49 @@ export default function AnalisisGeografico() {
                 url: url,
                 dataType: 'jsonp',
                 success: function (response) {
-                    response["num_entidad"] = numEntidad;
-                    response["nom_entidad"] = nombreEntidad;
-                    response["habilitado"] = true;
-                    response['tipo'] = "geojson";
-
-                    if (datosEntidades.some(ent => ent.num_entidad === numEntidad)) {
+                    console.log(capasVisualizadas)
+                    if (capasVisualizadas.some(capaVisual => capaVisual.num_capa === capa.indice)) {
                         return;
                     }
                     else {
+                        response["num_capa"] = capa.indice;
+                        response["nom_capa"] = capa.titulo;
+                        response["habilitado"] = true;
+                        response['tipo'] = "geojson";
+
                         //Se envian los datos a mapa para que los procese como geojson
-                        setDatosEntidades([
-                            ...datosEntidades,
+                        setCapasVisualizadas([
+                            ...capasVisualizadas,
                             response
                         ])
                     }
                 }
             });
         }
+        else {
+            const capaWMS = {};
+            //Se guardan los datos de la capa
+            capaWMS["attribution"] = "No disponible"
+            capaWMS["url"] = capa.url
+            capaWMS["layers"] = capa.capa
+            capaWMS["format"] = "image/png"
+            capaWMS["transparent"] = "true"
+            capaWMS["tipo"] = "wms"
+            capaWMS["nom_capa"] = capa.titulo;
+            capaWMS["num_capa"] = capa.indice;
+            capaWMS["habilitado"] = true;
+
+            setCapasVisualizadas([...capasVisualizadas, capaWMS])
+        }
     }
 
     //Funcion para cambiar el estado del checkbox
     const cambiaCheckbox = (event) => {
         const numeroEntidadChecked = event.target.value;
-        //Hace copia a otro arreglo para volver a sobreescribir datosEntidades
-        const datosEntidadesActualizado = datosEntidades.map((valor) => {
+        //Hace copia a otro arreglo para volver a sobreescribir capasVisualizadas
+        const capazVisualisadasActualizado = capasVisualizadas.map((valor) => {
             //Si es igual a la entidad que se envia, se cambia el checkbox
-            if (valor.num_entidad == numeroEntidadChecked) {
+            if (valor.num_capa == numeroEntidadChecked) {
                 //Si esta habilitado se desabilita, de manera igual en caso contrario
                 if (valor.habilitado) {
                     valor.habilitado = false;
@@ -165,7 +160,7 @@ export default function AnalisisGeografico() {
                 return valor;
             }
         });
-        setDatosEntidades(datosEntidadesActualizado);
+        setCapasVisualizadas(capazVisualisadasActualizado);
     }
 
     //Funcion para ordenar los nuevos datos
@@ -174,14 +169,57 @@ export default function AnalisisGeografico() {
         if (!result.destination) {
             return
         }
-        // Se crea una copia de datosEntidades
-        const items = Array.from(datosEntidades)
+        // Se crea una copia de capasVisualizadas
+        const items = Array.from(capasVisualizadas)
         // Lo eliminamos de acuerdo al index que le pasa
         const [reorderedItem] = items.splice(result.source.index, 1)
         // Se usa destination.index para agregar ese valor a su nuevo destino
         items.splice(result.destination.index, 0, reorderedItem)
         // Actualizamos datos entidades
-        setDatosEntidades(items)
+        setCapasVisualizadas(items)
+    }
+
+    function construyeCatalogo(capasBackEnd) {
+        //Para guardar la información de las capas que viene desde el backend, sirve como arreglo temporal
+        var catalogoCapas = [];
+
+        //Para guardar las capas que sean de entidades
+        let capaEstatal = null;
+        capasBackEnd["catalogo"].map(value => {
+            // Si el valor es igual a la capa de entidades
+            if (value.titulo == "Limite Municipal") {
+                capaEstatal = value;
+                return;
+            }
+        })
+
+        if (capaEstatal != null) {
+            for (let i = 0; i < 32; i++) {
+                let capa = {};
+                capa.titulo = "Municipios de " + catalogoEntidades[i].entidad;
+                capa.url = capaEstatal.url;
+                capa.capa = capaEstatal.capa;
+                capa.filtro_entidad = capaEstatal.filtro_entidad;
+                capa.tipo = "filtrada";
+                capa.valor_filtro = catalogoEntidades[i].id;
+                capa.wfs = capaEstatal.wfs;
+                capa.wms = capaEstatal.wms;
+                capa.indice = catalogoCapas.length;
+                catalogoCapas.push(capa);
+            }
+        }
+
+        //Se recorre otra vez el arreglo de capas de back end para ahora agregar todas las capas Wms
+        capasBackEnd["catalogo"].map(value => {
+            if (value.titulo != "Limite Municipal") {
+                value.tipo = "mosaico"
+                value.indice = catalogoCapas.length;
+                catalogoCapas.push(value)
+            }
+        })
+
+        //Se agrega a datos capas que es el arreglo que se va a recorrer para mostrar en el input
+        setDatosCapas(catalogoCapas);
     }
 
     return (
@@ -199,10 +237,13 @@ export default function AnalisisGeografico() {
                                             <Form.Label className="tw-text-red-600">Entidad</Form.Label>
                                             <Form.Control as="select" name="entidad" required ref={register}>
                                                 <option value=""></option>
-                                                <option value="24|San Luis Potosí">San Luis Potosí</option>
-                                                <option value="26|Sonora">Sonora</option>
-                                                <option value="27|Tabasco">Tabasco</option>
-                                                <option value="33|Localidades urbanas">Localidades urbanas</option>
+                                                {
+                                                    datosCapas.map((value, index) => {
+                                                        return (
+                                                            <option key={index} value={value.indice}>{value.titulo}</option>
+                                                        )
+                                                    })
+                                                }
                                             </Form.Control>
                                         </Form.Group>
                                         <input type="submit" />
@@ -217,16 +258,16 @@ export default function AnalisisGeografico() {
                                                 // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
                                                 <div {...provided.droppableProps} ref={provided.innerRef}>
                                                     {
-                                                        datosEntidades.map((capa, index) => (
-                                                            <Draggable key={capa.num_entidad} draggableId={capa.num_entidad} index={index}>
+                                                        capasVisualizadas.map((capa, index) => (
+                                                            <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
                                                                 {(provided) => (
                                                                     <Form.Group {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                                        <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_entidad} onChange={cambiaCheckbox} value={capa.num_entidad} />
+                                                                        <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={cambiaCheckbox} value={capa.num_capa} />
                                                                     </Form.Group>
                                                                 )}
                                                             </Draggable>
-                                                        )
-                                                        )}
+                                                        ))
+                                                    }
                                                     {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
                                                     {provided.placeholder}
                                                 </div>
@@ -235,7 +276,7 @@ export default function AnalisisGeografico() {
                                     </DragDropContext>
                                 </div>
                                 <div className="col-12">
-                                    <Map datos={datosEntidades} />
+                                    <Map datos={capasVisualizadas} />
                                 </div>
                             </div>
                         </div>

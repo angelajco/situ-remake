@@ -7,23 +7,14 @@ export default function ModalComponent(props) {
           return window.location.href = valor;
      }
 
-     return (        
+     return (
           <>
-               <Modal show={props.show} onHide={() => props.onHide()}>
-                    {
-                         (props.datos.ruta != undefined) ?
-                              <Modal.Header className="tw-bg-inst-verdec tw-text-white">
-                                   <Modal.Title>
-                                        {props.datos.title}
-                                   </Modal.Title>
-                              </Modal.Header>
-                              :
-                              <Modal.Header className="tw-bg-inst-verdec tw-text-white" closeButton>
-                                   <Modal.Title>
-                                        {props.datos.title}
-                                   </Modal.Title>
-                              </Modal.Header>
-                    }
+               <Modal show={props.show} onHide={() => props.onHide()} backdrop="static" keyboard={false}>
+                    <Modal.Header className="tw-bg-inst-verdec tw-text-white">
+                         <Modal.Title>
+                              {props.datos.title}
+                         </Modal.Title>
+                    </Modal.Header>
 
                     <Modal.Body>
                          {props.datos.body}

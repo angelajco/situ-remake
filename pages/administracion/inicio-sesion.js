@@ -65,6 +65,7 @@ export default function InicioSesion() {
                 else {
                     // Se agrega la cookie
                     cookies.set('SessionToken', response.data.jwtResponse['token'], { path: "/" })
+                    cookies.set('RolUsuario', response.data.message, { path: "/" })
                     //Se redirecciona
                     Router.push("/")
                 }
@@ -72,18 +73,18 @@ export default function InicioSesion() {
             .catch(function (error) {
                 console.log(error);
                 if (error.response) {
-                    handleShow();
                     setDatosModal({
                         title: error.response.data['message-subject'],
                         body: error.response.data['message']
                     })
+                    handleShow();
                 }
                 else {
-                    handleShow();
                     setDatosModal({
                         title: "Conexión no establecida",
                         body: "El tiempo de respuesta se ha agotado, favor de intentar más tarde."
                     })
+                    handleShow();
                 }
             })
     }
