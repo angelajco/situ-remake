@@ -18,6 +18,7 @@ export default function Menu() {
     // Estado para guardar el token
     const [tokenSesion, setTokenSesion] = useState(false)
     const tokenCookie = cookies.get('SessionToken')
+    const nivelRolCookie = cookies.get('RolUsuario')
 
 
     //Para ver la URL
@@ -72,6 +73,7 @@ export default function Menu() {
 
     const cerrarSesion = () => {
         cookies.remove('SessionToken', { path: "/" })
+        cookies.remove('RolUsuario', { path: "/" })
     }
 
     const changeLanguage = lng => {
@@ -95,15 +97,22 @@ export default function Menu() {
                         <Link href={deshabilitarPlaneacion ? "#" : "/planeacion6"}>
                             <a className={isActivePlaneacion} >PLANEACIÓN<br></br>MUNICIPAL</a>
                         </Link>
-                        <Link href="/analisis-geografico">
+                        <Link href="/analisis/analisis-geografico">
                             <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">ANÁLISIS<br></br>GEOGRÁFICO</a>
                         </Link>
                         <Link href="/construccion">
-                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">INDICADORES<br></br>ESTADÍSTICOS</a>
+                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">ESTADÍSTICAS E<br></br>INDICADORES</a>
                         </Link>
                         <Link href="/construccion">
                             <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">CONSULTA<br></br>DOCUMENTAL</a>
                         </Link>
+                        {
+                            (nivelRolCookie == '1' || nivelRolCookie == '2') ?
+                                <Link href="/administracion/autorizacion-usuarios">
+                                    <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">AUTORIZACION DE<br></br>USUARIOS</a>
+                                </Link>
+                                : ""
+                        }
                         {
                             tokenSesion
                                 ?
