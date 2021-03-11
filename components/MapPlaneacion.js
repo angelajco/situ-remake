@@ -12,7 +12,7 @@ const MapPlaneacion = (props) => {
   const { seccion } = props
   const { cl } = props
 
-  cl(L)
+  // cl(L)
 
   const [refresca, setRefresca] = useState(0)
 
@@ -27,15 +27,13 @@ const MapPlaneacion = (props) => {
 
   return (
     <>
-      <MapContainer fullscreenControl={true} center={[23.380964227121666, -99.16353656125003]} zoom={5} scrollWheelZoom={false} style={{ height: 400, width: "100%" }} >
+      <MapContainer fullscreenControl={true} center={[23.380964227121666, -99.16353656125003]} zoom={5} scrollWheelZoom={false} style={{ height: 650, width: "100%" }} >
         <ScaleControl maxWidth="500" />
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {
-          <CapasMapa seccion={seccion} />
-        }
+        <CapasMapa seccion={seccion} cl={cl} />
       </MapContainer>
     </>
   )

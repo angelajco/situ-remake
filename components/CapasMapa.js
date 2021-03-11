@@ -1,20 +1,20 @@
-import React, { useRef, useEffect } from 'react'
-import { GeoJSON, useMap } from 'react-leaflet'
+import React from 'react'
+import { useMap } from 'react-leaflet'
+
+/****
+ * Este Componenete solo sirve para tener una referencia al mapa
+ * ***IMPORTANTE******
+ * *** */
 
 export default function CapasMapa(props) {
 
-  const ref = useRef()
 
   const { seccion } = props
-
-  let capaAgregada = null
+  const { cl } = props
 
   const map = useMap()
-  console.log('Capa agregada')
 
-  map.on('layeradd', () => {
-    console.log('Evento LAYER ADD')
-  })
+  cl(map, L)
   // const map = useMap()
   // function capaAgregada() {
   //   console.log('Seagrego capa al map')
@@ -22,60 +22,24 @@ export default function CapasMapa(props) {
 
   // map.layeradd = capaAgregada
 
-  function MyComponent() {
-    const map = useMap()
-    const capa = useRef()
+  // function MyComponent() {
+  //   const map = useMap()
+  //   const capa = useRef()
 
-    if (capaAgregada != null && capaAgregada.marcaExt) {
+  //   if (capaAgregada != null && capaAgregada.marcaExt) {
 
-    }
-    // .current.getBounds()
+  //   }
+  //   current.getBounds()
 
-    // useEffect(() => {
-    //   setTimeout(function(){ console.log('Capa agregada UseEffect ', capa)}, 5000)
-    // }, [])
+  //   useEffect(() => {
+  //     setTimeout(function(){ console.log('Capa agregada UseEffect ', capa)}, 5000)
+  //   }, [])
 
-    return <GeoJSON data={capaAgregada.geoJson} style={capaAgregada.simbologia} />
-  }
-
-  let referenciasCapa = []
-
-  for (let index = 0; index < seccion.capas.length; index++) {
-    referenciasCapa.push(useRef(seccion.capas[index].titulo))
-  }
-
-  useEffect(() => {
-    console.log('Mapa ', map)
-    console.log('Referencias Capa ', referenciasCapa)
-    for (let index = 0; index < seccion.capas.length; index++) {
-      if (seccion.capas[index].marcaExt) {
-        let capa = referenciasCapa[index].current.leafletElement
-        if (capa != undefined) {
-          map.fitBounds(capa.getBounds())
-        }
-        return
-      }
-      // referenciasCapa.push(useRef(seccion.capas[index].titulo))
-    }
-  }, [referenciasCapa, seccion, map])
+  //   return <GeoJSON data={capaAgregada.geoJson} style={capaAgregada.simbologia} />
+  // }
 
   return (
     <>
-      {
-        seccion.capas.map((capa, index) => {
-          if (capa.geoJson != null) {
-            capaAgregada = capa
-            return (
-              <>
-                {/* <GeoJSON key={index} data={capa.geoJson} style={capa.simbologia} ref={referenciasCapa[index]} /> */}
-                <MyComponent />
-              </>
-            )
-          } else {
-            return ''
-          }
-        })
-      }
     </>
   )
 }

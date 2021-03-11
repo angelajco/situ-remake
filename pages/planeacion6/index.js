@@ -25,13 +25,19 @@ function recibeJSONcapa(datos) {
 var disparaRefrescaMapa = null
 var L2 = {}
 
+var mapaBase =  null
+
 function capaArecibir(cual) {
   capaReceptora = cual;
 }
 
-function capturaL(objeto) {
+function capturaL(mapa, objeto) {
+  
+  console.log('Capturando L', mapa)
+
   L2 = objeto
-  console.log('Capturando L', objeto)
+
+  mapaBase = mapa
   if (!(nucleo.modelo.contextos[nucleo.modelo.contextos.length - 1].capasCargadas)) {
     nucleo.modelo.iniciaDescargaGeoJson()
   }
@@ -358,7 +364,19 @@ class ModeloContenido {
     } else {
       console.log('Carga de capas terminada: ', this.contadorModelo)
       this.contextos[this.contextos.length - 1].capasCargadas = true
-      this.seccionMapa.refrescarContenido();
+      // this.seccionMapa.refrescarContenido();
+      for (let index = 0; index < this.seccionMapa.capas.length; index++) {
+        
+        let param={
+          style: this.seccionMapa.capas[index].simbologia,
+        }
+        //console.log("Parámetros para capa: ",this,param)
+        let layer = L2.geoJson(this.seccionMapa.capas[index].geoJson, param);
+        mapaBase.addLayer(layer)
+        if (this.seccionMapa.capas[index].marcaExt) {
+          mapaBase.fitBounds(layer.getBounds())
+        }
+      }
     }
   }
 } // Modelo Contenido
@@ -1063,7 +1081,8 @@ export default function index() {
   return (
     <>
       <div>
-        <div className="tw-mx-8 tw-mt-8 tw-relative tw-w-80">
+        <div className="tw-mx-8 tw-mt-8 tw-w-full tw-flex tw-justify-center">
+          <div className="tw-mx-8 tw-w-96">
           <Form.Group controlId="id_entidad">
             <Form.Control as="select" name="id_entidad" required ref={register}>
               <option value="" hidden>Entidad</option>
@@ -1074,6 +1093,8 @@ export default function index() {
               ))}
             </Form.Control>
           </Form.Group>
+          </div>
+          <div className="tw-mx-8 tw-w-96">
           <Form.Group controlId="id_municipio">
             <Form.Control as="select" name="id_municipio" required ref={register}>
               <option value="" hidden>Municipio</option>
@@ -1087,7 +1108,10 @@ export default function index() {
               }
             </Form.Control>
           </Form.Group>
-          <button onClick={desplegarDatos}>Enviar</button>
+          </div>
+          <div>
+            <button onClick={desplegarDatos}>Enviar</button>
+          </div>
         </div>
       </div>
       <div className="invisible">{contador}</div>

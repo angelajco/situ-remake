@@ -42,7 +42,9 @@ export default function SeccionPm(props) {
       {
         (seccion.tipo === 'mapaBase')
           ?
-          <MapPlaneacion seccion={seccion} cl={cl} />
+          <div className="tw-w-3/4">
+            <MapPlaneacion seccion={seccion} cl={cl} />
+          </div>
           :
           <div className="tw-flex tw-w-full tw-justify-between tw-flex-wrap">
             {
