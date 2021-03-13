@@ -27,24 +27,28 @@ export default function Menu() {
     // console.log(router.pathname);
     let ruta = router.pathname
 
-    let isActiveInicio = 'tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline'
-    let isActiveSesion = 'tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline'
-    let isActivePlaneacion = 'tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline'
+    let noActive = 'tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline'
+    let active = 'tw-ml-5 tw-text-green-400 tw-font-semibold tw-pointer-events-none'
 
     // Deshabilitar el boton del menu donde se encuentra el usuario
     let deshabilitarInicio = false
-    let deshabilitarSesion = false
     let deshabilitarPlaneacion = false
+    let deshabilitarAnalisis = false
+    let deshabilitarEstadisticas = false
+    let deshabilitarConsulta = false
+    let deshabilitarAutorizacion = false
+    let deshabilitarSesion = false
 
     if (ruta === '/') {
-        isActiveInicio += ' tw-text-green-400'
         deshabilitarInicio = true
-    } else if (ruta === '/administracion/inicio-sesion') {
-        isActiveSesion += ' tw-text-green-400'
-        deshabilitarSesion = true
-    } else if (ruta === '/planeacion5') {
-        isActivePlaneacion += ' tw-text-green-400'
+    } else if (ruta === '/planeacion6') {
         deshabilitarPlaneacion = true
+    } else if(ruta === '/analisis/analisis-geografico'){
+        deshabilitarAnalisis = true
+    } else if(ruta === '/administracion/autorizacion-usuarios'){
+        deshabilitarAutorizacion = true
+    } else if (ruta === '/administracion/inicio-sesion') {
+        deshabilitarSesion = true
     }
 
 
@@ -91,35 +95,38 @@ export default function Menu() {
                             <NavDropdown.Item onClick={() => changeLanguage('es')}>Español</NavDropdown.Item>
                             <NavDropdown.Item onClick={() => changeLanguage('en')}>Inglés</NavDropdown.Item>
                         </NavDropdown>
-                        <Link href={deshabilitarInicio ? "#" : "/"}>
-                            <a className={isActiveInicio}>INICIO</a>
+                        <Link href="/">
+                            <a className={deshabilitarInicio ? active : noActive}>INICIO</a>
                         </Link>
-                        <Link href={deshabilitarPlaneacion ? "#" : "/planeacion6"}>
-                            <a className={isActivePlaneacion} >PLANEACIÓN<br></br>MUNICIPAL</a>
+                        <Link href="/planeacion6">
+                            <a className={deshabilitarPlaneacion ?  active: noActive} >PLANEACIÓN<br></br>MUNICIPAL</a>
                         </Link>
                         <Link href="/analisis/analisis-geografico">
-                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">ANÁLISIS<br></br>GEOGRÁFICO</a>
+                            <a className={deshabilitarAnalisis ? active : noActive}>ANÁLISIS<br></br>GEOGRÁFICO</a>
                         </Link>
                         <Link href="/construccion">
-                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">ESTADÍSTICAS E<br></br>INDICADORES</a>
+                            <a className={noActive}>ESTADÍSTICAS E<br></br>INDICADORES</a>
                         </Link>
                         <Link href="/construccion">
-                            <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">CONSULTA<br></br>DOCUMENTAL</a>
+                            <a className={noActive}>CONSULTA<br></br>DOCUMENTAL</a>
                         </Link>
                         {
                             (nivelRolCookie == '1' || nivelRolCookie == '2') ?
                                 <Link href="/administracion/autorizacion-usuarios">
-                                    <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">AUTORIZACION DE<br></br>USUARIOS</a>
+                                    <a className={deshabilitarAutorizacion ? active : noActive}>AUTORIZACION DE<br></br>USUARIOS</a>
                                 </Link>
-                                : ""
+                                :
+                                <Link href="/administracion/autorizacion-usuarios" className="tw-hidden">
+                                    <a className={noActive}>AUTORIZACION DE<br></br>USUARIOS</a>
+                                </Link>
                         }
                         {
                             tokenSesion
                                 ?
-                                <a className="tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline" href="/administracion/inicio-sesion" onClick={cerrarSesion}>CERRAR<br></br>SESIÓN</a>
+                                <a className={noActive} href="/administracion/inicio-sesion" onClick={cerrarSesion}>CERRAR<br></br>SESIÓN</a>
                                 :
-                                <Link href={deshabilitarSesion ? "#" : "/administracion/inicio-sesion" }>
-                                    <a className={isActiveSesion} >INICIO DE<br></br>SESIÓN</a>
+                                <Link href="/administracion/inicio-sesion">
+                                    <a className={deshabilitarSesion ? active : noActive} >INICIO DE<br></br>SESIÓN</a>
                                 </Link>
                         }
                     </Nav>

@@ -17,7 +17,6 @@ const cookies = new Cookies()
 
 
 export default function InicioSesion() {
-
     //Datos para el modal
     const [show, setShow] = useState(false);
     const [datosModal, setDatosModal] = useState(

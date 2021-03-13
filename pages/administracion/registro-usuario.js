@@ -9,6 +9,8 @@ import ModalComponent from '../../components/ModalComponent';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEye, faEyeSlash, faQuestionCircle } from '@fortawesome/free-solid-svg-icons'
 
+import isEmail from 'validator/lib/isEmail';
+
 export default function Registro() {
 
     //Datos para crear el form
@@ -48,9 +50,15 @@ export default function Registro() {
     const refContrasena = watch("contrasena", "");
     const refEntidad = watch("id_entidad", "");
 
+    
+
     //Validar correo
     const validarNivel = () => {
         const refEmail = watch("email", "");
+
+        var yyy = isEmail(refEmail)
+        console.log(yyy);
+
         const refRol = watch("id_rol")
         if (refRol == "1" || refRol == "2") {
             //Se crea una bandera para validar los errores
@@ -322,7 +330,7 @@ export default function Registro() {
                                                 },
                                                 pattern:
                                                 {
-                                                    value: /^([a-z]+[0-9_-]*)+(\.[a-z0-9_-]+)*@([a-z0-9]+\.)+[a-z]+$/i,
+                                                    value: /^([a-z]+[0-9_-]*)+(\.[a-z0-9_-]+)*@([a-z0-9]+\.)+[a-z][a-z]+$/i,
                                                     message: "Correo incorrecto"
                                                 }
                                             })
