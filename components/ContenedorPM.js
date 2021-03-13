@@ -6,7 +6,7 @@ export default function ContenedorPM(props) {
   
   const {contenido} = props
 
-  console.log('Desplegando componente', contenido.tipoComponente)
+  // console.log('Desplegando componente', contenido.tipoComponente)
 
   switch (contenido.tipoComponente) {
     case "Tabular":

@@ -25,14 +25,14 @@ function recibeJSONcapa(datos) {
 var disparaRefrescaMapa = null
 var L2 = {}
 
-var mapaBase =  null
+var mapaBase = null
 
 function capaArecibir(cual) {
   capaReceptora = cual;
 }
 
 function capturaL(mapa, objeto) {
-  
+
   console.log('Capturando L', mapa)
 
   L2 = objeto
@@ -360,21 +360,45 @@ class ModeloContenido {
     }
 
     if (this.indCapas < this.seccionMapa.capas.length) {
-      this.seccionMapa.capas[this.indCapas].descargaGeoJson(this)
+      if (this.seccionMapa.capas[this.indCapas].tipo == 'wfs') {
+        console.log('descarga de capa wfs: ')
+        this.seccionMapa.capas[this.indCapas].descargaGeoJson(this)
+      } else if (this.seccionMapa.capas[this.indCapas].tipo == 'wms') {
+        let capa = this.seccionMapa.capas[this.indCapas]
+        console.log('agregando capa wms', capa)
+        let parametrosLL = {
+          //service: 'WMS',
+          layers: capa.configuracion.capa,
+          format: 'image/png',
+          transparent: true,
+        };
+
+        if (capa.minZoom) {
+          parametrosLL.minZoom = capa.minZoom;
+        }
+        if (capa.maxZoom) {
+          parametrosLL.maxZoom = capa.maxZoom;
+        }
+
+        let layer = L2.tileLayer.wms(capa.configuracion.url, parametrosLL);
+        mapaBase.addLayer(layer);
+        this.descargaAsincronaGeoJson()
+      }
     } else {
-      console.log('Carga de capas terminada: ', this.contadorModelo)
+      // console.log('Carga de capas terminada: ', this.contadorModelo)
       this.contextos[this.contextos.length - 1].capasCargadas = true
       // this.seccionMapa.refrescarContenido();
       for (let index = 0; index < this.seccionMapa.capas.length; index++) {
-        
-        let param={
-          style: this.seccionMapa.capas[index].simbologia,
-        }
-        //console.log("Parámetros para capa: ",this,param)
-        let layer = L2.geoJson(this.seccionMapa.capas[index].geoJson, param);
-        mapaBase.addLayer(layer)
-        if (this.seccionMapa.capas[index].marcaExt) {
-          mapaBase.fitBounds(layer.getBounds())
+        if (this.seccionMapa.capas[index].tipo == 'wfs') {
+          let param = {
+            style: this.seccionMapa.capas[index].simbologia,
+          }
+          //console.log("Parámetros para capa: ",this,param)
+          let layer = L2.geoJson(this.seccionMapa.capas[index].geoJson, param);
+          mapaBase.addLayer(layer)
+          if (this.seccionMapa.capas[index].marcaExt) {
+            mapaBase.fitBounds(layer.getBounds())
+          }
         }
       }
     }
@@ -409,8 +433,8 @@ class SeccionModelo {
       } else if (nodoXml.childNodes[index].nodeName === 'capas') {
         for (let index2 = 0; index2 < nodoXml.childNodes[index].childNodes.length; index2++) {
           if (nodoXml.childNodes[index].childNodes[index2].nodeName === 'capa') {
+            console.log('nueva capa: ')
             let nueva = new CapaSimple(nodoXml.childNodes[index].childNodes[index2], nucleo);
-
             this.capas.push(nueva);
           }
         }
@@ -460,6 +484,7 @@ class TablaDatos {
   }
 
   cargaDatos() {
+    console.log('CARGANDO DATOS TABLA: ', this)
     let filtro = `${this.configuracion.filtroMun}='${this.nucleo.claveMun}'`
     let cuerpo = { etiqFunc: this.configuracion.etiqueta, columnas: this.configuracion.columnas, filtro: filtro }
     let req = new XMLHttpRequest();
@@ -521,7 +546,7 @@ class DefinicionTabla {
 
   constructor(nodo) {
     this.etiqueta = nodo.getAttribute('etiqueta')
-    this.filtroMun = nodo.getAttribute('fltroMun')
+    this.filtroMun = nodo.getAttribute('filtroMun')
     this.columnas = []
     for (let i = 0; i < nodo.childNodes.length; i++) {
       if (nodo.childNodes[i].nodeName === 'columnas') {
@@ -555,7 +580,7 @@ class Contenedor {
       } else if (nodoXml.childNodes[index].nodeName === 'grafica') {
         let nuevo = new Grafica(nodoXml.childNodes[index], padre)
         this.contenido = nuevo
-
+        console.log('NUEVA GRAFICA ', nuevo)
       }
     }
   }
@@ -885,14 +910,20 @@ class CapaSimple {
     this.nucleo = nucleo;
     this.marcaExt = false;
     this.geoJson = null;
+    this.tipo = 'wms'
+    this.minZoom = 1
+    this.maxZoom = 2
 
     if (nodoXML.nodeName != "capa") {
       return
     }
+
     this.idCapa = nodoXML.getAttribute("id");
     this.filtro = nodoXML.getAttribute("filtro");
     this.marcaExt = nodoXML.getAttribute("marcaExt") == 'si';
     this.titulo = nodoXML.getAttribute("titulo")
+    this.tipo = nodoXML.getAttribute("tipo")
+
 
     for (let i = 0; i < nodoXML.childNodes.length; i++) {
       if (nodoXML.childNodes[i].nodeName == "simbologia") {
@@ -901,6 +932,10 @@ class CapaSimple {
         //document.getElementById("vista").value=nodoXML.childNodes[i].data;
         this.simbologia = eval(preSimbol);
         //this.simbologia=eval(nodoXML.firstChild.data);
+      } else if (nodoXML.childNodes[i].nodeName == "minZoom") {
+        this.minZoom = parseInt(nodoXML.childNodes[i].firstChild.nodeValue);
+      } else if (nodoXML.childNodes[i].nodeName == "maxZoom") {
+        this.maxZoom = parseInt(nodoXML.childNodes[i].firstChild.nodeValue);
       }
     }
   }
@@ -993,6 +1028,7 @@ class CapaSimple {
     var parameters1 = L2.Util.extend(parametrosLL);
     var paramURL = L2.Util.getParamString(parameters1);
 
+
     //Hacer petición AJAX
     capaArecibir(this);
     $.ajax({
@@ -1001,6 +1037,7 @@ class CapaSimple {
       dataType: 'jsonp',
       capa: this,
       success: function (response) {
+        // console.log('DESDE CAPA SIMPLE ANTES DE AJAX')
         this.capa.geoJson = response
         this.capa.nucleo.modelo.descargaAsincronaGeoJson()
       }
@@ -1083,31 +1120,31 @@ export default function index() {
       <div>
         <div className="tw-mx-8 tw-mt-8 tw-w-full tw-flex tw-justify-center">
           <div className="tw-mx-8 tw-w-96">
-          <Form.Group controlId="id_entidad">
-            <Form.Control as="select" name="id_entidad" required ref={register}>
-              <option value="" hidden>Entidad</option>
-              {entidades.map((value, index) => (
-                <option key={index} value={value.id_entidades}>
-                  {value.nombre_entidad}
-                </option>
-              ))}
-            </Form.Control>
-          </Form.Group>
+            <Form.Group controlId="id_entidad">
+              <Form.Control as="select" name="id_entidad" required ref={register}>
+                <option value="" hidden>Entidad</option>
+                {entidades.map((value, index) => (
+                  <option key={index} value={value.id_entidades}>
+                    {value.nombre_entidad}
+                  </option>
+                ))}
+              </Form.Control>
+            </Form.Group>
           </div>
           <div className="tw-mx-8 tw-w-96">
-          <Form.Group controlId="id_municipio">
-            <Form.Control as="select" name="id_municipio" required ref={register}>
-              <option value="" hidden>Municipio</option>
-              {
-                municipios.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
-                  <option key={index} value={munFiltrado.id_municipios}>
-                    {munFiltrado.nombre_municipio}
-                  </option>
-                )
-                )
-              }
-            </Form.Control>
-          </Form.Group>
+            <Form.Group controlId="id_municipio">
+              <Form.Control as="select" name="id_municipio" required ref={register}>
+                <option value="" hidden>Municipio</option>
+                {
+                  municipios.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
+                    <option key={index} value={munFiltrado.id_municipios}>
+                      {munFiltrado.nombre_municipio}
+                    </option>
+                  )
+                  )
+                }
+              </Form.Control>
+            </Form.Group>
           </div>
           <div>
             <button onClick={desplegarDatos}>Enviar</button>
