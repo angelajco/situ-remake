@@ -22,13 +22,16 @@ import ModalFunction from '../../components/ModalFunction';
 import Cookies from 'universal-cookie'
 const cookies = new Cookies()
 
-export default function AutorizacionUsuarios() {
+export default function GestionCatalogos() {
 
     // Estado para guardar el web token que se pide a la API
     const [tokenSesion, setTokenSesion] = useState(false)
     // Guarda el token que viene en la cookie para verificar que la tenga
     const tokenCookie = cookies.get('SessionToken')
     const nivelRolCookie = cookies.get('RolUsuario')
+
+    //Variable para guardar los catalogos
+    const [catalogos, setCatalogos] = useState([])
 
     //Variable para guardar los usuarios
     const [usuarios, setUsuarios] = useState([])
@@ -63,7 +66,7 @@ export default function AutorizacionUsuarios() {
 
     //Importar dinamicamente el loader
     const Loader = dynamic(() => import('../../components/Loader'));
-    
+
     useEffect(() => {
         if (nivelRolCookie != undefined) {
             if (nivelRolCookie != '1' && nivelRolCookie != '2') {
@@ -85,6 +88,15 @@ export default function AutorizacionUsuarios() {
             axios(config)
                 .then(function (response) {
                     setTokenSesion(response.data['success-boolean'])
+
+                    fetch(`${process.env.ruta}/wa/publico/consCatalogada01`)
+                        .then(res => res.json())
+                        .then(
+                            (data) => setCatalogos(data),
+                            (error) => console.log(error)
+                        )
+
+                    console.log(catalogos);
 
                     fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=5&id_rol=1,2`)
                         .then(res => res.json())
@@ -244,10 +256,10 @@ export default function AutorizacionUsuarios() {
 
     const accionesNoAutorizados = (cell, row) => {
         return (
-            <div className="tw-text-center">
+            <>
                 <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer" onClick={() => muestraInfo(row.email)} icon={faEye}></FontAwesomeIcon>
                 <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer tw-text-inst-verdec" onClick={() => abrirModal(row, true)} icon={faCheckCircle}></FontAwesomeIcon>
-            </div>
+            </>
         )
     }
 
@@ -256,25 +268,20 @@ export default function AutorizacionUsuarios() {
     const columnsAutorizados = [
         {
             dataField: 'nombre',
-            text: 'Nombre',
+            text: 'No.',
             formatter: completaNombre
         },
         {
             dataField: 'email',
-            text: 'Correo electrónico'
-        },
-        {
-            dataField: 'fecha_creacion',
-            text: 'Fecha de solicitud',
-            formatter: cell => moment(cell).format('DD-MM-YYYY')
+            text: 'Catálogo'
         },
         {
             dataField: 'rol',
-            text: 'Nivel de usuario solicitado',
+            text: 'Descripcion',
         },
         {
             dataField: 'acciones',
-            text: 'Acciones',
+            text: 'Accion',
             formatter: accionesAutorizados
         }
     ];
@@ -347,61 +354,14 @@ export default function AutorizacionUsuarios() {
                             <div className="row">
                                 <div className="col-12 col-tabs-usuarios">
 
-                                    <Tabs defaultActiveKey="autorizados" className="tabs-autorizacion">
-                                        <Tab eventKey="autorizados" title="Autorizar Usuarios" className="tab-tabla">
-
-                                            <ToolkitProvider keyField="id_usuario" data={usuarios} columns={columnsAutorizados} search>
-                                                {
-                                                    props => (
-                                                        <>
-                                                            <div className="tw-p-3 tw-bg-titulo">
-                                                                <SearchBar
-                                                                    {...props.searchProps}
-                                                                    placeholder="Buscar"
-                                                                    tableId="autorizar"
-                                                                />
-                                                            </div>
-                                                            <BootstrapTable
-                                                                {...props.baseProps}
-                                                                noDataIndication="No hay resultados de la búsqueda"
-                                                                pagination={pagination}
-                                                                headerClasses="tabla-usuarios-header"
-                                                                wrapperClasses="table-responsive"
-                                                            />
-                                                        </>
-                                                    )
-                                                }
-                                            </ToolkitProvider>
-
-                                        </Tab>
-
-                                        <Tab eventKey="no-autorizados" title="Usuarios No Autorizados" className="tab-tabla">
-
-                                            <ToolkitProvider keyField="id_usuario" data={noUsuarios} columns={columnsNoAutorizados} search>
-                                                {
-                                                    props => (
-                                                        <>
-                                                            <div className="tw-p-3 tw-bg-titulo">
-                                                                <SearchBar
-                                                                    {...props.searchProps}
-                                                                    placeholder="Buscar"
-                                                                    tableId="no-autorizados"
-                                                                />
-                                                            </div>
-                                                            <BootstrapTable
-                                                                {...props.baseProps}
-                                                                noDataIndication="No hay resultados de la búsqueda"
-                                                                pagination={pagination}
-                                                                headerClasses="tabla-usuarios-header"
-                                                                wrapperClasses="table-responsive"
-                                                            />
-                                                        </>
-                                                    )
-                                                }
-                                            </ToolkitProvider>
-
-                                        </Tab>
-                                    </Tabs>
+                                    <BootstrapTable
+                                        keyField='id'
+                                        pagination={pagination}
+                                        data={usuarios}
+                                        columns={columnsAutorizados}
+                                        headerClasses="tabla-usuarios-header"
+                                        wrapperClasses="table-responsive"
+                                    />
 
                                     {
                                         infoUsuario && (
