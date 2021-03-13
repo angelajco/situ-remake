@@ -1,15 +1,40 @@
 import Head from 'next/head'
-import { Carousel, Container } from 'react-bootstrap'
+import { Carousel, Container, Alert } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMapMarkerAlt, faHandPointRight } from '@fortawesome/free-solid-svg-icons'
+import { isIE } from 'react-device-detect'
+import { useState } from 'react'
 
 export default function Home() {
+
+  const [esInternet, setEsInternet] = useState(false)
+
+  if (isIE) {
+    setEsInternet(true)
+  }
+
   return (
     <>
       <Head>
         <title>SITU</title>
       </Head>
       <main>
+
+        {esInternet &&
+          <div className="container">
+            <div className="row">
+              <div className="col-12">
+                <Alert variant="danger">
+                  <Alert.Heading>Este sitio no funciona con Internet Explorer</Alert.Heading>
+                  <p>
+                    Se recomienda usar otro explorador web.
+                  </p>
+                </Alert>
+              </div>
+            </div>
+          </div>
+        }
+
         <Container>
           <section className="tw-flex md:tw-flex-wrap tw-w-full tw-mt-12">
             <div className="tw-mx-2 md:tw-mx-10">
