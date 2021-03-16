@@ -2,7 +2,9 @@ export default function Footer() {
     return (
         <footer className="tw-bg-inst-verdef tw-text-white">
             <div className="container tw-py-12 tw-flex tw-justify-between tw-flex-wrap">
-                <div className="tw-w-3/12 sm:tw-w-full">Logo</div>
+                <div className="tw-w-3/12 sm:tw-w-full">
+                    <img src="/images/escudo_2.png"></img>
+                </div>
                 <div className="tw-w-3/12 sm:tw-w-full">
                     <p className="tw-font-semibold tw-text-2xl">Enlaces</p>
                     <ul className="tw-p-0">
