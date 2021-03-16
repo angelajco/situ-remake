@@ -9,8 +9,6 @@ import ModalComponent from '../../components/ModalComponent';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEye, faEyeSlash, faQuestionCircle } from '@fortawesome/free-solid-svg-icons'
 
-import isEmail from 'validator/lib/isEmail';
-
 export default function Registro() {
 
     //Datos para crear el form
@@ -50,14 +48,11 @@ export default function Registro() {
     const refContrasena = watch("contrasena", "");
     const refEntidad = watch("id_entidad", "");
 
-    
+
 
     //Validar correo
     const validarNivel = () => {
         const refEmail = watch("email", "");
-
-        var yyy = isEmail(refEmail)
-        console.log(yyy);
 
         const refRol = watch("id_rol")
         if (refRol == "1" || refRol == "2") {
@@ -105,42 +100,57 @@ export default function Registro() {
 
     //Funcion a ejecutar al darle el boton de iniciar sesion
     const onSubmit = async (data) => {
-        //Envio de informacion
-        let datosFormulario = JSON.stringify(data);
-        let config = {
-            method: "post",
-            url: `${process.env.ruta}/wa/publico/createUser`,
-            headers: {
-                "Content-Type": "application/json"
-            },
-            data: datosFormulario
-        };
+        let emailSubmit = watch("email", "");
 
-        axios(config)
-            .then(function (response) {
-                if (response.data["success-boolean"]) {
-                    //Registro exitoso
-                    //Datos a enviar al modal si el usuario es correcto
-                    setDatosModal({
-                        title: 'Registro correcto',
-                        body: 'Para terminar el registro de la cuenta, hemos enviado un correo a ' + datosFormulario.email + ' para verificar su cuenta de correo electrónico',
-                        ruta: "/administracion/inicio-sesion"
-                    })
+        const emailDescompuesto = emailSubmit.split("@");
+        const despuesArroba = emailDescompuesto[1];
+        const splitted2 = despuesArroba.split(".");
+        const parte1 = splitted2[0];
+        const parte2 = splitted2[1];
+
+        if (parte1 === parte2) {
+            setError("email", {
+                message: "No se permiten correos electronicos con dos palabras iguales"
+            });
+        }
+        else {
+            //Envio de informacion
+            let datosFormulario = JSON.stringify(data);
+            let config = {
+                method: "post",
+                url: `${process.env.ruta}/wa/publico/createUser`,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                data: datosFormulario
+            };
+
+            axios(config)
+                .then(function (response) {
+                    if (response.data["success-boolean"]) {
+                        //Registro exitoso
+                        //Datos a enviar al modal si el usuario es correcto
+                        setDatosModal({
+                            title: 'Registro correcto',
+                            body: 'Para terminar el registro de la cuenta, hemos enviado un correo a ' + data.email + ' para verificar su cuenta de correo electrónico',
+                            ruta: "/administracion/inicio-sesion"
+                        })
+                        //Cambiamos el modal de show a true
+                        handleShow();
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error)
+                    //Registro no exitoso
                     //Cambiamos el modal de show a true
                     handleShow();
-                }
-            })
-            .catch(function (error) {
-                console.log(error)
-                //Registro no exitoso
-                //Cambiamos el modal de show a true
-                handleShow();
-                //Datos a enviar al modal si el usuario es incorrecto
-                setDatosModal({
-                    title: 'Registro incorrecto',
-                    body: 'Favor de verificar la información',
+                    //Datos a enviar al modal si el usuario es incorrecto
+                    setDatosModal({
+                        title: 'Registro incorrecto',
+                        body: 'Favor de verificar la información',
+                    });
                 });
-            });
+        }
     }
 
     //Fechas para año de nacimiento
@@ -264,7 +274,7 @@ export default function Registro() {
                                                 }
                                             })
                                         } />
-                                    <p>{errors.nombre && errors.nombre.message}</p>
+                                    <p className="tw-text-red-600">{errors.nombre && errors.nombre.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="apellido_paterno">
@@ -283,7 +293,7 @@ export default function Registro() {
                                             })
                                         }
                                     />
-                                    <p>{errors.apellido_paterno && errors.apellido_paterno.message}</p>
+                                    <p className="tw-text-red-600">{errors.apellido_paterno && errors.apellido_paterno.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="apellido_materno">
@@ -302,7 +312,7 @@ export default function Registro() {
                                             })
                                         }
                                     />
-                                    <p>{errors.apellido_materno && errors.apellido_materno.message}</p>
+                                    <p className="tw-text-red-600">{errors.apellido_materno && errors.apellido_materno.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="id_genero">
@@ -335,7 +345,7 @@ export default function Registro() {
                                                 }
                                             })
                                         } />
-                                    <p>{errors.email && errors.email.message}</p>
+                                    <p className="tw-text-red-600">{errors.email && errors.email.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="celular">
@@ -347,7 +357,7 @@ export default function Registro() {
                                             }
                                         })
                                     } />
-                                    <p>{errors.celular && errors.celular.message}</p>
+                                    <p className="tw-text-red-600">{errors.celular && errors.celular.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="instituto">
@@ -364,7 +374,7 @@ export default function Registro() {
                                             }
                                         })
                                     } />
-                                    <p>{errors.instituto && errors.instituto.message}</p>
+                                    <p className="tw-text-red-600">{errors.instituto && errors.instituto.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="id_entidad">
@@ -402,7 +412,7 @@ export default function Registro() {
                                             ))
                                         }
                                     </Form.Control>
-                                    <p>{errors.id_rol && errors.id_rol.message}</p>
+                                    <p className="tw-text-red-600">{errors.id_rol && errors.id_rol.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="id_ambito_actuacion">
@@ -450,7 +460,7 @@ export default function Registro() {
                                             </InputGroup.Text>
                                         </InputGroup.Append>
                                     </InputGroup>
-                                    <p>{errors.contrasena && errors.contrasena.message}</p>
+                                    <p className="tw-text-red-600">{errors.contrasena && errors.contrasena.message}</p>
                                 </Form.Group>
 
                                 <Form.Group>
@@ -470,7 +480,7 @@ export default function Registro() {
                                             </InputGroup.Text>
                                         </InputGroup.Append>
                                     </InputGroup>
-                                    <p>{errors.confirmar_contrasena && errors.confirmar_contrasena.message}</p>
+                                    <p className="tw-text-red-600">{errors.confirmar_contrasena && errors.confirmar_contrasena.message}</p>
                                 </Form.Group>
 
                                 {/* <div className="g-recaptcha" data-sitekey="YOURSITEKEY"></div> */}

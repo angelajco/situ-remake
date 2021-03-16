@@ -27,8 +27,8 @@ export default function Menu() {
     // console.log(router.pathname);
     let ruta = router.pathname
 
-    let noActive = 'tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline'
-    let active = 'tw-ml-5 tw-text-green-400 tw-font-semibold tw-pointer-events-none'
+    let noActive = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline'
+    let active = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-green-400 tw-font-semibold tw-pointer-events-none'
 
     // Deshabilitar el boton del menu donde se encuentra el usuario
     let deshabilitarInicio = false
@@ -111,13 +111,9 @@ export default function Menu() {
                             <a className={noActive}>CONSULTA<br></br>DOCUMENTAL</a>
                         </Link>
                         {
-                            (nivelRolCookie == '1' || nivelRolCookie == '2') ?
-                                <Link href="/administracion/autorizacion-usuarios">
-                                    <a className={deshabilitarAutorizacion ? active : noActive}>AUTORIZACION DE<br></br>USUARIOS</a>
-                                </Link>
-                                :
-                                <Link href="/administracion/autorizacion-usuarios" className="tw-hidden">
-                                    <a className={noActive}>AUTORIZACION DE<br></br>USUARIOS</a>
+                            (nivelRolCookie == '1' || nivelRolCookie == '2') &&
+                                <Link href="/administracion/administracion-sistema">
+                                    <a className={deshabilitarAutorizacion ? active : noActive}>ADMINISTRACIÓN DE<br></br>SISTEMA</a>
                                 </Link>
                         }
                         {
