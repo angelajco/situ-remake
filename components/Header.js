@@ -1,22 +1,25 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faSearch } from '@fortawesome/free-solid-svg-icons'
+
 export default function Header() {
-
-    const enlaces = [
-        { enlace: 'Trámites', },
-        { enlace: 'Gobierno', },
-    ]
-
     return (
-        <div className="container-fluid tw-bg-inst-verdef tw-py-5">
+        <div className="container-fluid tw-bg-inst-verdef tw-py-4">
             <div className="container">
-                <ul className="tw-w-full tw-flex tw-justify-end tw-mb-0">
-                    {
-                        enlaces.map((link, index) => (
-                            <li className="tw-px-4" key={index}>
-                                <a href="#" className="tw-text-white tw-text-2xl tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline">{link.enlace}</a>
-                            </li>
-                        ))
-                    }
-                </ul>
+                <div className="row">
+                    <div className="col-12 tw-flex tw-justify-end">
+                        <div className="tw-mr-3">
+                            <a href="https://www.gob.mx/tramites" target="_blank" className="tw-text-white tw-text-lg hover:tw-text-inst-dorado hover:tw-no-underline">Trámites</a>
+                        </div>
+                        <div className="tw-mr-3">
+                            <a href="https://www.gob.mx/gobierno" target="_blank" className="tw-text-white tw-text-lg hover:tw-text-inst-dorado hover:tw-no-underline">Gobierno</a>
+                        </div>
+                        <div>
+                            <a href="https://www.gob.mx/busqueda?utf8=%E2%9C%93" target="_blank" className="tw-text-white">
+                                <FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     )

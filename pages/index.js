@@ -2,42 +2,20 @@ import Head from 'next/head'
 import { Carousel, Container, Alert } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMapMarkerAlt, faHandPointRight } from '@fortawesome/free-solid-svg-icons'
-import { isIE } from 'react-device-detect'
-import { useState } from 'react'
+import {  useEffect } from 'react'
+
 
 export default function Home() {
-
-  const [esInternet, setEsInternet] = useState(false)
-
-  if (isIE) {
-    setEsInternet(true)
-  }
-
   return (
     <>
       <Head>
         <title>SITU</title>
       </Head>
+      
       <main>
-
-        {esInternet &&
-          <div className="container">
-            <div className="row">
-              <div className="col-12">
-                <Alert variant="danger">
-                  <Alert.Heading>Este sitio no funciona con Internet Explorer</Alert.Heading>
-                  <p>
-                    Se recomienda usar otro explorador web.
-                  </p>
-                </Alert>
-              </div>
-            </div>
-          </div>
-        }
-
         <Container>
-          <section className="tw-flex md:tw-flex-wrap tw-w-full tw-mt-12">
-            <div className="tw-mx-2 md:tw-mx-10">
+          <section className="tw-flex sm:tw-flex-wrap tw-w-full tw-mt-12">
+            <div className="tw-mx-5 sm:tw-mx-0 sm:tw-mb-10">
               <img
                 src="/images/logo.png"
                 alt="logo SITUs"
@@ -120,7 +98,7 @@ export default function Home() {
           </section>
         </Container>
         <section className="tw-flex tw-my-10">
-          <div className="md:tw-hidden">
+          <div className="sm:tw-hidden">
             <img
               src="/images/index/foto_izq.jpg"
               alt="imagen de una avenida"
@@ -130,19 +108,19 @@ export default function Home() {
             <div>
               <h2 className="tw-text-center tw-my-8 tw-font-bold">Lo más destacado</h2>
               <div className="tw-flex tw-justify-between tw-flex-wrap tw-my-8">
-                <div className="tw-w-4/12 md:tw-w-full tw-pt-10">
+                <div className="tw-w-4/12 sm:tw-w-full tw-pt-10">
                   <FontAwesomeIcon icon={faMapMarkerAlt} size="2x" />
                   <h3 className="tw-text-2xl tw-font-bold">Lorem ipsum dolor sit amet</h3>
                   <p className="tw-pr-8">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris venenatis finibus diam, a sodales nunc sollicitudin at.</p>
                   <FontAwesomeIcon icon={faHandPointRight} size="lg" />
                 </div>
-                <div className="tw-w-4/12 md:tw-w-full tw-pt-10">
+                <div className="tw-w-4/12 sm:tw-w-full tw-pt-10">
                   <FontAwesomeIcon icon={faMapMarkerAlt} size="2x" />
                   <h3 className="tw-text-2xl tw-font-bold">Lorem ipsum dolor sit amet</h3>
                   <p className="tw-pr-8">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris venenatis finibus diam, a sodales nunc sollicitudin at.</p>
                   <FontAwesomeIcon icon={faHandPointRight} size="lg" />
                 </div>
-                <div className="tw-w-4/12 md:tw-w-full tw-pt-10">
+                <div className="tw-w-4/12 sm:tw-w-full tw-pt-10">
                   <FontAwesomeIcon icon={faMapMarkerAlt} size="2x" />
                   <h3 className="tw-text-2xl tw-font-bold">Lorem ipsum dolor sit amet</h3>
                   <p className="tw-pr-8">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris venenatis finibus diam, a sodales nunc sollicitudin at.</p>
@@ -153,19 +131,19 @@ export default function Home() {
             <div>
               <h2 className="tw-text-center tw-my-8 tw-font-bold">Comunicados</h2>
               <div className="tw-flex tw-justify-between tw-flex-wrap tw-my-8">
-                <div className="tw-w-4/12 md:tw-w-full tw-pt-10">
+                <div className="tw-w-4/12 sm:tw-w-full tw-pt-10">
                   <FontAwesomeIcon icon={faMapMarkerAlt} size="2x" />
                   <h3 className="tw-text-2xl tw-font-bold">Lorem ipsum dolor sit amet</h3>
                   <p className="tw-pr-8">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris venenatis finibus diam, a sodales nunc sollicitudin at.</p>
                   <FontAwesomeIcon icon={faHandPointRight} size="lg" />
                 </div>
-                <div className="tw-w-4/12 md:tw-w-full tw-pt-10">
+                <div className="tw-w-4/12 sm:tw-w-full tw-pt-10">
                   <FontAwesomeIcon icon={faMapMarkerAlt} size="2x" />
                   <h3 className="tw-text-2xl tw-font-bold">Lorem ipsum dolor sit amet</h3>
                   <p className="tw-pr-8">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris venenatis finibus diam, a sodales nunc sollicitudin at.</p>
                   <FontAwesomeIcon icon={faHandPointRight} size="lg" />
                 </div>
-                <div className="tw-w-4/12 md:tw-w-full tw-pt-10">
+                <div className="tw-w-4/12 sm:tw-w-full tw-pt-10">
                   <FontAwesomeIcon icon={faMapMarkerAlt} size="2x" />
                   <h3 className="tw-text-2xl tw-font-bold">Lorem ipsum dolor sit amet</h3>
                   <p className="tw-pr-8">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris venenatis finibus diam, a sodales nunc sollicitudin at.</p>
@@ -180,17 +158,17 @@ export default function Home() {
         </section>
         <section className="tw-pb-10">
           <Container>
-            <div className="tw-grid tw-grid-rows-3 tw-grid-flow-col tw-gap-2 md:tw-flex md:tw-flex-wrap">
-              <div className="tw-row-span-3 tw-py-60 md:tw-w-full md:tw-py-20 tw-cursor-pointer bg-curvas-1">
+            <div className="tw-grid tw-grid-rows-3 tw-grid-flow-col tw-gap-2 sm:tw-flex sm:tw-flex-wrap">
+              <div className="tw-row-span-3 tw-py-60 sm:tw-w-full sm:tw-py-20 tw-cursor-pointer bg-curvas-1">
                 <h2 className="tw-px-5">SISTEMA NACIONAL DE INFORMACIÓN ESTADÍSTICA Y GEOGRÁFICA</h2>
               </div>
-              <div className="tw-col-span-2 md:tw-w-full tw-cursor-pointer bg-curvas-2">
+              <div className="tw-col-span-2 sm:tw-w-full tw-cursor-pointer bg-curvas-2">
                 <h2 className="tw-p-5 tw-text-white">REGISTRO AGRARIO NACIONAL</h2>
               </div>
-              <div className="tw-row-span-2 md:tw-w-full tw-cursor-pointer bg-curvas-3">
+              <div className="tw-row-span-2 sm:tw-w-full tw-cursor-pointer bg-curvas-3">
                 <h2 className="tw-p-5 tw-text-white">SISTEMA DE INFORMACIÓN GEOESPACIAL DEL CATASTRO RURAL</h2>
               </div>
-              <div className="tw-row-span-2 md:tw-w-full tw-cursor-pointer bg-curvas-4">
+              <div className="tw-row-span-2 sm:tw-w-full tw-cursor-pointer bg-curvas-4">
                 <h2 className="tw-p-5">DATOS ABIERTOS</h2>
               </div>
             </div>
