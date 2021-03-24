@@ -38,6 +38,26 @@ function capturaL(mapa, objeto) {
   L2 = objeto
 
   mapaBase = mapa
+  if(mapaBase.configurado) {
+
+  } else {
+    let capa0 = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+    });
+				
+    mapaBase.addLayer(capa0);
+    let google_sat = L2.tileLayer('http://www.google.cn/maps/vt?lyrs=s,h@189&gl=cn&x={x}&y={y}&z={z}', {
+      opacity: 1.0,
+      attribution: 'Google',
+    });
+    let topografico = L2.tileLayer.wms('http://gaiamapas.inegi.org.mx/mdmCache/service/wms?', {
+      layers: 'MapaBaseTopograficov61_consombreado', attribution: 'INEGI'
+    });
+    let mapasBase = {"INEGI topográfico": topografico,"Google Satelital": google_sat,"Open Street Map": capa0,};
+    L2.control.layers(mapasBase,null,{collapsed:true, position: 'bottomleft'}).addTo(mapaBase);
+    mapaBase.configurado = true;
+  }
   if (!(nucleo.modelo.contextos[nucleo.modelo.contextos.length - 1].capasCargadas)) {
     nucleo.modelo.iniciaDescargaGeoJson()
   }
@@ -307,6 +327,35 @@ class ModeloContenido {
     }
   }
 
+  obtenEtiquetaColunma(idTabla, idColumna) {
+    for (let index = 0; index < this.tablas.length; index++) {
+      if(this.tablas[index].id == idTabla) {
+        return this.tablas[index].etiquetaColumna(idColumna)
+      }
+    }
+    return ''
+  }
+
+  buscaEtiquetasNulas() {
+    for (let index = 0; index < this.secciones.length; index++) {
+      for (let index1 = 0; index1 < this.secciones[index].contenedores.length; index1++) {
+        if(this.secciones[index].contenedores[index1].contenido.tipoComponente == 'Grafica') {
+          let grafica = this.secciones[index].contenedores[index1].contenido
+          for (let index2 = 0; index2 < grafica.datos.length; index2++) {
+            if(grafica.datos[index2].etiqueta == '' && grafica.datos[index2].definicion.formula.length == 1)  {
+              console.log('creando etiqueta para: ', grafica.datos[index2].definicion)
+              let datos = grafica.datos[index2].definicion.formula[0].valor.split('.')
+              if(datos.length == 2) {
+                grafica.datos[index2].etiqueta = this.obtenEtiquetaColunma(datos[0], datos[1])
+              }
+            }
+          }
+        } 
+      }
+      
+    }
+  }
+
   cargaAsincrona() {
     this.indTabla++
     if (this.indTabla == 0) {
@@ -317,6 +366,7 @@ class ModeloContenido {
       return
     }
 
+    this.buscaEtiquetasNulas()
     this.contextos[this.contextos.length - 1].tablasCargadas = true
 
     this.indCapas = -1
@@ -483,32 +533,68 @@ class TablaDatos {
     this.datos = []
   }
 
-  cargaDatos() {
+  cargaDatosViejo() {
     console.log('CARGANDO DATOS TABLA: ', this)
-    let filtro = `${this.configuracion.filtroMun}='${this.nucleo.claveMun}'`
-    let cuerpo = { etiqFunc: this.configuracion.etiqueta, columnas: this.configuracion.columnas, filtro: filtro }
+    console.log('cargaDatosViejo')
+    let url = `${process.env.ruta}/wa/publico/consCatalogada01?`;
+    var columnas = '';
+    for (let index = 0; index < this.configuracion.columnas.length; index++) {
+      const element = this.configuracion.columnas[index];
+      columnas = columnas + 'columnas=' + element + (this.configuracion.columnas.length > 1 ? '&' : '');
+    }
+    let cuerpo = columnas + '&etiqueta_funcional=' + this.configuracion.etiqueta +
+      '&nombreFiltro=' + this.configuracion.filtroMun + '&valorFiltro=' + this.nucleo.claveMun;
     let req = new XMLHttpRequest();
-
     req.tablaPadre = this
-    req.open("POST", "http://172.16.117.11/wa0/cons_catalogada", true);
-    req.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded');
+    req.open("GET", url + cuerpo, true);
+    req.setRequestHeader("Content-Type", "application/json");
     req.onreadystatechange = function () {
       if (req.readyState == 4 && req.status == 200) {
-        //aqui obtienes la respuesta de tu peticion
-        // alert(req.responseText);
         let respuesta = JSON.parse(req.responseText)
-
         this.tablaPadre.tituloTabla = respuesta.nombreTabla
         this.tablaPadre.columnas = respuesta.columnas
         this.tablaPadre.datos = respuesta.datos
         this.tablaPadre.etiquetaID = respuesta.etiqFunc
         this.tablaPadre.nucleo.modelo.cargaAsincrona()
       } else if (req.status >= 400) {
-        this.errorCarga = true
+        this.tablaPadre.errorCarga = true
         this.tablaPadre.nucleo.modelo.cargaAsincrona()
       }
     }
-    req.send('parametros=' + JSON.stringify(cuerpo));
+    req.send();
+  }
+
+  cargaDatos() {
+    console.log('inicia petición ajax cargaDatos_')
+    let url = `${process.env.ruta}/wa/publico/consCatalogada01?`;
+    var columnas = '';
+    for (let index = 0; index < this.configuracion.columnas.length; index++) {
+      const element = this.configuracion.columnas[index];
+      columnas = columnas + 'columnas=' + element + (this.configuracion.columnas.length > 1 ? '&' : '');
+    }
+    let cuerpo = columnas + '&etiqueta_funcional=' + this.configuracion.etiqueta +
+      '&nombreFiltro=' + this.configuracion.filtroMun + '&valorFiltro=' + this.nucleo.claveMun;
+    let tablaPadre = this;
+    $.ajax({
+      url: url + cuerpo,
+      type: "GET",
+      dataType: 'json'})
+    .done(function (respuesta) {
+      console.log('respuesta ajax: ', respuesta)
+      tablaPadre.tituloTabla = respuesta.nombre_tabla
+      tablaPadre.columnas = respuesta.columnas
+      tablaPadre.datos = respuesta.datos
+      tablaPadre.etiquetaID = respuesta.etiqueta_funcional
+      tablaPadre.nucleo.modelo.cargaAsincrona()
+    })
+    .fail(function(error) {
+      console.log('error en peticion:', error);
+      tablaPadre.errorCarga = true
+      tablaPadre.nucleo.modelo.cargaAsincrona()
+    })
+    .always(function() {
+      console.log('petición finalizada')
+    });
   }
 
   obtenCelda(fila, id) {
@@ -538,6 +624,17 @@ class TablaDatos {
       }
     }
     return -1
+  }
+
+  etiquetaColumna(idCol) {
+    if(this.columnas != null) {
+      for (let index = 0; index < this.columnas.length; index++) {
+        if(this.columnas[index].id == idCol) {
+          return this.columnas[index].encabezado ?? this.columnas[index].columna
+        }
+      }
+    }
+    return ''
   }
 
 } // Clase Tabla Datos
@@ -629,6 +726,18 @@ class DespliegueTabular {
     }
   }
 
+  formatoColumna(indCol) {
+    if(this.nucleo.modelo.tablas[this.indiceTabla] && this.nucleo.modelo.tablas[this.indiceTabla].columnas) {
+      for (let index = 0; index < this.nucleo.modelo.tablas[this.indiceTabla].columnas.length; index++) {
+        let etiqueta = this.columnas[indCol].substr(this.columnas[indCol].indexOf('.') + 1)
+        if(this.nucleo.modelo.tablas[this.indiceTabla].columnas[index].id == etiqueta) {
+          return this.nucleo.modelo.tablas[this.indiceTabla].columnas[index].tipo
+        }
+      }
+    }
+    return 'varchar'
+  }
+
   encabezadoColumna(identificador) {
     return this.nucleo.encabezadoColumna(identificador)
   }
@@ -638,7 +747,7 @@ class DespliegueTabular {
     let posCol = []
 
 
-    let tope = (this.nucleo.modelo.tablas[this.indiceTabla].datos ?? []).length
+    let tope = (this.nucleo.modelo.tablas[this.indiceTabla] ? this.nucleo.modelo.tablas[this.indiceTabla].datos : [] ).length
 
     if (tope === 0) {
       return salida
@@ -745,6 +854,7 @@ class DatoGrafica {
     this.valor = null
     this.definicion = null
     this.color = 'red'
+
 
     if (nodoXml == null || nodoXml.nodeName == null) {
       return
@@ -1117,9 +1227,9 @@ export default function index() {
 
   return (
     <>
-      <div>
-        <div className="tw-mx-8 tw-mt-8 tw-w-full tw-flex tw-justify-center">
-          <div className="tw-mx-8 tw-w-96">
+      <div className="container-fluid tw-py-5">
+        <div className="row">
+          <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-xs-12">
             <Form.Group controlId="id_entidad">
               <Form.Control as="select" name="id_entidad" required ref={register}>
                 <option value="" hidden>Entidad</option>
@@ -1131,7 +1241,7 @@ export default function index() {
               </Form.Control>
             </Form.Group>
           </div>
-          <div className="tw-mx-8 tw-w-96">
+          <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-xs-12">
             <Form.Group controlId="id_municipio">
               <Form.Control as="select" name="id_municipio" required ref={register}>
                 <option value="" hidden>Municipio</option>
@@ -1146,13 +1256,13 @@ export default function index() {
               </Form.Control>
             </Form.Group>
           </div>
-          <div>
-            <button onClick={desplegarDatos}>Enviar</button>
+          <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-xs-12 d-flex justify-content-center">
+            <button className="tw-w-10/12" onClick={desplegarDatos}>Enviar</button>
           </div>
         </div>
       </div>
       <div className="invisible">{contador}</div>
-      <div className="tw-container tw-mx-8">
+      <div className="container-fluid">
         {
           secciones.map((seccion, index) => (
             <SeccionPm key={index} seccion={seccion} cl={capturaL} />

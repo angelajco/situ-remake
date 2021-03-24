@@ -58,9 +58,17 @@ export default function GraficaPM(props) {
           ))}
         </Pie>
         <Tooltip />
+        <Legend 
+          iconSize={30}/>
       </PieChart>;
     case "barra":
-      return <ResponsiveContainer width={ancho} height={alto}>
+      // for (let index = 0; index < datosPay.length; index++) {
+      //   const element = datosPay[index];
+      //   element.name = element.name.replaceAll('_', ' ')
+      //   element.name = element.name.charAt(0).toUpperCase() + element.name.substr(1)
+      //   datosPay[index].name = element.name
+      // }
+      return <ResponsiveContainer height={alto}>
         <BarChart
           width={500}
           height={300}
@@ -72,11 +80,9 @@ export default function GraficaPM(props) {
             bottom: 5,
           }}
         >
-          <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis />
           <Tooltip />
-          <Legend />
           <Bar dataKey="value" stackId="a" fill={COLORS[0]} />
         </BarChart>
       </ResponsiveContainer>

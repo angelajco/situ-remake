@@ -10,9 +10,24 @@ export default function Tabular(props) {
     setRefrescaTabular(refrescaTabular + 1)
   }
 
-  tabular.refrescarContenido = cambia
-
   // const a = [[1,2,3],[4,5,6],[7,8,9]]
+  const contenidoFormateado = []
+  const contenidoTabla = tabular.contenidoTabla()
+
+  for (let index2 = 0; index2 < contenidoTabla.length; index2++) {
+    const element = contenidoTabla[index2];
+    for (let index = 0; index < tabular.columnas.length; index++) {
+      let tipo = tabular.formatoColumna(index)
+      contenidoFormateado.push(
+        {
+          valor: tipo != 'varchar' ? new Intl.NumberFormat('en-US').format(element[index]) : element,
+          clases: 'border border-green-600 tw-px-2 text-right'
+        }
+      );
+    }
+  }
+
+  tabular.refrescarContenido = cambia
 
   return (
     <>
@@ -22,12 +37,12 @@ export default function Tabular(props) {
       {
         (tabular.datosDisponibles)
           ?
-          <table className="tw-border-separate tw-border tw-border-green-800">
-            <thead className="tw-bg-gray-400" >
+          <table className="tw-border-green-800 tw-w-full">
+            <thead className="tw-bg-guia-grisdd" >
               <tr>
                 {
                   tabular.columnas.map((encabezado, index) => (
-                    <th className="border border-green-600" key={index}>{tabular.encabezadoColumna(encabezado)}</th>
+                    <th className="tw-px-2" key={index}>{tabular.encabezadoColumna(encabezado)}</th>
                   ))
                 }
               </tr>
@@ -37,8 +52,8 @@ export default function Tabular(props) {
                 tabular.contenidoTabla().map((item, index) => (
                   <tr key={index}>
                     {
-                      item.map((item2, index2) => (
-                        <td className="border border-green-600" key={index2}>{item2}</td>
+                      contenidoFormateado.map((item2, index2) => (
+                        <td className={item2.clases} key={index2}>{item2.valor}</td>
                       ))
                     }
                   </tr>

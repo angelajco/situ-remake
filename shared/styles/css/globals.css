@@ -54,3 +54,19 @@
     width: 0.5rem;
     padding: 0.5rem;
 }
+
+/* footer */
+
+.simi-gob-mx {
+    font-family: Montserrat;
+    font-size: 85%;
+    line-height: 135%;
+    height: auto;
+}
+
+.stick-footer {
+    background-image: url("/pleca.svg");
+    background-color: #12322b;
+    background-repeat: repeat-x;
+    height: 50px;
+}
