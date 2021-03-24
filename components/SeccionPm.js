@@ -34,37 +34,45 @@ export default function SeccionPm(props) {
 
 
   return (
-    <section className="tw-my-6 tw-bg-gray-300">
+    <section className="row">
       {
         // console.log('Refresca', seccion.titulo, refresca)
       }
-      <h3 className="tw-mb-6 tw-text-center">{seccion.tituloSeccion()}</h3>
+      <h3 className="col-12 tw-text-center">{seccion.tituloSeccion()}</h3>
       {
         (seccion.tipo === 'mapaBase')
           ?
-          <div className="tw-w-3/4">
+          <div className="col-12">
             <MapPlaneacion seccion={seccion} cl={cl} />
           </div>
           :
-          <div className="tw-flex tw-w-full tw-justify-between tw-flex-wrap">
-            {
-              (seccion.contenedores.length > 0)
-                ?
-                seccion.contenedores.map((contenedor, index) => (
-                  <div key={index} className="tw-px-6">
-                    {
-                      (contenedor.titulo !== null)
-                        ?
-                        <h4 className="tw-mb-6 tw-text-center">{contenedor.titulo}</h4>
-                        :
-                        null
-                    }
-                    <ContenedorPM contenido = {contenedor.contenido} />
-                  </div>
-                ))
-                :
-                null
-            }
+          <div className="container-fluid">
+            <div className="row">
+              {
+                (seccion.contenedores.length > 0)
+                  ?
+                  seccion.contenedores.map((contenedor, index) => (
+                    <div key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-my-5">
+                      <div className="card">
+                        <div className="card-body">
+                          <div className="row justify-content-center">
+                            {
+                              (contenedor.titulo !== null)
+                                ?
+                                <h5 className="col-12 tw-text-center tw-py-2">{contenedor.titulo}</h5>
+                                :
+                                null
+                            }
+                            <ContenedorPM contenido = {contenedor.contenido} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                  :
+                  null
+              }
+            </div>
           </div>
       }
     </section>
