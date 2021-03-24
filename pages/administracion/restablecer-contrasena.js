@@ -47,10 +47,6 @@ export default function RestablecerContrasena() {
                     setMuestraError(error.response.data)
                 });
         }
-        else {
-            setMuestraForm(false)
-        }
-
     }, [router.query['permalink']])
 
     //Datos para el modal
@@ -86,21 +82,31 @@ export default function RestablecerContrasena() {
 
         axios(config)
             .then(function (response) {
-                console.log(JSON.stringify(response.data));
+                if (response.data["message-type"] == 3) {
+                    //Datos a enviar al modal si el usuario es incorrecto
+                    setDatosModal({
+                        title: response.data["message-subject"],
+                        body: response.data["message"],
+                        redireccion: '/inicio-sesion'
+                    })
+                    //cambiamos show a true
+                    handleShow();
+                } else {
+                    //Datos a enviar al modal si el usuario es incorrecto
+                    setDatosModal({
+                        title: response.data["message-subject"],
+                        body: response.data["message"],
+                    })
+                    handleShow();
+                }
             })
             .catch(function (error) {
-                console.log(error);
+                setDatosModal({
+                    title: "Conexión no establecida",
+                    body: "El tiempo de respuesta se ha agotado, favor de intentar más tarde."
+                })
+                handleShow();
             });
-
-
-        //cambiamos show a true
-        handleShow();
-        //Datos a enviar al modal si el usuario es incorrecto
-        setDatosModal({
-            title: 'Resultado del proceso',
-            body: 'Su contraseña fue restablecida con éxito.',
-            redireccion: '/inicio-sesion'
-        })
     }
 
     //Renderiza el tooltip

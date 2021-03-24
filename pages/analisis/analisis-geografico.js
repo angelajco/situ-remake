@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
-import { Form } from 'react-bootstrap'
+import { Form, Modal, Button } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
+import { ContextMenu, MenuItem, ContextMenuTrigger } from "react-contextmenu";
 
 import Router from 'next/router'
 import dynamic from 'next/dynamic'
@@ -34,6 +35,11 @@ export default function AnalisisGeografico() {
     const [capasVisualizadas, setCapasVisualizadas] = useState([])
     //Para guardar los datos de la capas
     const [datosCapas, setDatosCapas] = useState([])
+
+    //Estados para el modal
+    const [show, setShow] = useState(false);
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
 
     useEffect(() => {
         if (tokenCookie != undefined) {
@@ -222,8 +228,105 @@ export default function AnalisisGeografico() {
         setDatosCapas(catalogoCapas);
     }
 
+    function agregarCapas() {
+        setShow(true);
+    }
+
+    const [nombreMapa, setNombreMapa] = useState("Titulo mapa")
+    const [muestraEditarNombreMapa, setmuestraEditarNombreMapa] = useState(true)
+    function cambiaNombreMapa(e) {
+        if (e.target.value == "") {
+            setNombreMapa("Titulo del mapa")
+        } else {
+            setNombreMapa(e.target.value)
+        }
+    }
+
+    function menuContextual(e, data) {
+        console.log(e);
+    }
+
+    function consultar() {
+        console.log("consultar");
+        handleClose();
+    }
+
+    function agregar() {
+        console.log("agregar");
+        handleClose();
+    }
+
+    function limpiar() {
+        console.log("limpiar");
+        handleClose();
+    }
+
     return (
         <>
+            <Modal show={show} onHide={handleClose}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Búsqueda de capas</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>Listas:</p>
+                    <ul>
+                        <li>Temática</li>
+                        <li>Cobertura territorial</li>
+                        <ul>
+                            <li>Estado</li>
+                            <li>Municipio</li>
+                            <li>Localidad</li>
+                            <li>Colonia</li>
+                            <li>Clave catastral</li>
+                            <li>SUN</li>
+                            <li>Zona metropolitana</li>
+                            <li>AGEB</li>
+                        </ul>
+                    </ul>
+                    <p>Filtros</p>
+                    <ul>
+                        <li>Metadatos</li>
+                    </ul>
+                    <p>Tabla</p>
+                    <p>
+                        <label>
+                            <input type="checkbox" value="a" />
+                        Resultado de la búsqueda
+                    </label>
+                    </p>
+                    <p>
+                        <label>
+                            <input type="checkbox" value="b" />
+                        Capas a agregar
+                    </label>
+                    </p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={consultar}>Consultar</Button>
+                    <Button variant="primary" onClick={agregar}>Agregar capas</Button>
+                    <Button variant="primary" onClick={limpiar}>Limpiar camps</Button>
+                </Modal.Footer>
+            </Modal>
+
+
+
+            <ContextMenuTrigger id="same_unique_identifier">
+                <div className="well">Right click to see the menu</div>
+            </ContextMenuTrigger>
+
+            <ContextMenu id="same_unique_identifier">
+                <MenuItem data={{ foo: 'bar' }} onClick={menuContextual}>
+                    ContextMenu Item 1
+                    </MenuItem>
+                <MenuItem data={{ foo: 'bar' }} onClick={menuContextual}>
+                    ContextMenu Item 2
+                    </MenuItem>
+                <MenuItem divider />
+                <MenuItem data={{ foo: 'bar' }} onClick={menuContextual}>
+                    ContextMenu Item 3
+                    </MenuItem>
+            </ContextMenu>
+
             {
                 tokenSesion
                     ?
@@ -231,7 +334,6 @@ export default function AnalisisGeografico() {
                         <div className="container">
                             <div className="row">
                                 <div className="col-12">
-                                    <div>Informacion de rasgos</div>
                                     <Form onSubmit={handleSubmit(onSubmit)}>
                                         <Form.Group controlId="entidad">
                                             <Form.Label className="tw-text-red-600">Entidad</Form.Label>
@@ -275,8 +377,30 @@ export default function AnalisisGeografico() {
                                         </Droppable>
                                     </DragDropContext>
                                 </div>
-                                <div className="col-12">
+                                <div className="col-8">
+                                    <p>{nombreMapa}</p>
+                                    <div>
+                                        <button onClick={agregarCapas}>Agregar Capas (botón “+”)</button>
+                                        <button onClick={() => setmuestraEditarNombreMapa(false)}>Edición (nombre mapa)</button>
+                                        <input type="text" hidden={muestraEditarNombreMapa} onChange={cambiaNombreMapa} value={nombreMapa}></input>
+                                        <button hidden={muestraEditarNombreMapa} onClick={() => setmuestraEditarNombreMapa(true)}>Finalizar edición</button>
+                                        <button>Cargar información.</button>
+                                        <button>Descargar información.</button>
+                                        <button>Guardar proyecto.</button>
+                                        <button>Análisis espacial simple.</button>
+                                        <button>Sistema de coordenadas</button>
+                                        <button>Vista anterior</button>
+                                        <button>Vista posterior</button>
+                                    </div>
                                     <Map datos={capasVisualizadas} />
+                                </div>
+                                <div className="col-4">
+                                    <div>
+                                        Consultas prediseñadas
+                                    </div>
+                                    <div>
+                                        Capas
+                                    </div>
                                 </div>
                             </div>
                         </div>

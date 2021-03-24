@@ -18,8 +18,9 @@ export default function Menu() {
     // Estado para guardar el token
     const [tokenSesion, setTokenSesion] = useState(false)
     const tokenCookie = cookies.get('SessionToken')
-    const nivelRolCookie = cookies.get('RolUsuario')
 
+    const [nivel, setNivel] = useState(false)
+    const nivelRolCookie = cookies.get('RolUsuario')
 
     //Para ver la URL
     const router = useRouter();
@@ -36,17 +37,17 @@ export default function Menu() {
     let deshabilitarAnalisis = false
     let deshabilitarEstadisticas = false
     let deshabilitarConsulta = false
-    let deshabilitarAutorizacion = false
+    let deshabilitarAdministracion = false
     let deshabilitarSesion = false
 
     if (ruta === '/') {
         deshabilitarInicio = true
     } else if (ruta === '/planeacion6') {
         deshabilitarPlaneacion = true
-    } else if(ruta === '/analisis/analisis-geografico'){
+    } else if (ruta === '/analisis/analisis-geografico') {
         deshabilitarAnalisis = true
-    } else if(ruta === '/administracion/autorizacion-usuarios'){
-        deshabilitarAutorizacion = true
+    } else if (ruta === '/administracion/administracion-sistema') {
+        deshabilitarAdministracion = true
     } else if (ruta === '/administracion/inicio-sesion') {
         deshabilitarSesion = true
     }
@@ -75,6 +76,12 @@ export default function Menu() {
         }
     }, [tokenCookie])
 
+    useEffect(() => {
+        if(nivelRolCookie == 1 || nivelRolCookie == 2){
+            setNivel(true)
+        }
+    }, [nivelRolCookie])
+
     const cerrarSesion = () => {
         cookies.remove('SessionToken', { path: "/" })
         cookies.remove('RolUsuario', { path: "/" })
@@ -99,7 +106,7 @@ export default function Menu() {
                             <a className={deshabilitarInicio ? active : noActive}>INICIO</a>
                         </Link>
                         <Link href="/planeacion6">
-                            <a className={deshabilitarPlaneacion ?  active: noActive} >PLANEACIÓN<br></br>MUNICIPAL</a>
+                            <a className={deshabilitarPlaneacion ? active : noActive} >PLANEACIÓN<br></br>MUNICIPAL</a>
                         </Link>
                         <Link href="/analisis/analisis-geografico">
                             <a className={deshabilitarAnalisis ? active : noActive}>ANÁLISIS<br></br>GEOGRÁFICO</a>
@@ -111,9 +118,9 @@ export default function Menu() {
                             <a className={noActive}>CONSULTA<br></br>DOCUMENTAL</a>
                         </Link>
                         {
-                            (nivelRolCookie == '1' || nivelRolCookie == '2') &&
+                            nivel &&
                                 <Link href="/administracion/administracion-sistema">
-                                    <a className={deshabilitarAutorizacion ? active : noActive}>ADMINISTRACIÓN DE<br></br>SISTEMA</a>
+                                    <a className={deshabilitarAdministracion ? active : noActive}>ADMINISTRACIÓN DE<br></br>SISTEMA</a>
                                 </Link>
                         }
                         {

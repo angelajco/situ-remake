@@ -23,6 +23,13 @@ export default function Home() {
             </div>
             <div>
               <Carousel indicators={false} >
+              <Carousel.Item>
+                  <img
+                    className="d-block w-100"
+                    src="/images/index/slidesHome10.jpg"
+                    alt="Third slide"
+                  />
+                </Carousel.Item>
                 <Carousel.Item>
                   <img
                     className="d-block w-100"
@@ -83,13 +90,6 @@ export default function Home() {
                   <img
                     className="d-block w-100"
                     src="/images/index/slidesHome9.jpg"
-                    alt="Third slide"
-                  />
-                </Carousel.Item>
-                <Carousel.Item>
-                  <img
-                    className="d-block w-100"
-                    src="/images/index/slidesHome10.jpg"
                     alt="Third slide"
                   />
                 </Carousel.Item>
