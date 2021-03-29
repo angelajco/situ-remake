@@ -3,9 +3,11 @@ import { useRouter } from 'next/router'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 
-import {Button} from 'react-bootstrap'
+import { Button } from 'react-bootstrap'
 
 import ModalComponent from '../../components/ModalComponent';
+
+import Loader from '../../components/Loader'
 
 export default function Verificacion() {
   //Datos para el modal
@@ -60,8 +62,18 @@ export default function Verificacion() {
       mensaje['message'] = "No tiene permisos para ver esta página."
       setDatosPeticion(mensaje)
     }
-
   }, [router.query['permalink']])
+
+  //Para mostrar el Loader
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setCargando(false);
+    }, 3000);
+
+    return () => clearTimeout(timeout);
+  }, []);
 
   const reenviaCorreo = () => {
 
@@ -103,39 +115,44 @@ export default function Verificacion() {
         onClick={handleClose}
       />
 
-      <main>
-        <div className="container tw-my-12">
-          <div className="row shadow">
+      {
+        cargando ?
+          <Loader />
+          :
+          <main>
+            <div className="container tw-my-12">
+              <div className="row shadow">
 
-            <div className="col-12 col-md-6 tw-text-center">
-              <div className="tw-p-12">
-                <img src="/images/logo.png" alt="logo" className="img-fluid" />
+                <div className="col-12 col-md-6 tw-text-center">
+                  <div className="tw-p-12">
+                    <img src="/images/logo.png" alt="logo" className="img-fluid" />
+                  </div>
+                </div>
+
+                <div className="col-12 col-md-6 tw-p-12 tw-bg-guia-grisf6">
+                  <h1 className="titulo-h1">Verificación de correo electrónico</h1>
+                  <div className="mensajes-admin">
+                    {
+                      datosPeticion['message-type'] == 1
+                        ?
+                        (
+                          <>
+                            {datosPeticion['message']}
+                            <div className="tw-pt-6">
+                              <Button variant="outline-secondary" className="btn-admin" onClick={reenviaCorreo}>REENVIAR CORREO</Button>
+                            </div>
+                          </>
+                        )
+                        :
+                        datosPeticion['message']
+                    }
+                  </div>
+                </div>
+
               </div>
             </div>
-
-            <div className="col-12 col-md-6 tw-p-12 tw-bg-guia-grisf6">
-              <h1 className="titulo-h1">Verificación de correo electrónico</h1>
-              <div className="mensajes-admin">
-                {
-                  datosPeticion['message-type'] == 1
-                    ?
-                    (
-                      <>
-                        {datosPeticion['message']}
-                        <div className="tw-pt-6">
-                          <Button variant="outline-secondary" className="btn-admin" onClick={reenviaCorreo}>REENVIAR CORREO</Button>
-                        </div>
-                      </>
-                    )
-                    :
-                    datosPeticion['message']
-                }
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </main>
+          </main>
+      }
     </>
   )
 }

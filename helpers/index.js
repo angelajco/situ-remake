@@ -66,7 +66,7 @@ export default function createUndoRedo() {
   function redo() {
     if (this.canRedo) {
       const { history, current, future } = _timeline;
-      const [restOfArr, lastItem] = splitLast(future, _historyLimit);
+      const [restOfArr, lastItem] = splitLast(future);
       _timeline = {
         history: [...history, current],
         current: lastItem,
@@ -75,7 +75,7 @@ export default function createUndoRedo() {
       return this.current;
     }
   }
-
+  
   const publicAPI = {
     update,
     undo,
@@ -92,11 +92,11 @@ export default function createUndoRedo() {
     get historyLimit() {
       return _historyLimit;
     },
-    set historyLimit(val) {
-      _historyLimit = val;
-    },
     get timeline() {
       return _timeline;
+    },
+    set historyLimit(val) {
+      _historyLimit = val;
     }
   };
 

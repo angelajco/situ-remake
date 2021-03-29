@@ -1,6 +1,10 @@
 import React from "react";
 
-const Log = ({ val }) => <div>{JSON.stringify(val)}</div>;
+const Log = ({ val }) => {
+  return (
+    <div>{JSON.stringify(val)}</div>
+  )
+}
 
 const Logs = ({ title, items }) => (
   <div>

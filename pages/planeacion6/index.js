@@ -38,14 +38,14 @@ function capturaL(mapa, objeto) {
   L2 = objeto
 
   mapaBase = mapa
-  if(mapaBase.configurado) {
+  if (mapaBase.configurado) {
 
   } else {
     let capa0 = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
     });
-				
+
     mapaBase.addLayer(capa0);
     let google_sat = L2.tileLayer('http://www.google.cn/maps/vt?lyrs=s,h@189&gl=cn&x={x}&y={y}&z={z}', {
       opacity: 1.0,
@@ -54,8 +54,8 @@ function capturaL(mapa, objeto) {
     let topografico = L2.tileLayer.wms('http://gaiamapas.inegi.org.mx/mdmCache/service/wms?', {
       layers: 'MapaBaseTopograficov61_consombreado', attribution: 'INEGI'
     });
-    let mapasBase = {"INEGI topográfico": topografico,"Google Satelital": google_sat,"Open Street Map": capa0,};
-    L2.control.layers(mapasBase,null,{collapsed:true, position: 'bottomleft'}).addTo(mapaBase);
+    let mapasBase = { "INEGI topográfico": topografico, "Google Satelital": google_sat, "Open Street Map": capa0, };
+    L2.control.layers(mapasBase, null, { collapsed: true, position: 'bottomleft' }).addTo(mapaBase);
     mapaBase.configurado = true;
   }
   if (!(nucleo.modelo.contextos[nucleo.modelo.contextos.length - 1].capasCargadas)) {
@@ -94,6 +94,7 @@ class Nucleo {
         console.log('Error en el modelo')
         console.log('error', error)
       });
+
   }
 
   procesaModelo(xmlDoc) {
@@ -329,7 +330,7 @@ class ModeloContenido {
 
   obtenEtiquetaColunma(idTabla, idColumna) {
     for (let index = 0; index < this.tablas.length; index++) {
-      if(this.tablas[index].id == idTabla) {
+      if (this.tablas[index].id == idTabla) {
         return this.tablas[index].etiquetaColumna(idColumna)
       }
     }
@@ -339,20 +340,20 @@ class ModeloContenido {
   buscaEtiquetasNulas() {
     for (let index = 0; index < this.secciones.length; index++) {
       for (let index1 = 0; index1 < this.secciones[index].contenedores.length; index1++) {
-        if(this.secciones[index].contenedores[index1].contenido.tipoComponente == 'Grafica') {
+        if (this.secciones[index].contenedores[index1].contenido.tipoComponente == 'Grafica') {
           let grafica = this.secciones[index].contenedores[index1].contenido
           for (let index2 = 0; index2 < grafica.datos.length; index2++) {
-            if(grafica.datos[index2].etiqueta == '' && grafica.datos[index2].definicion.formula.length == 1)  {
+            if (grafica.datos[index2].etiqueta == '' && grafica.datos[index2].definicion.formula.length == 1) {
               console.log('creando etiqueta para: ', grafica.datos[index2].definicion)
               let datos = grafica.datos[index2].definicion.formula[0].valor.split('.')
-              if(datos.length == 2) {
+              if (datos.length == 2) {
                 grafica.datos[index2].etiqueta = this.obtenEtiquetaColunma(datos[0], datos[1])
               }
             }
           }
-        } 
+        }
       }
-      
+
     }
   }
 
@@ -580,23 +581,24 @@ class TablaDatos {
     $.ajax({
       url: url + cuerpo,
       type: "GET",
-      dataType: 'json'})
-    .done(function (respuesta) {
-      console.log('respuesta ajax: ', respuesta)
-      tablaPadre.tituloTabla = respuesta.nombre_tabla
-      tablaPadre.columnas = respuesta.columnas
-      tablaPadre.datos = respuesta.datos
-      tablaPadre.etiquetaID = respuesta.etiqueta_funcional
-      tablaPadre.nucleo.modelo.cargaAsincrona()
+      dataType: 'json'
     })
-    .fail(function(error) {
-      console.log('error en peticion:', error);
-      tablaPadre.errorCarga = true
-      tablaPadre.nucleo.modelo.cargaAsincrona()
-    })
-    .always(function() {
-      console.log('petición finalizada')
-    });
+      .done(function (respuesta) {
+        console.log('respuesta ajax: ', respuesta)
+        tablaPadre.tituloTabla = respuesta.nombre_tabla
+        tablaPadre.columnas = respuesta.columnas
+        tablaPadre.datos = respuesta.datos
+        tablaPadre.etiquetaID = respuesta.etiqueta_funcional
+        tablaPadre.nucleo.modelo.cargaAsincrona()
+      })
+      .fail(function (error) {
+        console.log('error en peticion:', error);
+        tablaPadre.errorCarga = true
+        tablaPadre.nucleo.modelo.cargaAsincrona()
+      })
+      .always(function () {
+        console.log('petición finalizada')
+      });
   }
 
   obtenCelda(fila, id) {
@@ -629,9 +631,9 @@ class TablaDatos {
   }
 
   etiquetaColumna(idCol) {
-    if(this.columnas != null) {
+    if (this.columnas != null) {
       for (let index = 0; index < this.columnas.length; index++) {
-        if(this.columnas[index].id == idCol) {
+        if (this.columnas[index].id == idCol) {
           return this.columnas[index].encabezado ?? this.columnas[index].columna
         }
       }
@@ -729,10 +731,10 @@ class DespliegueTabular {
   }
 
   formatoColumna(indCol) {
-    if(this.nucleo.modelo.tablas[this.indiceTabla] && this.nucleo.modelo.tablas[this.indiceTabla].columnas) {
+    if (this.nucleo.modelo.tablas[this.indiceTabla] && this.nucleo.modelo.tablas[this.indiceTabla].columnas) {
       for (let index = 0; index < this.nucleo.modelo.tablas[this.indiceTabla].columnas.length; index++) {
         let etiqueta = this.columnas[indCol].substr(this.columnas[indCol].indexOf('.') + 1)
-        if(this.nucleo.modelo.tablas[this.indiceTabla].columnas[index].id == etiqueta) {
+        if (this.nucleo.modelo.tablas[this.indiceTabla].columnas[index].id == etiqueta) {
           return this.nucleo.modelo.tablas[this.indiceTabla].columnas[index].tipo
         }
       }
@@ -749,7 +751,7 @@ class DespliegueTabular {
     let posCol = []
 
 
-    let tope = (this.nucleo.modelo.tablas[this.indiceTabla] ? this.nucleo.modelo.tablas[this.indiceTabla].datos : [] ).length
+    let tope = (this.nucleo.modelo.tablas[this.indiceTabla] ? this.nucleo.modelo.tablas[this.indiceTabla].datos : []).length
 
     if (tope === 0) {
       return salida

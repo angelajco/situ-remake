@@ -108,7 +108,6 @@ export default function AnalisisGeografico() {
                 url: url,
                 dataType: 'jsonp',
                 success: function (response) {
-                    console.log(capasVisualizadas)
                     if (capasVisualizadas.some(capaVisual => capaVisual.num_capa === capa.indice)) {
                         return;
                     }
@@ -235,11 +234,7 @@ export default function AnalisisGeografico() {
     const [nombreMapa, setNombreMapa] = useState("Titulo mapa")
     const [muestraEditarNombreMapa, setmuestraEditarNombreMapa] = useState(true)
     function cambiaNombreMapa(e) {
-        if (e.target.value == "") {
-            setNombreMapa("Titulo del mapa")
-        } else {
-            setNombreMapa(e.target.value)
-        }
+        setNombreMapa(e.target.value)
     }
 
     function menuContextual(e, data) {

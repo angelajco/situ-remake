@@ -1,21 +1,54 @@
-import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, ScaleControl, LayersControl, useMapEvents, useMap } from 'react-leaflet'
-import { useState, useRef, useEffect } from 'react'
+import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, ScaleControl, LayersControl, useMapEvents, useMap, FeatureGroup } from 'react-leaflet'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Table } from 'react-bootstrap'
 import Head from 'next/head'
-
-// import Control from 'react-leaflet-control'
+import { EditControl } from 'react-leaflet-draw'
 
 //Si no es necesario cargar los marcadores
-import "leaflet/dist/leaflet.css"
+// import "leaflet/dist/leaflet.css"
 
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
 
-import TextPath from 'react-leaflet-textpath';
-import { Control } from 'leaflet'
+import 'leaflet-draw/dist/leaflet.draw.css'
+
 const { BaseLayer } = LayersControl;
 
+import createUndoRedo from "../helpers/index";
+import Logs from "../helpers/Logs";
+
+function useTimeline() {
+    const timelineRef = useRef(new createUndoRedo());
+    const [state, setState] = useState(timelineRef.current.current);
+
+    const update = (value) => {
+        const nextState = timelineRef.current.update(value);
+        setState(nextState);
+    };
+
+    const undo = () => {
+        const nextState = timelineRef.current.undo();
+        setState(nextState);
+    };
+
+    const redo = () => {
+        const nextState = timelineRef.current.redo();
+        setState(nextState);
+    };
+
+    return [state, { ...timelineRef.current, update, undo, redo }];
+}
+
 const Map = (props) => {
+    //Centro y zoom del mapa
+    var centroInicial = [23.26825996870948, -102.88361673036671];
+    var acercamientoInicial = 5;
+    const [centro, setCentro] = useState(centroInicial)
+    const [acercamiento, setAcercamiento] = useState(acercamientoInicial)
+
+    //Valores para undo-redo
+    const [valorUndoRedo, setValorUndoRedo] = useState([centroInicial, acercamientoInicial])
+
     //Para guardar los rasgos
     const [rasgos, setRasgos] = useState([])
     function onEachFeature(feature = {}, layer) {
@@ -37,49 +70,81 @@ const Map = (props) => {
     // }
 
     function ControlMovimiento() {
-        
         const [coordinadas, setCoordinadas] = useState("")
         const mapa = useMap()
-        
-        const map = useMapEvents({
+        const mapaEventos = useMapEvents({
             moveend() {
-                var centro = map.getCenter();
-                var zoom = map.getZoom();
-                console.log("drag", centro);
-                console.log("zoom", zoom);
+                let centroUndoRedo = mapaEventos.getCenter();
+                let zoomUndoRedo = mapaEventos.getZoom();
+                setValorUndoRedo([zoomUndoRedo, centroUndoRedo]);
+                // console.log("valor", valorUndoRedo);
+                const newTodo = valorUndoRedo;
+                const nextTodos = [...todos, newTodo];
+                update(nextTodos);
+                console.log("todos", todos);
             },
             mousemove(e) {
                 setCoordinadas(e.latlng)
             }
         })
 
-        // console.log("cord", coordinadas);
-
         useEffect(() => {
             const legend = L.control({ position: "bottomleft" });
-
             legend.onAdd = () => {
                 const div = L.DomUtil.create("div", "legend");
                 div.innerHTML = coordinadas
                 return div;
             };
-
             legend.addTo(mapa);
-
             return () => legend.remove();
         }, [coordinadas]);
+
+        useEffect(() => {
+            const botones = L.control({ position: "bottomleft" });
+            botones.onAdd = () => {
+                const botonVistaCompleta = L.DomUtil.create("button", "botones");
+                botonVistaCompleta.innerHTML = "Vista completa"
+                L.DomEvent
+                    .addListener(botonVistaCompleta, 'click', L.DomEvent.stopPropagation)
+                    .addListener(botonVistaCompleta, 'click', L.DomEvent.preventDefault)
+                    .addListener(botonVistaCompleta, 'click', function () {
+                        mapa.setView(centroInicial, acercamientoInicial)
+                    });
+                return botonVistaCompleta;
+            };
+            botones.addTo(mapa);
+            return () => botones.remove();
+        }, []);
 
         return null;
     }
 
+    //Para undo-redo
+    const [todos, { timeline, canUndo, canRedo, update, undo, redo }] = useTimeline();
+    const onValueChange = ({ target }) => setValue(target.value);
+
+    const undoRedo = useCallback(
+        ({ target }) => {
+            target.name === "undo" ? undo() : redo();
+        },
+        [undo, redo]
+    );
+
     return (
         <>
             <Head>
-                {/* <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-                    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="crossorigin="" /> */}
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+                    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="crossorigin="" />
             </Head>
 
-            <MapContainer fullscreenControl={true} center={[19.380964227121666, -99.16353656125003]} zoom={6} scrollWheelZoom={false} style={{ height: 400, width: "100%" }}>
+            <button disabled={!canUndo} name="undo" onClick={undoRedo}>
+                undo
+            </button>
+            <button disabled={!canRedo} name="redo" onClick={undoRedo}>
+                redo
+            </button>
+
+            <MapContainer fullscreenControl={true} center={centro} zoom={acercamiento} scrollWheelZoom={false} style={{ height: 400, width: "100%" }}>
 
                 <ScaleControl maxWidth="100" />
                 <ControlMovimiento />
@@ -105,6 +170,16 @@ const Map = (props) => {
                     </BaseLayer>
 
                 </LayersControl>
+                <FeatureGroup>
+                    <EditControl
+                        position='topright'
+                        draw={{
+                            rectangle: false,
+                            circle: false,
+                            circlemarker: false,
+                        }}
+                    />
+                </FeatureGroup>
                 {
                     props.datos.map((capa, index) => {
                         if (capa.habilitado) {
@@ -123,6 +198,11 @@ const Map = (props) => {
                     })
                 }
             </MapContainer>
+
+            <div className="logs">
+                <Logs title="history" items={timeline.history} />
+                <Logs title="future" items={timeline.future} />
+            </div>
 
             <p>Información de rasgos</p>
             <div>

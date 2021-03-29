@@ -121,6 +121,17 @@ export default function RestablecerContrasena() {
         </Tooltip>
     );
 
+    //Para mostrar el Loader
+    const [cargando, setCargando] = useState(true);
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setCargando(false);
+        }, 3000);
+
+        return () => clearTimeout(timeout);
+    }, []);
+
     return (
         <>
             <ModalComponent
@@ -129,101 +140,107 @@ export default function RestablecerContrasena() {
                 onHide={handleClose}
                 onClick={handleClose}
             />
-            <main>
-                <div className="container tw-my-12">
-                    <div className="row shadow">
 
-                        <div className="col-12 col-md-6 tw-text-center">
-                            <div className="tw-p-12">
-                                <img src="/images/logo.png" alt="logo" className="img-fluid" />
+            {
+                cargando ?
+                    <Loader />
+                    :
+                    <main>
+                        <div className="container tw-my-12">
+                            <div className="row shadow">
+
+                                <div className="col-12 col-md-6 tw-text-center">
+                                    <div className="tw-p-12">
+                                        <img src="/images/logo.png" alt="logo" className="img-fluid" />
+                                    </div>
+                                </div>
+
+                                <div className="col-12 col-md-6 tw-p-12 tw-bg-guia-grisf6">
+                                    <h1 className="titulo-h1">Restablecer contraseña</h1>
+                                    {
+                                        muestraForm ?
+                                            (
+                                                <>
+                                                    <Form onSubmit={handleSubmit(onSubmit)}>
+
+                                                        <Form.Group>
+                                                            <label htmlFor="contrasena" className="tw-text-red-600">
+                                                                <OverlayTrigger placement="right" overlay={renderTooltip}>
+                                                                    <FontAwesomeIcon icon={faQuestionCircle} />
+                                                                </OverlayTrigger>
+                                                                <span className="tw-text-sm">
+                                                                    &nbsp;Condiciones para contraseña
+                                                            </span>
+                                                            </label>
+                                                            <InputGroup>
+                                                                <Form.Control name="password" required className="pass-form-registro" placeholder="Crear contraseña *"
+                                                                    type={passwordShown ? "text" : "password"}
+                                                                    ref={
+                                                                        register({
+                                                                            minLength: {
+                                                                                value: 8,
+                                                                                message: 'Longitud minima 8 caracteres',
+                                                                            },
+                                                                            pattern:
+                                                                            {
+                                                                                value: /^(?=.*\d)(?=.*[-!@#$/(){}=.,;:])(?=.*[A-Z])(?=.*[a-z])(?!.*(012|123|234|345|456|567|678|789))(?!.*(000|111|222|333|444|555|666|777|888|999)).*\S{8,}$/i,
+                                                                                message: "Contraseña incorrecta"
+                                                                            }
+                                                                        })
+                                                                    }
+                                                                />
+                                                                <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
+                                                                    <InputGroup.Text>
+                                                                        {passwordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
+                                                                    </InputGroup.Text>
+                                                                </InputGroup.Append>
+                                                            </InputGroup>
+                                                            {errors.password && errors.password.message}
+                                                        </Form.Group>
+
+                                                        <Form.Group>
+                                                            <InputGroup>
+                                                                <Form.Control name="confPassword" required className="pass-form-registro" placeholder="Confirmar contraseña *"
+                                                                    type={confPasswordShown ? "text" : "password"}
+                                                                    ref={
+                                                                        register({
+                                                                            validate: value =>
+                                                                                value === refContrasena.current || "Las contraseñas no coinciden"
+                                                                        })
+                                                                    }
+                                                                />
+                                                                <InputGroup.Append onClick={handleClickConfPass} className="tw-cursor-pointer">
+                                                                    <InputGroup.Text>
+                                                                        {confPasswordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
+                                                                    </InputGroup.Text>
+                                                                </InputGroup.Append>
+                                                            </InputGroup>
+                                                            {errors.confPassword && errors.confPassword.message}
+                                                        </Form.Group>
+
+                                                        <div className="tw-text-center tw-pt-6">
+                                                            <Button variant="outline-secondary" className="btn-admin" type="submit">ENVIAR</Button>
+                                                        </div>
+                                                    </Form>
+                                                </>
+                                            )
+                                            :
+                                            (
+                                                <div className="mensajes-admin">
+                                                    {muestraError ?
+                                                        muestraError['message-subject']
+                                                        :
+                                                        "No tiene permisos para ver esta página."
+                                                    }
+                                                </div>
+                                            )
+                                    }
+                                </div>
+
                             </div>
                         </div>
-
-                        <div className="col-12 col-md-6 tw-p-12 tw-bg-guia-grisf6">
-                            <h1 className="titulo-h1">Restablecer contraseña</h1>
-                            {
-                                muestraForm ?
-                                    (
-                                        <>
-                                            <Form onSubmit={handleSubmit(onSubmit)}>
-
-                                                <Form.Group>
-                                                    <label htmlFor="contrasena" className="tw-text-red-600">
-                                                        <OverlayTrigger placement="right" overlay={renderTooltip}>
-                                                            <FontAwesomeIcon icon={faQuestionCircle} />
-                                                        </OverlayTrigger>
-                                                        <span className="tw-text-sm">
-                                                            &nbsp;Condiciones para contraseña
-                                                            </span>
-                                                    </label>
-                                                    <InputGroup>
-                                                        <Form.Control name="password" required className="pass-form-registro" placeholder="Crear contraseña *"
-                                                            type={passwordShown ? "text" : "password"}
-                                                            ref={
-                                                                register({
-                                                                    minLength: {
-                                                                        value: 8,
-                                                                        message: 'Longitud minima 8 caracteres',
-                                                                    },
-                                                                    pattern:
-                                                                    {
-                                                                        value: /^(?=.*\d)(?=.*[-!@#$/(){}=.,;:])(?=.*[A-Z])(?=.*[a-z])(?!.*(012|123|234|345|456|567|678|789))(?!.*(000|111|222|333|444|555|666|777|888|999)).*\S{8,}$/i,
-                                                                        message: "Contraseña incorrecta"
-                                                                    }
-                                                                })
-                                                            }
-                                                        />
-                                                        <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
-                                                            <InputGroup.Text>
-                                                                {passwordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
-                                                            </InputGroup.Text>
-                                                        </InputGroup.Append>
-                                                    </InputGroup>
-                                                    {errors.password && errors.password.message}
-                                                </Form.Group>
-
-                                                <Form.Group>
-                                                    <InputGroup>
-                                                        <Form.Control name="confPassword" required className="pass-form-registro" placeholder="Confirmar contraseña *"
-                                                            type={confPasswordShown ? "text" : "password"}
-                                                            ref={
-                                                                register({
-                                                                    validate: value =>
-                                                                        value === refContrasena.current || "Las contraseñas no coinciden"
-                                                                })
-                                                            }
-                                                        />
-                                                        <InputGroup.Append onClick={handleClickConfPass} className="tw-cursor-pointer">
-                                                            <InputGroup.Text>
-                                                                {confPasswordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
-                                                            </InputGroup.Text>
-                                                        </InputGroup.Append>
-                                                    </InputGroup>
-                                                    {errors.confPassword && errors.confPassword.message}
-                                                </Form.Group>
-
-                                                <div className="tw-text-center tw-pt-6">
-                                                    <Button variant="outline-secondary" className="btn-admin" type="submit">ENVIAR</Button>
-                                                </div>
-                                            </Form>
-                                        </>
-                                    )
-                                    :
-                                    (
-                                        <div className="mensajes-admin">
-                                            {muestraError ?
-                                                muestraError['message-subject']
-                                                :
-                                                "No tiene permisos para ver esta página."
-                                            }
-                                        </div>
-                                    )
-                            }
-                        </div>
-
-                    </div>
-                </div>
-            </main>
+                    </main>
+            }
         </>
     )
 }

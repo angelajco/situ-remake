@@ -1,13 +1,11 @@
 import { useState, useCallback, useRef } from "react";
 
-import createUndoRedo from "./UndoRedo";
-import Logs from "./UndoRedo/Logs";
+import createUndoRedo from "../../helpers/index";
+import Logs from "../../helpers/Logs";
 
 function useTimeline() {
   const timelineRef = useRef(new createUndoRedo());
   const [state, setState] = useState(timelineRef.current.current);
-
-  console.log("time", timelineRef);
 
   const update = (value) => {
     const nextState = timelineRef.current.update(value);
@@ -23,23 +21,17 @@ function useTimeline() {
     const nextState = timelineRef.current.redo();
     setState(nextState);
   };
-
+  
   return [state, { ...timelineRef.current, update, undo, redo }];
 }
 
-const createTodo = (value) => ({
-  value,
-  done: false,
-});
-
 export default function Prueba() {
   const [value, setValue] = useState("");
-  const [todos, { update, undo, redo, timeline, canUndo, canRedo }] = useTimeline();
-
+  const [todos, { timeline, canUndo, canRedo, update, undo, redo }] = useTimeline();
   const onValueChange = ({ target }) => setValue(target.value);
 
   const add = () => {
-    const newTodo = createTodo(value);
+    const newTodo = value;
     const nextTodos = [...todos, newTodo];
     update(nextTodos);
     setValue("");
@@ -53,6 +45,7 @@ export default function Prueba() {
   );
 
   return (
+    // <div>hola</div>
     <div className="App">
       <div className="left">
         <div className="controls">
@@ -72,11 +65,15 @@ export default function Prueba() {
         </div>
         {todos.map((todo, index) => (
           <div key={index}>
-            {todo.value}
+            {todo}
           </div>
         )
         )}
       </div>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
       <div className="right">
         <div className="right-title">LOG</div>
         <div>
