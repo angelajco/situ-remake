@@ -266,7 +266,7 @@ export default function AutorizacionUsuarios() {
         {
             dataField: 'fecha_creacion',
             text: 'Fecha de solicitud',
-            formatter: cell => moment(cell).format('DD-MM-YYYY')
+            formatter: cell => moment(cell).lang("es").format('DD-MMM-YYYY')
         },
         {
             dataField: 'rol',
@@ -292,7 +292,7 @@ export default function AutorizacionUsuarios() {
         {
             dataField: 'fecha_creacion',
             text: 'Fecha de solicitud',
-            formatter: cell => moment(cell).format('DD-MM-YYYY')
+            formatter: cell => moment(cell).format('DD-MMM-YYYY')
         },
         {
             dataField: 'rol',
@@ -306,9 +306,9 @@ export default function AutorizacionUsuarios() {
     ];
 
     const pagination = paginationFactory({
-        sizePerPage: 5,
+        sizePerPage: 10,
         alwaysShowAllBtns: true,
-        sizePerPageList: []
+        sizePerPageList: [10,25,50,100]
     });
 
     return (
@@ -350,7 +350,7 @@ export default function AutorizacionUsuarios() {
                                     <Tabs defaultActiveKey="autorizados" className="tabs-autorizacion">
                                         <Tab eventKey="autorizados" title="Autorizar Usuarios" className="tab-tabla">
 
-                                            <ToolkitProvider keyField="id_usuario" data={usuarios} columns={columnsAutorizados} search>
+                                            <ToolkitProvider keyField="id_usuario" data={usuarios} columns={columnsAutorizados} search={{searchFormatted: true}}>
                                                 {
                                                     props => (
                                                         <>
@@ -419,11 +419,11 @@ export default function AutorizacionUsuarios() {
                                                                 </div>
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Apellido 1</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.apellidoPaterno} disabled></input>
+                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.apellido_paterno} disabled></input>
                                                                 </div>
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Apellido 2</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.apellidoMaterno} disabled></input>
+                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.apellido_materno} disabled></input>
                                                                 </div>
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Correo</span>
@@ -441,7 +441,7 @@ export default function AutorizacionUsuarios() {
                                                             <div className="col-12 col-md-6">
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Fecha de nacimiento</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.fechaNacimiento ? moment(infoUsuario.fechaNacimiento).format("DD-MM-YYYY") : ""} disabled></input>
+                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.fecha_nacimiento ? moment(infoUsuario.fechaNacimiento).format("DD-MM-YYYY") : ""} disabled></input>
                                                                 </div>
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Instituto</span>
@@ -465,7 +465,7 @@ export default function AutorizacionUsuarios() {
                                                                 </div>
                                                             </div>
                                                             <div className="col-12 tw-text-center tw-mt-6">
-                                                                <Button variant="outline-secondary" className="btn-admin" onClick={limpiaInfo}>ACEPTAR</Button>
+                                                                <Button variant="outline-secondary" className="btn-admin" onClick={limpiaInfo}>CERRAR</Button>
                                                             </div>
                                                         </div>
                                                     </div>

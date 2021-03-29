@@ -66,4 +66,10 @@
     color: #fff;
     @apply tw-bg-inst-grisc;
 }
-
+.react-bs-table-sizePerPage-dropdown #pageDropDown{
+    margin-top: 15px;
+    @apply tw-bg-titulo;
+}
+.react-bs-table-sizePerPage-dropdown ul li a{
+    @apply tw-text-titulo
+}

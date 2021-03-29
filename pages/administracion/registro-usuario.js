@@ -486,13 +486,13 @@ export default function Registro() {
                                 {/* <div className="g-recaptcha" data-sitekey="YOURSITEKEY"></div> */}
 
                                 <Form.Group controlId="terminos">
-                                    <Form.Check type="checkbox" required feedback="Acepta los términos y condiciones" label={
+                                    <Form.Check type="checkbox" required feedback="Acepta los términos y condiciones" feedbackTooltip label={
                                         <a href="https://www.gob.mx/terminos" target="_blank" className="tw-text-inst-verdec hover:tw-text-inst-verdef">He leído y acepto los Términos y Condiciones</a>
                                     } />
                                 </Form.Group>
 
                                 <Form.Group controlId="privacidad">
-                                    <Form.Check type="checkbox" required feedbackTooltip="Acepta el aviso de privacidad" label={
+                                    <Form.Check type="checkbox" required feedback="Acepta el aviso de privacidad" feedbackTooltip label={
                                         <a href="https://www.gob.mx/terminos" target="_blank" className="tw-text-inst-verdec hover:tw-text-inst-verdef">He leído y acepto Aviso de Privacidad</a>
                                     } />
                                 </Form.Group>
