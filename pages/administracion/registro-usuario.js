@@ -232,6 +232,16 @@ export default function Registro() {
             )
     }
 
+    function evalPass(e) {
+        console.log('pass to evaluate: ', refContrasena)
+        console.log('event name: ', e.target.name)
+        if(e.target.name === 'confirmar_contrasena') {
+            console.log('compare the too password flields')
+        } else {
+            console.log('just evaluate the password field')
+        }
+    }
+
     return (
         <>
             <Head>
@@ -439,7 +449,7 @@ export default function Registro() {
                                     </label>
                                     <InputGroup>
                                         <Form.Control name="contrasena" required id="contrasena" className="pass-form-registro" placeholder="Crear contraseña *"
-                                            type={passwordShown ? "text" : "password"}
+                                            type={passwordShown ? "text" : "password"} onBlur={evalPass}
                                             ref={
                                                 register({
                                                     minLength: {
@@ -466,7 +476,7 @@ export default function Registro() {
                                 <Form.Group>
                                     <InputGroup>
                                         <Form.Control name="confirmar_contrasena" className="pass-form-registro" id="confirmar_contrasena" required placeholder="Confirmar contraseña *"
-                                            type={confPasswordShown ? "text" : "password"}
+                                            type={confPasswordShown ? "text" : "password"} onBlur={evalPass}
                                             ref={
                                                 register({
                                                     validate: value =>

@@ -566,6 +566,8 @@ class TablaDatos {
 
   cargaDatos() {
     console.log('inicia petición ajax cargaDatos_')
+    console.log('entorno: ', process.env.ruta)
+    console.log('env: ', process.env.env)
     let url = `${process.env.ruta}/wa/publico/consCatalogada01?`;
     var columnas = '';
     for (let index = 0; index < this.configuracion.columnas.length; index++) {
@@ -1257,7 +1259,9 @@ export default function index() {
             </Form.Group>
           </div>
           <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-xs-12 d-flex justify-content-center">
-            <button className="tw-w-10/12" onClick={desplegarDatos}>Enviar</button>
+            <div>
+              <button className="button button-primary" onClick={desplegarDatos}>Enviar</button>
+            </div>
           </div>
         </div>
       </div>

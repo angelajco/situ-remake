@@ -1,11 +1,12 @@
-isProd = process.env.NODE_ENV === 'production';
+isProd = process.env.ENV == 'PRODUCTION';
 const basePath = isProd ? '' : '';
-const rutas = isProd ? '' : 'http://172.16.117.11';
+const rutas = isProd ? 'https://situ.sedatu.gob.mx' : 'http://172.16.117.11';
 
 module.exports = {
   basePath: basePath,
   env: {
     img: basePath,
-    ruta: rutas
+    ruta: rutas,
+    env: 'DEVELOPMENT'
   }
 }
