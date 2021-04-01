@@ -132,11 +132,12 @@ export default function AutorizacionUsuarios() {
     }
 
     const abrirModal = (usuario, valor) => {
+        console.log(usuario);
         handleShowFunction();
         if (valor) {
             setDatosModalFunction({
                 title: 'Autorización de usuario',
-                body: '¿Desea autorizar al usuario ' + usuario.nombre + "?",
+                body: '¿Desea autorizar al usuario ' + usuario.email + "?",
                 id: usuario.id_usuario
             });
             setNombreFuncion(true)
@@ -144,7 +145,7 @@ export default function AutorizacionUsuarios() {
         else {
             setDatosModalFunction({
                 title: 'Rechazo de usuario',
-                body: '¿Desea rechazar al usuario ' + usuario.nombre + "?",
+                body: '¿Desea rechazar al usuario ' + usuario.email + "?",
                 id: usuario.id_usuario
             });
             setNombreFuncion(false)
@@ -179,6 +180,13 @@ export default function AutorizacionUsuarios() {
                     .then(res => res.json())
                     .then(
                         (data) => setSiUsuarios(data),
+                        (error) => console.log(error)
+                    )
+
+                fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=93`)
+                    .then(res => res.json())
+                    .then(
+                        (data) => setNoUsuarios(data),
                         (error) => console.log(error)
                     )
 
@@ -295,7 +303,7 @@ export default function AutorizacionUsuarios() {
         {
             dataField: 'fecha_creacion',
             text: 'Fecha de solicitud',
-            formatter: cell => moment(cell).lang("es").format('DD-MMM-YYYY')
+            formatter: cell => moment(cell).locale("es").format('DD-MMM-YYYY')
         },
         {
             dataField: 'rol',
@@ -321,7 +329,7 @@ export default function AutorizacionUsuarios() {
         {
             dataField: 'fecha_creacion',
             text: 'Fecha de solicitud',
-            formatter: cell => moment(cell).format('DD-MMM-YYYY')
+            formatter: cell => moment(cell).locale("es").format("DD-MMM-YYYY")
         },
         {
             dataField: 'rol',
@@ -347,7 +355,7 @@ export default function AutorizacionUsuarios() {
         {
             dataField: 'fecha_creacion',
             text: 'Fecha de solicitud',
-            formatter: cell => moment(cell).format('DD-MMM-YYYY')
+            formatter: cell => moment(cell).locale("es").format('DD-MMM-YYYY')
         },
         {
             dataField: 'rol',
@@ -485,6 +493,7 @@ export default function AutorizacionUsuarios() {
                                     {
                                         infoUsuario && (
                                             <>
+                                            {console.log(infoUsuario)}
                                                 <div className="row">
                                                     <div className="col-12 tw-bg-menu tw-text-white tw-py-2">
                                                         <FontAwesomeIcon className="tw-text-inst-verdef" icon={faUser}></FontAwesomeIcon><b>&nbsp;INFORMACIÓN</b> DEL USUARIO
@@ -520,7 +529,7 @@ export default function AutorizacionUsuarios() {
                                                             <div className="col-12 col-md-6">
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Fecha de nacimiento</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.fecha_nacimiento ? moment(infoUsuario.fechaNacimiento).format("DD-MM-YYYY") : ""} disabled></input>
+                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.fecha_nacimiento ? moment(infoUsuario.fecha_nacimiento).format("DD-MM-YYYY") : ""} disabled></input>
                                                                 </div>
                                                                 <div className="row tw-mb-4">
                                                                     <span className="col-6 tw-text-right">Instituto</span>
