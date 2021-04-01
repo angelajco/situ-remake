@@ -103,10 +103,9 @@ export default function Menu() {
     };
 
     return (
-        <Navbar expand="lg" className="tw-text-center tw-bg-menu">
-            <Container>
+        <Navbar expand="lg" className="tw-text-center tw-bg-menu tw-px-8">
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
-                <Navbar.Collapse id="basic-navbar-nav" className="justify-content-center">
+                <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
                     <Nav className="tw-py-2">
                         <NavDropdown title="CAMBIO DE IDIOMA" id="basic-nav-dropdown" className="idioma-menu tw-font-semibold">
                             <NavDropdown.Item onClick={() => changeLanguage('es')}>Español</NavDropdown.Item>
@@ -150,7 +149,6 @@ export default function Menu() {
                         }
                     </Nav>
                 </Navbar.Collapse>
-            </Container>
         </Navbar>
     )
 }

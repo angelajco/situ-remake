@@ -20,7 +20,7 @@ export default function AnalisisGeografico() {
     resetServerContext();
 
     // Estado para guardar el web token que se pide a la API
-    const [tokenSesion, setTokenSesion] = useState(false)
+    const [tokenSesion, setTokenSesion] = useState(true)
     // Guarda el token que viene en la cookie para verificar que la tenga
     const tokenCookie = cookies.get('SessionToken')
 
@@ -66,11 +66,11 @@ export default function AnalisisGeografico() {
                 .catch(function (error) {
                     console.log(error)
                     cookies.remove('SessionToken', { path: "/" })
-                    Router.push("/administracion/inicio-sesion")
+                    // Router.push("/administracion/inicio-sesion")
                 })
         }
         else {
-            Router.push('/administracion/inicio-sesion')
+            // Router.push('/administracion/inicio-sesion')
         }
 
         fetch(`${process.env.ruta}/wa0/lista_capas01`)
@@ -101,7 +101,6 @@ export default function AnalisisGeografico() {
 
     //Al seleccionar y añadir una entidad
     const onSubmit = (data) => {
-        console.log(data);
         let indice = parseInt(data.entidad)
         let capa = datosCapas[indice]
 
