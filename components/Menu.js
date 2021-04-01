@@ -28,8 +28,8 @@ export default function Menu() {
     // console.log(router.pathname);
     let ruta = router.pathname
 
-    let noActive = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-dorado hover:tw-no-underline'
-    let active = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-green-400 tw-font-semibold tw-pointer-events-none'
+    let noActive = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-verdef hover:tw-no-underline'
+    let active = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-titulo tw-font-semibold tw-pointer-events-none'
 
     // Deshabilitar el boton del menu donde se encuentra el usuario
     let deshabilitarInicio = false

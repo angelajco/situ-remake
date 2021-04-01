@@ -5,6 +5,7 @@ import { useRouter } from 'next/router'
 
 import axios from 'axios'
 import ModalComponent from '../../components/ModalComponent'
+import Loader from '../../components/Loader'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEye, faEyeSlash, faQuestionCircle } from '@fortawesome/free-solid-svg-icons'
@@ -132,6 +133,29 @@ export default function RestablecerContrasena() {
         return () => clearTimeout(timeout);
     }, []);
 
+    function evalPass(e) {
+        const evalContrasena = watch("password");
+        let regExp = /^(?=.*\d)(?=.*[-!@#$/(){}=.,;:])(?=.*[A-Z])(?=.*[a-z])(?!.*[+^"'´%&¿?*~|\\])(?!.*(012|123|234|345|456|567|678|789))(?!.*(000|111|222|333|444|555|666|777|888|999))\S{8,}$/;
+        if(evalContrasena.length === 0) {
+            document.getElementById("error-pass").hidden = true;
+        } else {
+            if(!regExp.test(evalContrasena) || evalContrasena.length < 8) {
+                document.getElementById("error-pass").hidden = false;
+            } else {
+                document.getElementById("error-pass").hidden = true;
+            }
+        }
+        if(document.getElementById('confirmar_contrasena').value.length > 0) {
+            if(evalContrasena !== document.getElementById('confirmar_contrasena').value) {
+                document.getElementById("error-conf-pass").hidden = false;
+            } else {
+                document.getElementById("error-conf-pass").hidden = true;
+            }
+        } else {
+            document.getElementById("error-conf-pass").hidden = true;
+        }
+    }
+
     return (
         <>
             <ModalComponent
@@ -174,7 +198,7 @@ export default function RestablecerContrasena() {
                                                             </label>
                                                             <InputGroup>
                                                                 <Form.Control name="password" required className="pass-form-registro" placeholder="Crear contraseña *"
-                                                                    type={passwordShown ? "text" : "password"}
+                                                                    type={passwordShown ? "text" : "password"} onBlur={evalPass}
                                                                     ref={
                                                                         register({
                                                                             minLength: {
@@ -195,13 +219,13 @@ export default function RestablecerContrasena() {
                                                                     </InputGroup.Text>
                                                                 </InputGroup.Append>
                                                             </InputGroup>
-                                                            {errors.password && errors.password.message}
+                                                            <p id ="error-pass" className="tw-text-red-600" hidden={true}>Contrase&ntilde;a incorrecta</p>
                                                         </Form.Group>
 
                                                         <Form.Group>
                                                             <InputGroup>
-                                                                <Form.Control name="confPassword" required className="pass-form-registro" placeholder="Confirmar contraseña *"
-                                                                    type={confPasswordShown ? "text" : "password"}
+                                                                <Form.Control name="confPassword" id="confirmar_contrasena" required className="pass-form-registro" placeholder="Confirmar contraseña *"
+                                                                    type={confPasswordShown ? "text" : "password"} onBlur={evalPass}
                                                                     ref={
                                                                         register({
                                                                             validate: value =>
@@ -215,7 +239,7 @@ export default function RestablecerContrasena() {
                                                                     </InputGroup.Text>
                                                                 </InputGroup.Append>
                                                             </InputGroup>
-                                                            {errors.confPassword && errors.confPassword.message}
+                                                            <p id ="error-conf-pass" className="tw-text-red-600" hidden={true}>Las contrase&ntilde;as no coinciden</p>
                                                         </Form.Group>
 
                                                         <div className="tw-text-center tw-pt-6">

@@ -233,12 +233,25 @@ export default function Registro() {
     }
 
     function evalPass(e) {
-        console.log('pass to evaluate: ', refContrasena)
-        console.log('event name: ', e.target.name)
-        if(e.target.name === 'confirmar_contrasena') {
-            console.log('compare the too password flields')
+        const evalContrasena = watch("contrasena");
+        let regExp = /^(?=.*\d)(?=.*[-!@#$/(){}=.,;:])(?=.*[A-Z])(?=.*[a-z])(?!.*[+^"'´%&¿?*~|\\])(?!.*(012|123|234|345|456|567|678|789))(?!.*(000|111|222|333|444|555|666|777|888|999))\S{8,}$/;
+        if(evalContrasena.length === 0) {
+            document.getElementById("error-pass").hidden = true;
         } else {
-            console.log('just evaluate the password field')
+            if(!regExp.test(evalContrasena) || evalContrasena.length < 8) {
+                document.getElementById("error-pass").hidden = false;
+            } else {
+                document.getElementById("error-pass").hidden = true;
+            }
+        }
+        if(document.getElementById('confirmar_contrasena').value.length > 0) {
+            if(evalContrasena !== document.getElementById('confirmar_contrasena').value) {
+                document.getElementById("error-conf-pass").hidden = false;
+            } else {
+                document.getElementById("error-conf-pass").hidden = true;
+            }
+        } else {
+            document.getElementById("error-conf-pass").hidden = true;
         }
     }
 
@@ -470,7 +483,7 @@ export default function Registro() {
                                             </InputGroup.Text>
                                         </InputGroup.Append>
                                     </InputGroup>
-                                    <p className="tw-text-red-600">{errors.contrasena && errors.contrasena.message}</p>
+                                    <p id ="error-pass" className="tw-text-red-600" hidden={true}>Contrase&ntilde;a incorrecta</p>
                                 </Form.Group>
 
                                 <Form.Group>
@@ -490,7 +503,7 @@ export default function Registro() {
                                             </InputGroup.Text>
                                         </InputGroup.Append>
                                     </InputGroup>
-                                    <p className="tw-text-red-600">{errors.confirmar_contrasena && errors.confirmar_contrasena.message}</p>
+                                    <p id ="error-conf-pass" className="tw-text-red-600" hidden={true}>Las contrase&ntilde;as no coinciden</p>
                                 </Form.Group>
 
                                 {/* <div className="g-recaptcha" data-sitekey="YOURSITEKEY"></div> */}
