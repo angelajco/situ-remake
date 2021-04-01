@@ -105,16 +105,16 @@ export default function Home() {
             <Container>
               <div className="tw-grid tw-grid-rows-3 tw-grid-flow-col tw-gap-2 sm:tw-flex sm:tw-flex-wrap">
                 <a href="https://www.snieg.mx/" target="_blank" className={classes + " tw-row-span-3 tw-py-60 sm:tw-w-full sm:tw-py-20 tw-cursor-pointer bg-curvas-1"}>
-                  <h2 className="tw-px-5">SISTEMA NACIONAL DE INFORMACIÓN ESTADÍSTICA Y GEOGRÁFICA</h2>
+                  <h2 className="tw-px-5">SISTEMA NACIONAL DE INFORMACI&Oacute;N ESTAD&Iacute;STICA Y GEOGR&Aacute;FICA</h2>
                 </a>
-                <a href="https://www.gob.mx/ran" target="_blank" className={classes + " tw-col-span-2 sm:tw-w-full tw-cursor-pointer bg-curvas-2"}>
-                  <h2 className="tw-p-5 tw-text-white">REGISTRO AGRARIO NACIONAL</h2>
+                <a href="http://gaia.inegi.org.mx/" target="_blank" className={classes + " tw-col-span-2 sm:tw-w-full tw-cursor-pointer bg-curvas-2"}>
+                  <h2 className="tw-p-5 tw-text-white">MAPA DIGITAL DE M&Eacute;XICO</h2>
                 </a>
                 <a href="https://sig.ran.gob.mx/acceso.php" target="_blank" className={classes + " tw-row-span-2 sm:tw-w-full tw-cursor-pointer bg-curvas-3"}>
-                  <h2 className="tw-p-5 tw-text-white">SISTEMA DE INFORMACIÓN GEOESPACIAL DEL CATASTRO RURAL</h2>
+                  <h2 className="tw-p-5 tw-text-white">SISTEMA DE INFORMACI&Oacute;N GEOESPACIAL DEL CATASTRO RURAL</h2>
                 </a>
                 <a href="https://www.datos.gob.mx/" target="_blank" className={classes + " tw-row-span-2 sm:tw-w-full tw-cursor-pointer bg-curvas-4"}>
-                  <h2 className="tw-p-5">DATOS ABIERTOS</h2>
+                  <h2 className="tw-p-5">INSTITUTO NACIONAL DE INFORMACI&Oacute;N  ESTAD&Iacute;STICA Y GEOGR&Aacute;FICA DE JALISCO</h2>
                 </a>
               </div>
           </Container>
