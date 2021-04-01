@@ -19,8 +19,11 @@ export default function Menu() {
     const [tokenSesion, setTokenSesion] = useState(false)
     const tokenCookie = cookies.get('SessionToken')
 
-    const [nivel, setNivel] = useState(false)
-    const nivelRolCookie = cookies.get('RolUsuario')
+    const [rolEstatus, setRolEstatus] = useState(false)
+    const [nombreUsuario, setNombreUsuario] = useState(false)
+    const rolCookie = cookies.get('RolUsuario')
+    const estatusCookie = cookies.get('EstatusUsuario')
+    const usuarioCookie = cookies.get('Usuario')
 
     //Para ver la URL
     const router = useRouter();
@@ -77,15 +80,22 @@ export default function Menu() {
     }, [tokenCookie])
 
     useEffect(() => {
-        if(nivelRolCookie == 1 || nivelRolCookie == 2){
-            setNivel(true)
+        if ((rolCookie == 1 || rolCookie == 2) && estatusCookie == 10) {
+            setRolEstatus(true)
         }
-    }, [nivelRolCookie])
+        if (usuarioCookie != undefined) {
+            setNombreUsuario(true);
+        }
+    }, [rolCookie, estatusCookie, usuarioCookie])
 
     const cerrarSesion = () => {
         cookies.remove('SessionToken', { path: "/" })
         cookies.remove('RolUsuario', { path: "/" })
+        cookies.remove('EstatusUsuario', { path: "/" })
+        cookies.remove('Usuario', { path: "/" })
     }
+
+    console.log(usuarioCookie);
 
     const changeLanguage = lng => {
         localStorage.setItem("idioma", lng);
@@ -118,10 +128,10 @@ export default function Menu() {
                             <a className={noActive}>CONSULTA<br></br>DOCUMENTAL</a>
                         </Link>
                         {
-                            nivel &&
-                                <Link href="/administracion/administracion-sistema">
-                                    <a className={deshabilitarAdministracion ? active : noActive}>ADMINISTRACIÓN DE<br></br>SISTEMA</a>
-                                </Link>
+                            rolEstatus &&
+                            <Link href="/administracion/administracion-sistema">
+                                <a className={deshabilitarAdministracion ? active : noActive}>ADMINISTRACIÓN DE<br></br>SISTEMA</a>
+                            </Link>
                         }
                         {
                             tokenSesion
@@ -131,6 +141,12 @@ export default function Menu() {
                                 <Link href="/administracion/inicio-sesion">
                                     <a className={deshabilitarSesion ? active : noActive} >INICIO DE<br></br>SESIÓN</a>
                                 </Link>
+                        }
+                        {
+                            nombreUsuario &&
+                            <Navbar.Text className={noActive}>
+                                {usuarioCookie}
+                            </Navbar.Text>
                         }
                     </Nav>
                 </Navbar.Collapse>
