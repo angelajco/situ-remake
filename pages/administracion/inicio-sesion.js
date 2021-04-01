@@ -17,6 +17,7 @@ const cookies = new Cookies()
 
 
 export default function InicioSesion() {
+    console.log(process.env.ruta);
     //Datos para el modal
     const [show, setShow] = useState(false);
     const [datosModal, setDatosModal] = useState(
@@ -64,7 +65,9 @@ export default function InicioSesion() {
                 else {
                     // Se agrega la cookie
                     cookies.set('SessionToken', response.data.jwtResponse['token'], { path: "/" })
-                    cookies.set('RolUsuario', response.data.message, { path: "/" })
+                    cookies.set('RolUsuario', response.data.messager, { path: "/" })
+                    cookies.set('EstatusUsuario', response.data.messagee, { path: "/" })
+                    cookies.set('Usuario', response.data.nameUser, { path: "/" })
                     //Se redirecciona
                     Router.push("/")
                 }

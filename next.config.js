@@ -1,4 +1,4 @@
-isProd = process.env.NODE_ENV == 'production';
+isProd = process.env.NODE_ENV === 'production';
 const basePath = isProd ? '' : '';
 const rutas = isProd ? '' : 'http://172.16.117.11';
 

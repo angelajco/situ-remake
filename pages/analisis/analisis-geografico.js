@@ -15,7 +15,7 @@ import Cookies from 'universal-cookie'
 const cookies = new Cookies()
 
 export default function AnalisisGeografico() {
-
+    console.log(process.local);
     //Cuando se renderiza el lado del servidor (SSR). Garantiza que el estado del contexto no persista en varias representaciones en el servidor, lo que provocaría discrepancias en las marcas de cliente / servidor después de que se presenten varias solicitudes en el servidor
     resetServerContext();
 
@@ -36,10 +36,18 @@ export default function AnalisisGeografico() {
     //Para guardar los datos de la capas
     const [datosCapas, setDatosCapas] = useState([])
 
+    //Para guardar las capas que se van a mostrar
+    const [capasVisualizadasEspejo, setCapasVisualizadasEspejo] = useState([])
+    //Para guardar los datos de la capas
+    const [datosCapasEspejo, setDatosCapasEspejo] = useState([])
+
     //Estados para el modal
     const [show, setShow] = useState(false);
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
+
+    //Pantalla dividida
+    const [pantallaDividida, setPantallaDividida] = useState(true)
 
     useEffect(() => {
         if (tokenCookie != undefined) {
@@ -83,8 +91,17 @@ export default function AnalisisGeografico() {
         }
     )
 
+    const MapEspejo = dynamic(
+        () => import('../../components/Map'),
+        {
+            loading: () => <p>El mapa está cargando</p>,
+            ssr: false
+        }
+    )
+
     //Al seleccionar y añadir una entidad
     const onSubmit = (data) => {
+        console.log(data);
         let indice = parseInt(data.entidad)
         let capa = datosCapas[indice]
 
@@ -182,6 +199,21 @@ export default function AnalisisGeografico() {
         items.splice(result.destination.index, 0, reorderedItem)
         // Actualizamos datos entidades
         setCapasVisualizadas(items)
+    }
+
+    function handleOnDragEndEspejo(result) {
+        // Si el destino existe, esto es para evitar cuando se arrastra fuera del contenedor
+        if (!result.destination) {
+            return
+        }
+        // Se crea una copia de capasVisualizadas
+        const items = Array.from(capasVisualizadasEspejo)
+        // Lo eliminamos de acuerdo al index que le pasa
+        const [reorderedItem] = items.splice(result.source.index, 1)
+        // Se usa destination.index para agregar ese valor a su nuevo destino
+        items.splice(result.destination.index, 0, reorderedItem)
+        // Actualizamos datos entidades
+        setCapasVisualizadasEspejo(items)
     }
 
     function construyeCatalogo(capasBackEnd) {
@@ -326,79 +358,163 @@ export default function AnalisisGeografico() {
                 tokenSesion
                     ?
                     (
-                        <div className="container">
-                            <div className="row">
-                                <div className="col-12">
-                                    <Form onSubmit={handleSubmit(onSubmit)}>
-                                        <Form.Group controlId="entidad">
-                                            <Form.Label className="tw-text-red-600">Entidad</Form.Label>
-                                            <Form.Control as="select" name="entidad" required ref={register}>
-                                                <option value=""></option>
-                                                {
-                                                    datosCapas.map((value, index) => {
-                                                        return (
-                                                            <option key={index} value={value.indice}>{value.titulo}</option>
-                                                        )
-                                                    })
-                                                }
-                                            </Form.Control>
-                                        </Form.Group>
-                                        <input type="submit" />
-                                    </Form>
-                                </div>
-                                <div className="col-12">
-                                    <p>Capas</p>
-                                    {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
-                                    <DragDropContext onDragEnd={handleOnDragEnd}>
-                                        <Droppable droppableId="entidades">
-                                            {(provided) => (
-                                                // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
-                                                <div {...provided.droppableProps} ref={provided.innerRef}>
+                        <div className="main">
+                            <div className="container">
+                                <div className="row">
+                                    <div className="col-12">
+                                        <Form onSubmit={handleSubmit(onSubmit)}>
+                                            <Form.Group controlId="entidad">
+                                                <Form.Label className="tw-text-red-600">Entidad</Form.Label>
+                                                <Form.Control as="select" name="entidad" required ref={register}>
+                                                    <option value=""></option>
                                                     {
-                                                        capasVisualizadas.map((capa, index) => (
-                                                            <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
-                                                                {(provided) => (
-                                                                    <Form.Group {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                                        <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={cambiaCheckbox} value={capa.num_capa} />
-                                                                    </Form.Group>
-                                                                )}
-                                                            </Draggable>
-                                                        ))
+                                                        datosCapas.map((value, index) => {
+                                                            return (
+                                                                <option key={index} value={value.indice}>{value.titulo}</option>
+                                                            )
+                                                        })
                                                     }
-                                                    {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
-                                                    {provided.placeholder}
-                                                </div>
-                                            )}
-                                        </Droppable>
-                                    </DragDropContext>
-                                </div>
-                                <div className="col-8">
-                                    <p>{nombreMapa}</p>
-                                    <div>
-                                        <button onClick={agregarCapas}>Agregar Capas (botón “+”)</button>
-                                        <button onClick={() => setmuestraEditarNombreMapa(false)}>Edición (nombre mapa)</button>
-                                        <input type="text" hidden={muestraEditarNombreMapa} onChange={cambiaNombreMapa} value={nombreMapa}></input>
-                                        <button hidden={muestraEditarNombreMapa} onClick={() => setmuestraEditarNombreMapa(true)}>Finalizar edición</button>
-                                        <button>Cargar información.</button>
-                                        <button>Descargar información.</button>
-                                        <button>Guardar proyecto.</button>
-                                        <button>Análisis espacial simple.</button>
-                                        <button>Sistema de coordenadas</button>
-                                        <button>Vista anterior</button>
-                                        <button>Vista posterior</button>
+                                                </Form.Control>
+                                            </Form.Group>
+                                            <input type="hidden" value="mapa" ref={register}/>
+                                            <input type="submit" />
+                                        </Form>
                                     </div>
-                                    <Map datos={capasVisualizadas} />
-                                </div>
-                                <div className="col-4">
-                                    <div>
-                                        Consultas prediseñadas
+                                    <div className="col-12">
+                                        <p>Capas</p>
+                                        {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
+                                        <DragDropContext onDragEnd={handleOnDragEnd}>
+                                            <Droppable droppableId="entidades">
+                                                {(provided) => (
+                                                    // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
+                                                    <div {...provided.droppableProps} ref={provided.innerRef}>
+                                                        {
+                                                            capasVisualizadas.map((capa, index) => (
+                                                                <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
+                                                                    {(provided) => (
+                                                                        <Form.Group {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                                                            <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={cambiaCheckbox} value={capa.num_capa} />
+                                                                        </Form.Group>
+                                                                    )}
+                                                                </Draggable>
+                                                            ))
+                                                        }
+                                                        {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
+                                                        {provided.placeholder}
+                                                    </div>
+                                                )}
+                                            </Droppable>
+                                        </DragDropContext>
                                     </div>
-                                    <div>
-                                        Capas
+                                    <div className="col-8">
+                                        <p>{nombreMapa}</p>
+                                        <div>
+                                            <button onClick={agregarCapas}>Agregar Capas (botón “+”)</button>
+                                            <button onClick={() => setmuestraEditarNombreMapa(false)}>Edición (nombre mapa)</button>
+                                            <input type="text" hidden={muestraEditarNombreMapa} onChange={cambiaNombreMapa} value={nombreMapa}></input>
+                                            <button hidden={muestraEditarNombreMapa} onClick={() => setmuestraEditarNombreMapa(true)}>Finalizar edición</button>
+                                            <button>Cargar información.</button>
+                                            <button>Descargar información.</button>
+                                            <button>Guardar proyecto.</button>
+                                            <button>Análisis espacial simple.</button>
+                                            <button>Sistema de coordenadas</button>
+                                            <button>Vista anterior</button>
+                                            <button>Vista posterior</button>
+                                        </div>
+                                        <Map datos={capasVisualizadas} />
+                                    </div>
+                                    <div className="col-4">
+                                        <div>
+                                            Consultas prediseñadas
+                                    </div>
+                                        <div>
+                                            Capas
+                                    </div>
                                     </div>
                                 </div>
                             </div>
+                            {
+                                pantallaDividida &&
+                                (
+                                    // <div className="container">
+                                    //     <div className="row">
+                                    //         <div className="col-12">
+                                    //             <Form onSubmit={handleSubmit(onSubmit)}>
+                                    //                 <Form.Group controlId="entidad">
+                                    //                     <Form.Label className="tw-text-red-600">Entidad</Form.Label>
+                                    //                     <Form.Control as="select" name="entidad" required ref={register}>
+                                    //                         <option value=""></option>
+                                    //                         {
+                                    //                             datosCapas.map((value, index) => {
+                                    //                                 return (
+                                    //                                     <option key={index} value={value.indice}>{value.titulo}</option>
+                                    //                                 )
+                                    //                             })
+                                    //                         }
+                                    //                     </Form.Control>
+                                    //                 </Form.Group>
+                                    //                 <input type="submit" />
+                                    //             </Form>
+                                    //         </div>
+                                    //         <div className="col-12">
+                                    //             <p>Capas</p>
+                                    //             {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
+                                    //             <DragDropContext onDragEnd={handleOnDragEnd}>
+                                    //                 <Droppable droppableId="entidades">
+                                    //                     {(provided) => (
+                                    //                         // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
+                                    //                         <div {...provided.droppableProps} ref={provided.innerRef}>
+                                    //                             {
+                                    //                                 capasVisualizadasEspejo.map((capa, index) => (
+                                    //                                     <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
+                                    //                                         {(provided) => (
+                                    //                                             <Form.Group {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                    //                                                 <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={cambiaCheckbox} value={capa.num_capa} />
+                                    //                                             </Form.Group>
+                                    //                                         )}
+                                    //                                     </Draggable>
+                                    //                                 ))
+                                    //                             }
+                                    //                             {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
+                                    //                             {provided.placeholder}
+                                    //                         </div>
+                                    //                     )}
+                                    //                 </Droppable>
+                                    //             </DragDropContext>
+                                    //         </div>
+                                    //         <div className="col-8">
+                                    //             <p>{nombreMapa}</p>
+                                    //             <div>
+                                    //                 <button onClick={agregarCapas}>Agregar Capas (botón “+”)</button>
+                                    //                 <button onClick={() => setmuestraEditarNombreMapa(false)}>Edición (nombre mapa)</button>
+                                    //                 <input type="text" hidden={muestraEditarNombreMapa} onChange={cambiaNombreMapa} value={nombreMapa}></input>
+                                    //                 <button hidden={muestraEditarNombreMapa} onClick={() => setmuestraEditarNombreMapa(true)}>Finalizar edición</button>
+                                    //                 <button>Cargar información.</button>
+                                    //                 <button>Descargar información.</button>
+                                    //                 <button>Guardar proyecto.</button>
+                                    //                 <button>Análisis espacial simple.</button>
+                                    //                 <button>Sistema de coordenadas</button>
+                                    //                 <button>Vista anterior</button>
+                                    //                 <button>Vista posterior</button>
+                                    //             </div>
+                                    //             <MapEspejo datos={capasVisualizadasEspejo} />
+                                    //         </div>
+                                    //         <div className="col-4">
+                                    //             <div>
+                                    //                 Consultas prediseñadas
+                                    // </div>
+                                    //             <div>
+                                    //                 Capas
+                                    // </div>
+                                    //         </div>
+                                    //     </div>
+                                    // </div>
+                                    <div>hola</div>
+                                )
+                            }
                         </div>
+
+
                     )
                     :
                     (typeof window !== 'undefined') &&

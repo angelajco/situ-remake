@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Tabs, Tab, Modal, Button } from 'react-bootstrap'
+import { Tabs, Tab, Button, OverlayTrigger, Tooltip } from 'react-bootstrap'
 
 import dynamic from 'next/dynamic'
 import Router from 'next/router'
@@ -28,11 +28,13 @@ export default function AutorizacionUsuarios() {
     const [tokenSesion, setTokenSesion] = useState(false)
     // Guarda el token que viene en la cookie para verificar que la tenga
     const tokenCookie = cookies.get('SessionToken')
-    const nivelRolCookie = cookies.get('RolUsuario')
+    const rolCookie = cookies.get('RolUsuario')
+    const estatusCookie = cookies.get('EstatusUsuario')
 
     //Variable para guardar los usuarios
     const [usuarios, setUsuarios] = useState([])
     const [noUsuarios, setNoUsuarios] = useState([])
+    const [siUsuarios, setSiUsuarios] = useState([])
     //Variable para guardar los datos de un solo usuario
     const [infoUsuario, setInfoUsuario] = useState()
 
@@ -63,14 +65,12 @@ export default function AutorizacionUsuarios() {
 
     //Importar dinamicamente el loader
     const Loader = dynamic(() => import('../../components/Loader'));
-    
+
     useEffect(() => {
-        if (nivelRolCookie != undefined) {
-            if (nivelRolCookie != '1' && nivelRolCookie != '2') {
-                Router.push('/');
-            }
+        if ((rolCookie != 1 && rolCookie != 2) || estatusCookie != 10) {
+            Router.push('/');
         }
-    }, [nivelRolCookie])
+    }, [rolCookie, estatusCookie])
 
     useEffect(() => {
         if (tokenCookie != undefined) {
@@ -90,6 +90,13 @@ export default function AutorizacionUsuarios() {
                         .then(res => res.json())
                         .then(
                             (data) => setUsuarios(data),
+                            (error) => console.log(error)
+                        )
+
+                    fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=10`)
+                        .then(res => res.json())
+                        .then(
+                            (data) => setSiUsuarios(data),
                             (error) => console.log(error)
                         )
 
@@ -168,10 +175,10 @@ export default function AutorizacionUsuarios() {
                         (error) => console.log(error)
                     )
 
-                fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=93`)
+                fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=10`)
                     .then(res => res.json())
                     .then(
-                        (data) => setNoUsuarios(data),
+                        (data) => setSiUsuarios(data),
                         (error) => console.log(error)
                     )
 
@@ -235,9 +242,15 @@ export default function AutorizacionUsuarios() {
     const accionesAutorizados = (cell, row) => {
         return (
             <div className="tw-text-center">
-                <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer" onClick={() => muestraInfo(row.email)} icon={faEye}></FontAwesomeIcon>
-                <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer tw-text-inst-verdec" onClick={() => abrirModal(row, true)} icon={faCheckCircle}></FontAwesomeIcon>
-                <FontAwesomeIcon className="tw-cursor-pointer tw-text-inst-rojo" onClick={() => abrirModal(row, false)} icon={faTimesCircle}></FontAwesomeIcon>
+                <OverlayTrigger placement="bottom" overlay={<Tooltip>Ver información</Tooltip>}>
+                    <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer" onClick={() => muestraInfo(row.email)} icon={faEye}></FontAwesomeIcon>
+                </OverlayTrigger>
+                <OverlayTrigger placement="bottom" overlay={<Tooltip>Autorizar</Tooltip>}>
+                    <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer tw-text-inst-verdec" onClick={() => abrirModal(row, true)} icon={faCheckCircle}></FontAwesomeIcon>
+                </OverlayTrigger>
+                <OverlayTrigger placement="bottom" overlay={<Tooltip>Rechazar</Tooltip>}>
+                    <FontAwesomeIcon className="tw-cursor-pointer tw-text-inst-rojo" onClick={() => abrirModal(row, false)} icon={faTimesCircle}></FontAwesomeIcon>
+                </OverlayTrigger>
             </div>
         )
     }
@@ -245,11 +258,27 @@ export default function AutorizacionUsuarios() {
     const accionesNoAutorizados = (cell, row) => {
         return (
             <div className="tw-text-center">
-                <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer" onClick={() => muestraInfo(row.email)} icon={faEye}></FontAwesomeIcon>
-                <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer tw-text-inst-verdec" onClick={() => abrirModal(row, true)} icon={faCheckCircle}></FontAwesomeIcon>
-            </div>
+                <OverlayTrigger placement="bottom" overlay={<Tooltip>Ver información</Tooltip>}>
+                    <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer" onClick={() => muestraInfo(row.email)} icon={faEye}></FontAwesomeIcon>
+                </OverlayTrigger >
+                <OverlayTrigger placement="bottom" overlay={<Tooltip>Autorizar</Tooltip>}>
+                    <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer tw-text-inst-verdec" onClick={() => abrirModal(row, true)} icon={faCheckCircle}></FontAwesomeIcon>
+                </OverlayTrigger>
+            </div >
         )
     }
+
+    const accionesSiAutorizados = (cell, row) => {
+        return (
+            <div className="tw-text-center">
+                <OverlayTrigger placement="bottom" overlay={<Tooltip>Ver información</Tooltip>}>
+                    <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer" onClick={() => muestraInfo(row.email)} icon={faEye}></FontAwesomeIcon>
+                </OverlayTrigger >
+            </div >
+        )
+    }
+
+
 
     const { SearchBar } = Search;
 
@@ -305,10 +334,36 @@ export default function AutorizacionUsuarios() {
         }
     ];
 
+    const columnsSiAutorizados = [
+        {
+            dataField: 'nombre',
+            text: 'Nombre',
+            formatter: completaNombre
+        },
+        {
+            dataField: 'email',
+            text: 'Correo electrónico'
+        },
+        {
+            dataField: 'fecha_creacion',
+            text: 'Fecha de solicitud',
+            formatter: cell => moment(cell).format('DD-MMM-YYYY')
+        },
+        {
+            dataField: 'rol',
+            text: 'Nivel de usuario solicitado',
+        },
+        {
+            dataField: 'acciones',
+            text: 'Acciones',
+            formatter: accionesSiAutorizados
+        }
+    ];
+
     const pagination = paginationFactory({
         sizePerPage: 10,
         alwaysShowAllBtns: true,
-        sizePerPageList: [10,25,50,100]
+        sizePerPageList: [10, 25, 50, 100]
     });
 
     return (
@@ -347,10 +402,10 @@ export default function AutorizacionUsuarios() {
                             <div className="row">
                                 <div className="col-12 col-tabs-usuarios">
 
-                                    <Tabs defaultActiveKey="autorizados" className="tabs-autorizacion">
-                                        <Tab eventKey="autorizados" title="Autorizar Usuarios" className="tab-tabla">
+                                    <Tabs defaultActiveKey="autorizar" className="tabs-autorizacion">
+                                        <Tab eventKey="autorizar" title="Autorizar Usuarios" className="tab-tabla">
 
-                                            <ToolkitProvider keyField="id_usuario" data={usuarios} columns={columnsAutorizados} search={{searchFormatted: true}}>
+                                            <ToolkitProvider keyField="id_usuario" data={usuarios} columns={columnsAutorizados} search={{ searchFormatted: true }}>
                                                 {
                                                     props => (
                                                         <>
@@ -372,7 +427,31 @@ export default function AutorizacionUsuarios() {
                                                     )
                                                 }
                                             </ToolkitProvider>
+                                        </Tab>
 
+                                        <Tab eventKey="autorizados" title="Usuarios Autorizados" className="tab-tabla">
+                                            <ToolkitProvider keyField="id_usuario" data={siUsuarios} columns={columnsSiAutorizados} search={{ searchFormatted: true }}>
+                                                {
+                                                    props => (
+                                                        <>
+                                                            <div className="tw-p-3 tw-bg-titulo">
+                                                                <SearchBar
+                                                                    {...props.searchProps}
+                                                                    placeholder="Buscar"
+                                                                    tableId="si-autorizados"
+                                                                />
+                                                            </div>
+                                                            <BootstrapTable
+                                                                {...props.baseProps}
+                                                                noDataIndication="No hay resultados de la búsqueda"
+                                                                pagination={pagination}
+                                                                headerClasses="tabla-usuarios-header"
+                                                                wrapperClasses="table-responsive"
+                                                            />
+                                                        </>
+                                                    )
+                                                }
+                                            </ToolkitProvider>
                                         </Tab>
 
                                         <Tab eventKey="no-autorizados" title="Usuarios No Autorizados" className="tab-tabla">

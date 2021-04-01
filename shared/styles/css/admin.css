@@ -38,7 +38,7 @@
 }
 
 .tabs-autorizacion a {
-    width: 50%;
+    width: 33.33%;
     text-align: center;
     color: white;
     @apply tw-bg-menu;
