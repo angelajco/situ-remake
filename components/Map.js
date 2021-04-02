@@ -17,11 +17,7 @@ const { BaseLayer } = LayersControl;
 import createUndoRedo from "../helpers/index";
 import Logs from "../helpers/Logs";
 
-<<<<<<< HEAD
 function UseTimeline() {
-=======
-function useTimeline() {
->>>>>>> francop
     const timelineRef = useRef(new createUndoRedo());
     const [state, setState] = useState(timelineRef.current.current);
 

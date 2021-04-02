@@ -31,8 +31,8 @@ export default function Menu() {
     // console.log(router.pathname);
     let ruta = router.pathname
 
-    let noActive = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-verdef hover:tw-no-underline'
-    let active = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-titulo tw-font-semibold tw-pointer-events-none'
+    let noActive = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-titulo hover:tw-text-inst-verdef hover:tw-no-underline hover:tw-font-bold'
+    let active = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-titulo tw-font-bold tw-pointer-events-none'
 
     // Deshabilitar el boton del menu donde se encuentra el usuario
     let deshabilitarInicio = false
@@ -103,11 +103,12 @@ export default function Menu() {
     };
 
     return (
-        <Navbar expand="lg" className="tw-text-center tw-bg-menu tw-px-8">
+        <Navbar expand="lg" className="tw-text-center tw-bg-white justify-content-center">
+            <div className="row custom-max-width">
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
-                <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
+                <Navbar.Collapse id="basic-navbar-nav" className="justify-content-center">
                     <Nav className="tw-py-2">
-                        <NavDropdown title="CAMBIO DE IDIOMA" id="basic-nav-dropdown" className="idioma-menu tw-font-semibold">
+                        <NavDropdown title="CAMBIO DE IDIOMA" id="basic-nav-dropdown" className="md:tw-mb-3 tw-font-semibold md:tw-ml-0 tw-ml-5 tw-text-titulo hover:tw-text-inst-verdef hover:tw-no-underline hover:tw-font-bold">
                             <NavDropdown.Item onClick={() => changeLanguage('es')}>Español</NavDropdown.Item>
                             <NavDropdown.Item onClick={() => changeLanguage('en')}>Inglés</NavDropdown.Item>
                         </NavDropdown>
@@ -115,13 +116,13 @@ export default function Menu() {
                             <a className={deshabilitarInicio ? active : noActive}>INICIO</a>
                         </Link>
                         <Link href="/planeacion6">
-                            <a className={deshabilitarPlaneacion ? active : noActive} >PLANEACIÓN<br></br>MUNICIPAL</a>
+                            <a className={deshabilitarPlaneacion ? active : noActive} >PLANEACI&Oacute;N<br></br>MUNICIPAL</a>
                         </Link>
                         <Link href="/analisis/analisis-geografico">
-                            <a className={deshabilitarAnalisis ? active : noActive}>ANÁLISIS<br></br>GEOGRÁFICO</a>
+                            <a className={deshabilitarAnalisis ? active : noActive}>AN&Aacute;LISIS<br></br>GEOGR&Aacute;FICO</a>
                         </Link>
                         <Link href="/construccion">
-                            <a className={noActive}>ESTADÍSTICAS E<br></br>INDICADORES</a>
+                            <a className={noActive}>ESTAD&Iacute;STICAS E<br></br>INDICADORES</a>
                         </Link>
                         <Link href="/construccion">
                             <a className={noActive}>CONSULTA<br></br>DOCUMENTAL</a>
@@ -129,16 +130,16 @@ export default function Menu() {
                         {
                             rolEstatus &&
                             <Link href="/administracion/administracion-sistema">
-                                <a className={deshabilitarAdministracion ? active : noActive}>ADMINISTRACIÓN DE<br></br>SISTEMA</a>
+                                <a className={deshabilitarAdministracion ? active : noActive}>ADMINISTRACI&Oacute;N DE<br></br>SISTEMA</a>
                             </Link>
                         }
                         {
                             tokenSesion
                                 ?
-                                <a className={noActive} href="/administracion/inicio-sesion" onClick={cerrarSesion}>CERRAR<br></br>SESIÓN</a>
+                                <a className={noActive} href="/administracion/inicio-sesion" onClick={cerrarSesion}>CERRAR<br></br>SESI&Oacute;N</a>
                                 :
                                 <Link href="/administracion/inicio-sesion">
-                                    <a className={deshabilitarSesion ? active : noActive} >INICIO DE<br></br>SESIÓN</a>
+                                    <a className={deshabilitarSesion ? active : noActive} >INICIO DE<br></br>SESI&Oacute;N</a>
                                 </Link>
                         }
                         {
@@ -149,6 +150,7 @@ export default function Menu() {
                         }
                     </Nav>
                 </Navbar.Collapse>
+            </div>
         </Navbar>
     )
 }

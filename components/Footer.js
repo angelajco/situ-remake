@@ -1,13 +1,13 @@
 export default function Footer() {
     return (
-        <footer className="tw-bg-inst-verdef tw-text-white simi-gob-mx">
+        <footer className="tw-bg-inst-verdef tw-text-white simi-gob-mx-content">
             <div className="container tw-py-12 tw-flex tw-justify-between tw-flex-wrap">
-                <div className="row">
-                    <div className="col-sm-6 col-lg-3">
-                        <img src="/images/escudo_2.png"></img>
+                <div className="row custom-max-width">
+                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                        <img src="/images/escudo_2.png" className="w-100 custom-mx-b-1"></img>
                     </div>
-                    <div className="col-sm-6 col-lg-3">
-                        <h6>Enlaces</h6>
+                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                        <h6 className="simi-gob-mx-title">Enlaces</h6>
                         <ul className="tw-p-0">
                             <li className="tw-list-none">
                                 <a className="tw-text-white" target="_blank" href="https://www.participa.gob.mx/">Participa</a>
@@ -29,10 +29,10 @@ export default function Footer() {
                             </li>
                         </ul>
                     </div>
-                    <div className="col-sm-6 col-lg-3">
-                        <h6>¿Qué es gob.mx?</h6>
-                        <p>Es el portal único de trámites, información y participación ciudadana.<a className="tw-text-white" href="https://www.gob.mx/que-es-gobmx" target="_blank">&nbsp;Leer más</a></p>
-                        <h6>Temas</h6>
+                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                        <h6 className="simi-gob-mx-title">¿Qu&eacute; es gob.mx?</h6>
+                        <p>Es el portal &uacute;nico de tr&aacute;mites, informaci&oacute;n y participaci&oacute;n ciudadana.<a className="tw-text-white" href="https://www.gob.mx/que-es-gobmx" target="_blank">&nbsp;Leer m&aacute;s</a></p>
+                        <h6 className="simi-gob-mx-title">Temas</h6>
                         <ul className="tw-p-0">
                             <li className="tw-list-none">
                                 <a className="tw-text-white" href="https://www.gob.mx/accesibilidad" target="_blank">Declaración de accesibilidad</a>
@@ -57,8 +57,8 @@ export default function Footer() {
                             </li>
                         </ul>
                     </div>
-                    <div className="col-sm-6 col-lg-3">
-                        <h6>Contacto</h6>
+                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                        <h6 className="simi-gob-mx-title">Contacto</h6>
                         <p className="">Dudas e información a <a className="tw-text-white tw-break-words" href="mailto:controlgestion@sedatu.gob.mx">controlgestion@sedatu.gob.mx</a></p>
                         <h6>Síguenos en</h6>
                         <a href="https://www.facebook.com/gobmexico" className="tw-mr-2" target="_blank">
