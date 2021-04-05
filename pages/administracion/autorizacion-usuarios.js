@@ -132,7 +132,6 @@ export default function AutorizacionUsuarios() {
     }
 
     const abrirModal = (usuario, valor) => {
-        console.log(usuario);
         handleShowFunction();
         if (valor) {
             setDatosModalFunction({
@@ -493,7 +492,6 @@ export default function AutorizacionUsuarios() {
                                     {
                                         infoUsuario && (
                                             <>
-                                            {console.log(infoUsuario)}
                                                 <div className="row">
                                                     <div className="col-12 tw-bg-menu tw-text-white tw-py-2">
                                                         <FontAwesomeIcon className="tw-text-inst-verdef" icon={faUser}></FontAwesomeIcon><b>&nbsp;INFORMACIÓN</b> DEL USUARIO

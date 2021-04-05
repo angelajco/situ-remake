@@ -1,4 +1,5 @@
 import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, ScaleControl, LayersControl, useMapEvents, useMap, FeatureGroup } from 'react-leaflet'
+import L from 'leaflet'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Table } from 'react-bootstrap'
 import Head from 'next/head'
@@ -17,7 +18,7 @@ const { BaseLayer } = LayersControl;
 import createUndoRedo from "../helpers/index";
 import Logs from "../helpers/Logs";
 
-function UseTimeline() {
+function useTimeline() {
     const timelineRef = useRef(new createUndoRedo());
     const [state, setState] = useState(timelineRef.current.current);
 
@@ -27,7 +28,6 @@ function UseTimeline() {
     };
 
     const undo = () => {
-        const mapaModificable = useMap();
         const nextState = timelineRef.current.undo();
         setState(nextState);
     };
@@ -60,9 +60,11 @@ const Map = (props) => {
 
     //estilos del mapa, se puede enviar como funcion o como objeto
     //como funcion
-    function estilos() {
+    function estilos(estilos) {
         return {
             color: "#FF0000",
+            opacity: estilos.transparencia,
+            fillOpacity: estilos.transparencia
         }
     }
     //como objeto
@@ -70,48 +72,61 @@ const Map = (props) => {
     //     fillColor: "#FF0000",
     // }
 
+    function UndoRedoMapa() {
+        return null
+    }
+
     function ControlMovimiento() {
-        const [coordenadas, setCoordinadas] = useState("")
+        const [coordenadas, setCoordenadas] = useState("")
+        const [tipoCoordenada, setTipoCoordenada] = useState(1)
         const mapa = useMap()
-
-        // var drawnItems = new L.FeatureGroup();
-        // mapa.addLayer(drawnItems);
-
-        // var drawControl = new L.Control.Draw({
-        //     edit: {
-        //         featureGroup: drawnItems,
-        //         remove: false
-        //     }
-        // });
-        // mapa.addControl(drawControl);
-
-
 
         const mapaEventos = useMapEvents({
             moveend() {
                 let centroUndoRedo = mapaEventos.getCenter();
                 let zoomUndoRedo = mapaEventos.getZoom();
                 setValorUndoRedo([zoomUndoRedo, centroUndoRedo]);
-                // console.log("valor", valorUndoRedo);
                 const newTodo = valorUndoRedo;
                 const nextTodos = [...todos, newTodo];
                 update(nextTodos);
-                console.log("todos", todos);
             },
             mousemove(e) {
-                setCoordinadas(e.latlng)
+                if (tipoCoordenada == 1) {
+                    setCoordenadas(e.latlng)
+                }
+                else if (tipoCoordenada == 2) {
+                    const metros = mapa.project(e.latlng).divideBy(256);
+                    setCoordenadas(metros)
+                }
+                else {
+                    let lat = e.latlng.lat;
+                    let latGrado = Math.floor(lat);
+                    let latMinuto = Math.floor((lat - latGrado) * 60);
+                    let latSegundo = Math.floor((lat - latGrado - (latMinuto / 60)) * 3600);
+                    let latGradoMinutoSegundo = latGrado + "°" + latMinuto + "'" + latSegundo + "''";
+
+                    let lng = e.latlng.lng;
+                    let lngGrado = Math.floor(lng);
+                    let lngMinuto = Math.floor((lng - lngGrado) * 60);
+                    let lngSegundo = Math.floor((lng - lngGrado - (lngMinuto / 60)) * 3600);
+                    let lngGradoMinutoSegundo = lngGrado + "°" + lngMinuto + "'" + lngSegundo + "''";
+
+                    let gradoMinutosSegundos = "LatLng(" + latGradoMinutoSegundo + "," + lngGradoMinutoSegundo + ")";
+                    setCoordenadas(gradoMinutosSegundos);
+                }
+
             }
         })
 
         useEffect(() => {
-            const legend = L.control({ position: "bottomleft" });
-            legend.onAdd = () => {
-                const div = L.DomUtil.create("div", "legend");
-                div.innerHTML = coordenadas
-                return div;
+            const leyendaCoordenadas = L.control({ position: "bottomleft" });
+            leyendaCoordenadas.onAdd = () => {
+                const divCoordenadas = L.DomUtil.create("div", "coordenadas");
+                divCoordenadas.innerHTML = coordenadas
+                return divCoordenadas;
             };
-            legend.addTo(mapa);
-            return () => legend.remove();
+            leyendaCoordenadas.addTo(mapa);
+            return () => leyendaCoordenadas.remove();
         }, [coordenadas]);
 
         useEffect(() => {
@@ -125,17 +140,44 @@ const Map = (props) => {
                     .addListener(botonVistaCompleta, 'click', function () {
                         mapa.setView(centroInicial, acercamientoInicial)
                     });
+
+
                 return botonVistaCompleta;
             };
+
+            const botones2 = L.control({ position: "bottomleft" });
+            botones2.onAdd = () => {
+                const botonCambiaCoordenadas = L.DomUtil.create("div", "cambia-coordenadas");
+                botonCambiaCoordenadas.innerHTML = "<select> <option value='1'>Grados decimales</option> <option value='2'>Metros</option> <option value='3'>Grados, minutos y segundos</option> </select>"
+                L.DomEvent
+                    .addListener(botonCambiaCoordenadas, 'change', function (e) {
+                        if (e.target.value == 1) {
+                            setTipoCoordenada(1);
+                        }
+                        else if (e.target.value == 2) {
+                            setTipoCoordenada(2);
+                        } else {
+                            setTipoCoordenada(3);
+                        }
+                    });
+
+
+                return botonCambiaCoordenadas;
+            }
+
             botones.addTo(mapa);
-            return () => botones.remove();
+            botones2.addTo(mapa);
+            return () => {
+                botones.remove();
+                botones2.remove();
+            }
         }, []);
 
         return null;
     }
 
     //Para undo-redo
-    const [todos, { timeline, canUndo, canRedo, update, undo, redo }] = UseTimeline();
+    const [todos, { timeline, canUndo, canRedo, update, undo, redo }] = useTimeline();
     const onValueChange = ({ target }) => setValue(target.value);
 
     const undoRedo = useCallback(
@@ -163,7 +205,7 @@ const Map = (props) => {
 
                 <ScaleControl maxWidth="100" />
                 <ControlMovimiento />
-                <UseTimeline />
+
                 <LayersControl>
                     <BaseLayer checked name="Mapa base">
                         <TileLayer
@@ -197,18 +239,18 @@ const Map = (props) => {
                     >
                     </EditControl>
                 </FeatureGroup>
+
                 {
                     props.datos.map((capa, index) => {
-                        console.log(capa);
                         if (capa.habilitado) {
                             if (capa.tipo == "geojson") {
                                 return (
-                                    <GeoJSON key={index} data={capa} style={estilos} onEachFeature={onEachFeature} />
+                                    <GeoJSON key={index} data={capa} style={() => estilos(capa.estilos)} onEachFeature={onEachFeature} minZoom="4" />
                                 )
                             }
                             if (capa.tipo == "wms") {
                                 return (
-                                    <WMSTileLayer key={index} attribution={capa.attribution} url={capa.url} layers={capa.layers} format={capa.format} transparent={capa.transparent} />
+                                    <WMSTileLayer key={index} attribution={capa.attribution} url={capa.url} layers={capa.layers} format={capa.format} transparent={capa.transparent} opacity={capa.estilos.transparencia} minZoom={capa.zoomMinimo} maxZoom={capa.zoomMaximo} />
                                 )
                             }
 

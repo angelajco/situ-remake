@@ -28,7 +28,6 @@ export default function Menu() {
     //Para ver la URL
     const router = useRouter();
 
-    // console.log(router.pathname);
     let ruta = router.pathname
 
     let noActive = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-white tw-font-semibold hover:tw-text-inst-verdef hover:tw-no-underline'
@@ -94,8 +93,6 @@ export default function Menu() {
         cookies.remove('EstatusUsuario', { path: "/" })
         cookies.remove('Usuario', { path: "/" })
     }
-
-    console.log(usuarioCookie);
 
     const changeLanguage = lng => {
         localStorage.setItem("idioma", lng);
