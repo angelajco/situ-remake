@@ -279,7 +279,7 @@ export default function Registro() {
                         </div>
 
                         <div className="col-12 col-md-6 tw-p-12 tw-bg-guia-grisf6">
-                            <h1 className="titulo-h1">Registro de usuario</h1>
+                            <h1 className="titulo-h1">Registro de persona usuaria</h1>
                             <Form onSubmit={handleSubmit(onSubmit)}>
 
                                 <Form.Group controlId="nombre">
@@ -426,7 +426,7 @@ export default function Registro() {
 
                                 <Form.Group controlId="id_rol">
                                     <Form.Control as="select" name="id_rol" required onChange={validarNivel} ref={register}>
-                                        <option value="" hidden>Perfil de usuario *</option>
+                                        <option value="" hidden>Perfil de persona usuaria *</option>
                                         {
                                             roles.map((value, index) => (
                                                 <option key={index} value={value.id_rol}>

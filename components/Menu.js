@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap'
 import { useRouter } from 'next/router'
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUserCircle } from '@fortawesome/free-solid-svg-icons'
+
 import Link from 'next/link'
 
 import axios from 'axios'
@@ -31,8 +34,8 @@ export default function Menu() {
     // console.log(router.pathname);
     let ruta = router.pathname
 
-    let noActive = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-titulo hover:tw-text-inst-verdef hover:tw-no-underline hover:tw-font-bold'
-    let active = 'md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-titulo tw-font-bold tw-pointer-events-none'
+    let noActive = 'simi-gob-mx-situ-menu md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-titulo hover:tw-text-inst-verdef hover:tw-no-underline hover:tw-font-bold'
+    let active = 'simi-gob-mx-situ-menu md:tw-mb-3 md:tw-ml-0 tw-ml-5 tw-text-titulo tw-font-bold tw-pointer-events-none'
 
     // Deshabilitar el boton del menu donde se encuentra el usuario
     let deshabilitarInicio = false
@@ -139,7 +142,22 @@ export default function Menu() {
                                 <a className={noActive} href="/administracion/inicio-sesion" onClick={cerrarSesion}>CERRAR<br></br>SESI&Oacute;N</a>
                                 :
                                 <Link href="/administracion/inicio-sesion">
-                                    <a className={deshabilitarSesion ? active : noActive} >INICIO DE<br></br>SESI&Oacute;N</a>
+                                    <a className={deshabilitarSesion ? active : noActive} >
+                                        INICIO DE<br/>SESI&Oacute;N
+                                    </a>
+                                </Link>
+                        }
+                        {
+                            tokenSesion
+                                ?
+                                <a className={noActive} href="/administracion/inicio-sesion" onClick={cerrarSesion}>
+                                    <FontAwesomeIcon size="3x" icon={faUserCircle}/>
+                                </a>
+                                :
+                                <Link href="/administracion/inicio-sesion">
+                                    <a className={deshabilitarSesion ? active : noActive} >
+                                        <FontAwesomeIcon size="3x" icon={faUserCircle}/>
+                                    </a>
                                 </Link>
                         }
                         {

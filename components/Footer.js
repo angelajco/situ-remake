@@ -3,7 +3,7 @@ export default function Footer() {
         <footer className="tw-bg-inst-verdef tw-text-white simi-gob-mx-content">
             <div className="container tw-py-12 tw-flex tw-justify-between tw-flex-wrap">
                 <div className="row custom-max-width">
-                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-xs-12 custom-mx-b-1">
                         <img src="/images/escudo_2.png" className="w-100 custom-mx-b-1"></img>
                     </div>
                     <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-xs-12">
