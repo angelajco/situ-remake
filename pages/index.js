@@ -101,7 +101,7 @@ export default function Home() {
                         </b>
                       </h5>
                       <small className="text-center w-100">
-                        INSTITUTO NACIONAL DE INFORMACI&Oacute;N  ESTAD&Iacute;STICA Y GEOGR&Aacute;FICA DE JALISCO
+                        INSTITUTO DE INFORMACI&Oacute;N ESTAD&Iacute;STICA Y GEOGR&Aacute;FICA DE JALISCO
                       </small>
                     </div>
                   </a>
