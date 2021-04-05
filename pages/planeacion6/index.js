@@ -33,8 +33,6 @@ function capaArecibir(cual) {
 
 function capturaL(mapa, objeto) {
 
-  console.log('Capturando L', mapa)
-
   L2 = objeto
 
   mapaBase = mapa
@@ -92,7 +90,7 @@ class Nucleo {
       })
       .catch(error => {
         console.log('Error en el modelo')
-        console.log('error', error)
+        console.log(error)
       });
 
   }
@@ -289,13 +287,9 @@ class ModeloContenido {
       let partes = variable.split('.')
       idTabla = partes[0]
       columna = partes[1]
-      console.log('REsolviendo variable: ', variable)
 
       for (let index = 0; index < this.tablas.length; index++) {
         if (idTabla === this.tablas[index].id) {
-
-          console.log('Tabla ubicada: ', this.tablas[index].id, this.tablas[index].datos, this.nucleo.claveMun)
-
           for (let i = 0; i < this.tablas[index].columnas.length; i++) {
             if (this.tablas[index].columnas[i].id === columna) {
               if (this.tablas[index].datos.length > 0) {
@@ -344,7 +338,6 @@ class ModeloContenido {
           let grafica = this.secciones[index].contenedores[index1].contenido
           for (let index2 = 0; index2 < grafica.datos.length; index2++) {
             if (grafica.datos[index2].etiqueta == '' && grafica.datos[index2].definicion.formula.length == 1) {
-              console.log('creando etiqueta para: ', grafica.datos[index2].definicion)
               let datos = grafica.datos[index2].definicion.formula[0].valor.split('.')
               if (datos.length == 2) {
                 grafica.datos[index2].etiqueta = this.obtenEtiquetaColunma(datos[0], datos[1])
@@ -359,9 +352,6 @@ class ModeloContenido {
 
   cargaAsincrona() {
     this.indTabla++
-    if (this.indTabla == 0) {
-      console.log('Iniciando carga tablas ', this.contadorModelo)
-    }
     if (this.indTabla < this.tablas.length) {
       this.tablas[this.indTabla].cargaDatos()
       return
@@ -372,7 +362,6 @@ class ModeloContenido {
 
     this.indCapas = -1
     // this.cargaAsincronaDatosCapas()
-    console.log('Carga de tablas concluida: ', this.contadorModelo)
     this.yaTengoDatos()
     // this.iniciaDescargaGeoJson()
     // this.descargaAsincronaGeoJson()
@@ -406,17 +395,11 @@ class ModeloContenido {
   descargaAsincronaGeoJson() {
 
     this.indCapas++
-    if (this.indCapas == 0) {
-      console.log('Iniciando descarga de geoJson ', this.contadorModelo)
-    }
-
     if (this.indCapas < this.seccionMapa.capas.length) {
       if (this.seccionMapa.capas[this.indCapas].tipo == 'wfs') {
-        console.log('descarga de capa wfs: ')
         this.seccionMapa.capas[this.indCapas].descargaGeoJson(this)
       } else if (this.seccionMapa.capas[this.indCapas].tipo == 'wms') {
         let capa = this.seccionMapa.capas[this.indCapas]
-        console.log('agregando capa wms', capa)
         let parametrosLL = {
           //service: 'WMS',
           layers: capa.configuracion.capa,
@@ -436,7 +419,6 @@ class ModeloContenido {
         this.descargaAsincronaGeoJson()
       }
     } else {
-      // console.log('Carga de capas terminada: ', this.contadorModelo)
       this.contextos[this.contextos.length - 1].capasCargadas = true
       // this.seccionMapa.refrescarContenido();
       for (let index = 0; index < this.seccionMapa.capas.length; index++) {
@@ -444,7 +426,6 @@ class ModeloContenido {
           let param = {
             style: this.seccionMapa.capas[index].simbologia,
           }
-          //console.log("Parámetros para capa: ",this,param)
           let layer = L2.geoJson(this.seccionMapa.capas[index].geoJson, param);
           mapaBase.addLayer(layer)
           if (this.seccionMapa.capas[index].marcaExt) {
@@ -484,7 +465,6 @@ class SeccionModelo {
       } else if (nodoXml.childNodes[index].nodeName === 'capas') {
         for (let index2 = 0; index2 < nodoXml.childNodes[index].childNodes.length; index2++) {
           if (nodoXml.childNodes[index].childNodes[index2].nodeName === 'capa') {
-            console.log('nueva capa: ')
             let nueva = new CapaSimple(nodoXml.childNodes[index].childNodes[index2], nucleo);
             this.capas.push(nueva);
           }
@@ -535,8 +515,6 @@ class TablaDatos {
   }
 
   cargaDatosViejo() {
-    console.log('CARGANDO DATOS TABLA: ', this)
-    console.log('cargaDatosViejo')
     let url = `${process.env.ruta}/wa/publico/consCatalogada01?`;
     var columnas = '';
     for (let index = 0; index < this.configuracion.columnas.length; index++) {
@@ -566,9 +544,6 @@ class TablaDatos {
   }
 
   cargaDatos() {
-    console.log('inicia petición ajax cargaDatos_')
-    console.log('entorno: ', process.env.ruta)
-    console.log('env: ', process.env.env)
     let url = `${process.env.ruta}/wa/publico/consCatalogada01?`;
     var columnas = '';
     for (let index = 0; index < this.configuracion.columnas.length; index++) {
@@ -584,7 +559,6 @@ class TablaDatos {
       dataType: 'json'
     })
       .done(function (respuesta) {
-        console.log('respuesta ajax: ', respuesta)
         tablaPadre.tituloTabla = respuesta.nombre_tabla
         tablaPadre.columnas = respuesta.columnas
         tablaPadre.datos = respuesta.datos
@@ -592,13 +566,10 @@ class TablaDatos {
         tablaPadre.nucleo.modelo.cargaAsincrona()
       })
       .fail(function (error) {
-        console.log('error en peticion:', error);
+        console.log(error);
         tablaPadre.errorCarga = true
         tablaPadre.nucleo.modelo.cargaAsincrona()
       })
-      .always(function () {
-        console.log('petición finalizada')
-      });
   }
 
   obtenCelda(fila, id) {
@@ -681,7 +652,6 @@ class Contenedor {
       } else if (nodoXml.childNodes[index].nodeName === 'grafica') {
         let nuevo = new Grafica(nodoXml.childNodes[index], padre)
         this.contenido = nuevo
-        console.log('NUEVA GRAFICA ', nuevo)
       }
     }
   }
@@ -1070,7 +1040,7 @@ class CapaSimple {
         this.cliente.configuracion = JSON.parse(req.responseText);
         this.modelo.cargaAsincronaDatosCapas();
       } else if (req.status >= 400) {
-        console.log("Error en el servidor", req);
+        console.log("Error en el servidor");
         this.modelo.cargaAsincronaDatosCapas();
       }
     }
@@ -1151,7 +1121,6 @@ class CapaSimple {
       dataType: 'jsonp',
       capa: this,
       success: function (response) {
-        // console.log('DESDE CAPA SIMPLE ANTES DE AJAX')
         this.capa.geoJson = response
         this.capa.nucleo.modelo.descargaAsincronaGeoJson()
       }
