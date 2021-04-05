@@ -57,16 +57,204 @@
 
 /* footer */
 
+/* footer {
+    background-image: url('/images/index/circuitos_footer.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+} */
+
 .simi-gob-mx {
     font-family: Montserrat;
-    font-size: 85%;
-    line-height: 135%;
+    font-size: 13pt;
+    line-height: 21pt;
     height: auto;
 }
 
-.stick-footer {
-    background-image: url("/images/index/pleca.svg");
-    background-color: #12322b;
-    background-repeat: repeat-x;
-    height: 50px;
+.simi-gob-mx-situ-menu {
+    font-family: Montserrat;
+    font-size: 10pt;
+    line-height: 15pt;
+    height: auto;
+}
+
+.simi-gob-mx-content {
+    font-family: Montserrat;
+    font-size: 13pt;
+    line-height: 21pt;
+    height: auto;
+}
+
+.simi-gob-mx-title {
+    font-family: Montserrat;
+    font-size: 16pt;
+    line-height: 26pt;
+    height: auto;
+}
+
+/* custom responsive */
+
+@media only screen and (min-width: 769px) {
+    .custom-max-width {
+        width: 100%;
+        max-width: 1200px !important;
+        padding-right: 75px !important;
+        padding-left: 75px !important;
+    }
+
+    .custom-max-width-np {
+        width: 100%;
+        max-width: 1200px !important;
+    }
+
+    .custom-inst-text {
+        font-family: Montserrat;
+        font-size: 16pt;
+        text-align: justify;
+    }
+
+    .custom-mx-t-1 {
+        margin-top: 37px !important;
+    }
+    
+    .custom-mx-t-2 {
+        margin-top: 75px !important;
+    }
+
+    .custom-mx-b-1 {
+        margin-bottom: 37px !important;
+    }
+    
+    .custom-mx-x-1 {
+        margin: 37px !important;
+    }
+
+    .custom-px-t-1 {
+        padding-top: 37px !important;
+    }
+
+    .custom-title-2x1 {
+        font-size: 1.5rem !important;
+        line-height: 2rem !important;
+    }
+
+    .stick-footer {
+        background-image: url("/images/index/pleca.svg");
+        background-color: #12322b;
+        background-repeat: repeat-x;
+        height: 50px;
+    }
+}
+
+@media only screen and (min-width: 481px) and (max-width : 768px) {
+    .custom-max-width {
+        width: 100%;
+        max-width: 768px !important;
+        padding-right: 37px !important;
+        padding-left: 37px !important;
+    }
+
+    .custom-inst-text {
+        font-family: Montserrat;
+        font-size: 12pt;
+        text-align: justify;
+    }
+
+    .custom-mx-t-1 {
+        margin-top: 15px !important;
+    }
+    
+    .custom-mx-t-2 {
+        margin-top: 37px !important;
+    }
+
+    .custom-mx-b-1 {
+        margin-bottom: 15px !important;
+    }
+    
+    .custom-mx-x-1 {
+        margin: 15px !important;
+    }
+
+    .custom-px-t-1 {
+        padding-top: 15px !important;
+    }
+
+    .custom-title-2x1 {
+        font-size: 1.3rem !important;
+        line-height: 1.5rem !important;
+    }
+
+    .stick-footer {
+        background-image: url("/images/index/pleca.svg");
+        background-color: #12322b;
+        background-repeat: repeat-x;
+        height: 40px;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .custom-max-width {
+        width: 100%;
+        max-width: 480px !important;
+        padding-right: 37px !important;
+        padding-left: 37px !important;
+    }
+
+    .custom-inst-text {
+        font-family: Montserrat;
+        font-size: 9pt;
+        text-align: justify;
+    }
+
+    .custom-inst-text {
+        font-family: Montserrat;
+        font-size: 12pt;
+        text-align: justify;
+    }
+
+    .custom-mx-t-1 {
+        margin-top: 7px !important;
+    }
+    
+    .custom-mx-t-2 {
+        margin-top: 15px !important;
+    }
+
+    .custom-mx-b-1 {
+        margin-bottom: 7px !important;
+    }
+    
+    .custom-mx-x-1 {
+        margin: 7px !important;
+    }
+
+    .custom-px-t-1 {
+        padding-top: 7px !important;
+    }
+
+    .custom-title-2x1 {
+        font-size: 1rem !important;
+        line-height: 1rem !important;
+    }
+
+    .stick-footer {
+        background-image: url("/images/index/pleca.svg");
+        background-color: #12322b;
+        background-repeat: repeat-x;
+        height: 25px;
+    }
+}
+
+.test-heigth {
+    height: 100px !important;
+}
+
+.interesting-sites-images {
+    width: 90%;
+    height: 200px;
+}
+
+.interesting-sites {
+    background-image: url('/images/index/fondo_sitios_interes.jpg');
+    background-repeat: repeat;
 }

@@ -2,9 +2,16 @@ import React from 'react'
 
 export default function TituloSitu() {
   return (
-    <div className="tw-bg-titulo tw-py-2 tw-mt-16">
-      <div className="tw-px-8 tw-flex tw-justify-end">
-        <h1 className="tw-text-2xl tw-font-bold tw-text-white">Sistema de Información Territorial y Urbana SITU</h1>
+    <div className="container-fluid">
+      <div className="row tw-bg-titulo tw-py-2 tw-mt-16 justify-content-center">
+        <div className="custom-max-width tw-flex tw-justify-center">
+          <p className="custom-title-2x1 tw-my-4 tw-text-white">
+            <b className="tw-mr-2">
+              Sistema de Información Territorial y Urbana
+            </b>
+            SITU
+          </p>
+        </div>
       </div>
     </div>
   )
