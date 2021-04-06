@@ -25,8 +25,8 @@ function MyApp({ Component, pageProps }) {
 
   return (
     <>
-      <Header />
       <TituloSitu />
+      <Header />
       <Menu />
       <Component {...pageProps} />
       <Footer />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap'
+import { Navbar, Nav, OverlayTrigger, NavDropdown, Tooltip } from 'react-bootstrap'
 import { useRouter } from 'next/router'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -44,6 +44,14 @@ export default function Menu() {
     let deshabilitarConsulta = false
     let deshabilitarAdministracion = false
     let deshabilitarSesion = false
+
+    const renderTooltip = (props) => (
+        <Tooltip className="tooltip-pass" id="button-tooltip" {...props}>
+            <div>
+                {tokenSesion ? 'Cerrar sesión' : 'Iniciar sesión'}
+            </div>
+        </Tooltip>
+    );
 
     if (ruta === '/') {
         deshabilitarInicio = true
@@ -103,9 +111,9 @@ export default function Menu() {
     };
 
     return (
-        <Navbar expand="lg" className="tw-text-center tw-bg-white justify-content-center">
+        <Navbar expand="lg" className="tw-text-center tw-bg-white justify-content-center custom-mt-situ-menu custom-mt-situ-menu">
             <div className="row custom-max-width">
-                <Navbar.Toggle aria-controls="basic-navbar-nav" />
+                <Navbar.Toggle aria-controls="basic-navbar-nav" className="ml-auto custom-toggler"/>
                 <Navbar.Collapse id="basic-navbar-nav" className="justify-content-center">
                     <Nav className="tw-py-2">
                         <NavDropdown title="CAMBIO DE IDIOMA" id="basic-nav-dropdown" className="md:tw-mb-3 tw-font-semibold md:tw-ml-0 tw-ml-5 tw-text-titulo hover:tw-text-inst-verdef hover:tw-no-underline hover:tw-font-bold">
@@ -118,7 +126,8 @@ export default function Menu() {
                         <Link href="/planeacion6">
                             <a className={deshabilitarPlaneacion ? active : noActive} >PLANEACI&Oacute;N<br></br>MUNICIPAL</a>
                         </Link>
-                        <Link href="/analisis/analisis-geografico">
+                        {/* <Link href="/analisis/analisis-geografico"> */}
+                        <Link href="/construccion">
                             <a className={deshabilitarAnalisis ? active : noActive}>AN&Aacute;LISIS<br></br>GEOGR&Aacute;FICO</a>
                         </Link>
                         <Link href="/construccion">
@@ -136,24 +145,17 @@ export default function Menu() {
                         {
                             tokenSesion
                                 ?
-                                <a className={noActive} href="/administracion/inicio-sesion" onClick={cerrarSesion}>CERRAR<br></br>SESI&Oacute;N</a>
-                                :
-                                <Link href="/administracion/inicio-sesion">
-                                    <a className={deshabilitarSesion ? active : noActive} >
-                                        INICIO DE<br/>SESI&Oacute;N
-                                    </a>
-                                </Link>
-                        }
-                        {
-                            tokenSesion
-                                ?
                                 <a className={noActive} href="/administracion/inicio-sesion" onClick={cerrarSesion}>
-                                    <FontAwesomeIcon size="3x" icon={faUserCircle}/>
+                                    <OverlayTrigger placement="right" overlay={renderTooltip}>
+                                        <FontAwesomeIcon size="3x" icon={faUserCircle}/>
+                                    </OverlayTrigger>
                                 </a>
                                 :
                                 <Link href="/administracion/inicio-sesion">
                                     <a className={deshabilitarSesion ? active : noActive} >
-                                        <FontAwesomeIcon size="3x" icon={faUserCircle}/>
+                                        <OverlayTrigger placement="right" overlay={renderTooltip}>
+                                            <FontAwesomeIcon size="3x" icon={faUserCircle}/>
+                                        </OverlayTrigger>
                                     </a>
                                 </Link>
                         }

@@ -18,11 +18,11 @@ export default function Header() {
                             alt="Gobierno de M&eacute;exico"
                         />
                     </Navbar.Brand>
-                    <Navbar.Toggle aria-controls="basic-navbar-nav" className="ml-auto"/>
+                    <Navbar.Toggle aria-controls="basic-navbar-nav" className="ml-auto tw-text-titulo"/>
                     <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
                         <Nav>
                             <a href="https://mivacuna.salud.gob.mx" target="_blank" className={noActive}>Registro para vacunaci&oacute;n</a>
-                            <a href="hhttps://coronavirus.gob.mx" target="_blank" className={noActive} >Informaci&oacute; sobre COVID-19</a>
+                            <a href="https://coronavirus.gob.mx" target="_blank" className={noActive} >Informaci&oacute;n sobre COVID-19</a>
                             <a href="https://www.gob.mx/tramites" target="_blank" className={noActive}>Tr&aacute;mites</a>
                             <a href="https://www.gob.mx/gobierno" target="_blank" className={noActive} >Gobierno</a>
                             <a href="https://www.gob.mx/busqueda?utf8=%E2%9C%93" target="_blank" className={noActive}>

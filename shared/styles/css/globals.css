@@ -22,46 +22,7 @@
     color: white;
 }
 
-/* Backgrounds index */
-
-.bg-curvas-1 {
-    background-image: url('/images/index/curvas_nivel.jpg');
-    background-repeat: no-repeat;
-    background-size: cover;
-}
-
-.bg-curvas-2 {
-    background-image: url('/images/index/curvas_nivel2.jpg');
-    background-repeat: no-repeat;
-    background-size: cover;
-}
-
-.bg-curvas-3 {
-    background-image: url('/images/index/curvas_nivel4.jpg');
-    background-repeat: no-repeat;
-    background-size: cover;
-}
-
-.bg-curvas-4 {
-    background-image: url('/images/index/curvas_nivel3.jpg');
-    background-repeat: no-repeat;
-    background-size: cover;
-}
-
-.border-gris::after {
-    content: '';
-    background-color: #98989a;
-    width: 0.5rem;
-    padding: 0.5rem;
-}
-
 /* footer */
-
-/* footer {
-    background-image: url('/images/index/circuitos_footer.png');
-    background-repeat: no-repeat;
-    background-size: contain;
-} */
 
 .simi-gob-mx {
     font-family: Montserrat;
@@ -90,6 +51,8 @@
     line-height: 26pt;
     height: auto;
 }
+
+/* ends footer */
 
 /* custom responsive */
 
@@ -143,6 +106,13 @@
         background-repeat: repeat-x;
         height: 50px;
     }
+
+    footer {
+        background-image: url('/images/index/circuitos_footer_.png');
+        background-repeat: no-repeat;
+        background-position: 10% 11%;
+        background-size: 44% 92%;
+    }
 }
 
 @media only screen and (min-width: 481px) and (max-width : 768px) {
@@ -180,7 +150,7 @@
     }
 
     .custom-title-2x1 {
-        font-size: 1.3rem !important;
+        font-size: 1.1rem !important;
         line-height: 1.5rem !important;
     }
 
@@ -189,6 +159,12 @@
         background-color: #12322b;
         background-repeat: repeat-x;
         height: 40px;
+    }
+
+    footer {
+        background-image: url('/images/index/circuitos_footer_.png');
+        background-repeat: no-repeat;
+        background-position: 50% 90%;
     }
 }
 
@@ -243,7 +219,15 @@
         background-repeat: repeat-x;
         height: 25px;
     }
+
+    footer {
+        background-image: url('/images/index/circuitos_footer_.png');
+        background-repeat: no-repeat;
+        background-position: 50% 97%;
+    }
 }
+
+/* ends resposive */
 
 .test-heigth {
     height: 100px !important;
@@ -257,4 +241,16 @@
 .interesting-sites {
     background-image: url('/images/index/fondo_sitios_interes.jpg');
     background-repeat: repeat;
+}
+
+.custom-mt-situ-menu {
+    margin-top: 144px;
+}
+
+.custom-toggler.navbar-toggler .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3e%3cpath stroke='rgb(39,108,111)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.navbar-toggler {
+    border: none;
 }
