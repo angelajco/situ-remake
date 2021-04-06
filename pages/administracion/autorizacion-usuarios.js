@@ -463,7 +463,7 @@ export default function AutorizacionUsuarios() {
 
                                         <Tab eventKey="no-autorizados" title="Usuarios No Autorizados" className="tab-tabla">
 
-                                            <ToolkitProvider keyField="id_usuario" data={noUsuarios} columns={columnsNoAutorizados} search>
+                                            <ToolkitProvider keyField="id_usuario" data={noUsuarios} columns={columnsNoAutorizados} search={{ searchFormatted: true }}>
                                                 {
                                                     props => (
                                                         <>

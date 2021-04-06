@@ -228,7 +228,7 @@ const Map = (props) => {
                     </BaseLayer>
                 </LayersControl>
 
-                <FeatureGroup>
+                {/* <FeatureGroup>
                     <EditControl
                         position='topright'
                         draw={{
@@ -238,7 +238,7 @@ const Map = (props) => {
                         }}
                     >
                     </EditControl>
-                </FeatureGroup>
+                </FeatureGroup> */}
 
                 {
                     props.datos.map((capa, index) => {
