@@ -63,6 +63,8 @@ export default function Menu() {
         deshabilitarAdministracion = true
     } else if (ruta === '/administracion/inicio-sesion') {
         deshabilitarSesion = true
+    } else if (ruta.includes('/estadisticas-indicadores')) {
+        deshabilitarEstadisticas = true
     }
 
 
@@ -126,12 +128,12 @@ export default function Menu() {
                         <Link href="/planeacion6">
                             <a className={deshabilitarPlaneacion ? active : noActive} >PLANEACI&Oacute;N<br></br>MUNICIPAL</a>
                         </Link>
-                        {/* <Link href="/analisis/analisis-geografico"> */}
-                        <Link href="/construccion">
+                        <Link href="/analisis/analisis-geografico">
                             <a className={deshabilitarAnalisis ? active : noActive}>AN&Aacute;LISIS<br></br>GEOGR&Aacute;FICO</a>
                         </Link>
+                        {/* <Link href="/estadisticas-indicadores"> */}
                         <Link href="/construccion">
-                            <a className={noActive}>ESTAD&Iacute;STICAS E<br></br>INDICADORES</a>
+                            <a className={deshabilitarEstadisticas ? active : noActive}>ESTAD&Iacute;STICAS E<br></br>INDICADORES</a>
                         </Link>
                         <Link href="/construccion">
                             <a className={noActive}>CONSULTA<br></br>DOCUMENTAL</a>
