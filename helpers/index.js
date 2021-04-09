@@ -43,8 +43,6 @@ export default function createUndoRedo() {
     _timeline = {
       history: [...limitedHistory, current],
       current: next,
-      // reset redo, don't allow redo if we update in the middle of the timeline
-      // this seems to be the idiomatic approach for most applications
       future: []
     };
     return this.current;
@@ -75,7 +73,7 @@ export default function createUndoRedo() {
       return this.current;
     }
   }
-  
+
   const publicAPI = {
     update,
     undo,

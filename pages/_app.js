@@ -1,6 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
 import '../shared/styles/css/globals.css'
 import '../shared/styles/css/admin.css'
+import '../shared/styles/css/analisis.css'
 
 import Header from '../components/Header'
 import Menu from '../components/Menu'

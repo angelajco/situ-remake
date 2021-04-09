@@ -22,101 +22,56 @@ var estadoActual;
 var estadoActualLatLng;
 var estadoActualZoom;
 
-var _timeline = {
-    history: [],
-    current: [],
-    future: []
-};
-
 function useTimeline() {
-
-    const [state, setState] = useState([]);
-    const historyLimit = -5
-
-    function _canUndo() {
-        return _timeline.history.length > 1;
-    }
-
-    function _canRedo() {
-        return _timeline.future.length > 0;
-    }
-
-    const canUndo = _canUndo();
-    const canRedo = _canRedo();
-
-    const splitLast = arr => {
-        // split the last item from an array and return a tupple of [rest, last]
-        const length = arr.length;
-        const lastItem = arr[length - 1];
-        const restOfArr = arr.slice(0, length - 1);
-        return [restOfArr, lastItem];
-    };
-
-    const sliceEnd = (arr, size) => {
-        // slice array from to end by size
-        const startIndex = arr.length < size ? 0 : size;
-        const trimmedArr = arr.slice(startIndex, arr.length);
-        return trimmedArr;
-    };
-
+    const timelineRef = useRef(new createUndoRedo());
+    const [state, setState] = useState(timelineRef.current.current);
+    // console.log(state, "state de timeline");
     const update = (value) => {
-        const { history, current } = _timeline;
-        const limitedHistory = sliceEnd(history, historyLimit);
-        _timeline = {
-            history: [...limitedHistory, current],
-            current: value,
-            future: []
-        };
-        setState(_timeline.current);
+        // console.log(value, "value del update")
+        const nextState = timelineRef.current.update(value);
+        // console.log("timeline update", timelineRef.current.current)
+        setState(nextState);
     };
 
     const undo = () => {
-        const { history, current, future } = _timeline;
-        const [restOfArr, lastItem] = splitLast(history);
-        _timeline = {
-            history: restOfArr,
-            current: lastItem,
-            future: [...future, current]
-        };
-        setState(_timeline.current);
+        const nextState = timelineRef.current.undo();
+        setState(nextState);
+
+        // estadoActual = timelineRef.current.current[timelineRef.current.current.length - 1];
+        // console.log(estadoActual, "zoom actual de undo");
+        // estadoActualLatLng = estadoActual.centroUndoRedo;
+        // estadoActualZoom = estadoActual.zoomUndoRedo;
+        // estadoActualZoom = estadoActual;
+        // console.log("timeline undo", timelineRef.current.current)
     };
 
     const redo = () => {
-        const { history, current, future } = _timeline;
-        const [restOfArr, lastItem] = splitLast(future);
-        _timeline = {
-            history: [...history, current],
-            current: lastItem,
-            future: restOfArr
-        };
-        setState(_timeline.current);
+        const nextState = timelineRef.current.redo();
+        setState(nextState);
     };
 
-    useEffect(() => {
-        update([
-            {
-                centroUndoRedo: { lat: 23.26825996870948, lng: -102.88361673036671 },
-                zoomUndoRedo: 5
-            }
-        ]);
-    }, [])
-
-    return [state, { canUndo, canRedo, update, undo, redo }];
+    return [state, { ...timelineRef.current, update, undo, redo }];
 }
 
 const Map = (props) => {
-    console.log(props);
     const [coordenadas, setCoordenadas] = useState("")
     const [tipoCoordenada, setTipoCoordenada] = useState(1)
+
+    let centroUndoRedo = {}
+    let zoomUndoRedo = 0;
 
     //Centro y zoom del mapa
     var centroInicial = [23.26825996870948, -102.88361673036671];
     var acercamientoInicial = 5;
 
+    const [centro, setCentro] = useState(centroInicial)
+    const [acercamiento, setAcercamiento] = useState(acercamientoInicial)
+
     //Para guardar los rasgos
     const [rasgos, setRasgos] = useState([])
     function onEachFeature(feature = {}, layer) {
         layer.on('click', function () {
+            console.log("agregado")
             setRasgos([feature.properties])
         })
     }
@@ -137,25 +92,38 @@ const Map = (props) => {
     // }
 
     //Para manejar los estados del undo-redo
-    const [todos, { canUndo, canRedo, update, undo, redo }] = useTimeline();
+    const [todos, { timeline, canUndo, canRedo, update, undo, redo }] = useTimeline();
+    //Valores para undo-redo
+    // const [valorUndoRedo, setValorUndoRedo] = useState({ centroUndoRedo: centroInicial, zoomUndoRedo: acercamiento })
+    const [valorUndoRedo, setValorUndoRedo] = useState(acercamiento)
+
+    useEffect(() => {
+        // update([]);
+        // update([5]);
+    }, [])
+
     const [registraMovimiento, setRegistraMovimiento] = useState(true)
     //Para undo-redo
     const [mapaReferencia, setmapaReferencia] = useState(null);
     function MapaMovimientoUndoRedo({ target }) {
-        setRegistraMovimiento(false);
         if (target.name === 'undo') {
+            // console.log("timeline undo antes", timeline)
             undo();
-            estadoActual = _timeline.current[_timeline.current.length - 1];
-            estadoActualLatLng = estadoActual.centroUndoRedo;
-            estadoActualZoom = estadoActual.zoomUndoRedo;
-            mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
+            // console.log("timeline undo despues", timeline)
+
+            estadoActualZoom = _timeline
+            console.log(estadoActualZoom, "zoom de current undo");
+
+            setRegistraMovimiento(false);
+            // mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
+            // mapaReferencia.setView(centroInicial, estadoActualZoom);
         }
         else {
             redo();
-            estadoActual = _timeline.current[_timeline.current.length - 1];
-            estadoActualLatLng = estadoActual.centroUndoRedo;
-            estadoActualZoom = estadoActual.zoomUndoRedo;
-            mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
+            setRegistraMovimiento(false);
+            estadoActualZoom = timeline.current[timeline.current.length - 1]
+            console.log(estadoActualZoom, "zoom de current redo");
+            // mapaReferencia.setView(centroInicial, estadoActualZoom);
         }
     }
 
@@ -164,10 +132,15 @@ const Map = (props) => {
 
         const mapaEventos = useMapEvents({
             moveend() {
-                let centroUndoRedo = mapaEventos.getCenter();
-                let zoomUndoRedo = mapaEventos.getZoom();
+                centroUndoRedo = mapaEventos.getCenter();
+                zoomUndoRedo = mapaEventos.getZoom();
+                console.log(zoomUndoRedo, 'zoom-actual de moveend')
                 if (registraMovimiento == true) {
-                    const nextTodos = [...todos, { centroUndoRedo, zoomUndoRedo }];
+                    // setValorUndoRedo({ centroUndoRedo, zoomUndoRedo });
+                    // setValorUndoRedo(zoomUndoRedo);
+                    // console.log("valorUndoRedo va guardando uno atrasado", valorUndoRedo);
+                    const nextTodos = [...todos, zoomUndoRedo];
+                    // console.log("nextTodos es la variable donde se guardan los valores", nextTodos)
                     update(nextTodos);
                 }
                 setRegistraMovimiento(true)
@@ -260,23 +233,19 @@ const Map = (props) => {
 
     return (
         <>
-
             <Head>
                 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
                     integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
             </Head>
-            {props.botones == true &&
-                <div className="tw-inline-block">
-                    <button className="tw-mr-5" disabled={!canUndo} name="undo" onClick={MapaMovimientoUndoRedo}>
-                        Vista anterior
-                        </button>
-                    <button disabled={!canRedo} name="redo" onClick={MapaMovimientoUndoRedo}>
-                        Vista posterior
-                        </button>
-                </div>
-            }
 
-            <MapContainer whenCreated={setmapaReferencia} fullscreenControl={true} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 400, width: "100%" }}>
+            <button disabled={!canUndo} name="undo" onClick={MapaMovimientoUndoRedo}>
+                undo
+            </button>
+            <button disabled={!canRedo} name="redo" onClick={MapaMovimientoUndoRedo}>
+                redo
+            </button>
+
+            <MapContainer whenCreated={setmapaReferencia} fullscreenControl={true} center={centro} zoom={acercamiento} scrollWheelZoom={true} style={{ height: 400, width: "100%" }}>
 
                 <ScaleControl maxWidth="100" />
                 <ControlMovimiento />
@@ -303,7 +272,7 @@ const Map = (props) => {
                     </BaseLayer>
                 </LayersControl>
 
-                <FeatureGroup>
+                {/* <FeatureGroup>
                     <EditControl
                         position='topright'
                         draw={{
@@ -313,7 +282,7 @@ const Map = (props) => {
                         }}
                     >
                     </EditControl>
-                </FeatureGroup>
+                </FeatureGroup> */}
 
                 {
                     props.datos.map((capa, index) => {
@@ -333,6 +302,23 @@ const Map = (props) => {
                     })
                 }
             </MapContainer>
+
+            <div className="logs row">
+                <div className="col-3">
+
+                    <Logs title="history" items={timeline.history} />
+                </div>
+                <div className="col-3">
+
+                    <Logs title="current" items={timeline.current} />
+                </div>
+                <div className="col-3">
+
+                    <Logs title="future" items={timeline.future} />
+                </div>
+            </div>
+
+
 
             {rasgos &&
                 rasgos.map((valor, index) => (

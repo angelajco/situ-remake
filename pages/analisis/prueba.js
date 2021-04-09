@@ -21,7 +21,7 @@ function useTimeline() {
     const nextState = timelineRef.current.redo();
     setState(nextState);
   };
-  
+
   return [state, { ...timelineRef.current, update, undo, redo }];
 }
 
@@ -45,7 +45,6 @@ export default function Prueba() {
   );
 
   return (
-    // <div>hola</div>
     <div className="App">
       <div className="left">
         <div className="controls">
@@ -70,16 +69,24 @@ export default function Prueba() {
         )
         )}
       </div>
-      <br/>
-      <br/>
-      <br/>
-      <br/>
+      <br />
+      <br />
       <div className="right">
         <div className="right-title">LOG</div>
         <div>
-          <div className="logs">
-            <Logs title="history" items={timeline.history} />
-            <Logs title="future" items={timeline.future} />
+          <div className="logs row">
+            <div className="col-3">
+
+              <Logs title="history" items={timeline.history} />
+            </div>
+            <div className="col-3">
+
+              <Logs title="current" items={timeline.current} />
+            </div>
+            <div className="col-3">
+
+              <Logs title="future" items={timeline.future} />
+            </div>
           </div>
         </div>
       </div>

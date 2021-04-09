@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
-import { Form, Modal, Button } from 'react-bootstrap'
+import { Form, Modal, Button, OverlayTrigger, Tooltip, Card, ListGroup } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
 import { ContextMenu, MenuItem, ContextMenuTrigger } from "react-contextmenu";
 
@@ -13,6 +13,9 @@ import catalogoEntidades from "../../shared/jsons/entidades.json";
 
 import Cookies from 'universal-cookie'
 const cookies = new Cookies()
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUpload, faDownload, faSave, faEdit, faCheck, faPlus } from '@fortawesome/free-solid-svg-icons'
 
 export default function AnalisisGeografico() {
     //Cuando se renderiza el lado del servidor (SSR). Garantiza que el estado del contexto no persista en varias representaciones en el servidor, lo que provocaría discrepancias en las marcas de cliente / servidor después de que se presenten varias solicitudes en el servidor
@@ -52,14 +55,6 @@ export default function AnalisisGeografico() {
 
     //Importa dinámicamente el mapa
     const Map = dynamic(
-        () => import('../../components/Map'),
-        {
-            loading: () => <p>El mapa está cargando</p>,
-            ssr: false
-        }
-    )
-
-    const MapEspejo = dynamic(
         () => import('../../components/Map'),
         {
             loading: () => <p>El mapa está cargando</p>,
@@ -190,7 +185,10 @@ export default function AnalisisGeografico() {
                 capaWMS["estilos"] = { 'transparencia': 1 };
                 capaWMS["zoomMinimo"] = 0;
                 capaWMS["zoomMaximo"] = 18;
+                capaWMS["leyenda"] = capa.leyenda;
+                console.log(capaWMS, "capaWMS");
                 setCapasVisualizadasEspejo([...capasVisualizadasEspejo, capaWMS])
+
             }
         }
     }
@@ -433,13 +431,11 @@ export default function AnalisisGeografico() {
                 <Modal.Footer>
                     <Button variant="secondary" onClick={consultar}>Consultar</Button>
                     <Button variant="primary" onClick={agregar}>Agregar capas</Button>
-                    <Button variant="primary" onClick={limpiar}>Limpiar camps</Button>
+                    <Button variant="primary" onClick={limpiar}>Limpiar campos</Button>
                 </Modal.Footer>
             </Modal>
 
-
-
-            <ContextMenuTrigger id="same_unique_identifier">
+            {/* <ContextMenuTrigger id="same_unique_identifier">
                 <div className="well">Right click to see the menu</div>
             </ContextMenuTrigger>
 
@@ -454,8 +450,7 @@ export default function AnalisisGeografico() {
                 <MenuItem data={{ foo: 'bar' }} onClick={menuContextual}>
                     ContextMenu Item 3
                     </MenuItem>
-            </ContextMenu>
-
+            </ContextMenu> */}
 
             <div className="main">
                 <div className="container">
@@ -463,12 +458,26 @@ export default function AnalisisGeografico() {
                         <div className="col-12">
                             <button onClick={dividirPantalla}>Pantalla dividida</button>
                         </div>
+
                         <div className={dobleMapa}>
                             <div className="row">
+                                <div className="col-12 tw-text-center">
+                                    <p>
+                                        {nombreMapa}
+                                        <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
+                                            <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setmuestraEditarNombreMapa(false)} icon={faEdit}></FontAwesomeIcon>
+                                        </OverlayTrigger>
+                                    </p>
+                                    <input type="text" hidden={muestraEditarNombreMapa} onChange={(event) => cambiaNombreMapa(event, 0)} value={nombreMapa}></input>
+                                    <OverlayTrigger overlay={<Tooltip>Finalizar edición</Tooltip>}>
+                                        <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" hidden={muestraEditarNombreMapa} onClick={() => setmuestraEditarNombreMapa(true)} icon={faCheck}></FontAwesomeIcon>
+                                    </OverlayTrigger>
+                                </div>
+
                                 <div className="col-12">
                                     <Form onSubmit={handleSubmit(onSubmit)}>
                                         <Form.Group controlId="entidad">
-                                            <Form.Label className="tw-text-red-600">Entidad</Form.Label>
+                                            <Form.Label className="tw-text-red-600">Capas</Form.Label>
                                             <Form.Control as="select" name="entidad" required ref={register}>
                                                 <option value=""></option>
                                                 {
@@ -480,165 +489,180 @@ export default function AnalisisGeografico() {
                                                 }
                                             </Form.Control>
                                         </Form.Group>
-                                        <input type="hidden" name="mapa" value={0} ref={register} />
-                                        <input type="submit" />
+                                        <input type="submit" value="Agregar" />
                                     </Form>
                                 </div>
-                                <div className="col-12">
-                                    <p>Capas</p>
-                                    {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
-                                    <DragDropContext onDragEnd={handleOnDragEnd}>
-                                        <Droppable droppableId="entidades">
-                                            {(provided) => (
-                                                // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
-                                                <div {...provided.droppableProps} ref={provided.innerRef}>
-                                                    {
+
+                                <div className="col-12 tw-mt-8">
+                                    <Card>
+                                        <Card.Header>Capas</Card.Header>
+                                        {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
+                                        <DragDropContext onDragEnd={handleOnDragEnd}>
+                                            <Droppable droppableId="entidades">
+                                                {(provided) => (
+                                                    // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
+                                                    <ListGroup {...provided.droppableProps} ref={provided.innerRef}> {
                                                         capasVisualizadas.map((capa, index) => (
                                                             <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
                                                                 {(provided) => (
                                                                     <>
-                                                                        <div {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef} className="row">
-                                                                            <Form.Group className="col-6">
-                                                                                <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
-                                                                            </Form.Group>
-                                                                            <Form.Group className="col-6">
-                                                                                <Form.Label>Transparencia</Form.Label>
-                                                                                <Form.Control type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 0)} />
-                                                                            </Form.Group>
-                                                                            {capa.tipo == "wms" &&
-                                                                                (
-                                                                                    <>
-                                                                                        <Form.Group className="col-6">
-                                                                                            <Form.Label>Zoom minimo</Form.Label>
-                                                                                            <Form.Control type="range" min="0" step="1" max="18" defaultValue="0" name={capa.num_capa} data-zoom="0" onChange={zoomMinMax} />
-                                                                                        </Form.Group>
-                                                                                        <Form.Group className="col-6">
-                                                                                            <Form.Label>Zoom máximo</Form.Label>
-                                                                                            <Form.Control type="range" min="0" step="1" max="18" defaultValue="18" name={capa.num_capa} data-zoom="1" onChange={zoomMinMax} />
-                                                                                        </Form.Group>
-                                                                                    </>
-                                                                                )}
-                                                                        </div>
+                                                                        <ListGroup.Item {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                                                            <div className="row">
+                                                                                <Form.Group className="col-6">
+                                                                                    <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
+                                                                                </Form.Group>
+                                                                                <Form.Group className="col-6">
+                                                                                    <Form.Label>Transparencia</Form.Label>
+                                                                                    <Form.Control type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 0)} />
+                                                                                </Form.Group>
+                                                                                {capa.tipo == "wms" &&
+                                                                                    (
+                                                                                        <>
+                                                                                            <Form.Group className="col-6">
+                                                                                                <Form.Label>Zoom minimo</Form.Label>
+                                                                                                <Form.Control type="range" min="0" step="1" max="18" defaultValue="0" name={capa.num_capa} data-zoom="0" onChange={zoomMinMax} />
+                                                                                            </Form.Group>
+                                                                                            <Form.Group className="col-6">
+                                                                                                <Form.Label>Zoom máximo</Form.Label>
+                                                                                                <Form.Control type="range" min="0" step="1" max="18" defaultValue="18" name={capa.num_capa} data-zoom="1" onChange={zoomMinMax} />
+                                                                                            </Form.Group>
+                                                                                        </>
+                                                                                    )}
+                                                                            </div>
+                                                                        </ListGroup.Item>
                                                                     </>
                                                                 )}
                                                             </Draggable>
                                                         ))
                                                     }
-                                                    {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
-                                                    {provided.placeholder}
-                                                </div>
-                                            )}
-                                        </Droppable>
-                                    </DragDropContext>
+                                                        {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
+                                                        {provided.placeholder}
+                                                    </ListGroup>
+                                                )}
+                                            </Droppable>
+                                        </DragDropContext>
+                                    </Card>
                                 </div>
-                                <div className="col-12">
-                                    <p>{nombreMapa}</p>
-                                    <div>
-                                        <button onClick={agregarCapas}>Agregar Capas (botón “+”)</button>
-                                        <button onClick={() => setmuestraEditarNombreMapa(false)}>Edición (nombre mapa)</button>
-                                        <input type="text" hidden={muestraEditarNombreMapa} onChange={(event) => cambiaNombreMapa(event, 0)} value={nombreMapa}></input>
-                                        <button hidden={muestraEditarNombreMapa} onClick={() => setmuestraEditarNombreMapa(true)}>Finalizar edición</button>
-                                        <button>Cargar información.</button>
-                                        <button>Descargar información.</button>
-                                        <button>Guardar proyecto.</button>
-                                        <button>Análisis espacial simple.</button>
-                                        <button>Sistema de coordenadas</button>
-                                        <button>Vista anterior</button>
-                                        <button>Vista posterior</button>
+
+                                <div className="col-12 tw-mt-8">
+                                    <div className="tw-mb-4 tw-inline-block">
+                                        <OverlayTrigger overlay={<Tooltip>Agregar capas</Tooltip>}>
+                                            <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" onClick={agregarCapas} icon={faPlus}></FontAwesomeIcon>
+                                        </OverlayTrigger>
+                                        <OverlayTrigger overlay={<Tooltip>Subir información</Tooltip>}>
+                                            <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" icon={faUpload}></FontAwesomeIcon>
+                                        </OverlayTrigger>
+                                        <OverlayTrigger overlay={<Tooltip>Descargar información</Tooltip>}>
+                                            <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" icon={faDownload}></FontAwesomeIcon>
+                                        </OverlayTrigger>
+                                        <OverlayTrigger overlay={<Tooltip>Guardar información</Tooltip>}>
+                                            <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" icon={faSave}></FontAwesomeIcon>
+                                        </OverlayTrigger>
                                     </div>
-                                    <Map datos={capasVisualizadas} />
+                                    <Map datos={capasVisualizadas} botones={true} />
                                 </div>
                             </div>
                         </div>
 
                         {
                             pantallaDividida &&
-                            (
-                                <>
-                                    <div className="col-6">
-                                        <div className="row">
-                                            <div className="col-12">
-                                                <Form onSubmit={handleSubmit1(onSubmitEspejo)}>
-                                                    <Form.Group controlId="entidad">
-                                                        <Form.Label className="tw-text-red-600">Entidad</Form.Label>
-                                                        <Form.Control as="select" name="entidad" required ref={register1}>
-                                                            <option value=""></option>
-                                                            {
-                                                                datosCapasBackEnd.map((value, index) => {
-                                                                    return (
-                                                                        <option key={index} value={value.indice}>{value.titulo}</option>
-                                                                    )
-                                                                })
-                                                            }
-                                                        </Form.Control>
-                                                    </Form.Group>
-                                                    <input type="hidden" name="mapa" value={1} ref={register1} />
-                                                    <input type="submit" />
-                                                </Form>
-                                            </div>
-                                            <div className="col-12">
-                                                <p>Capas</p>
-                                                <DragDropContext onDragEnd={handleOnDragEndEspejo}>
-                                                    <Droppable droppableId="entidades-espejo">
-                                                        {(provided) => (
-                                                            <div {...provided.droppableProps} ref={provided.innerRef}>
-                                                                {
-                                                                    capasVisualizadasEspejo.map((capa, index) => (
-                                                                        <Draggable key={capa.num_capa} draggableId={capa.nom_capa + " espejo"} index={index}>
-                                                                            {(provided) => (
-                                                                                <div {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef} className="row">
-                                                                                    <Form.Group className="col-6">
-                                                                                        <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 1)} value={capa.num_capa} />
-                                                                                    </Form.Group>
-                                                                                    {/* <Form.Group className="col-6">
-                                                                                        <Form.Label>Transparencia</Form.Label>
-                                                                                        <Form.Control type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 1)}/>
-                                                                                    </Form.Group>
-                                                                                    {capa.tipo == "wms" &&
-                                                                                        (
-                                                                                            <>
-                                                                                                <Form.Group className="col-6">
-                                                                                                    <Form.Label>Zoom minimo</Form.Label>
-                                                                                                    <Form.Control type="range" min="0" step="1" max="18" defaultValue="0" name={capa.num_capa} data-zoom="0" onChange={zoomMinMax} />
-                                                                                                </Form.Group>
-                                                                                                <Form.Group className="col-6">
-                                                                                                    <Form.Label>Zoom máximo</Form.Label>
-                                                                                                    <Form.Control type="range" min="0" step="1" max="18" defaultValue="18" name={capa.num_capa} data-zoom="1" onChange={zoomMinMax} />
-                                                                                                </Form.Group>
-                                                                                            </>
-                                                                                        )} */}
-                                                                                </div>
-                                                                            )}
-                                                                        </Draggable>
-                                                                    ))
-                                                                }
-                                                                {provided.placeholder}
-                                                            </div>
-                                                        )}
-                                                    </Droppable>
-                                                </DragDropContext>
-                                            </div>
-                                            <div className="col-12">
-                                                <p>{nombreMapaEspejo}</p>
-                                                <div>
-                                                    <button onClick={agregarCapas}>Agregar Capas (botón “+”)</button>
-                                                    <button onClick={() => setmuestraEditarNombreMapaEspejo(false)}>Edición (nombre mapa)</button>
-                                                    <input type="text" hidden={muestraEditarNombreMapaEspejo} onChange={(event) => cambiaNombreMapa(event, 1)} value={nombreMapaEspejo}></input>
-                                                    <button hidden={muestraEditarNombreMapaEspejo} onClick={() => setmuestraEditarNombreMapaEspejo(true)}>Finalizar edición</button>
-                                                    <button>Cargar información.</button>
-                                                    <button>Descargar información.</button>
-                                                    <button>Guardar proyecto.</button>
-                                                    <button>Análisis espacial simple.</button>
-                                                    <button>Sistema de coordenadas</button>
-                                                    <button>Vista anterior</button>
-                                                    <button>Vista posterior</button>
-                                                </div>
-                                                <MapEspejo datos={capasVisualizadasEspejo} />
-                                            </div>
-                                        </div>
+                            <div className="col-6">
+                                <div className="row">
+                                    <div className="col-12 tw-text-center">
+                                        <p>
+                                            {nombreMapaEspejo}
+                                            <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
+                                                <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setmuestraEditarNombreMapaEspejo(false)} icon={faEdit}></FontAwesomeIcon>
+                                            </OverlayTrigger>
+                                        </p>
+                                        <input type="text" hidden={muestraEditarNombreMapaEspejo} onChange={(event) => cambiaNombreMapa(event, 1)} value={nombreMapaEspejo}></input>
+                                        <OverlayTrigger overlay={<Tooltip>Finalizar edición</Tooltip>}>
+                                            <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" hidden={muestraEditarNombreMapaEspejo} onClick={() => setmuestraEditarNombreMapaEspejo(true)} icon={faCheck}></FontAwesomeIcon>
+                                        </OverlayTrigger>
                                     </div>
-                                </>
-                            )
+
+                                    <div className="col-12">
+                                        <Form onSubmit={handleSubmit1(onSubmitEspejo)}>
+                                            <Form.Group controlId="entidad">
+                                                <Form.Label className="tw-text-red-600">Capas</Form.Label>
+                                                <Form.Control as="select" name="entidad" required ref={register1}>
+                                                    <option value=""></option>
+                                                    {
+                                                        datosCapasBackEnd.map((value, index) => {
+                                                            return (
+                                                                <option key={index} value={value.indice}>{value.titulo}</option>
+                                                            )
+                                                        })
+                                                    }
+                                                </Form.Control>
+                                            </Form.Group>
+                                            <input type="submit" value="Agregar" />
+                                        </Form>
+                                    </div>
+                                    <div className="col-12 tw-mt-8">
+                                        <Card>
+                                            <Card.Header>Capas</Card.Header>
+                                            <DragDropContext onDragEnd={handleOnDragEndEspejo}>
+                                                <Droppable droppableId="entidades-espejo">
+                                                    {(provided) => (
+                                                        <ListGroup {...provided.droppableProps} ref={provided.innerRef}> {
+                                                            capasVisualizadasEspejo.map((capa, index) => (
+                                                                <Draggable key={capa.num_capa} draggableId={capa.nom_capa + " espejo"} index={index}>
+                                                                    {(provided) => (
+                                                                        <ListGroup.Item {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                                                            <div className="row">
+                                                                                <Form.Group className="col-6">
+                                                                                    <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 1)} value={capa.num_capa} />
+                                                                                </Form.Group>
+                                                                                <Form.Group className="col-6">
+                                                                                    <Form.Label>Transparencia</Form.Label>
+                                                                                    <Form.Control type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 1)} />
+                                                                                </Form.Group>
+                                                                                {capa.tipo == "wms" &&
+                                                                                    (
+                                                                                        <>
+                                                                                            <Form.Group className="col-6">
+                                                                                                <Form.Label>Zoom minimo</Form.Label>
+                                                                                                <Form.Control type="range" min="0" step="1" max="18" defaultValue="0" name={capa.num_capa} data-zoom="0" onChange={zoomMinMax} />
+                                                                                            </Form.Group>
+                                                                                            <Form.Group className="col-6">
+                                                                                                <Form.Label>Zoom máximo</Form.Label>
+                                                                                                <Form.Control type="range" min="0" step="1" max="18" defaultValue="18" name={capa.num_capa} data-zoom="1" onChange={zoomMinMax} />
+                                                                                            </Form.Group>
+                                                                                        </>
+                                                                                    )}
+                                                                            </div>
+                                                                        </ListGroup.Item>
+                                                                    )}
+                                                                </Draggable>
+                                                            ))
+                                                        }
+                                                            {provided.placeholder}
+                                                        </ListGroup>
+                                                    )}
+                                                </Droppable>
+                                            </DragDropContext>
+                                        </Card>
+                                    </div>
+                                    <div className="col-12 tw-mt-8">
+                                        <div className="tw-mb-4">
+                                            <OverlayTrigger overlay={<Tooltip>Agregar capas</Tooltip>}>
+                                                <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" onClick={agregarCapas} icon={faPlus}></FontAwesomeIcon>
+                                            </OverlayTrigger>
+                                            <OverlayTrigger overlay={<Tooltip>Subir información</Tooltip>}>
+                                                <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" icon={faUpload}></FontAwesomeIcon>
+                                            </OverlayTrigger>
+                                            <OverlayTrigger overlay={<Tooltip>Descargar información</Tooltip>}>
+                                                <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" icon={faDownload}></FontAwesomeIcon>
+                                            </OverlayTrigger>
+                                            <OverlayTrigger overlay={<Tooltip>Guardar información</Tooltip>}>
+                                                <FontAwesomeIcon className="tw-cursor-pointer tw-text-3xl" icon={faSave}></FontAwesomeIcon>
+                                            </OverlayTrigger>
+                                        </div>
+                                        <Map datos={capasVisualizadasEspejo} />
+                                    </div>
+                                </div>
+                            </div>
                         }
                     </div>
                 </div>

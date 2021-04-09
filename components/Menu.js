@@ -127,7 +127,7 @@ export default function Menu() {
                             <a className={deshabilitarPlaneacion ? active : noActive} >PLANEACI&Oacute;N<br></br>MUNICIPAL</a>
                         </Link>
                         {/* <Link href="/analisis/analisis-geografico"> */}
-                        <Link href="/construccion">
+                        <Link href="/analisis/analisis-geografico">
                             <a className={deshabilitarAnalisis ? active : noActive}>AN&Aacute;LISIS<br></br>GEOGR&Aacute;FICO</a>
                         </Link>
                         <Link href="/construccion">

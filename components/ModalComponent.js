@@ -24,8 +24,13 @@ export default function ModalComponent(props) {
                          {
                               //Verifica si existen una redireccion, en caso contrario solo cierra el modal
                               (props.datos.ruta != undefined) ?
-                                   <Button variant="outline-danger" onClick={() => redireccion(props.datos.ruta)}>Aceptar</Button> :
-                                   <Button variant="outline-danger" onClick={() => props.onClick()}>Aceptar</Button>
+                                   <Button variant="outline-danger" onClick={() => redireccion(props.datos.ruta)}>
+                                        {props.datos.nombreBoton != undefined ? props.datos.nombreBoton : "Aceptar"}
+                                   </Button>
+                                   :
+                                   <Button variant="outline-danger" onClick={() => props.onClick()}>
+                                        {props.datos.nombreBoton != undefined ? props.datos.nombreBoton : "Aceptar"}
+                                   </Button>
                          }
                     </Modal.Footer>
                </Modal>
