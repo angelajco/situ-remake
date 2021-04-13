@@ -32,7 +32,6 @@ function useTimeline() {
     const historyLimit = -6
 
     function _canUndo() {
-        console.log(_timeline.history);
         return _timeline.history.length > 2;
     }
 
@@ -104,9 +103,6 @@ function useTimeline() {
 }
 
 const Map = (props) => {
-    const [coordenadas, setCoordenadas] = useState("")
-    const [tipoCoordenada, setTipoCoordenada] = useState(1)
-
     //Centro y zoom del mapa
     var centroInicial = [23.26825996870948, -102.88361673036671];
     var acercamientoInicial = 5;
@@ -140,7 +136,6 @@ const Map = (props) => {
     const [registraMovimiento, setRegistraMovimiento] = useState(true)
     const [mapaReferencia, setmapaReferencia] = useState(null);
     function MapaMovimientoUndoRedo({ target }) {
-        console.log(target);
         setRegistraMovimiento(false);
         if (target.name === 'undo') {
             undo();
@@ -149,7 +144,7 @@ const Map = (props) => {
             let estadoActualZoom = estadoActual.zoomUndoRedo;
             mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
         }
-        else {
+        else if (target.name === 'redo') {
             redo();
             let estadoActual = _timeline.current[_timeline.current.length - 1];
             let estadoActualLatLng = estadoActual.centroUndoRedo;
@@ -159,6 +154,8 @@ const Map = (props) => {
     }
 
     function ControlMovimiento() {
+        const [coordenadas, setCoordenadas] = useState("")
+        const [tipoCoordenada, setTipoCoordenada] = useState(1)
         const mapa = useMap()
 
         const mapaEventos = useMapEvents({
