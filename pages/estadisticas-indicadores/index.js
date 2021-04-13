@@ -1,29 +1,302 @@
+import dynamic from 'next/dynamic';
+
+import { Dropdown, MenuItem, DropdownButton } from 'react-bootstrap';
+
 import GenericChart from '../../components/GenericChart';
+import GenericTable from '../../components/GenericTable';
 
 export default function index() {
     
-    const content = [
-        {
-            tipo: "barra",
-            datos: [
-                {
-                    name: "Estatales",
-                    value: 54.7,
-                    representation: "percentage"
-                }
-            ]
+    let chartContent = {
+        name: "Instrumentos de planeación", 
+        type: "barra",
+        color: "#276C6F",
+        heigth: 100,
+        width: 100,
+        angle: 0,
+        data: [
+            {
+                name: "Estatales",
+                value: 54.7,
+                representation: "percentage"
+            },
+            {
+                name: "Municipales",
+                value: 17,
+                representation: "percentage"
+            }
+        ]
+    };
+    let tableContent ={
+        type: "table",
+        data: [
+            {
+                id: "01",
+                entidad: "Aguascalientes",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "02",
+                entidad: "Baja California",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "03",
+                entidad: "Baja California Sur",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "04",
+                entidad: "Campeche",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "05",
+                entidad: "Coahuila",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "06",
+                entidad: "Colima",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "07",
+                entidad: "Chiapas",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "08",
+                entidad: "Chihuahua",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "09",
+                entidad: "Ciudad de México",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "10",
+                entidad: "Durango",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "11",
+                entidad: "Guanajuato",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "12",
+                entidad: "Guerrero",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "13",
+                entidad: "Hidalgo",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "14",
+                entidad: "Jalisco",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "15",
+                entidad: "México",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "16",
+                entidad: "Michoacan",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "17",
+                entidad: "Morelos",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "18",
+                entidad: "Nayarit",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "19",
+                entidad: "Nuevo León",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "20",
+                entidad: "Oaxaca",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "21",
+                entidad: "Puebla",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "22",
+                entidad: "Queretaro",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "23",
+                entidad: "Quintana Roo",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "24",
+                entidad: "San Luis Potosi",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "25",
+                entidad: "Sinaloa",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "26",
+                entidad: "Sonora",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "27",
+                entidad: "Tabasco",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "28",
+                entidad: "Tamaulipas",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "29",
+                entidad: "Tlaxcala",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "30",
+                entidad: "Veracruz",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "31",
+                entidad: "Yucatán",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            },
+            {
+                id: "32",
+                entidad: "Zacatecas",
+                poblacion_total: Math.floor(Math.random() * 100000),
+                hombres: Math.floor(Math.random() * 100000),
+                mujeres: Math.floor(Math.random() * 100000)
+            }
+        ]
+    };
+    let mapContent = {
+        configuration: {
+            size: {
+                height: 450,
+                width: "100%"
+            },
+            zoom: 5,
+            scrollWheelZoom:false
         },
-        {
-            tipo: "barra",
-            datos: [
-                {
-                    name: "Municipales",
-                    value: 17,
-                    representation: "percentage"
-                }
-            ]
+        data: {
+            center: [24.1969953,-102.8199341]
         }
-    ];
+    };
+    let basedTableChartContent = {
+        name: "Especificación de tabla", 
+        type: "barra",
+        color: "#276C6F",
+        heigth: 250,
+        width: 100,
+        angle: -90,
+        anchor: "end",
+        data: []
+    };
+
+    const GenericMap = dynamic(
+        () => import('../../components/GenericMap'),
+        {
+            loading: () => <p>El mapa está cargando</p>,
+            ssr: false
+        }
+    )
+
+    function prepareData() {
+        tableContent.data.map((data) => (
+            basedTableChartContent.data.push({
+                name: data.entidad,
+                value: data['poblacion_total'],
+                representation: "integer"
+            })
+        ))
+    }
 
     return (
         <>
@@ -93,14 +366,9 @@ export default function index() {
                     </div>
                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-xs-12">
                         <div className="row">
-                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 custom-mx-t-1">
+                            <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-mx-t-1">
                                 <div className="row justify-content-center tw-mx-1">
-                                    <GenericChart chart = {content[0]} />
-                                </div>
-                            </div>
-                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 custom-mx-t-1">
-                                <div className="row justify-content-center tw-mx-1">
-                                    <GenericChart chart = {content[1]} />
+                                    <GenericChart chart={chartContent} />
                                 </div>
                             </div>
                         </div>
@@ -108,45 +376,65 @@ export default function index() {
                 </div>
                 <div className="row">
                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-xs-12">
-                        <div className="row justify-content-center custom-mx-t-1">
-                            <h4>
-                                Tabular
-                            </h4>
+                        <div className="row justify-content-center custom-mx-t-1 custom-h-450 table-responsive">
+                            <GenericTable table={tableContent} />
                         </div>
-                        <div className="row custom-mx-t-1">
-                            <div className="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-xs-12">
+                        <div className="row">
+                            <div className="col-xl-4 col-lg-4 col-md-4 col-sm-4 col-xs-12 custom-mx-t-1">
                                 <div className="row justify-content-center tw-mx-1">
-                                    <h6>
-                                        Combo columna gr&aacute;fica
-                                    </h6>
+                                    <Dropdown>
+                                        <Dropdown.Toggle variant="light" id="chartColumnDropdown">
+                                            Columna a graficar
+                                        </Dropdown.Toggle>
+                                        <Dropdown.Menu>
+                                            {
+                                                Object.keys(tableContent.data[0]).map((column, index) => (
+                                                    column !== 'id' && tableContent.data[0][column].constructor.name !== "String" ?
+                                                    <Dropdown.Item href={"#/action-" + index} key={index}>{column}</Dropdown.Item> :
+                                                    ''
+                                                ))
+                                            }
+                                        </Dropdown.Menu>
+                                    </Dropdown>
                                 </div>
                             </div>
-                            <div className="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-xs-12">
+                            <div className="col-xl-4 col-lg-4 col-md-4 col-sm-4 col-xs-12 custom-mx-t-1">
                                 <div className="row justify-content-center tw-mx-1">
-                                    <h6>
-                                        Combo tipo gr&aacute;fica
-                                    </h6>
+                                    <Dropdown>
+                                        <Dropdown.Toggle variant="light" id="chartTypeDropdown">
+                                            Tipo de gr&aacute;fica
+                                        </Dropdown.Toggle>
+                                        <Dropdown.Menu>
+                                            <Dropdown.Item key="0">Barras</Dropdown.Item>
+                                            <Dropdown.Item key="1">Pay</Dropdown.Item>
+                                            <Dropdown.Item key="2">Radar</Dropdown.Item>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
                                 </div>
                             </div>
-                            <div className="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-xs-12">
+                            <div className="col-xl-4 col-lg-4 col-md-4 col-sm-4 col-xs-12 custom-mx-t-1">
                                 <div className="row justify-content-center tw-mx-1">
-                                    <h6>
-                                        Combo columna mapa
-                                    </h6>
+                                    <Dropdown>
+                                        <Dropdown.Toggle variant="light" id="mapColumnDropdown">
+                                            Columna a graficar
+                                        </Dropdown.Toggle>
+                                        <Dropdown.Menu>
+                                            {
+                                                Object.keys(tableContent.data[0]).map((column, index) => (
+                                                    column !== 'id' && tableContent.data[0][column].constructor.name !== "String" ?
+                                                    <Dropdown.Item href={"#/action-" + index} key={index}>{column}</Dropdown.Item> :
+                                                    ''
+                                                ))
+                                            }
+                                        </Dropdown.Menu>
+                                    </Dropdown>
                                 </div>
                             </div>
-                        </div>
-                        <div className="row justify-content-center custom-mx-t-1">
-                            <h4>
-                                Gr&aacute;fica
-                            </h4>
                         </div>
                     </div>
                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-xs-12">
                         <div className="row justify-content-center custom-mx-t-1">
-                            <h4>
-                                Mapa
-                            </h4>
+                            <GenericMap map={mapContent} />
                         </div>
                         <div className="row justify-content-center custom-mx-t-1">
                             <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-xs-12">
@@ -161,6 +449,12 @@ export default function index() {
                             </div>
                         </div>
                     </div>
+                </div>
+                <div className="row justify-content-center custom-mx-t-1">
+                    {
+                        prepareData()
+                    }
+                    <GenericChart chart={basedTableChartContent} />
                 </div>
             </section>
         </>

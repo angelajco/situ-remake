@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 
 export default function GenericChart(props) {
 
@@ -9,7 +9,8 @@ export default function GenericChart(props) {
   const cambia = () => {
     setRefrescaGrafica(refrescaGrafica + 1)
   }
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#e5d8', '#ffe280'];
+
+  const COLORS = [grafica.chart.color];
   const RADIAN = Math.PI / 180;
   const renderCustomizedLabel = ({
     cx, cy, midAngle, innerRadius, outerRadius, percent, index,
@@ -26,8 +27,8 @@ export default function GenericChart(props) {
   };
 
   const genericChart = grafica.chart;
-  const ancho = parseInt(100)
-  const alto = parseInt(100)
+  const ancho = parseInt(genericChart.width ? genericChart.width : 100);
+  const alto = parseInt(genericChart.heigth ? genericChart.heigth : 100);
 
   const getIntroOfPage = () => {
     return '';
@@ -36,8 +37,12 @@ export default function GenericChart(props) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="custom-tooltip tw-bg-titulo tw-px-1">
-          <p className="label tw-text-white">{`${payload[0].value}%`}</p>
+        <div className="custom-tooltip tw-bg-inst-verdef tw-px-1">
+          {
+            genericChart.data[0].representation === 'percentage' ?
+            <p className="label tw-text-white">{`${payload[0].value}%`}</p> :
+            <p className="label tw-text-white">{`${payload[0].value}`}</p>
+          }
           <p className="intro tw-text-white">{getIntroOfPage()}</p>
         </div>
       );
@@ -46,7 +51,11 @@ export default function GenericChart(props) {
     return null;
   };
 
-  switch (genericChart.tipo) {
+  let renderLabel = function(entry) {
+    return entry.name;
+  }
+
+  switch (genericChart.type) {
     case "pay":
       return <PieChart width={ancho} height={alto}>
         <Pie
@@ -70,7 +79,8 @@ export default function GenericChart(props) {
         <BarChart
           width={ancho}
           height={alto}
-          data={genericChart.datos}
+          data={genericChart.data}
+          label={renderLabel} 
           margin={{
             top: 20,
             right: 30,
@@ -78,7 +88,11 @@ export default function GenericChart(props) {
             bottom: 5,
           }}
         >
-          <XAxis dataKey="name" />
+          {
+            genericChart.anchor ?
+              <XAxis dataKey="name" angle={genericChart.angle} textAnchor={genericChart.anchor}/> :
+              <XAxis dataKey="name" angle={genericChart.angle}/>
+          }
           <YAxis />
           <Tooltip content={<CustomTooltip />} />
           <Bar dataKey="value" stackId="a" fill={COLORS[0]} />
