@@ -32,7 +32,7 @@ function useTimeline() {
     const historyLimit = -6
 
     function _canUndo() {
-        return _timeline.history.length > 2;
+        return _timeline.history.length > 1;
     }
 
     function _canRedo() {
