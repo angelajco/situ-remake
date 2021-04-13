@@ -127,7 +127,7 @@ export default function Registro() {
 
             axios(config)
                 .then(function (response) {
-                    if (response.data["success-boolean"]) {
+                    if (response.data["message-type"] == 1) {
                         //Registro exitoso
                         //Datos a enviar al modal si el usuario es correcto
                         setDatosModal({
@@ -135,20 +135,26 @@ export default function Registro() {
                             body: 'Para terminar el registro de la cuenta, hemos enviado un correo a ' + data.email + ' para verificar su cuenta de correo electrónico',
                             ruta: "/administracion/inicio-sesion"
                         })
-                        //Cambiamos el modal de show a true
-                        handleShow();
                     }
-                })
-                .catch(function (error) {
-                    console.log(error)
-                    //Registro no exitoso
+                    else {
+                        setDatosModal({
+                            title: response.data["message-subject"],
+                            body: response.data['message']
+                        })
+                    }
                     //Cambiamos el modal de show a true
                     handleShow();
+                })
+                .catch(function (error) {
+                    //Registro no exitoso
+                    console.log(error)
                     //Datos a enviar al modal si el usuario es incorrecto
                     setDatosModal({
                         title: 'Registro incorrecto',
                         body: 'Favor de verificar la información',
                     });
+                    //Cambiamos el modal de show a true
+                    handleShow();
                 });
         }
     }
@@ -235,17 +241,17 @@ export default function Registro() {
     function evalPass(e) {
         const evalContrasena = watch("contrasena");
         let regExp = /^(?=.*\d)(?=.*[-!@#$/(){}=.,;:])(?=.*[A-Z])(?=.*[a-z])(?!.*[+^"'´%&¿?*~|\\])(?!.*(012|123|234|345|456|567|678|789))(?!.*(000|111|222|333|444|555|666|777|888|999))\S{8,}$/;
-        if(evalContrasena.length === 0) {
+        if (evalContrasena.length === 0) {
             document.getElementById("error-pass").hidden = true;
         } else {
-            if(!regExp.test(evalContrasena) || evalContrasena.length < 8) {
+            if (!regExp.test(evalContrasena) || evalContrasena.length < 8) {
                 document.getElementById("error-pass").hidden = false;
             } else {
                 document.getElementById("error-pass").hidden = true;
             }
         }
-        if(document.getElementById('confirmar_contrasena').value.length > 0) {
-            if(evalContrasena !== document.getElementById('confirmar_contrasena').value) {
+        if (document.getElementById('confirmar_contrasena').value.length > 0) {
+            if (evalContrasena !== document.getElementById('confirmar_contrasena').value) {
                 document.getElementById("error-conf-pass").hidden = false;
             } else {
                 document.getElementById("error-conf-pass").hidden = true;
@@ -483,7 +489,7 @@ export default function Registro() {
                                             </InputGroup.Text>
                                         </InputGroup.Append>
                                     </InputGroup>
-                                    <p id ="error-pass" className="tw-text-red-600" hidden={true}>Contrase&ntilde;a incorrecta</p>
+                                    <p id="error-pass" className="tw-text-red-600" hidden={true}>Contrase&ntilde;a incorrecta</p>
                                 </Form.Group>
 
                                 <Form.Group>
@@ -503,7 +509,7 @@ export default function Registro() {
                                             </InputGroup.Text>
                                         </InputGroup.Append>
                                     </InputGroup>
-                                    <p id ="error-conf-pass" className="tw-text-red-600" hidden={true}>Las contrase&ntilde;as no coinciden</p>
+                                    <p id="error-conf-pass" className="tw-text-red-600" hidden={true}>Las contrase&ntilde;as no coinciden</p>
                                 </Form.Group>
 
                                 {/* <div className="g-recaptcha" data-sitekey="YOURSITEKEY"></div> */}

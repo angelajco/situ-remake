@@ -1,12 +1,16 @@
+// import { MapContainer } from 'react-leaflet'
+// import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
+// import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
+
+// import 'leaflet-draw/dist/leaflet.draw.css'
+
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
 import { Form, Modal, Button, OverlayTrigger, Tooltip, Card, ListGroup } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
 import { ContextMenu, MenuItem, ContextMenuTrigger } from "react-contextmenu";
 
-import Router from 'next/router'
 import dynamic from 'next/dynamic'
-import axios from 'axios'
 import $ from 'jquery'
 
 import catalogoEntidades from "../../shared/jsons/entidades.json";
@@ -64,7 +68,6 @@ export default function AnalisisGeografico() {
 
     //Al seleccionar y añadir una entidad para el mapa original
     const onSubmit = (data) => {
-        console.log("submitOrigianl", data);
         let indice = parseInt(data.entidad)
         let capa = datosCapasBackEnd[indice]
 
@@ -121,6 +124,8 @@ export default function AnalisisGeografico() {
                 capaWMS["estilos"] = { 'transparencia': 1 };
                 capaWMS["zoomMinimo"] = 0;
                 capaWMS["zoomMaximo"] = 18;
+                capaWMS["leyenda"] = capa.leyenda;
+
                 setCapasVisualizadas([...capasVisualizadas, capaWMS])
             }
         }
@@ -128,7 +133,6 @@ export default function AnalisisGeografico() {
 
     //Al seleccionar y añadir una entidad para el mapa original
     const onSubmitEspejo = (data) => {
-        console.log("submitEspejo", data);
         let indice = parseInt(data.entidad)
         let capa = datosCapasBackEnd[indice]
 
@@ -186,7 +190,6 @@ export default function AnalisisGeografico() {
                 capaWMS["zoomMinimo"] = 0;
                 capaWMS["zoomMaximo"] = 18;
                 capaWMS["leyenda"] = capa.leyenda;
-                console.log(capaWMS, "capaWMS");
                 setCapasVisualizadasEspejo([...capasVisualizadasEspejo, capaWMS])
 
             }
@@ -274,7 +277,6 @@ export default function AnalisisGeografico() {
 
     //Funcion para ordenar los nuevos datos
     function handleOnDragEnd(result) {
-        console.log(result);
         // Si el destino existe, esto es para evitar cuando se arrastra fuera del contenedor
         if (!result.destination) {
             return
@@ -290,7 +292,6 @@ export default function AnalisisGeografico() {
     }
 
     function handleOnDragEndEspejo(result) {
-        console.log("espejo");
         if (!result.destination) {
             return
         }
@@ -388,8 +389,13 @@ export default function AnalisisGeografico() {
         handleClose();
     }
 
+    useEffect(() => {
+    }, [])
+
     return (
         <>
+
+
             <Modal show={show} onHide={handleClose}>
                 <Modal.Header closeButton>
                     <Modal.Title>Búsqueda de capas</Modal.Title>
@@ -546,7 +552,7 @@ export default function AnalisisGeografico() {
 
                                 <div className="col-12 tw-mt-8">
                                     <div className="tw-mb-4 tw-inline-block">
-                                        <OverlayTrigger overlay={<Tooltip>Agregar capas</Tooltip>}>
+                                        {/* <OverlayTrigger overlay={<Tooltip>Agregar capas</Tooltip>}>
                                             <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" onClick={agregarCapas} icon={faPlus}></FontAwesomeIcon>
                                         </OverlayTrigger>
                                         <OverlayTrigger overlay={<Tooltip>Subir información</Tooltip>}>
@@ -557,9 +563,10 @@ export default function AnalisisGeografico() {
                                         </OverlayTrigger>
                                         <OverlayTrigger overlay={<Tooltip>Guardar información</Tooltip>}>
                                             <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" icon={faSave}></FontAwesomeIcon>
-                                        </OverlayTrigger>
+                                        </OverlayTrigger> */}
                                     </div>
                                     <Map datos={capasVisualizadas} botones={true} />
+                                    
                                 </div>
                             </div>
                         </div>
@@ -644,21 +651,7 @@ export default function AnalisisGeografico() {
                                             </DragDropContext>
                                         </Card>
                                     </div>
-                                    <div className="col-12 tw-mt-8">
-                                        <div className="tw-mb-4">
-                                            <OverlayTrigger overlay={<Tooltip>Agregar capas</Tooltip>}>
-                                                <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" onClick={agregarCapas} icon={faPlus}></FontAwesomeIcon>
-                                            </OverlayTrigger>
-                                            <OverlayTrigger overlay={<Tooltip>Subir información</Tooltip>}>
-                                                <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" icon={faUpload}></FontAwesomeIcon>
-                                            </OverlayTrigger>
-                                            <OverlayTrigger overlay={<Tooltip>Descargar información</Tooltip>}>
-                                                <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" icon={faDownload}></FontAwesomeIcon>
-                                            </OverlayTrigger>
-                                            <OverlayTrigger overlay={<Tooltip>Guardar información</Tooltip>}>
-                                                <FontAwesomeIcon className="tw-cursor-pointer tw-text-3xl" icon={faSave}></FontAwesomeIcon>
-                                            </OverlayTrigger>
-                                        </div>
+                                    <div className="col-12 tw-mt-20">
                                         <Map datos={capasVisualizadasEspejo} />
                                     </div>
                                 </div>

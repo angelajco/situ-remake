@@ -1,9 +1,14 @@
-import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, ScaleControl, LayersControl, useMapEvents, useMap, FeatureGroup } from 'react-leaflet'
-import L from 'leaflet'
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { Table } from 'react-bootstrap'
 import Head from 'next/head'
+
+import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, ScaleControl, LayersControl, useMapEvents, useMap, FeatureGroup } from 'react-leaflet'
+import { useState, useEffect } from 'react'
+import { OverlayTrigger, Table, Tooltip } from 'react-bootstrap'
 import { EditControl } from 'react-leaflet-draw'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUndo, faRedo, faImages } from '@fortawesome/free-solid-svg-icons'
+
+import Popout from 'react-popout'
+import L from 'leaflet'
 
 //Si no es necesario cargar los marcadores
 // import "leaflet/dist/leaflet.css"
@@ -15,13 +20,6 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 
 const { BaseLayer } = LayersControl;
 
-import createUndoRedo from "../helpers/index";
-import Logs from "../helpers/Logs";
-
-var estadoActual;
-var estadoActualLatLng;
-var estadoActualZoom;
-
 var _timeline = {
     history: [],
     current: [],
@@ -31,10 +29,11 @@ var _timeline = {
 function useTimeline() {
 
     const [state, setState] = useState([]);
-    const historyLimit = -5
+    const historyLimit = -6
 
     function _canUndo() {
-        return _timeline.history.length > 1;
+        console.log(_timeline.history);
+        return _timeline.history.length > 2;
     }
 
     function _canRedo() {
@@ -105,7 +104,6 @@ function useTimeline() {
 }
 
 const Map = (props) => {
-    console.log(props);
     const [coordenadas, setCoordenadas] = useState("")
     const [tipoCoordenada, setTipoCoordenada] = useState(1)
 
@@ -138,23 +136,24 @@ const Map = (props) => {
 
     //Para manejar los estados del undo-redo
     const [todos, { canUndo, canRedo, update, undo, redo }] = useTimeline();
-    const [registraMovimiento, setRegistraMovimiento] = useState(true)
     //Para undo-redo
+    const [registraMovimiento, setRegistraMovimiento] = useState(true)
     const [mapaReferencia, setmapaReferencia] = useState(null);
     function MapaMovimientoUndoRedo({ target }) {
+        console.log(target);
         setRegistraMovimiento(false);
         if (target.name === 'undo') {
             undo();
-            estadoActual = _timeline.current[_timeline.current.length - 1];
-            estadoActualLatLng = estadoActual.centroUndoRedo;
-            estadoActualZoom = estadoActual.zoomUndoRedo;
+            let estadoActual = _timeline.current[_timeline.current.length - 1];
+            let estadoActualLatLng = estadoActual.centroUndoRedo;
+            let estadoActualZoom = estadoActual.zoomUndoRedo;
             mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
         }
         else {
             redo();
-            estadoActual = _timeline.current[_timeline.current.length - 1];
-            estadoActualLatLng = estadoActual.centroUndoRedo;
-            estadoActualZoom = estadoActual.zoomUndoRedo;
+            let estadoActual = _timeline.current[_timeline.current.length - 1];
+            let estadoActualLatLng = estadoActual.centroUndoRedo;
+            let estadoActualZoom = estadoActual.zoomUndoRedo;
             mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
         }
     }
@@ -222,8 +221,6 @@ const Map = (props) => {
                     .addListener(botonVistaCompleta, 'click', function () {
                         mapa.setView(centroInicial, acercamientoInicial)
                     });
-
-
                 return botonVistaCompleta;
             };
 
@@ -242,8 +239,6 @@ const Map = (props) => {
                             setTipoCoordenada(3);
                         }
                     });
-
-
                 return botonCambiaCoordenadas;
             }
 
@@ -258,23 +253,63 @@ const Map = (props) => {
         return null;
     }
 
+    /*Estados para ventana de leyendas*/
+    const [ventana, setVentana] = useState(false)
+    const popupVentana = (tipo) => {
+        if (tipo == 1) {
+            setVentana(true);
+        }
+        else {
+            setVentana(false)
+        }
+    }
+
     return (
         <>
+            {ventana &&
+                <Popout title='Simbología' onClosing={() => popupVentana(2)}>
+                    <p>Simbología</p>
+                    {
+                        props.datos.map((capa, index) => {
+                            if (capa.habilitado) {
+                                if (capa.tipo == "wms") {
+                                    return (
+                                        <div key={index}>
+                                            <img src={capa.leyenda}></img>
+                                            <br></br>
+                                        </div>
+                                    )
+                                }
+                            }
+                        })
+                    }
+                </Popout>
+            }
 
             <Head>
                 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
                     integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
+                <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
             </Head>
-            {props.botones == true &&
-                <div className="tw-inline-block">
-                    <button className="tw-mr-5" disabled={!canUndo} name="undo" onClick={MapaMovimientoUndoRedo}>
-                        Vista anterior
-                        </button>
-                    <button disabled={!canRedo} name="redo" onClick={MapaMovimientoUndoRedo}>
-                        Vista posterior
-                        </button>
-                </div>
-            }
+            <div className="tw-mb-4 tw-inline-block">
+                {props.botones == true &&
+                    <>
+                        <OverlayTrigger rootClose overlay={<Tooltip>Vista anterior</Tooltip>}>
+                            <button disabled={!canUndo} className="tw-border-transparent tw-bg-transparent tw-mr-5" name="undo" onClick={MapaMovimientoUndoRedo}>
+                                <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faUndo} />
+                            </button>
+                        </OverlayTrigger>
+                        <OverlayTrigger rootClose overlay={<Tooltip>Vista posterior</Tooltip>}>
+                            <button disabled={!canRedo} className="tw-border-transparent tw-bg-transparent tw-mr-5" name="redo" onClick={MapaMovimientoUndoRedo}>
+                                <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faRedo}></FontAwesomeIcon>
+                            </button>
+                        </OverlayTrigger>
+                    </>
+                }
+                <OverlayTrigger overlay={<Tooltip>Leyendas</Tooltip>}>
+                    <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" onClick={() => popupVentana(1)} icon={faImages}></FontAwesomeIcon>
+                </OverlayTrigger>
+            </div>
 
             <MapContainer whenCreated={setmapaReferencia} fullscreenControl={true} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 400, width: "100%" }}>
 
@@ -303,7 +338,7 @@ const Map = (props) => {
                     </BaseLayer>
                 </LayersControl>
 
-                <FeatureGroup>
+                {/* <FeatureGroup>
                     <EditControl
                         position='topright'
                         draw={{
@@ -313,7 +348,7 @@ const Map = (props) => {
                         }}
                     >
                     </EditControl>
-                </FeatureGroup>
+                </FeatureGroup> */}
 
                 {
                     props.datos.map((capa, index) => {
