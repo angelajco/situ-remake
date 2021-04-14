@@ -26,6 +26,8 @@ var _timeline = {
     future: []
 };
 
+var registraMovimiento = true;
+
 function useTimeline() {
 
     const [state, setState] = useState([]);
@@ -90,15 +92,6 @@ function useTimeline() {
         setState(_timeline.current);
     };
 
-    useEffect(() => {
-        update([
-            {
-                centroUndoRedo: { lat: 23.26825996870948, lng: -102.88361673036671 },
-                zoomUndoRedo: 5
-            }
-        ]);
-    }, [])
-
     return [state, { canUndo, canRedo, update, undo, redo }];
 }
 
@@ -132,24 +125,34 @@ const Map = (props) => {
 
     //Para manejar los estados del undo-redo
     const [todos, { canUndo, canRedo, update, undo, redo }] = useTimeline();
-    //Para undo-redo
-    const [registraMovimiento, setRegistraMovimiento] = useState(true)
+    useEffect(() => {
+        update([
+            {
+                centroUndoRedo: { lat: 23.26825996870948, lng: -102.88361673036671 },
+                zoomUndoRedo: 5
+            }
+        ]);
+    }, [])
     const [mapaReferencia, setmapaReferencia] = useState(null);
     function MapaMovimientoUndoRedo({ target }) {
-        setRegistraMovimiento(false);
+        registraMovimiento = false;
         if (target.name === 'undo') {
-            undo();
-            let estadoActual = _timeline.current[_timeline.current.length - 1];
-            let estadoActualLatLng = estadoActual.centroUndoRedo;
-            let estadoActualZoom = estadoActual.zoomUndoRedo;
-            mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
+            if (_timeline.history.length > 1) {
+                undo();
+                let estadoActual = _timeline.current[_timeline.current.length - 1];
+                let estadoActualLatLng = estadoActual.centroUndoRedo;
+                let estadoActualZoom = estadoActual.zoomUndoRedo;
+                mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
+            }
         }
         else if (target.name === 'redo') {
-            redo();
-            let estadoActual = _timeline.current[_timeline.current.length - 1];
-            let estadoActualLatLng = estadoActual.centroUndoRedo;
-            let estadoActualZoom = estadoActual.zoomUndoRedo;
-            mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
+            if (_timeline.future.length > 0) {
+                redo();
+                let estadoActual = _timeline.current[_timeline.current.length - 1];
+                let estadoActualLatLng = estadoActual.centroUndoRedo;
+                let estadoActualZoom = estadoActual.zoomUndoRedo;
+                mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
+            }
         }
     }
 
@@ -166,7 +169,7 @@ const Map = (props) => {
                     const nextTodos = [...todos, { centroUndoRedo, zoomUndoRedo }];
                     update(nextTodos);
                 }
-                setRegistraMovimiento(true)
+                registraMovimiento = true;
             },
             mousemove(e) {
                 if (tipoCoordenada == 1) {
@@ -335,7 +338,7 @@ const Map = (props) => {
                     </BaseLayer>
                 </LayersControl>
 
-                {/* <FeatureGroup>
+                <FeatureGroup>
                     <EditControl
                         position='topright'
                         draw={{
@@ -345,7 +348,7 @@ const Map = (props) => {
                         }}
                     >
                     </EditControl>
-                </FeatureGroup> */}
+                </FeatureGroup>
 
                 {
                     props.datos.map((capa, index) => {

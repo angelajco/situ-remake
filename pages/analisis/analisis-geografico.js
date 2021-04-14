@@ -1,14 +1,10 @@
-// import { MapContainer } from 'react-leaflet'
-// import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
-// import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
-
-// import 'leaflet-draw/dist/leaflet.draw.css'
-
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
 import { Form, Modal, Button, OverlayTrigger, Tooltip, Card, ListGroup } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
 import { ContextMenu, MenuItem, ContextMenuTrigger } from "react-contextmenu";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUpload, faDownload, faSave, faEdit, faCheck, faPlus } from '@fortawesome/free-solid-svg-icons'
 
 import dynamic from 'next/dynamic'
 import $ from 'jquery'
@@ -18,8 +14,10 @@ import catalogoEntidades from "../../shared/jsons/entidades.json";
 import Cookies from 'universal-cookie'
 const cookies = new Cookies()
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faUpload, faDownload, faSave, faEdit, faCheck, faPlus } from '@fortawesome/free-solid-svg-icons'
+// import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css';
+
+// import Slider, { SliderTooltip } from 'rc-slider';
+// import 'rc-slider/assets/index.css';
 
 export default function AnalisisGeografico() {
     //Cuando se renderiza el lado del servidor (SSR). Garantiza que el estado del contexto no persista en varias representaciones en el servidor, lo que provocaría discrepancias en las marcas de cliente / servidor después de que se presenten varias solicitudes en el servidor
@@ -230,6 +228,7 @@ export default function AnalisisGeografico() {
         }
     }
 
+    const [valorTransparencia, setValorTransparencia] = useState(1)
     const transparenciaCapas = ({ target }, mapa) => {
         let mapaBase;
         if (mapa == 0) {
@@ -256,13 +255,19 @@ export default function AnalisisGeografico() {
         }
     }
 
-    const zoomMinMax = ({ target }) => {
-        let capazVisualisadasActualizado = capasVisualizadas.map((valor) => {
+    const zoomMinMax = ({ target }, mapa) => {
+        let mapaBase;
+        if (mapa == 0) {
+            mapaBase = capasVisualizadas;
+        } else if (mapa == 1) {
+            mapaBase = capasVisualizadasEspejo;
+        }
+        let capazVisualisadasActualizado = mapaBase.map((valor) => {
             //Si es igual a la entidad que se envia, se cambia el zoom
             if (valor.num_capa == target.name) {
-                if (target.dataset.zoom == 0) {
+                if (target.dataset.zoom == "min") {
                     valor.zoomMinimo = target.value
-                } else {
+                } else if (target.dataset.zoom == "max") {
                     valor.zoomMaximo = target.value
                 }
                 return valor;
@@ -272,7 +277,11 @@ export default function AnalisisGeografico() {
                 return valor;
             }
         });
-        setCapasVisualizadas(capazVisualisadasActualizado);
+        if (mapa == 0) {
+            setCapasVisualizadas(capazVisualisadasActualizado);
+        } else if (mapa == 1) {
+            setCapasVisualizadasEspejo(capazVisualisadasActualizado)
+        }
     }
 
     //Funcion para ordenar los nuevos datos
@@ -389,8 +398,24 @@ export default function AnalisisGeografico() {
         handleClose();
     }
 
-    useEffect(() => {
-    }, [])
+    const { createSliderWithTooltip } = Slider;
+    const Range = createSliderWithTooltip(Slider.Range);
+    const { Handle } = Slider;
+
+    const handle = props => {
+        const { value, dragging, index, ...restProps } = props;
+        return (
+            <SliderTooltip
+                prefixCls="rc-slider-tooltip"
+                overlay={`${value} %`}
+                visible={dragging}
+                placement="top"
+                key={index}
+            >
+                <Handle value={value} {...restProps} />
+            </SliderTooltip>
+        );
+    };
 
     return (
         <>
@@ -519,18 +544,63 @@ export default function AnalisisGeografico() {
                                                                                 </Form.Group>
                                                                                 <Form.Group className="col-6">
                                                                                     <Form.Label>Transparencia</Form.Label>
-                                                                                    <Form.Control type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 0)} />
+                                                                                    <div className="tw-flex">
+                                                                                        <span className="tw-mr-6">+</span>
+                                                                                        <Form.Control custom type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 0)} />
+                                                                                        <span className="tw-ml-6">-</span>
+                                                                                    </div>
+                                                                                    {/* <Slider min={0} max={1} defaultValue={1} step={0.1} handle={handle} /> */}
                                                                                 </Form.Group>
                                                                                 {capa.tipo == "wms" &&
                                                                                     (
                                                                                         <>
                                                                                             <Form.Group className="col-6">
-                                                                                                <Form.Label>Zoom minimo</Form.Label>
-                                                                                                <Form.Control type="range" min="0" step="1" max="18" defaultValue="0" name={capa.num_capa} data-zoom="0" onChange={zoomMinMax} />
+                                                                                                <Form.Label>Escala minima</Form.Label>
+                                                                                                <Form.Control defaultValue="0" as="select" onChange={(event) => zoomMinMax(event, 0)} name={capa.num_capa} data-zoom="min">
+                                                                                                    <option value="0">1:10000 KM</option>
+                                                                                                    <option value="1">1:5000 KM</option>
+                                                                                                    <option value="2">1:2000 KM</option>
+                                                                                                    <option value="3">1:1000 KM</option>
+                                                                                                    <option value="4">1:500 KM</option>
+                                                                                                    <option value="5">1:300 KM</option>
+                                                                                                    <option value="6">1:200 KM</option>
+                                                                                                    <option value="7">1:100 KM</option>
+                                                                                                    <option value="8">1:50 KM</option>
+                                                                                                    <option value="9">1:20 KM</option>
+                                                                                                    <option value="10">1:10 KM</option>
+                                                                                                    <option value="11">1:5 KM</option>
+                                                                                                    <option value="12">1:3 KM</option>
+                                                                                                    <option value="13">1:1 KM</option>
+                                                                                                    <option value="14">1:500 M</option>
+                                                                                                    <option value="15">1:300 M</option>
+                                                                                                    <option value="16">1:200 M</option>
+                                                                                                    <option value="17">1:100 M</option>
+                                                                                                    <option value="18">1:50 M</option>
+                                                                                                </Form.Control>
                                                                                             </Form.Group>
                                                                                             <Form.Group className="col-6">
-                                                                                                <Form.Label>Zoom máximo</Form.Label>
-                                                                                                <Form.Control type="range" min="0" step="1" max="18" defaultValue="18" name={capa.num_capa} data-zoom="1" onChange={zoomMinMax} />
+                                                                                                <Form.Label>Escala maxima</Form.Label>
+                                                                                                <Form.Control defaultValue="18" as="select" onChange={(event) => zoomMinMax(event, 0)} name={capa.num_capa} data-zoom="max">
+                                                                                                    <option value="0">1:10000 KM</option>
+                                                                                                    <option value="1">1:5000 KM</option>
+                                                                                                    <option value="2">1:2000 KM</option>
+                                                                                                    <option value="3">1:1000 KM</option>
+                                                                                                    <option value="4">1:500 KM</option>
+                                                                                                    <option value="5">1:300 KM</option>
+                                                                                                    <option value="6">1:200 KM</option>
+                                                                                                    <option value="7">1:100 KM</option>
+                                                                                                    <option value="8">1:50 KM</option>
+                                                                                                    <option value="9">1:20 KM</option>
+                                                                                                    <option value="10">1:10 KM</option>
+                                                                                                    <option value="11">1:5 KM</option>
+                                                                                                    <option value="12">1:3 KM</option>
+                                                                                                    <option value="13">1:1 KM</option>
+                                                                                                    <option value="14">1:500 M</option>
+                                                                                                    <option value="15">1:300 M</option>
+                                                                                                    <option value="16">1:200 M</option>
+                                                                                                    <option value="17">1:100 M</option>
+                                                                                                    <option value="18">1:50 M</option>
+                                                                                                </Form.Control>
                                                                                             </Form.Group>
                                                                                         </>
                                                                                     )}
@@ -566,7 +636,7 @@ export default function AnalisisGeografico() {
                                         </OverlayTrigger> */}
                                     </div>
                                     <Map datos={capasVisualizadas} botones={true} />
-                                    
+
                                 </div>
                             </div>
                         </div>
@@ -623,18 +693,62 @@ export default function AnalisisGeografico() {
                                                                                 </Form.Group>
                                                                                 <Form.Group className="col-6">
                                                                                     <Form.Label>Transparencia</Form.Label>
-                                                                                    <Form.Control type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 1)} />
+                                                                                    <div className="tw-flex">
+                                                                                        <span className="tw-mr-6">+</span>
+                                                                                        <Form.Control custom type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 1)} />
+                                                                                        <span className="tw-ml-6">-</span>
+                                                                                    </div>
                                                                                 </Form.Group>
                                                                                 {capa.tipo == "wms" &&
                                                                                     (
                                                                                         <>
                                                                                             <Form.Group className="col-6">
-                                                                                                <Form.Label>Zoom minimo</Form.Label>
-                                                                                                <Form.Control type="range" min="0" step="1" max="18" defaultValue="0" name={capa.num_capa} data-zoom="0" onChange={zoomMinMax} />
+                                                                                                <Form.Label>Escala minima</Form.Label>
+                                                                                                <Form.Control defaultValue="0" as="select" onChange={(event) => zoomMinMax(event, 1)} name={capa.num_capa} data-zoom="min">
+                                                                                                    <option value="0">1:10000 KM</option>
+                                                                                                    <option value="1">1:5000 KM</option>
+                                                                                                    <option value="2">1:2000 KM</option>
+                                                                                                    <option value="3">1:1000 KM</option>
+                                                                                                    <option value="4">1:500 KM</option>
+                                                                                                    <option value="5">1:300 KM</option>
+                                                                                                    <option value="6">1:200 KM</option>
+                                                                                                    <option value="7">1:100 KM</option>
+                                                                                                    <option value="8">1:50 KM</option>
+                                                                                                    <option value="9">1:20 KM</option>
+                                                                                                    <option value="10">1:10 KM</option>
+                                                                                                    <option value="11">1:5 KM</option>
+                                                                                                    <option value="12">1:3 KM</option>
+                                                                                                    <option value="13">1:1 KM</option>
+                                                                                                    <option value="14">1:500 M</option>
+                                                                                                    <option value="15">1:300 M</option>
+                                                                                                    <option value="16">1:200 M</option>
+                                                                                                    <option value="17">1:100 M</option>
+                                                                                                    <option value="18">1:50 M</option>
+                                                                                                </Form.Control>
                                                                                             </Form.Group>
                                                                                             <Form.Group className="col-6">
-                                                                                                <Form.Label>Zoom máximo</Form.Label>
-                                                                                                <Form.Control type="range" min="0" step="1" max="18" defaultValue="18" name={capa.num_capa} data-zoom="1" onChange={zoomMinMax} />
+                                                                                                <Form.Label>Escala maxima</Form.Label>
+                                                                                                <Form.Control defaultValue="18" as="select" onChange={(event) => zoomMinMax(event, 1)} name={capa.num_capa} data-zoom="max" data-mapa="1">
+                                                                                                    <option value="0">1:10000 KM</option>
+                                                                                                    <option value="1">1:5000 KM</option>
+                                                                                                    <option value="2">1:2000 KM</option>
+                                                                                                    <option value="3">1:1000 KM</option>
+                                                                                                    <option value="4">1:500 KM</option>
+                                                                                                    <option value="5">1:300 KM</option>
+                                                                                                    <option value="6">1:200 KM</option>
+                                                                                                    <option value="7">1:100 KM</option>
+                                                                                                    <option value="8">1:50 KM</option>
+                                                                                                    <option value="9">1:20 KM</option>
+                                                                                                    <option value="10">1:10 KM</option>
+                                                                                                    <option value="11">1:5 KM</option>
+                                                                                                    <option value="12">1:3 KM</option>
+                                                                                                    <option value="13">1:1 KM</option>
+                                                                                                    <option value="14">1:500 M</option>
+                                                                                                    <option value="15">1:300 M</option>
+                                                                                                    <option value="16">1:200 M</option>
+                                                                                                    <option value="17">1:100 M</option>
+                                                                                                    <option value="18">1:50 M</option>
+                                                                                                </Form.Control>
                                                                                             </Form.Group>
                                                                                         </>
                                                                                     )}
@@ -651,7 +765,7 @@ export default function AnalisisGeografico() {
                                             </DragDropContext>
                                         </Card>
                                     </div>
-                                    <div className="col-12 tw-mt-20">
+                                    <div className="col-12 tw-mt-8">
                                         <Map datos={capasVisualizadasEspejo} />
                                     </div>
                                 </div>
