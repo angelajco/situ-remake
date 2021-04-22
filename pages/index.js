@@ -15,7 +15,7 @@ export default function Home() {
       
       <main>
         <section className="situ-index">
-          <img src="/images/index/situ-inst.png" className="tw-w-full" alt="Sistema de Información Territorial y Urbana SITU"/>
+          <img src="/images/index/foto_aerea.jpg" className="tw-w-full" alt="Sistema de Información Territorial y Urbana SITU"/>
         </section>
         <section className="container-fluid custom-max-width custom-mx-t-2">
           <p className="custom-inst-text">

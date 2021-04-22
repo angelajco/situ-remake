@@ -38,11 +38,8 @@ export default function GenericChart(props) {
     if (active && payload && payload.length) {
       return (
         <div className="custom-tooltip tw-bg-inst-verdef tw-px-1">
-          {
-            genericChart.data[0].representation === 'percentage' ?
-            <p className="label tw-text-white">{`${payload[0].value}%`}</p> :
-            <p className="label tw-text-white">{`${payload[0].value}`}</p>
-          }
+            <p className="label tw-text-white text-center">{payload[0].payload.name}</p>
+            <p className="label tw-text-white text-center">{payload[0].value}{genericChart.data[0].representation === 'percentage' ? '%' : ''}</p>
           <p className="intro tw-text-white">{getIntroOfPage()}</p>
         </div>
       );
@@ -81,12 +78,7 @@ export default function GenericChart(props) {
           height={alto}
           data={genericChart.data}
           label={renderLabel} 
-          margin={{
-            top: 20,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
+          margin={genericChart.margin}
         >
           {
             genericChart.anchor ?
