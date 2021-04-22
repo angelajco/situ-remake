@@ -17,7 +17,7 @@ const cookies = new Cookies()
 
 
 export default function InicioSesion() {
-    console.log(process.env.ruta);
+    console.log("objeto Leaflet", L);
     //Datos para el modal
     const [show, setShow] = useState(false);
     const [datosModal, setDatosModal] = useState(
@@ -122,7 +122,7 @@ export default function InicioSesion() {
                                 </Form.Group>
                                 <Form.Group>
                                     <InputGroup>
-                                        <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} placeholder="Contraseña" required ref={register} />
+                                        <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} placeholder="Contraseña" required ref={register} autoComplete="on" />
                                         <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
                                             <InputGroup.Text>
                                                 {passwordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}

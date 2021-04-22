@@ -4,3 +4,15 @@
     background-position: 50% 50%;
     background-size: 50%;
 }
+
+.btn-analisis{
+    font-weight: 600;
+    background-color: #fff;
+    border-radius: 9999px;
+    padding: .375rem 2rem;
+}
+.coordenadas{
+    position: absolute;
+    bottom: 0;
+    left: 150%;
+}
