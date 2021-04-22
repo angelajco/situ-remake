@@ -25,28 +25,24 @@
 /* footer */
 
 .simi-gob-mx {
-    font-family: Montserrat;
     font-size: 13pt;
     line-height: 21pt;
     height: auto;
 }
 
 .simi-gob-mx-situ-menu {
-    font-family: Montserrat;
     font-size: 10pt;
     line-height: 15pt;
     height: auto;
 }
 
 .simi-gob-mx-content {
-    font-family: Montserrat;
     font-size: 13pt;
     line-height: 21pt;
     height: auto;
 }
 
 .simi-gob-mx-title {
-    font-family: Montserrat;
     font-size: 16pt;
     line-height: 26pt;
     height: auto;
@@ -70,7 +66,6 @@
     }
 
     .custom-inst-text {
-        font-family: Montserrat;
         font-size: 16pt;
         text-align: justify;
     }
@@ -124,7 +119,6 @@
     }
 
     .custom-inst-text {
-        font-family: Montserrat;
         font-size: 12pt;
         text-align: justify;
     }
@@ -177,13 +171,11 @@
     }
 
     .custom-inst-text {
-        font-family: Montserrat;
         font-size: 9pt;
         text-align: justify;
     }
 
     .custom-inst-text {
-        font-family: Montserrat;
         font-size: 12pt;
         text-align: justify;
     }
@@ -253,4 +245,10 @@
 
 .navbar-toggler {
     border: none;
+}
+
+/* body */
+
+body, header, footer {
+    font-family: Montserrat, sans-serif !important;
 }

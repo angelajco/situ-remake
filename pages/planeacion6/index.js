@@ -1200,7 +1200,7 @@ export default function index() {
 
   return (
     <>
-      <div className="container-fluid tw-py-5">
+      <div className="container-fluid custom-max-width custom-mx-b-1">
         <div className="row">
           <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-xs-12">
             <Form.Group controlId="id_entidad">
@@ -1237,7 +1237,7 @@ export default function index() {
         </div>
       </div>
       <div className="invisible">{contador}</div>
-      <div className="container-fluid">
+      <div className="container-fluid custom-max-width custom-mx-b-1">
         {
           secciones.map((seccion, index) => (
             <SeccionPm key={index} seccion={seccion} cl={capturaL} />

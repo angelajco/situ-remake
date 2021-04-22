@@ -13,7 +13,7 @@ export default function GraficaPM(props) {
     setRefrescaGrafica(refrescaGrafica + 1)
   }
 
-  console.log('Grafica', grafica)
+  // console.log('Grafica', grafica)
   grafica.refrescarContenido = cambia
 
   // const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#e5d8', '#ffe280'];
@@ -38,7 +38,7 @@ export default function GraficaPM(props) {
   const ancho = parseInt(grafica.ancho)
   const alto = parseInt(grafica.alto)
 
-  console.log('DATOS DE GRAFICA DE PAY: ', datosPay)
+  // console.log('DATOS DE GRAFICA DE PAY: ', datosPay)
 
   switch (grafica.tipo) {
     case "pay":

@@ -11,3 +11,14 @@
 .custom-h-450 {
     height: 450px;
 }
+
+.card-header {
+    cursor: pointer;
+}
+
+.card-body {
+    padding-top: 1.25rem;
+    padding-bottom: unset;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+}
