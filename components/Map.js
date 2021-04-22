@@ -1,14 +1,15 @@
 import Head from 'next/head'
 
-import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, ScaleControl, LayersControl, useMapEvents, useMap, FeatureGroup } from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, ScaleControl, LayersControl, useMapEvents, useMap, FeatureGroup, ZoomControl } from 'react-leaflet'
 import { useState, useEffect } from 'react'
 import { OverlayTrigger, Table, Tooltip } from 'react-bootstrap'
 import { EditControl } from 'react-leaflet-draw'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faUndo, faRedo, faImages } from '@fortawesome/free-solid-svg-icons'
+import { faUndo, faRedo, faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 
 import Popout from 'react-popout'
-import L from 'leaflet'
+
+import React from 'react'
 
 //Si no es necesario cargar los marcadores
 // import "leaflet/dist/leaflet.css"
@@ -134,6 +135,22 @@ const Map = (props) => {
         ]);
     }, [])
     const [mapaReferencia, setmapaReferencia] = useState(null);
+
+    useEffect(() => {
+        if (mapaReferencia != null) {
+            mapaReferencia.addControl(new L.Control.Fullscreen(
+                {
+                    title:{
+                        false: 'Ver pantalla completa',
+                        true: 'Salir de pantalla completa'
+                    },
+                    position: "bottomright"
+                }
+            ));
+        }
+    }, [mapaReferencia])
+
+
     function MapaMovimientoUndoRedo({ target }) {
         registraMovimiento = false;
         if (target.name === 'undo') {
@@ -156,9 +173,9 @@ const Map = (props) => {
         }
     }
 
+    const [tipoCoordenada, setTipoCoordenada] = useState(1)
     function ControlMovimiento() {
         const [coordenadas, setCoordenadas] = useState("")
-        const [tipoCoordenada, setTipoCoordenada] = useState(1)
         const mapa = useMap()
 
         const mapaEventos = useMapEvents({
@@ -173,23 +190,28 @@ const Map = (props) => {
             },
             mousemove(e) {
                 if (tipoCoordenada == 1) {
-                    setCoordenadas(e.latlng)
+                    let latlng = {};
+                    latlng["lat"] = e.latlng.lat.toFixed(3)
+                    latlng["lng"] = e.latlng.lng.toFixed(3)
+                    let latlngString = "LatLng(" + latlng["lat"] + "," + latlng["lng"] + ")"
+                    setCoordenadas(latlngString)
                 }
                 else if (tipoCoordenada == 2) {
-                    const metros = mapa.project(e.latlng).divideBy(256);
-                    setCoordenadas(metros)
+                    let metros = L.CRS.EPSG3857.project(e.latlng);
+                    let metrosString = "LatLng(" + metros.x.toFixed(3) + "," + metros.y.toFixed(3) + ")"
+                    setCoordenadas(metrosString)
                 }
                 else {
                     let lat = e.latlng.lat;
-                    let latGrado = Math.floor(lat);
-                    let latMinuto = Math.floor((lat - latGrado) * 60);
-                    let latSegundo = Math.floor((lat - latGrado - (latMinuto / 60)) * 3600);
+                    let latGrado = Math.trunc(lat);
+                    let latMinuto = Math.trunc((Math.abs(lat) - Math.abs(latGrado)) * 60);
+                    let latSegundo = Math.trunc((Math.abs(lat) - Math.abs(latGrado) - (latMinuto / 60)) * 3600);
                     let latGradoMinutoSegundo = latGrado + "°" + latMinuto + "'" + latSegundo + "''";
 
                     let lng = e.latlng.lng;
-                    let lngGrado = Math.floor(lng);
-                    let lngMinuto = Math.floor((lng - lngGrado) * 60);
-                    let lngSegundo = Math.floor((lng - lngGrado - (lngMinuto / 60)) * 3600);
+                    let lngGrado = Math.trunc(lng);
+                    let lngMinuto = Math.trunc((Math.abs(lng) - Math.abs(lngGrado)) * 60);
+                    let lngSegundo = Math.trunc((Math.abs(lng) - Math.abs(lngGrado) - (lngMinuto / 60)) * 3600);
                     let lngGradoMinutoSegundo = lngGrado + "°" + lngMinuto + "'" + lngSegundo + "''";
 
                     let gradoMinutosSegundos = "LatLng(" + latGradoMinutoSegundo + "," + lngGradoMinutoSegundo + ")";
@@ -223,34 +245,24 @@ const Map = (props) => {
                     });
                 return botonVistaCompleta;
             };
-
-            const botones2 = L.control({ position: "bottomleft" });
-            botones2.onAdd = () => {
-                const botonCambiaCoordenadas = L.DomUtil.create("div", "cambia-coordenadas");
-                botonCambiaCoordenadas.innerHTML = "<select> <option value='1'>Grados decimales</option> <option value='2'>Metros</option> <option value='3'>Grados, minutos y segundos</option> </select>"
-                L.DomEvent
-                    .addListener(botonCambiaCoordenadas, 'change', function (e) {
-                        if (e.target.value == 1) {
-                            setTipoCoordenada(1);
-                        }
-                        else if (e.target.value == 2) {
-                            setTipoCoordenada(2);
-                        } else {
-                            setTipoCoordenada(3);
-                        }
-                    });
-                return botonCambiaCoordenadas;
-            }
-
             botones.addTo(mapa);
-            botones2.addTo(mapa);
             return () => {
                 botones.remove();
-                botones2.remove();
             }
         }, []);
 
         return null;
+    }
+
+    function cambiaTipoCoordenada({ target }) {
+        if (target.value == 1) {
+            setTipoCoordenada(1);
+        }
+        else if (target.value == 2) {
+            setTipoCoordenada(2);
+        } else {
+            setTipoCoordenada(3);
+        }
     }
 
     /*Estados para ventana de leyendas*/
@@ -289,19 +301,18 @@ const Map = (props) => {
             <Head>
                 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
                     integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
-                <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
             </Head>
             <div className="tw-mb-4 tw-inline-block">
                 {props.botones == true &&
                     <>
                         <OverlayTrigger rootClose overlay={<Tooltip>Vista anterior</Tooltip>}>
                             <button disabled={!canUndo} className="tw-border-transparent tw-bg-transparent tw-mr-5" name="undo" onClick={MapaMovimientoUndoRedo}>
-                                <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faUndo} />
+                                <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faArrowLeft} />
                             </button>
                         </OverlayTrigger>
                         <OverlayTrigger rootClose overlay={<Tooltip>Vista posterior</Tooltip>}>
                             <button disabled={!canRedo} className="tw-border-transparent tw-bg-transparent tw-mr-5" name="redo" onClick={MapaMovimientoUndoRedo}>
-                                <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faRedo}></FontAwesomeIcon>
+                                <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faArrowRight}></FontAwesomeIcon>
                             </button>
                         </OverlayTrigger>
                     </>
@@ -311,63 +322,73 @@ const Map = (props) => {
                 </OverlayTrigger>
             </div>
 
-            <MapContainer whenCreated={setmapaReferencia} fullscreenControl={true} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 400, width: "100%" }}>
+            <div className="contenedor-mapa tw-mb-4">
+                <MapContainer whenCreated={setmapaReferencia} center={centroInicial} zoomControl={false} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 400, width: "100%" }}>
 
-                <ScaleControl maxWidth="100" />
-                <ControlMovimiento />
+                    <ScaleControl maxWidth="100" />
+                    <ControlMovimiento />
+                    <ZoomControl position="bottomright" />
 
-                <LayersControl>
-                    <BaseLayer checked name="Mapa base">
-                        <TileLayer
-                            attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
-                    </BaseLayer>
-                    <BaseLayer name="Mapa NASA">
-                        <TileLayer
-                            url="https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default//EPSG3857_500m/{z}/{y}/{x}.jpeg"
-                            attribution="© NASA Blue Marble, image service by OpenGeo"
-                        />
-                    </BaseLayer>
-                    <BaseLayer name="Google">
-                        <TileLayer
-                            url="http://www.google.cn/maps/vt?lyrs=s,h@189&gl=cn&x={x}&y={y}&z={z}"
-                            attribution="Google"
-                            opacity="1"
-                        />
-                    </BaseLayer>
-                </LayersControl>
+                    <LayersControl>
+                        <BaseLayer checked name="Mapa base">
+                            <TileLayer
+                                attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                        </BaseLayer>
+                        <BaseLayer name="Mapa NASA">
+                            <TileLayer
+                                url="https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default//EPSG3857_500m/{z}/{y}/{x}.jpeg"
+                                attribution="© NASA Blue Marble, image service by OpenGeo"
+                            />
+                        </BaseLayer>
+                        <BaseLayer name="Google">
+                            <TileLayer
+                                url="http://www.google.cn/maps/vt?lyrs=s,h@189&gl=cn&x={x}&y={y}&z={z}"
+                                attribution="Google"
+                                opacity="1"
+                            />
+                        </BaseLayer>
+                    </LayersControl>
 
-                <FeatureGroup>
-                    <EditControl
-                        position='topright'
-                        draw={{
-                            rectangle: false,
-                            circle: false,
-                            circlemarker: false,
-                        }}
-                    >
-                    </EditControl>
-                </FeatureGroup>
+                    <FeatureGroup>
+                        <EditControl
+                            position='topright'
+                            draw={{
+                                rectangle: false,
+                                circle: false,
+                                circlemarker: false,
+                            }}
+                        >
+                        </EditControl>
+                    </FeatureGroup>
 
-                {
-                    props.datos.map((capa, index) => {
-                        if (capa.habilitado) {
-                            if (capa.tipo == "geojson") {
-                                return (
-                                    <GeoJSON key={index} data={capa} style={() => estilos(capa.estilos)} onEachFeature={onEachFeature} />
-                                )
+                    {
+                        props.datos.map((capa, index) => {
+                            if (capa.habilitado) {
+                                if (capa.tipo == "geojson") {
+                                    return (
+                                        <GeoJSON key={index} data={capa} style={() => estilos(capa.estilos)} onEachFeature={onEachFeature} />
+                                    )
+                                }
+                                if (capa.tipo == "wms") {
+                                    return (
+                                        <WMSTileLayer key={index} attribution={capa.attribution} url={capa.url} layers={capa.layers} format={capa.format} transparent={capa.transparent} opacity={capa.estilos.transparencia} minZoom={capa.zoomMinimo} maxZoom={capa.zoomMaximo} />
+                                    )
+                                }
+
                             }
-                            if (capa.tipo == "wms") {
-                                return (
-                                    <WMSTileLayer key={index} attribution={capa.attribution} url={capa.url} layers={capa.layers} format={capa.format} transparent={capa.transparent} opacity={capa.estilos.transparencia} minZoom={capa.zoomMinimo} maxZoom={capa.zoomMaximo} />
-                                )
-                            }
-
-                        }
-                    })
-                }
-            </MapContainer>
+                        })
+                    }
+                </MapContainer>
+                <div className="tw-bg-gray-200 tw-border-solid tw-border-1 tw-border-gray-300">
+                    <select onChange={(e) => cambiaTipoCoordenada(e)}>
+                        <option value='1'>Grados decimales</option>
+                        <option value='2'>Metros</option>
+                        <option value='3'>Grados, minutos y segundos</option>
+                    </select>
+                </div>
+            </div>
 
             {rasgos &&
                 rasgos.map((valor, index) => (
@@ -400,4 +421,4 @@ const Map = (props) => {
     )
 }
 
-export default Map
+export default React.memo(Map)

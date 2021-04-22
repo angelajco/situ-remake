@@ -101,6 +101,7 @@ export default function Menu() {
     }, [rolCookie, estatusCookie, usuarioCookie])
 
     const cerrarSesion = () => {
+        setTokenSesion(false)
         cookies.remove('SessionToken', { path: "/" })
         cookies.remove('RolUsuario', { path: "/" })
         cookies.remove('EstatusUsuario', { path: "/" })
@@ -115,7 +116,7 @@ export default function Menu() {
     return (
         <Navbar expand="lg" className="tw-text-center tw-bg-white justify-content-center custom-mt-situ-menu custom-mt-situ-menu">
             <div className="row custom-max-width">
-                <Navbar.Toggle aria-controls="basic-navbar-nav" className="ml-auto custom-toggler"/>
+                <Navbar.Toggle aria-controls="basic-navbar-nav" className="ml-auto custom-toggler" />
                 <Navbar.Collapse id="basic-navbar-nav" className="justify-content-center">
                     <Nav className="tw-py-2">
                         <NavDropdown title="CAMBIO DE IDIOMA" id="basic-nav-dropdown" className="md:tw-mb-3 tw-font-semibold md:tw-ml-0 tw-ml-5 tw-text-titulo hover:tw-text-inst-verdef hover:tw-no-underline hover:tw-font-bold">
@@ -147,16 +148,18 @@ export default function Menu() {
                         {
                             tokenSesion
                                 ?
-                                <a className={noActive} href="/administracion/inicio-sesion" onClick={cerrarSesion}>
-                                    <OverlayTrigger placement="right" overlay={renderTooltip}>
-                                        <FontAwesomeIcon size="3x" icon={faUserCircle}/>
-                                    </OverlayTrigger>
-                                </a>
+                                <Link href="/administracion/inicio-sesion">
+                                    <a className={noActive} onClick={cerrarSesion}>
+                                        <OverlayTrigger placement="right" overlay={renderTooltip}>
+                                            <FontAwesomeIcon size="3x" icon={faUserCircle} />
+                                        </OverlayTrigger>
+                                    </a>
+                                </Link>
                                 :
                                 <Link href="/administracion/inicio-sesion">
                                     <a className={deshabilitarSesion ? active : noActive} >
                                         <OverlayTrigger placement="right" overlay={renderTooltip}>
-                                            <FontAwesomeIcon size="3x" icon={faUserCircle}/>
+                                            <FontAwesomeIcon size="3x" icon={faUserCircle} />
                                         </OverlayTrigger>
                                     </a>
                                 </Link>
