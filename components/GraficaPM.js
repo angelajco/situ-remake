@@ -33,6 +33,18 @@ export default function GraficaPM(props) {
       </text>
     );
   };
+  
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="tw-bg-white border border-green-600 tw-p-5">
+            {payload[0].payload.name} : {new Intl.NumberFormat('en-US').format(payload[0].value)}
+        </div>
+      );
+    }
+  
+    return null;
+  };
 
   const datosPay = grafica.generaDatos()
   const ancho = parseInt(grafica.ancho)
@@ -82,7 +94,7 @@ export default function GraficaPM(props) {
         >
           <XAxis dataKey="name" />
           <YAxis />
-          <Tooltip />
+          <Tooltip content={<CustomTooltip />} />
           <Bar dataKey="value" stackId="a" fill={COLORS[0]} />
         </BarChart>
       </ResponsiveContainer>

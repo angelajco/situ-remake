@@ -211,7 +211,7 @@ export default function index() {
                                         </h4>
                                     </Accordion.Toggle>
                                     <Accordion.Collapse eventKey="0">
-                                        <Card.Body>
+                                        <Card.Body className="custom-card-body">
                                             {
                                                 errors.isStatisticalProductsError ?
                                                 <h4 className="text-center">
@@ -237,7 +237,7 @@ export default function index() {
                                         </h4>
                                     </Accordion.Toggle>
                                     <Accordion.Collapse eventKey="1">
-                                        <Card.Body>
+                                        <Card.Body className="custom-card-body">
                                             {
                                                 isFiltersActive ?
                                                 errors.isStatisticalProductsError || errors.isAggregationLevelsError ?

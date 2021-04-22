@@ -37,12 +37,12 @@ export default function Tabular(props) {
       {
         (tabular.datosDisponibles)
           ?
-          <table className="tw-border-green-800 tw-w-full">
-            <thead className="tw-bg-guia-grisdd" >
+          <table className="tw-w-full table-hover">
+            <thead className="tw-bg-titulo" >
               <tr>
                 {
                   tabular.columnas.map((encabezado, index) => (
-                    <th className="tw-px-2" key={index}>{tabular.encabezadoColumna(encabezado)}</th>
+                    <th className="tw-px-2 tw-text-white text-center" key={index}>{tabular.encabezadoColumna(encabezado)}</th>
                   ))
                 }
               </tr>

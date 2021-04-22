@@ -1179,22 +1179,27 @@ export default function index() {
 
   function desplegarDatos() {
 
-    let nombreMun = ''
-    municipios.filter(mun => mun.id_municipios == refMunicipio.current).map((munFiltrado, index) => (
-      nombreMun = munFiltrado.nombre_municipio
-    ))
+    if(refMunicipio.current.length != 0) {
 
-    let nombreEntidad = ''
-    entidades.map((entidad, index) => {
-      if (entidad.id_entidades === refEntidad.current) {
-        nombreEntidad = entidad.nombre_entidad
-      }
-    })
+      let nombreMun = ''
+      municipios.filter(mun => mun.id_municipios == refMunicipio.current).map((munFiltrado, index) => (
+        nombreMun = munFiltrado.nombre_municipio
+      ))
 
-    nucleo.actualizaDatos(refEntidad.current, nombreEntidad, refMunicipio.current, nombreMun)
+      let nombreEntidad = ''
+      entidades.map((entidad, index) => {
+        if (entidad.id_entidades === refEntidad.current) {
+          nombreEntidad = entidad.nombre_entidad
+        }
+      })
 
-    setSecciones(nucleo.modelo.secciones)
-    setContador(contador + 1)
+      nucleo.actualizaDatos(refEntidad.current, nombreEntidad, refMunicipio.current, nombreMun)
+
+      setSecciones(nucleo.modelo.secciones)
+      setContador(contador + 1)
+    } else {
+      alert('Todos los campos son obligatorios')
+    }
 
   }
 
@@ -1231,7 +1236,7 @@ export default function index() {
           </div>
           <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-xs-12 d-flex justify-content-center">
             <div>
-              <button className="button button-primary" onClick={desplegarDatos}>Enviar</button>
+              <button className="btn-analisis" onClick={desplegarDatos}>Enviar</button>
             </div>
           </div>
         </div>

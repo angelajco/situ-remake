@@ -16,7 +16,7 @@
     cursor: pointer;
 }
 
-.card-body {
+.custom-card-body {
     padding-top: 1.25rem;
     padding-bottom: unset;
     padding-left: 1.25rem;
