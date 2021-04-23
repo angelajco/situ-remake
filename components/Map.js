@@ -1,4 +1,5 @@
 import Head from 'next/head'
+import React from 'react'
 
 import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, ScaleControl, LayersControl, useMapEvents, useMap, FeatureGroup, ZoomControl } from 'react-leaflet'
 import { useState, useEffect } from 'react'
@@ -7,27 +8,19 @@ import { EditControl } from 'react-leaflet-draw'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUndo, faRedo, faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 
-import Popout from 'react-popout'
-
-import React from 'react'
-
 //Si no es necesario cargar los marcadores
 // import "leaflet/dist/leaflet.css"
 
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
-
 import 'leaflet-draw/dist/leaflet.draw.css'
-
-const { BaseLayer } = LayersControl;
+import 'leaflet-easyprint'
 
 var _timeline = {
     history: [],
     current: [],
     future: []
 };
-
-var registraMovimiento = true;
 
 function useTimeline() {
 
@@ -96,7 +89,11 @@ function useTimeline() {
     return [state, { canUndo, canRedo, update, undo, redo }];
 }
 
+const { BaseLayer } = LayersControl;
+var registraMovimiento = true;
+
 const Map = (props) => {
+
     //Centro y zoom del mapa
     var centroInicial = [23.26825996870948, -102.88361673036671];
     var acercamientoInicial = 5;
@@ -140,13 +137,19 @@ const Map = (props) => {
         if (mapaReferencia != null) {
             mapaReferencia.addControl(new L.Control.Fullscreen(
                 {
-                    title:{
+                    title: {
                         false: 'Ver pantalla completa',
                         true: 'Salir de pantalla completa'
                     },
                     position: "bottomright"
                 }
             ));
+
+            L.easyPrint({
+                title: 'Imprimir',
+                position: 'topleft',
+                sizeModes: ['A4Portrait', 'A4Landscape']
+            }).addTo(mapaReferencia);
         }
     }, [mapaReferencia])
 
@@ -330,16 +333,10 @@ const Map = (props) => {
                     <ZoomControl position="bottomright" />
 
                     <LayersControl>
-                        <BaseLayer checked name="Mapa base">
+                        <BaseLayer checked name="Open street map">
                             <TileLayer
                                 attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
-                        </BaseLayer>
-                        <BaseLayer name="Mapa NASA">
-                            <TileLayer
-                                url="https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default//EPSG3857_500m/{z}/{y}/{x}.jpeg"
-                                attribution="© NASA Blue Marble, image service by OpenGeo"
                             />
                         </BaseLayer>
                         <BaseLayer name="Google">

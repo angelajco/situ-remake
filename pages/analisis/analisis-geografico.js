@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
-import { Form, Modal, Button, OverlayTrigger, Tooltip, Card, ListGroup } from 'react-bootstrap'
+import { Form, Modal, Button, OverlayTrigger, Tooltip, Card, ListGroup, Accordion } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
 import { ContextMenu, MenuItem, ContextMenuTrigger } from "react-contextmenu";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faUpload, faDownload, faSave, faEdit, faCheck, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faUpload, faDownload, faSave, faEdit, faCheck, faPlus, faAngleDown } from '@fortawesome/free-solid-svg-icons'
 
 import dynamic from 'next/dynamic'
 import $ from 'jquery'
@@ -14,8 +14,8 @@ import catalogoEntidades from "../../shared/jsons/entidades.json";
 import Cookies from 'universal-cookie'
 const cookies = new Cookies()
 
- //Importa dinámicamente el mapa
- const Map = dynamic(
+//Importa dinámicamente el mapa
+const Map = dynamic(
     () => import('../../components/Map'),
     {
         loading: () => <p>El mapa está cargando</p>,
@@ -523,35 +523,41 @@ export default function AnalisisGeografico() {
                                 </div>
 
                                 <div className="col-12 tw-mt-8">
-                                    <Card>
-                                        <Card.Header>Capas</Card.Header>
+                                    <Accordion>
+                                        <Card>
+                                            <Card.Header className="tw-pointer-events-none">Capas</Card.Header>
+                                        </Card>
                                         {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
                                         <DragDropContext onDragEnd={handleOnDragEnd}>
                                             <Droppable droppableId="entidades">
                                                 {(provided) => (
                                                     // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
-                                                    <ListGroup {...provided.droppableProps} ref={provided.innerRef}> {
+                                                    <div {...provided.droppableProps} ref={provided.innerRef}> {
                                                         capasVisualizadas.map((capa, index) => (
                                                             <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
                                                                 {(provided) => (
-                                                                    <>
-                                                                        <ListGroup.Item {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                                            <div className="row">
-                                                                                <Form.Group className="col-6">
-                                                                                    <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
-                                                                                </Form.Group>
-                                                                                <Form.Group className="col-6">
+                                                                    <Card {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                                                        <Card.Header>
+                                                                            <Accordion.Toggle as={Button} variant="link" eventKey={capa.num_capa.toString()}>
+                                                                                <FontAwesomeIcon icon={faAngleDown} />
+                                                                            </Accordion.Toggle>
+                                                                            <Form.Group className="tw-inline-block">
+                                                                                <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
+                                                                            </Form.Group>
+                                                                        </Card.Header>
+                                                                        <Accordion.Collapse eventKey={capa.num_capa.toString()}>
+                                                                            <Card.Body>
+                                                                                <Form.Group>
                                                                                     <Form.Label>Transparencia</Form.Label>
                                                                                     <div className="tw-flex">
                                                                                         <span className="tw-mr-6">+</span>
                                                                                         <Form.Control custom type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 0)} />
                                                                                         <span className="tw-ml-6">-</span>
                                                                                     </div>
-                                                                                    {/* <Slider min={0} max={1} defaultValue={1} step={0.1} handle={handle} /> */}
                                                                                 </Form.Group>
                                                                                 {capa.tipo == "wms" &&
                                                                                     (
-                                                                                        <>
+                                                                                        <div className="row">
                                                                                             <Form.Group className="col-6">
                                                                                                 <Form.Label>Escala minima</Form.Label>
                                                                                                 <Form.Control defaultValue="0" as="select" onChange={(event) => zoomMinMax(event, 0)} name={capa.num_capa} data-zoom="min">
@@ -600,23 +606,25 @@ export default function AnalisisGeografico() {
                                                                                                     <option value="18">1:50 M</option>
                                                                                                 </Form.Control>
                                                                                             </Form.Group>
-                                                                                        </>
+                                                                                        </div>
                                                                                     )}
-                                                                            </div>
-                                                                        </ListGroup.Item>
-                                                                    </>
+                                                                            </Card.Body>
+                                                                        </Accordion.Collapse>
+                                                                    </Card>
                                                                 )}
                                                             </Draggable>
                                                         ))
                                                     }
                                                         {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
                                                         {provided.placeholder}
-                                                    </ListGroup>
+                                                    </div>
                                                 )}
                                             </Droppable>
                                         </DragDropContext>
-                                    </Card>
+                                    </Accordion>
                                 </div>
+
+
 
                                 <div className="col-12 tw-mt-8">
                                     <div className="tw-mb-4 tw-inline-block">
