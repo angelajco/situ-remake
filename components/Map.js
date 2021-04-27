@@ -16,6 +16,9 @@ import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
 import 'leaflet-draw/dist/leaflet.draw.css'
 
+import 'leaflet-zoombox'
+import 'leaflet-zoombox/L.Control.ZoomBox.css'
+
 var _timeline = {
     history: [],
     current: [],
@@ -113,6 +116,27 @@ export default function Map(props) {
                     position: "bottomright"
                 }
             ));
+            var options = {
+                modal: true,
+                title: "Acercar a un área determinada"
+            };
+            var control = L.control.zoomBox(options);
+            mapaReferencia.addControl(control);
+            mapaReferencia.on('draw:created', function (e) {
+                var type = e.layerType,
+                    layer = e.layer;
+                if (type === 'polyline') {
+                    var distance = 0;
+                    length = layer.getLatLngs().length;
+                    for (var i = 1; i < length; i++) {
+                        distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
+                    }
+                    layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance/1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, {permanent: false, direction:"center"}).openTooltip()
+                } else {
+                    var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                    layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area/10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area/1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area/1000))} m<sup>2</sup></p>`, {permanent: false, direction:"center"}).openTooltip()
+                }
+            })
 
             // L.easyPrint({
             //     title: 'Imprimir',
@@ -127,6 +151,9 @@ export default function Map(props) {
         L.drawLocal.draw.toolbar.buttons.polyline = "Dibujar una linea"
         L.drawLocal.draw.toolbar.buttons.polygon = "Dibujar un poligono"
         L.drawLocal.draw.toolbar.buttons.marker = "Dibujar un marcador"
+        L.drawLocal.draw.toolbar.buttons.rectangle = "Dibujar un rectangulo";
+        L.drawLocal.draw.handlers.rectangle.tooltip.start = "Mantener click y arrastrar para dibujar";
+        // L.drawLocal.draw.handlers.simpleshape.tooltip.end = "Dejar de hacer click para mostrar el dibujo";
         L.drawLocal.draw.handlers.polyline.error = "<strong>¡Error:</strong> las esquinas de la forma no se pueden cruzar!"
         L.drawLocal.draw.toolbar.actions.title = "Cancelar dibujo"
         L.drawLocal.draw.toolbar.actions.text = "Cancelar"
@@ -363,7 +390,7 @@ export default function Map(props) {
                     <EditControl
                         position='topright'
                         draw={{
-                            rectangle: false,
+                            rectangle: true,
                             circle: false,
                             circlemarker: false,
                         }}
