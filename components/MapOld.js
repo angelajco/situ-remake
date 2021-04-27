@@ -1,20 +1,22 @@
 import Head from 'next/head'
-import React, { useState, useEffect, useRef } from 'react'
+import React from 'react'
 
-import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, useMapEvents, ZoomControl, FeatureGroup } from 'react-leaflet'
-import { OverlayTrigger, Tooltip } from 'react-bootstrap'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, ScaleControl, LayersControl, useMapEvents, useMap, FeatureGroup, ZoomControl } from 'react-leaflet'
+import { useState, useEffect } from 'react'
+import { OverlayTrigger, Table, Tooltip } from 'react-bootstrap'
 import { EditControl } from 'react-leaflet-draw'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUndo, faRedo, faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+
 import Popout from 'react-popout'
 
-const { BaseLayer } = LayersControl;
 //Si no es necesario cargar los marcadores
 // import "leaflet/dist/leaflet.css"
 
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
 import 'leaflet-draw/dist/leaflet.draw.css'
+import 'leaflet-easyprint'
 
 var _timeline = {
     history: [],
@@ -22,12 +24,10 @@ var _timeline = {
     future: []
 };
 
-//Funcion del timeline undo redo
-var registraMovimiento = true;
 function useTimeline() {
 
     const [state, setState] = useState([]);
-    const historyLimit = -5
+    const historyLimit = -6
 
     function _canUndo() {
         return _timeline.history.length > 1;
@@ -91,19 +91,52 @@ function useTimeline() {
     return [state, { canUndo, canRedo, update, undo, redo }];
 }
 
+const { BaseLayer } = LayersControl;
+var registraMovimiento = true;
+
 export default function Map(props) {
-    //Para guardar las referencias del mapa    
-    const [mapaReferencia, setmapaReferencia] = useState(null);
-    props.referencia(mapaReferencia);
 
     //Centro y zoom del mapa
-    var centroInicial = [24.26825996870948, -102.88361673036671];
+    var centroInicial = [26.26825996870948, -102.88361673036671];
     var acercamientoInicial = 5;
 
-    useEffect(() => {
+    //Para guardar los rasgos
+    const [rasgos, setRasgos] = useState([])
+    function onEachFeature(feature = {}, layer) {
+        layer.on('click', function () {
+            setRasgos([feature.properties])
+        })
+    }
 
+    //estilos del mapa, se puede enviar como funcion o como objeto
+    //como funcion
+    function estilos(estilos) {
+        return {
+            color: "#FF0000",
+            fillColor: "#FF7777",
+            opacity: estilos.transparencia,
+            fillOpacity: estilos.transparencia
+        }
+    }
+    //como objeto
+    // const estilos = {
+    //     fillColor: "#FF0000",
+    // }
+
+    //Para manejar los estados del undo-redo
+    const [todos, { canUndo, canRedo, update, undo, redo }] = useTimeline();
+    useEffect(() => {
+        update([
+            {
+                centroUndoRedo: { lat: 23.26825996870948, lng: -102.88361673036671 },
+                zoomUndoRedo: 5
+            }
+        ]);
+    }, [])
+    const [mapaReferencia, setmapaReferencia] = useState(null);
+
+    useEffect(() => {
         if (mapaReferencia != null) {
-            
             mapaReferencia.addControl(new L.Control.Fullscreen(
                 {
                     title: {
@@ -119,51 +152,10 @@ export default function Map(props) {
             //     position: 'topleft',
             //     sizeModes: ['A4Portrait', 'A4Landscape']
             // }).addTo(mapaReferencia);
-
         }
     }, [mapaReferencia])
 
-    useEffect(() => {
-        L.drawLocal.draw.toolbar.buttons.polyline = "Dibujar una linea"
-        L.drawLocal.draw.toolbar.buttons.polygon = "Dibujar un poligono"
-        L.drawLocal.draw.toolbar.buttons.marker = "Dibujar un marcador"
-        L.drawLocal.draw.handlers.polyline.error = "<strong>¡Error:</strong> las esquinas de la forma no se pueden cruzar!"
-        L.drawLocal.draw.toolbar.actions.title = "Cancelar dibujo"
-        L.drawLocal.draw.toolbar.actions.text = "Cancelar"
-        L.drawLocal.draw.toolbar.finish.title = "Finalizar dibujo"
-        L.drawLocal.draw.toolbar.finish.text = "Finalizar"
-        L.drawLocal.draw.toolbar.undo.title = "Borrar último punto dibujado"
-        L.drawLocal.draw.toolbar.undo.text = "Borrar último punto"
-        L.drawLocal.draw.handlers.marker.tooltip.start = "Clic en el mapa para poner un marcador."
-        L.drawLocal.draw.handlers.polygon.tooltip.start = "Clic para empezar a dibujar una forma."
-        L.drawLocal.draw.handlers.polygon.tooltip.cont = "Clic para continuar dibujando la forma."
-        L.drawLocal.draw.handlers.polygon.tooltip.end = "Clic en el primer punto para cerrar esta forma."
-        L.drawLocal.draw.handlers.polyline.tooltip.start = "Clic para empezar a dibujar una linea."
-        L.drawLocal.draw.handlers.polyline.tooltip.cont = "Clic para continuar dibujando la linea."
-        L.drawLocal.draw.handlers.polyline.tooltip.end = "Clic en el último punto para finalizar la linea."
-        L.drawLocal.edit.toolbar.actions.save.title = "Guardar cambios"
-        L.drawLocal.edit.toolbar.actions.save.text = "Guardar"
-        L.drawLocal.edit.toolbar.actions.cancel.title = "Cancelar edición, descartar todos los cambios"
-        L.drawLocal.edit.toolbar.actions.cancel.text = "Cancelar"
-        L.drawLocal.edit.toolbar.actions.clearAll.title = "Limpiar todas las capas"
-        L.drawLocal.edit.toolbar.actions.clearAll.text = "Limpiar todo"
-        L.drawLocal.edit.toolbar.buttons.edit = "Editar capas"
-        L.drawLocal.edit.toolbar.buttons.editDisabled = "No hay capas para editar"
-        L.drawLocal.edit.toolbar.buttons.remove = "Borrar capas"
-        L.drawLocal.edit.toolbar.buttons.removeDisabled = "No hay capas para borrar"
-        L.drawLocal.edit.handlers.edit.tooltip.text = "Arrastre controladores o marcadores para editar carecaterísticas."
-        L.drawLocal.edit.handlers.edit.tooltip.subtext = "Clic en cancelar para deshacer los cambios"
-        L.drawLocal.edit.handlers.remove.tooltip.text = "Click en la figura para borrarla."
 
-        update([
-            {
-                centroUndoRedo: { lat: 23.26825996870948, lng: -102.88361673036671 },
-                zoomUndoRedo: 5
-            }
-        ]);
-    }, [])
-
-    const [todos, { canUndo, canRedo, update, undo, redo }] = useTimeline();
     function MapaMovimientoUndoRedo({ target }) {
         registraMovimiento = false;
         if (target.name === 'undo') {
@@ -188,9 +180,9 @@ export default function Map(props) {
 
     const [tipoCoordenada, setTipoCoordenada] = useState(1)
     function ControlMovimiento() {
-
         const [coordenadas, setCoordenadas] = useState("")
         const mapa = useMap()
+
         const mapaEventos = useMapEvents({
             moveend() {
                 let centroUndoRedo = mapaEventos.getCenter();
@@ -218,14 +210,14 @@ export default function Map(props) {
                     let lat = e.latlng.lat;
                     let latGrado = Math.trunc(lat);
                     let latMinuto = Math.trunc((Math.abs(lat) - Math.abs(latGrado)) * 60);
-                    let latSegundo = (Math.abs(lat) - Math.abs(latGrado) - (latMinuto / 60)) * 3600;
-                    let latGradoMinutoSegundo = latGrado + "°" + latMinuto + "'" + latSegundo.toFixed(2) + "''";
+                    let latSegundo = Math.trunc((Math.abs(lat) - Math.abs(latGrado) - (latMinuto / 60)) * 3600);
+                    let latGradoMinutoSegundo = latGrado + "°" + latMinuto + "'" + latSegundo + "''";
 
                     let lng = e.latlng.lng;
                     let lngGrado = Math.trunc(lng);
                     let lngMinuto = Math.trunc((Math.abs(lng) - Math.abs(lngGrado)) * 60);
-                    let lngSegundo = (Math.abs(lng) - Math.abs(lngGrado) - (lngMinuto / 60)) * 3600;
-                    let lngGradoMinutoSegundo = lngGrado + "°" + lngMinuto + "'" + lngSegundo.toFixed(2) + "''";
+                    let lngSegundo = Math.trunc((Math.abs(lng) - Math.abs(lngGrado) - (lngMinuto / 60)) * 3600);
+                    let lngGradoMinutoSegundo = lngGrado + "°" + lngMinuto + "'" + lngSegundo + "''";
 
                     let gradoMinutosSegundos = "LatLng(" + latGradoMinutoSegundo + "," + lngGradoMinutoSegundo + ")";
                     setCoordenadas(gradoMinutosSegundos);
@@ -234,29 +226,11 @@ export default function Map(props) {
             }
         })
 
-        // useEffect(() => {
-        //     L.drawLocal.draw.toolbar.buttons.rectangle = "Dibujar un rectangulo";
-        //     L.drawLocal.draw.handlers.rectangle.tooltip.start = "Mantener click y arrastrar para dibujar";
-        //     mapa.on('draw:created', function (e) {
-        //         var type = e.layerType,
-        //             layer = e.layer;
-        //         if (type === 'rectangle') {
-        //             // mapa.fitBounds(layer.getLatLngs());
-        //             // mapa.removeLayer(layer);
-        //         } else {
-        //             console.log(layer.getLatLngs())
-        //             var area = L.GeometryUtil.geodesicArea(layer.getLatLngs());
-        //             console.log(area)
-        //             layer.bindTooltip(area, {permanent: false, direction:"center"}).openTooltip()
-        //         }
-        //     })
-        // })
-
         useEffect(() => {
             const leyendaCoordenadas = L.control({ position: "bottomleft" });
             leyendaCoordenadas.onAdd = () => {
                 const divCoordenadas = L.DomUtil.create("div", "coordenadas");
-                divCoordenadas.innerHTML = coordenadas + " " + "Zoom:&nbsp" + mapa.getZoom();
+                divCoordenadas.innerHTML = coordenadas
                 return divCoordenadas;
             };
             leyendaCoordenadas.addTo(mapa);
@@ -307,26 +281,24 @@ export default function Map(props) {
         }
     }
 
+    function pintaWMS(datos){
+        return(
+            <WMSTileLayer key={index} attribution={capa.attribution} url={capa.url} layers={capa.layers} format={capa.format} transparent={capa.transparent} opacity={capa.estilos.transparencia} minZoom={capa.zoomMinimo} maxZoom={capa.zoomMaximo} />
+        )
+    }
+
     return (
         <>
-            <Head>
-                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-                    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
-            </Head>
-
             {ventana &&
                 <Popout title='Simbología' onClosing={() => popupVentana(2)}>
-                    <h3><b>Simbología</b></h3>
+                    <p>Simbología</p>
                     {
                         props.datos.map((capa, index) => {
                             if (capa.habilitado) {
-                                console.log(capa);
                                 if (capa.tipo == "wms") {
                                     return (
                                         <div key={index}>
-                                            <p><b>{capa.nom_capa}</b></p>
-                                            <img src={capa.simbologia}></img>
-                                            <br></br>
+                                            <img src={capa.leyenda}></img>
                                             <br></br>
                                         </div>
                                     )
@@ -337,66 +309,119 @@ export default function Map(props) {
                 </Popout>
             }
 
-
-            <MapContainer whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false} >
-                <ScaleControl maxWidth="100" />
-                <ZoomControl position="bottomright" zoomInTitle="Acercar" zoomOutTitle="Alejar" />
-
-                <LayersControl>
-                    <BaseLayer checked name="Open street map">
-                        <TileLayer
-                            className="tilelayer-base"
-                            attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
-                    </BaseLayer>
-                    <BaseLayer name="Google">
-                        <TileLayer
-                            className="tilelayer-base"
-                            attribution="Google"
-                            url="http://www.google.cn/maps/vt?lyrs=s,h@189&gl=cn&x={x}&y={y}&z={z}"
-                        />
-                    </BaseLayer>
-                </LayersControl>
-                <ControlMovimiento />
-                <FeatureGroup>
-                    <EditControl
-                        position='topright'
-                        draw={{
-                            rectangle: false,
-                            circle: false,
-                            circlemarker: false,
-                        }}
-                    >
-                    </EditControl>
-                </FeatureGroup>
-            </MapContainer>
-
-            <div className="tw-bg-gray-200 tw-border-solid tw-border-1 tw-border-gray-300 tw-text-right">
-                <select onChange={(e) => cambiaTipoCoordenada(e)} className="tw-mr-5">
-                    <option value='1'>Grados decimales</option>
-                    <option value='2'>Metros</option>
-                    <option value='3'>Grados, minutos y segundos</option>
-                </select>
+            <Head>
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+                    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
+            </Head>
+            <div className="tw-mb-4 tw-inline-block">
                 {props.botones == true &&
                     <>
                         <OverlayTrigger rootClose overlay={<Tooltip>Vista anterior</Tooltip>}>
-                            <button disabled={!canUndo} className="tw-border-transparent tw-bg-transparent tw-mr-5 tw-border-none" name="undo" onClick={MapaMovimientoUndoRedo}>
+                            <button disabled={!canUndo} className="tw-border-transparent tw-bg-transparent tw-mr-5" name="undo" onClick={MapaMovimientoUndoRedo}>
                                 <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faArrowLeft} />
                             </button>
                         </OverlayTrigger>
                         <OverlayTrigger rootClose overlay={<Tooltip>Vista posterior</Tooltip>}>
-                            <button disabled={!canRedo} className="tw-border-transparent tw-bg-transparent tw-mr-5 tw-border-none" name="redo" onClick={MapaMovimientoUndoRedo}>
+                            <button disabled={!canRedo} className="tw-border-transparent tw-bg-transparent tw-mr-5" name="redo" onClick={MapaMovimientoUndoRedo}>
                                 <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faArrowRight}></FontAwesomeIcon>
                             </button>
                         </OverlayTrigger>
                     </>
                 }
                 <OverlayTrigger overlay={<Tooltip>Simbología</Tooltip>}>
-                    <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl tw-mt-2" onClick={() => popupVentana(1)} icon={faImages}></FontAwesomeIcon>
+                    <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" onClick={() => popupVentana(1)} icon={faImages}></FontAwesomeIcon>
                 </OverlayTrigger>
             </div>
 
+            <div className="contenedor-mapa tw-mb-4">
+                <MapContainer drawControl whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false}>
+
+                    <ScaleControl maxWidth="100" />
+                    <ControlMovimiento />
+                    <ZoomControl position="bottomright" />
+
+                    <LayersControl>
+                        <BaseLayer checked name="Open street map">
+                            <TileLayer
+                                attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                        </BaseLayer>
+                        <BaseLayer name="Google">
+                            <TileLayer
+                                url="http://www.google.cn/maps/vt?lyrs=s,h@189&gl=cn&x={x}&y={y}&z={z}"
+                                attribution="Google"
+                                opacity="1"
+                            />
+                        </BaseLayer>
+                    </LayersControl>
+
+                    {/* <FeatureGroup>
+                        <EditControl
+                            position='topright'
+                            draw={{
+                                rectangle: false,
+                                circle: false,
+                                circlemarker: false,
+                            }}
+                        >
+                        </EditControl>
+                    </FeatureGroup> */}
+
+                    {
+                        props.datos.map((capa, index) => {
+                            if (capa.habilitado) {
+                                if (capa.tipo == "geojson") {
+                                    return (
+                                        <GeoJSON key={index} data={capa} style={() => estilos(capa.estilos)} onEachFeature={onEachFeature} />
+                                    )
+                                }
+                                if (capa.tipo == "wms") {
+                                    return (
+                                        <WMSTileLayer key={index} attribution={capa.attribution} url={capa.url} layers={capa.layers} format={capa.format} transparent={capa.transparent} opacity={capa.estilos.transparencia} minZoom={capa.zoomMinimo} maxZoom={capa.zoomMaximo} />
+                                    )
+                                }
+
+                            }
+                        })
+                    }
+                </MapContainer>
+                <div className="tw-bg-gray-200 tw-border-solid tw-border-1 tw-border-gray-300">
+                    <select onChange={(e) => cambiaTipoCoordenada(e)}>
+                        <option value='1'>Grados decimales</option>
+                        <option value='2'>Metros</option>
+                        <option value='3'>Grados, minutos y segundos</option>
+                    </select>
+                </div>
+            </div>
+
+            {rasgos &&
+                rasgos.map((valor, index) => (
+                    <Table className="tw-mt-8" striped bordered hover key={index}>
+                        <thead>
+                            <tr>
+                                <th colSpan="5" className="tw-text-center">Información de rasgos</th>
+                            </tr>
+                            <tr>
+                                {
+                                    Object.keys(valor).map((key, indexKey) => (
+                                        <th key={indexKey}>{key}</th>
+                                    ))
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{valor.fid}</td>
+                                <td>{valor.CVEGEO}</td>
+                                <td>{valor.CVE_ENT}</td>
+                                <td>{valor.CVE_MUN}</td>
+                                <td>{valor.NOMGEO}</td>
+                            </tr>
+                        </tbody>
+                    </Table>
+                ))
+            }
         </>
     )
 }

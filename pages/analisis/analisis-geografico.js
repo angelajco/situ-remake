@@ -1,55 +1,24 @@
+import Head from 'next/head'
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
-import { Form, Modal, Button, OverlayTrigger, Tooltip, Card, ListGroup } from 'react-bootstrap'
+import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
-import { ContextMenu, MenuItem, ContextMenuTrigger } from "react-contextmenu";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faUpload, faDownload, faSave, faEdit, faCheck, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faEdit, faCheck, faAngleDown, faCaretLeft } from '@fortawesome/free-solid-svg-icons'
 
-import dynamic from 'next/dynamic'
-import $ from 'jquery'
+import ContenedorMapaAnalisis from '../../components/ContenedorMapaAnalisis'
 
 import catalogoEntidades from "../../shared/jsons/entidades.json";
 
-import Cookies from 'universal-cookie'
-const cookies = new Cookies()
+import $ from 'jquery'
 
- //Importa dinámicamente el mapa
- const Map = dynamic(
-    () => import('../../components/Map'),
-    {
-        loading: () => <p>El mapa está cargando</p>,
-        ssr: false
-    }
-)
+//Obten referencia del mapa
+var referenciaMapa = null;
+function capturaReferenciaMapa(mapa) {
+    referenciaMapa = mapa;
+}
 
-export default function AnalisisGeografico() {
-
-    //Cuando se renderiza el lado del servidor (SSR). Garantiza que el estado del contexto no persista en varias representaciones en el servidor, lo que provocaría discrepancias en las marcas de cliente / servidor después de que se presenten varias solicitudes en el servidor
-    resetServerContext();
-
-    //Acciones del formulario
-    const { register, handleSubmit } = useForm();
-    const { register: register1, handleSubmit: handleSubmit1 } = useForm();
-
-    //Para guardar las capas que se van a mostrar
-    const [capasVisualizadas, setCapasVisualizadas] = useState([])
-    //Para guardar los datos de las capas
-    const [datosCapasBackEnd, setDatosCapasBackEnd] = useState([])
-
-    //Para guardar las capas que se van a mostrar
-    const [capasVisualizadasEspejo, setCapasVisualizadasEspejo] = useState([])
-    //Para guardar la columna de la capa espejo
-    const [dobleMapa, setDobleMapa] = useState("col-12")
-
-    //Estados para el modal
-    const [show, setShow] = useState(false);
-    const handleClose = () => setShow(false);
-    const handleShow = () => setShow(true);
-
-    //Pantalla dividida
-    const [pantallaDividida, setPantallaDividida] = useState(false)
-
+export default function AnalisisGeograficoCopy() {
     useEffect(() => {
         fetch(`${process.env.ruta}/wa0/lista_capas01`)
             .then(res => res.json())
@@ -57,258 +26,55 @@ export default function AnalisisGeografico() {
                 (data) => construyeCatalogo(data),
                 (error) => console.log(error)
             )
-
     }, [])
 
-    //Al seleccionar y añadir una entidad para el mapa original
-    const onSubmit = (data) => {
-        let indice = parseInt(data.entidad)
-        let capa = datosCapasBackEnd[indice]
+    //Para guardar los rasgos
+    const [rasgos, setRasgos] = useState([])
+    const [rasgosEspejo, setRasgosEspejo] = useState([])
 
-        if (capa.tipo == "filtrada") {
-            const owsrootUrl = capa.url;
-            const defaultParameters1 = {
-                service: 'WFS',
-                version: '2.0',
-                request: 'GetFeature',
-                //sedatu:
-                typeName: capa.capa,
-                outputFormat: 'text/javascript',
-                format_options: 'callback:getJson',
-                cql_filter: capa.filtro_entidad + "=" + "'" + capa.valor_filtro + "'"
-            };
-            var parameters1 = L.Util.extend(defaultParameters1);
-            var url = owsrootUrl + L.Util.getParamString(parameters1);
-            //Hace la petición para traer los datos de la entidad
-            $.ajax({
-                jsonpCallback: 'getJson',
-                url: url,
-                dataType: 'jsonp',
-                success: function (response) {
-                    if (capasVisualizadas.some(capaVisual => capaVisual.num_capa === capa.indice)) {
-                        return;
-                    }
-                    else {
-                        response["num_capa"] = capa.indice;
-                        response["nom_capa"] = capa.titulo;
-                        response["habilitado"] = true;
-                        response['tipo'] = "geojson";
-                        response['estilos'] = { 'transparencia': 1 };
-                        setCapasVisualizadas([...capasVisualizadas, response])
-                    }
-                }
-            });
-        }
-        else {
-            if (capasVisualizadas.some(capaVisual => capaVisual.num_capa === capa.indice)) {
-                return;
-            }
-            else {
-                const capaWMS = {};
-                //Se guardan los datos de la capa
-                capaWMS["attribution"] = "No disponible"
-                capaWMS["url"] = capa.url
-                capaWMS["layers"] = capa.capa
-                capaWMS["format"] = "image/png"
-                capaWMS["transparent"] = "true"
-                capaWMS["tipo"] = "wms"
-                capaWMS["nom_capa"] = capa.titulo;
-                capaWMS["num_capa"] = capa.indice;
-                capaWMS["habilitado"] = true;
-                capaWMS["estilos"] = { 'transparencia': 1 };
-                capaWMS["zoomMinimo"] = 0;
-                capaWMS["zoomMaximo"] = 18;
-                capaWMS["leyenda"] = capa.leyenda;
+    //Acciones del formulario
+    const { register, handleSubmit } = useForm();
+    const { register: register1, handleSubmit: handleSubmit1 } = useForm();
 
-                setCapasVisualizadas([...capasVisualizadas, capaWMS])
-            }
+    //Para guardar la columna de la capa espejo
+    const [dobleMapa, setDobleMapa] = useState("col-12")
+    const [pantallaDividida, setPantallaDividida] = useState(false);
+    const [dobleMapaVista, setDobleMapaVista] = useState("col-6")
+
+    function dividirPantalla() {
+        if (pantallaDividida == true) {
+            setPantallaDividida(false);
+            setDobleMapa("col-12");
+            setDobleMapaVista("col-6");
+        } else {
+            setPantallaDividida(true)
+            setDobleMapa("col-6");
+            setDobleMapaVista("col-12");
         }
     }
 
-    //Al seleccionar y añadir una entidad para el mapa original
-    const onSubmitEspejo = (data) => {
-        let indice = parseInt(data.entidad)
-        let capa = datosCapasBackEnd[indice]
+    //Nombres para mapas
+    //Mapa original
+    const [nombreMapa, setNombreMapa] = useState("Titulo mapa")
+    const [muestraEditarNombreMapa, setmuestraEditarNombreMapa] = useState(true)
+    //Mapa espejo
+    const [nombreMapaEspejo, setNombreMapaEspejo] = useState("Titulo mapa")
+    const [muestraEditarNombreMapaEspejo, setmuestraEditarNombreMapaEspejo] = useState(true)
 
-        if (capa.tipo == "filtrada") {
-            const owsrootUrl = capa.url;
-            const defaultParameters1 = {
-                service: 'WFS',
-                version: '2.0',
-                request: 'GetFeature',
-                //sedatu:
-                typeName: capa.capa,
-                outputFormat: 'text/javascript',
-                format_options: 'callback:getJson',
-                cql_filter: capa.filtro_entidad + "=" + "'" + capa.valor_filtro + "'"
-            };
-            var parameters1 = L.Util.extend(defaultParameters1);
-            var url = owsrootUrl + L.Util.getParamString(parameters1);
-            //Hace la petición para traer los datos de la entidad
-            $.ajax({
-                jsonpCallback: 'getJson',
-                url: url,
-                dataType: 'jsonp',
-                success: function (response) {
-                    if (capasVisualizadasEspejo.some(capaVisual => capaVisual.num_capa === capa.indice)) {
-                        return;
-                    }
-                    else {
-                        response["num_capa"] = capa.indice;
-                        response["nom_capa"] = capa.titulo;
-                        response["habilitado"] = true;
-                        response['tipo'] = "geojson";
-                        response['estilos'] = { 'transparencia': 1 };
-                        setCapasVisualizadasEspejo([...capasVisualizadasEspejo, response])
-                    }
-                }
-            });
-        }
-        else {
-            if (capasVisualizadasEspejo.some(capaVisual => capaVisual.num_capa === capa.indice)) {
-                return;
-            }
-            else {
-                const capaWMS = {};
-                //Se guardan los datos de la capa
-                capaWMS["attribution"] = "No disponible"
-                capaWMS["url"] = capa.url
-                capaWMS["layers"] = capa.capa
-                capaWMS["format"] = "image/png"
-                capaWMS["transparent"] = "true"
-                capaWMS["tipo"] = "wms"
-                capaWMS["nom_capa"] = capa.titulo;
-                capaWMS["num_capa"] = capa.indice;
-                capaWMS["habilitado"] = true;
-                capaWMS["estilos"] = { 'transparencia': 1 };
-                capaWMS["zoomMinimo"] = 0;
-                capaWMS["zoomMaximo"] = 18;
-                capaWMS["leyenda"] = capa.leyenda;
-                setCapasVisualizadasEspejo([...capasVisualizadasEspejo, capaWMS])
-
-            }
-        }
-    }
-
-    //Funcion para cambiar el estado del checkbox
-    const cambiaCheckbox = ({ target }, mapa) => {
-        let mapaBase;
+    function cambiaNombreMapa(e, mapa) {
         if (mapa == 0) {
-            mapaBase = capasVisualizadas;
+            setNombreMapa(e.target.value)
         } else if (mapa == 1) {
-            mapaBase = capasVisualizadasEspejo;
+            setNombreMapaEspejo(e.target.value)
         }
-        //Hace copia a otro arreglo para volver a sobreescribir capasVisualizadas
-        let capasVisualisadasActualizado = mapaBase.map((valor) => {
-            //Si es igual a la entidad que se envia, se cambia el checkbox
-            if (valor.num_capa == target.value) {
-                //Si esta habilitado se desabilita, de manera igual en caso contrario
-                if (valor.habilitado) {
-                    valor.habilitado = false;
-                    return valor;
-                }
-                else {
-                    valor.habilitado = true;
-                    return valor;
-                }
-            }
-            //Si no es igual a la entidad que se envia, se envia con los mismos valores
-            else {
-                return valor;
-            }
-        });
-        if (mapa == 0) {
-            setCapasVisualizadas(capasVisualisadasActualizado);
-        } else if (mapa == 1) {
-            setCapasVisualizadasEspejo(capasVisualisadasActualizado);
-        }
+
     }
 
-    const [valorTransparencia, setValorTransparencia] = useState(1)
-    const transparenciaCapas = ({ target }, mapa) => {
-        let mapaBase;
-        if (mapa == 0) {
-            mapaBase = capasVisualizadas;
-        } else if (mapa == 1) {
-            mapaBase = capasVisualizadasEspejo;
-        }
-        //Hace copia a otro arreglo para volver a sobreescribir capasVisualizadas
-        let capasVisualisadasActualizado = mapaBase.map((valor) => {
-            //Si es igual a la entidad que se envia, se cambia la transparencia
-            if (valor.num_capa == target.name) {
-                valor.estilos.transparencia = target.value
-                return valor;
-            }
-            // Si no es igual a la entidad que se envia, se envia con los mismos valores
-            else {
-                return valor;
-            }
-        });
-        if (mapa == 0) {
-            setCapasVisualizadas(capasVisualisadasActualizado);
-        } else if (mapa == 1) {
-            setCapasVisualizadasEspejo(capasVisualisadasActualizado);
-        }
-    }
-
-    const zoomMinMax = ({ target }, mapa) => {
-        let mapaBase;
-        if (mapa == 0) {
-            mapaBase = capasVisualizadas;
-        } else if (mapa == 1) {
-            mapaBase = capasVisualizadasEspejo;
-        }
-        let capasVisualisadasActualizado = mapaBase.map((valor) => {
-            //Si es igual a la entidad que se envia, se cambia el zoom
-            if (valor.num_capa == target.name) {
-                if (target.dataset.zoom == "min") {
-                    valor.zoomMinimo = target.value
-                } else if (target.dataset.zoom == "max") {
-                    valor.zoomMaximo = target.value
-                }
-                return valor;
-            }
-            // Si no es igual a la entidad que se envia, se envia con los mismos valores
-            else {
-                return valor;
-            }
-        });
-        if (mapa == 0) {
-            setCapasVisualizadas(capasVisualisadasActualizado);
-        } else if (mapa == 1) {
-            setCapasVisualizadasEspejo(capasVisualisadasActualizado)
-        }
-    }
-
-    //Funcion para ordenar los nuevos datos
-    function handleOnDragEnd(result) {
-        // Si el destino existe, esto es para evitar cuando se arrastra fuera del contenedor
-        if (!result.destination) {
-            return
-        }
-        // Se crea una copia de capasVisualizadas
-        let items = Array.from(capasVisualizadas)
-        // Lo eliminamos de acuerdo al index que le pasa
-        let [reorderedItem] = items.splice(result.source.index, 1)
-        // Se usa destination.index para agregar ese valor a su nuevo destino
-        items.splice(result.destination.index, 0, reorderedItem)
-        // Actualizamos datos entidades
-        setCapasVisualizadas(items)
-    }
-
-    function handleOnDragEndEspejo(result) {
-        if (!result.destination) {
-            return
-        }
-        let items = Array.from(capasVisualizadasEspejo)
-        let [reorderedItem] = items.splice(result.source.index, 1)
-        items.splice(result.destination.index, 0, reorderedItem)
-        setCapasVisualizadasEspejo(items)
-    }
-
+    //Para guardar los datos de las capas del BackEnd
+    const [datosCapasBackEnd, setDatosCapasBackEnd] = useState([])
     function construyeCatalogo(capasBackEnd) {
         //Para guardar la información de las capas que viene desde el backend, sirve como arreglo temporal
-        var catalogoCapas = [];
+        let catalogoCapas = [];
         //Para guardar las capas que sean de entidades
         let capaEstatal = null;
         capasBackEnd["catalogo"].map(value => {
@@ -345,141 +111,318 @@ export default function AnalisisGeografico() {
         setDatosCapasBackEnd(catalogoCapas);
     }
 
-    function dividirPantalla() {
-        if (pantallaDividida == true) {
-            setPantallaDividida(false)
-            setDobleMapa("col-12")
+    //Al seleccionar y añadir una entidad para el mapa original
+    //Para guardar las capas que se van a mostrar
+
+    const estilos = {
+        color: "#FF0000",
+        fillColor: "#FF7777",
+        opacity: "1",
+        fillOpacity: "1"
+    }
+
+    const [capasVisualizadas, setCapasVisualizadas] = useState([])
+    const onSubmit = (data) => {
+        let indice = parseInt(data.capaMapa)
+        let capa = datosCapasBackEnd[indice]
+        if (capasVisualizadas.some(capaVisual => capaVisual.num_capa === capa.indice)) {
+            return;
+        }
+        else {
+            if (capa.tipo == "filtrada") {
+                const owsrootUrl = capa.url;
+                const defaultParameters1 = {
+                    service: 'WFS',
+                    version: '2.0',
+                    request: 'GetFeature',
+                    //sedatu:
+                    typeName: capa.capa,
+                    outputFormat: 'text/javascript',
+                    format_options: 'callback:getJson',
+                    cql_filter: capa.filtro_entidad + "=" + "'" + capa.valor_filtro + "'"
+                };
+                var parameters1 = L.Util.extend(defaultParameters1);
+                var url = owsrootUrl + L.Util.getParamString(parameters1);
+                //Hace la petición para traer los datos de la entidad
+                $.ajax({
+                    jsonpCallback: 'getJson',
+                    url: url,
+                    dataType: 'jsonp',
+                    success: function (response) {
+                        response["num_capa"] = capa.indice;
+                        response["nom_capa"] = capa.titulo;
+                        response["habilitado"] = true;
+                        response['tipo'] = "geojson";
+                        response['estilos'] = { 'transparencia': 1 };
+                        let layer = L.geoJSON(response, {
+                            style: estilos,
+                            onEachFeature: function (feature = {}, layer) {
+                                layer.on('click', function () {
+                                    setRasgos([feature.properties])
+                                })
+                            }
+                        });
+                        response['layer'] = layer;
+                        setCapasVisualizadas([...capasVisualizadas, response])
+                        referenciaMapa.addLayer(response.layer)
+                    }
+                });
+            } else {
+                const capaWMS = {};
+                //Se guardan los datos de la capa
+                capaWMS["attribution"] = "No disponible"
+                capaWMS["url"] = capa.url
+                capaWMS["layers"] = capa.capa
+                capaWMS["format"] = "image/png"
+                capaWMS["transparent"] = "true"
+                capaWMS["tipo"] = "wms"
+                capaWMS["nom_capa"] = capa.titulo;
+                capaWMS["num_capa"] = capa.indice;
+                capaWMS["habilitado"] = true;
+                capaWMS["estilos"] = { 'transparencia': 1 };
+                capaWMS["zoomMinimo"] = 5;
+                capaWMS["zoomMaximo"] = 18;
+                capaWMS["simbologia"] = capa.leyenda;
+
+                let layer = L.tileLayer.wms(capaWMS.url, {
+                    layers: capaWMS.layers,
+                    format: capaWMS.format,
+                    transparent: capaWMS.transparent,
+                    attribution: capaWMS.attribution,
+                    opacity: capaWMS.estilos.transparencia,
+                    minZoom: capaWMS.zoomMinimo,
+                    maxZoom: capaWMS.zoomMaximo,
+                })
+                capaWMS["layer"] = layer;
+                setCapasVisualizadas([...capasVisualizadas, capaWMS])
+                referenciaMapa.addLayer(capaWMS.layer)
+            }
+        }
+    }
+
+    //Al seleccionar y añadir una entidad para el mapa espejo
+    const [capasVisualizadasEspejo, setCapasVisualizadasEspejo] = useState([])
+    const onSubmitEspejo = (data) => {
+        let indice = parseInt(data.capaEspejo)
+        let capa = datosCapasBackEnd[indice]
+        if (capasVisualizadasEspejo.some(capaVisual => capaVisual.num_capa === capa.indice)) {
+            return;
         } else {
-            setPantallaDividida(true)
-            setDobleMapa("col-6")
+            if (capa.tipo == "filtrada") {
+                const owsrootUrl = capa.url;
+                const defaultParameters1 = {
+                    service: 'WFS',
+                    version: '2.0',
+                    request: 'GetFeature',
+                    //sedatu:
+                    typeName: capa.capa,
+                    outputFormat: 'text/javascript',
+                    format_options: 'callback:getJson',
+                    cql_filter: capa.filtro_entidad + "=" + "'" + capa.valor_filtro + "'"
+                };
+                var parameters1 = L.Util.extend(defaultParameters1);
+                var url = owsrootUrl + L.Util.getParamString(parameters1);
+                //Hace la petición para traer los datos de la entidad
+                $.ajax({
+                    jsonpCallback: 'getJson',
+                    url: url,
+                    dataType: 'jsonp',
+                    success: function (response) {
+                        response["num_capa"] = capa.indice;
+                        response["nom_capa"] = capa.titulo;
+                        response["habilitado"] = true;
+                        response['tipo'] = "geojson";
+                        response['estilos'] = { 'transparencia': 1 };
+                        let layer = L.geoJSON(response, {
+                            style: estilos,
+                            onEachFeature: function (feature = {}, layer) {
+                                layer.on('click', function () {
+                                    setRasgosEspejo([feature.properties])
+                                })
+                            }
+                        });
+                        response['layer'] = layer;
+                        setCapasVisualizadasEspejo([...capasVisualizadasEspejo, response])
+                        referenciaMapa.addLayer(response.layer)
+                    }
+                });
+            } else {
+                const capaWMS = {};
+                //Se guardan los datos de la capa
+                capaWMS["attribution"] = "No disponible"
+                capaWMS["url"] = capa.url
+                capaWMS["layers"] = capa.capa
+                capaWMS["format"] = "image/png"
+                capaWMS["transparent"] = "true"
+                capaWMS["tipo"] = "wms"
+                capaWMS["nom_capa"] = capa.titulo;
+                capaWMS["num_capa"] = capa.indice;
+                capaWMS["habilitado"] = true;
+                capaWMS["estilos"] = { 'transparencia': 1 };
+                capaWMS["zoomMinimo"] = 5;
+                capaWMS["zoomMaximo"] = 18;
+                capaWMS["simbologia"] = capa.leyenda;
+                let layer = L.tileLayer.wms(capaWMS.url, {
+                    layers: capaWMS.layers,
+                    format: capaWMS.format,
+                    transparent: capaWMS.transparent,
+                    attribution: capaWMS.attribution,
+                    opacity: capaWMS.estilos.transparencia,
+                    minZoom: capaWMS.zoomMinimo,
+                    maxZoom: capaWMS.zoomMaximo,
+                })
+                capaWMS["layer"] = layer;
+
+                setCapasVisualizadasEspejo([...capasVisualizadasEspejo, capaWMS])
+                referenciaMapa.addLayer(capaWMS.layer)
+            }
         }
     }
 
-    function agregarCapas() {
-        setShow(true);
-    }
-
-    //Mapa original
-    const [nombreMapa, setNombreMapa] = useState("Titulo del mapa")
-    const [muestraEditarNombreMapa, setmuestraEditarNombreMapa] = useState(true)
-    //Mapa espejo
-    const [nombreMapaEspejo, setNombreMapaEspejo] = useState("Titulo del mapa")
-    const [muestraEditarNombreMapaEspejo, setmuestraEditarNombreMapaEspejo] = useState(true)
-
-    function cambiaNombreMapa(e, mapa) {
+    //Funcion para cambiar el estado del checkbox
+    const cambiaCheckbox = ({ target }, mapa) => {
+        let mapaBase;
         if (mapa == 0) {
-            setNombreMapa(e.target.value)
+            mapaBase = capasVisualizadas;
         } else if (mapa == 1) {
-            setNombreMapaEspejo(e.target.value)
+            mapaBase = capasVisualizadasEspejo;
         }
-
+        //Hace copia a otro arreglo para volver a sobreescribir capasVisualizadas
+        let capasVisualisadasActualizado = mapaBase.map((valor) => {
+            //Si es igual a la entidad que se envia, se cambia el checkbox
+            if (valor.num_capa == target.value) {
+                //Si esta habilitado se desabilita, de manera igual en caso contrario
+                if (valor.habilitado) {
+                    valor.habilitado = false;
+                    referenciaMapa.removeLayer(valor.layer);
+                    return valor;
+                }
+                else {
+                    valor.habilitado = true;
+                    referenciaMapa.addLayer(valor.layer)
+                    return valor;
+                }
+            }
+            //Si no es igual a la entidad que se envia, se envia con los mismos valores
+            else {
+                return valor;
+            }
+        });
+        if (mapa == 0) {
+            setCapasVisualizadas(capasVisualisadasActualizado);
+        } else if (mapa == 1) {
+            setCapasVisualizadasEspejo(capasVisualisadasActualizado);
+        }
     }
 
-    function menuContextual(e, data) {
-        console.log(e);
+    //Cambia la transparencia de las capas
+    const transparenciaCapas = ({ target }, mapa) => {
+        let mapaBase;
+        if (mapa == 0) {
+            mapaBase = capasVisualizadas;
+        } else if (mapa == 1) {
+            mapaBase = capasVisualizadasEspejo;
+        }
+        //Hace copia a otro arreglo para volver a sobreescribir capasVisualizadas
+        let capasVisualisadasActualizado = mapaBase.map((valor) => {
+            //Si es igual a la entidad que se envia, se cambia la transparencia
+            if (valor.num_capa == target.name) {
+                valor.estilos.transparencia = target.value;
+                if (valor.tipo == "geojson") {
+                    valor.layer.setStyle({ opacity: valor.estilos.transparencia, fillOpacity: valor.estilos.transparencia })
+                }
+                else if (valor.tipo == "wms") {
+                    valor.layer.setOpacity(valor.estilos.transparencia)
+                }
+                return valor;
+            }
+            // Si no es igual a la entidad que se envia, se envia con los mismos valores
+            else {
+                return valor;
+            }
+        });
+        if (mapa == 0) {
+            setCapasVisualizadas(capasVisualisadasActualizado);
+        } else if (mapa == 1) {
+            setCapasVisualizadasEspejo(capasVisualisadasActualizado);
+        }
     }
 
-    function consultar() {
-        console.log("consultar");
-        handleClose();
+    //Cambia la escala de la visualización de las capas
+    const zoomMinMax = ({ target }, mapa) => {
+        let mapaBase;
+        if (mapa == 0) {
+            mapaBase = capasVisualizadas;
+        } else if (mapa == 1) {
+            mapaBase = capasVisualizadasEspejo;
+        }
+        let capasVisualisadasActualizado = mapaBase.map((valor) => {
+            //Si es igual a la entidad que se envia, se cambia el zoom
+            if (valor.num_capa == target.name) {
+                if (target.dataset.zoom == "min") {
+                    valor.zoomMinimo = target.value
+                    valor.layer.options.minZoom = valor.zoomMinimo;
+                } else if (target.dataset.zoom == "max") {
+                    valor.zoomMaximo = target.value
+                    valor.layer.options.maxZoom = valor.zoomMaximo;
+                }
+                referenciaMapa.removeLayer(valor.layer)
+                referenciaMapa.addLayer(valor.layer)
+                return valor;
+            }
+            // Si no es igual a la entidad que se envia, se envia con los mismos valores
+            else {
+                return valor;
+            }
+        });
+        if (mapa == 0) {
+            setCapasVisualizadas(capasVisualisadasActualizado);
+        } else if (mapa == 1) {
+            setCapasVisualizadasEspejo(capasVisualisadasActualizado)
+        }
     }
 
-    function agregar() {
-        console.log("agregar");
-        handleClose();
+    //Cuando se renderiza el lado del servidor (SSR). Garantiza que el estado del contexto no persista en varias representaciones en el servidor, lo que provocaría discrepancias en las marcas de cliente / servidor después de que se presenten varias solicitudes en el servidor
+    resetServerContext();
+    //Funcion para ordenar los nuevos datos
+    function handleOnDragEnd(result) {
+        // Si el destino existe, esto es para evitar cuando se arrastra fuera del contenedor
+        if (!result.destination) {
+            return
+        }
+        // Se crea una copia de capasVisualizadas
+        let items = Array.from(capasVisualizadas)
+        // Lo eliminamos de acuerdo al index que le pasa
+        let [reorderedItem] = items.splice(result.source.index, 1)
+        // Se usa destination.index para agregar ese valor a su nuevo destino
+        items.splice(result.destination.index, 0, reorderedItem)
+        // Actualizamos datos entidades
+        setCapasVisualizadas(items)
     }
 
-    function limpiar() {
-        console.log("limpiar");
-        handleClose();
+    function handleOnDragEndEspejo(result) {
+        if (!result.destination) {
+            return
+        }
+        let items = Array.from(capasVisualizadasEspejo)
+        let [reorderedItem] = items.splice(result.source.index, 1)
+        items.splice(result.destination.index, 0, reorderedItem)
+        setCapasVisualizadasEspejo(items)
     }
 
-    // const { createSliderWithTooltip } = Slider;
-    // const Range = createSliderWithTooltip(Slider.Range);
-    // const { Handle } = Slider;
+    //Para mostrar menu lateral de mapas
+    const [menuLateral, setMenuLateral] = useState(false);
+    const [menuLateralEspejo, setMenuLateralEspejo] = useState(false);
 
-    // const handle = props => {
-    //     const { value, dragging, index, ...restProps } = props;
-    //     return (
-    //         <SliderTooltip
-    //             prefixCls="rc-slider-tooltip"
-    //             overlay={`${value} %`}
-    //             visible={dragging}
-    //             placement="top"
-    //             key={index}
-    //         >
-    //             <Handle value={value} {...restProps} />
-    //         </SliderTooltip>
-    //     );
-    // };
+    //Para mostrar collapse de mapas
+    const [openCapasCollapse, setOpenCapasCollapse] = useState(true);
+    const [openCapasCollapseEspejo, setOpenCapasCollapseEspejo] = useState(true);
+    const [openRasgosCollapse, setOpenRasgosCollapse] = useState(true);
+    const [openRasgosCollapseEspejo, setOpenRasgosCollapseEspejo] = useState(true);
 
     return (
         <>
-
-
-            <Modal show={show} onHide={handleClose}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Búsqueda de capas</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <p>Listas:</p>
-                    <ul>
-                        <li>Temática</li>
-                        <li>Cobertura territorial</li>
-                        <ul>
-                            <li>Estado</li>
-                            <li>Municipio</li>
-                            <li>Localidad</li>
-                            <li>Colonia</li>
-                            <li>Clave catastral</li>
-                            <li>SUN</li>
-                            <li>Zona metropolitana</li>
-                            <li>AGEB</li>
-                        </ul>
-                    </ul>
-                    <p>Filtros</p>
-                    <ul>
-                        <li>Metadatos</li>
-                    </ul>
-                    <p>Tabla</p>
-                    <p>
-                        <label>
-                            <input type="checkbox" value="a" />
-                        Resultado de la búsqueda
-                    </label>
-                    </p>
-                    <p>
-                        <label>
-                            <input type="checkbox" value="b" />
-                        Capas a agregar
-                    </label>
-                    </p>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={consultar}>Consultar</Button>
-                    <Button variant="primary" onClick={agregar}>Agregar capas</Button>
-                    <Button variant="primary" onClick={limpiar}>Limpiar campos</Button>
-                </Modal.Footer>
-            </Modal>
-
-            {/* <ContextMenuTrigger id="same_unique_identifier">
-                <div className="well">Right click to see the menu</div>
-            </ContextMenuTrigger>
-
-            <ContextMenu id="same_unique_identifier">
-                <MenuItem data={{ foo: 'bar' }} onClick={menuContextual}>
-                    ContextMenu Item 1
-                    </MenuItem>
-                <MenuItem data={{ foo: 'bar' }} onClick={menuContextual}>
-                    ContextMenu Item 2
-                    </MenuItem>
-                <MenuItem divider />
-                <MenuItem data={{ foo: 'bar' }} onClick={menuContextual}>
-                    ContextMenu Item 3
-                    </MenuItem>
-            </ContextMenu> */}
-
-            <div className="main">
+            <div className="main tw-mb-12">
                 <div className="container">
                     <div className="row">
                         <div className="col-12">
@@ -492,7 +435,7 @@ export default function AnalisisGeografico() {
                                     <p>
                                         {nombreMapa}
                                         <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
-                                            <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setmuestraEditarNombreMapa(false)} icon={faEdit}></FontAwesomeIcon>
+                                            <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setmuestraEditarNombreMapa(false)} icon={faEdit} />
                                         </OverlayTrigger>
                                     </p>
                                     <input type="text" hidden={muestraEditarNombreMapa} onChange={(event) => cambiaNombreMapa(event, 0)} value={nombreMapa}></input>
@@ -501,12 +444,11 @@ export default function AnalisisGeografico() {
                                     </OverlayTrigger>
                                 </div>
 
-                                <div className="col-6">
+                                <div className={dobleMapaVista}>
                                     <p>Capas</p>
-                                    <Form className="row" onSubmit={handleSubmit(onSubmit)}>
-                                        <Form.Group className="col-9 tw-mb-0" controlId="entidad">
-                                            {/* <Form.Label className="tw-font-bold">Capas</Form.Label> */}
-                                            <Form.Control as="select" name="entidad" required ref={register}>
+                                    <Form onSubmit={handleSubmit(onSubmit)}>
+                                        <Form.Group className="tw-inline-flex tw-mr-4" controlId="capaMapa">
+                                            <Form.Control className=" " as="select" name="capaMapa" required ref={register}>
                                                 <option value=""></option>
                                                 {
                                                     datosCapasBackEnd.map((value, index) => {
@@ -517,127 +459,155 @@ export default function AnalisisGeografico() {
                                                 }
                                             </Form.Control>
                                         </Form.Group>
-                                        <button className="btn-analisis col-3" type="submit">AGREGAR
+                                        <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR
                                         </button>
                                     </Form>
                                 </div>
 
                                 <div className="col-12 tw-mt-8">
-                                    <Card>
-                                        <Card.Header>Capas</Card.Header>
-                                        {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
-                                        <DragDropContext onDragEnd={handleOnDragEnd}>
-                                            <Droppable droppableId="entidades">
-                                                {(provided) => (
-                                                    // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
-                                                    <ListGroup {...provided.droppableProps} ref={provided.innerRef}> {
-                                                        capasVisualizadas.map((capa, index) => (
-                                                            <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
-                                                                {(provided) => (
-                                                                    <>
-                                                                        <ListGroup.Item {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                                            <div className="row">
-                                                                                <Form.Group className="col-6">
-                                                                                    <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
-                                                                                </Form.Group>
-                                                                                <Form.Group className="col-6">
-                                                                                    <Form.Label>Transparencia</Form.Label>
-                                                                                    <div className="tw-flex">
-                                                                                        <span className="tw-mr-6">+</span>
-                                                                                        <Form.Control custom type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 0)} />
-                                                                                        <span className="tw-ml-6">-</span>
-                                                                                    </div>
-                                                                                    {/* <Slider min={0} max={1} defaultValue={1} step={0.1} handle={handle} /> */}
-                                                                                </Form.Group>
-                                                                                {capa.tipo == "wms" &&
-                                                                                    (
-                                                                                        <>
-                                                                                            <Form.Group className="col-6">
-                                                                                                <Form.Label>Escala minima</Form.Label>
-                                                                                                <Form.Control defaultValue="0" as="select" onChange={(event) => zoomMinMax(event, 0)} name={capa.num_capa} data-zoom="min">
-                                                                                                    <option value="0">1:10000 KM</option>
-                                                                                                    <option value="1">1:5000 KM</option>
-                                                                                                    <option value="2">1:2000 KM</option>
-                                                                                                    <option value="3">1:1000 KM</option>
-                                                                                                    <option value="4">1:500 KM</option>
-                                                                                                    <option value="5">1:300 KM</option>
-                                                                                                    <option value="6">1:200 KM</option>
-                                                                                                    <option value="7">1:100 KM</option>
-                                                                                                    <option value="8">1:50 KM</option>
-                                                                                                    <option value="9">1:20 KM</option>
-                                                                                                    <option value="10">1:10 KM</option>
-                                                                                                    <option value="11">1:5 KM</option>
-                                                                                                    <option value="12">1:3 KM</option>
-                                                                                                    <option value="13">1:1 KM</option>
-                                                                                                    <option value="14">1:500 M</option>
-                                                                                                    <option value="15">1:300 M</option>
-                                                                                                    <option value="16">1:200 M</option>
-                                                                                                    <option value="17">1:100 M</option>
-                                                                                                    <option value="18">1:50 M</option>
-                                                                                                </Form.Control>
+                                    <div className="contenedor-menu-lateral">
+                                        <div className={menuLateral ? "tw-w-96 menu-lateral" : "tw-w-0 menu-lateral"}>
+                                            <Card>
+                                                <Card.Header>
+                                                    <Button onClick={() => setOpenRasgosCollapse(!openRasgosCollapse)} variant="link">
+                                                        <FontAwesomeIcon icon={faAngleDown} />
+                                                    </Button>
+                                                    <b>Información de rasgos</b>
+                                                </Card.Header>
+                                            </Card>
+                                            {rasgos &&
+                                                rasgos.map((valor, index) => (
+                                                    <Collapse in={openRasgosCollapse} key={index}>
+                                                        <Table striped bordered hover>
+                                                            <thead>
+                                                                <tr>
+                                                                    <th colSpan="2" className="tw-text-center">Información de rasgos</th>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th>Valor</th>
+                                                                    <th>Descripción</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {
+                                                                    Object.keys(valor).map((key, indexKey) => (
+                                                                        <tr>
+                                                                            <td key={indexKey}>{key}</td>
+                                                                            <td>{valor[key]}</td>
+                                                                        </tr>
+                                                                    ))
+                                                                }
+                                                            </tbody>
+                                                        </Table>
+                                                    </Collapse>
+                                                ))
+                                            }
+                                            <Card>
+                                                <Card.Header>
+                                                    <Button onClick={() => setOpenCapasCollapse(!openCapasCollapse)} variant="link">
+                                                        <FontAwesomeIcon icon={faAngleDown} />
+                                                    </Button>
+                                                    <b>Capas</b>
+                                                </Card.Header>
+                                            </Card>
+                                            <Collapse in={openCapasCollapse}>
+                                                <Accordion>
+                                                    {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
+                                                    <DragDropContext onDragEnd={handleOnDragEnd}>
+                                                        <Droppable droppableId="capas">
+                                                            {(provided) => (
+                                                                // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
+                                                                <div {...provided.droppableProps} ref={provided.innerRef}> {
+                                                                    capasVisualizadas.map((capa, index) => (
+                                                                        <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
+                                                                            {(provided) => (
+                                                                                <Card {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                                                                    <Card.Header>
+                                                                                        <Accordion.Toggle as={Button} variant="link" eventKey={capa.num_capa.toString()}>
+                                                                                            <FontAwesomeIcon icon={faAngleDown} />
+                                                                                        </Accordion.Toggle>
+                                                                                        <Form.Group className="tw-inline-block">
+                                                                                            <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
+                                                                                        </Form.Group>
+                                                                                    </Card.Header>
+                                                                                    <Accordion.Collapse eventKey={capa.num_capa.toString()}>
+                                                                                        <Card.Body>
+                                                                                            <Form.Group>
+                                                                                                <Form.Label>Transparencia</Form.Label>
+                                                                                                <div className="tw-flex">
+                                                                                                    <span className="tw-mr-6">+</span>
+                                                                                                    <Form.Control custom type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 0)} />
+                                                                                                    <span className="tw-ml-6">-</span>
+                                                                                                </div>
                                                                                             </Form.Group>
-                                                                                            <Form.Group className="col-6">
-                                                                                                <Form.Label>Escala maxima</Form.Label>
-                                                                                                <Form.Control defaultValue="18" as="select" onChange={(event) => zoomMinMax(event, 0)} name={capa.num_capa} data-zoom="max">
-                                                                                                    <option value="0">1:10000 KM</option>
-                                                                                                    <option value="1">1:5000 KM</option>
-                                                                                                    <option value="2">1:2000 KM</option>
-                                                                                                    <option value="3">1:1000 KM</option>
-                                                                                                    <option value="4">1:500 KM</option>
-                                                                                                    <option value="5">1:300 KM</option>
-                                                                                                    <option value="6">1:200 KM</option>
-                                                                                                    <option value="7">1:100 KM</option>
-                                                                                                    <option value="8">1:50 KM</option>
-                                                                                                    <option value="9">1:20 KM</option>
-                                                                                                    <option value="10">1:10 KM</option>
-                                                                                                    <option value="11">1:5 KM</option>
-                                                                                                    <option value="12">1:3 KM</option>
-                                                                                                    <option value="13">1:1 KM</option>
-                                                                                                    <option value="14">1:500 M</option>
-                                                                                                    <option value="15">1:300 M</option>
-                                                                                                    <option value="16">1:200 M</option>
-                                                                                                    <option value="17">1:100 M</option>
-                                                                                                    <option value="18">1:50 M</option>
-                                                                                                </Form.Control>
-                                                                                            </Form.Group>
-                                                                                        </>
-                                                                                    )}
-                                                                            </div>
-                                                                        </ListGroup.Item>
-                                                                    </>
-                                                                )}
-                                                            </Draggable>
-                                                        ))
-                                                    }
-                                                        {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
-                                                        {provided.placeholder}
-                                                    </ListGroup>
-                                                )}
-                                            </Droppable>
-                                        </DragDropContext>
-                                    </Card>
-                                </div>
-
-                                <div className="col-12 tw-mt-8">
-                                    <div className="tw-mb-4 tw-inline-block">
-                                        {/* <OverlayTrigger overlay={<Tooltip>Agregar capas</Tooltip>}>
-                                            <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" onClick={agregarCapas} icon={faPlus}></FontAwesomeIcon>
-                                        </OverlayTrigger>
-                                        <OverlayTrigger overlay={<Tooltip>Subir información</Tooltip>}>
-                                            <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" icon={faUpload}></FontAwesomeIcon>
-                                        </OverlayTrigger>
-                                        <OverlayTrigger overlay={<Tooltip>Descargar información</Tooltip>}>
-                                            <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" icon={faDownload}></FontAwesomeIcon>
-                                        </OverlayTrigger>
-                                        <OverlayTrigger overlay={<Tooltip>Guardar información</Tooltip>}>
-                                            <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl" icon={faSave}></FontAwesomeIcon>
-                                        </OverlayTrigger> */}
+                                                                                            {capa.tipo == "wms" &&
+                                                                                                (
+                                                                                                    <div className="row">
+                                                                                                        <Form.Group className="col-6">
+                                                                                                            <Form.Label>Zoom mínimo</Form.Label>
+                                                                                                            <Form.Control defaultValue="0" as="select" onChange={(event) => zoomMinMax(event, 0)} name={capa.num_capa} data-zoom="min">
+                                                                                                                <option value="5">5</option>
+                                                                                                                <option value="6">6</option>
+                                                                                                                <option value="7">7</option>
+                                                                                                                <option value="8">8</option>
+                                                                                                                <option value="9">9</option>
+                                                                                                                <option value="10">10</option>
+                                                                                                                <option value="11">11</option>
+                                                                                                                <option value="12">12</option>
+                                                                                                                <option value="13">13</option>
+                                                                                                                <option value="14">14</option>
+                                                                                                                <option value="15">15</option>
+                                                                                                                <option value="16">16</option>
+                                                                                                                <option value="17">17</option>
+                                                                                                                <option value="18">18</option>
+                                                                                                            </Form.Control>
+                                                                                                        </Form.Group>
+                                                                                                        <Form.Group className="col-6">
+                                                                                                            <Form.Label>Zoom máximo</Form.Label>
+                                                                                                            <Form.Control defaultValue="18" as="select" onChange={(event) => zoomMinMax(event, 0)} name={capa.num_capa} data-zoom="max">
+                                                                                                                <option value="5">5</option>
+                                                                                                                <option value="6">6</option>
+                                                                                                                <option value="7">7</option>
+                                                                                                                <option value="8">8</option>
+                                                                                                                <option value="9">9</option>
+                                                                                                                <option value="10">10</option>
+                                                                                                                <option value="11">11</option>
+                                                                                                                <option value="12">12</option>
+                                                                                                                <option value="13">13</option>
+                                                                                                                <option value="14">14</option>
+                                                                                                                <option value="15">15</option>
+                                                                                                                <option value="16">16</option>
+                                                                                                                <option value="17">17</option>
+                                                                                                                <option value="18">18</option>
+                                                                                                            </Form.Control>
+                                                                                                        </Form.Group>
+                                                                                                    </div>
+                                                                                                )}
+                                                                                        </Card.Body>
+                                                                                    </Accordion.Collapse>
+                                                                                </Card>
+                                                                            )}
+                                                                        </Draggable>
+                                                                    ))
+                                                                }
+                                                                    {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
+                                                                    {provided.placeholder}
+                                                                </div>
+                                                            )}
+                                                        </Droppable>
+                                                    </DragDropContext>
+                                                </Accordion>
+                                            </Collapse>
+                                        </div>
+                                        <button className="btn btn-light boton-menu-lateral" onClick={() => setMenuLateral(!menuLateral)}>
+                                            <FontAwesomeIcon className="tw-cursor-pointer" icon={faCaretLeft} />
+                                        </button>
                                     </div>
-                                    <Map datos={capasVisualizadas} botones={true} />
-
+                                    <ContenedorMapaAnalisis referencia={capturaReferenciaMapa} botones={true} datos={capasVisualizadas} />
                                 </div>
                             </div>
                         </div>
+
 
                         {
                             pantallaDividida &&
@@ -656,11 +626,11 @@ export default function AnalisisGeografico() {
                                         </OverlayTrigger>
                                     </div>
 
-                                    <div className="col-12">
+                                    <div className={dobleMapaVista}>
+                                        <p>Capas</p>
                                         <Form onSubmit={handleSubmit1(onSubmitEspejo)}>
-                                            <Form.Group controlId="entidad">
-                                                <Form.Label className="tw-text-red-600">Capas</Form.Label>
-                                                <Form.Control as="select" name="entidad" required ref={register1}>
+                                            <Form.Group className="tw-inline-flex tw-mr-4" controlId="capaEspejo">
+                                                <Form.Control as="select" name="capaEspejo" required ref={register1}>
                                                     <option value=""></option>
                                                     {
                                                         datosCapasBackEnd.map((value, index) => {
@@ -671,104 +641,157 @@ export default function AnalisisGeografico() {
                                                     }
                                                 </Form.Control>
                                             </Form.Group>
-                                            <input type="submit" value="Agregar" />
+                                            <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR</button>
                                         </Form>
                                     </div>
+
                                     <div className="col-12 tw-mt-8">
-                                        <Card>
-                                            <Card.Header>Capas</Card.Header>
-                                            <DragDropContext onDragEnd={handleOnDragEndEspejo}>
-                                                <Droppable droppableId="entidades-espejo">
-                                                    {(provided) => (
-                                                        <ListGroup {...provided.droppableProps} ref={provided.innerRef}> {
-                                                            capasVisualizadasEspejo.map((capa, index) => (
-                                                                <Draggable key={capa.num_capa} draggableId={capa.nom_capa + " espejo"} index={index}>
-                                                                    {(provided) => (
-                                                                        <ListGroup.Item {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                                            <div className="row">
-                                                                                <Form.Group className="col-6">
-                                                                                    <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 1)} value={capa.num_capa} />
-                                                                                </Form.Group>
-                                                                                <Form.Group className="col-6">
-                                                                                    <Form.Label>Transparencia</Form.Label>
-                                                                                    <div className="tw-flex">
-                                                                                        <span className="tw-mr-6">+</span>
-                                                                                        <Form.Control custom type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 1)} />
-                                                                                        <span className="tw-ml-6">-</span>
-                                                                                    </div>
-                                                                                </Form.Group>
-                                                                                {capa.tipo == "wms" &&
-                                                                                    (
-                                                                                        <>
-                                                                                            <Form.Group className="col-6">
-                                                                                                <Form.Label>Escala minima</Form.Label>
-                                                                                                <Form.Control defaultValue="0" as="select" onChange={(event) => zoomMinMax(event, 1)} name={capa.num_capa} data-zoom="min">
-                                                                                                    <option value="0">1:10000 KM</option>
-                                                                                                    <option value="1">1:5000 KM</option>
-                                                                                                    <option value="2">1:2000 KM</option>
-                                                                                                    <option value="3">1:1000 KM</option>
-                                                                                                    <option value="4">1:500 KM</option>
-                                                                                                    <option value="5">1:300 KM</option>
-                                                                                                    <option value="6">1:200 KM</option>
-                                                                                                    <option value="7">1:100 KM</option>
-                                                                                                    <option value="8">1:50 KM</option>
-                                                                                                    <option value="9">1:20 KM</option>
-                                                                                                    <option value="10">1:10 KM</option>
-                                                                                                    <option value="11">1:5 KM</option>
-                                                                                                    <option value="12">1:3 KM</option>
-                                                                                                    <option value="13">1:1 KM</option>
-                                                                                                    <option value="14">1:500 M</option>
-                                                                                                    <option value="15">1:300 M</option>
-                                                                                                    <option value="16">1:200 M</option>
-                                                                                                    <option value="17">1:100 M</option>
-                                                                                                    <option value="18">1:50 M</option>
-                                                                                                </Form.Control>
+                                        <div className="contenedor-menu-lateral">
+                                            <div className={menuLateralEspejo ? "tw-w-96 menu-lateral" : "tw-w-0 menu-lateral"}>
+                                                <Card>
+                                                    <Card.Header>
+                                                        <Button onClick={() => setOpenRasgosCollapseEspejo(!openRasgosCollapseEspejo)} variant="link">
+                                                            <FontAwesomeIcon icon={faAngleDown} />
+                                                        </Button>
+                                                        <b>Información de rasgos</b>
+                                                    </Card.Header>
+                                                </Card>
+                                                {rasgosEspejo &&
+                                                    rasgosEspejo.map((valor, index) => (
+                                                        <Collapse in={openRasgosCollapseEspejo} key={index}>
+                                                            <Table striped bordered hover>
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th colSpan="2" className="tw-text-center">Información de rasgos</th>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <th>Valor</th>
+                                                                        <th>Descripción</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {
+                                                                        Object.keys(valor).map((key, indexKey) => (
+                                                                            <tr>
+                                                                                <td key={indexKey}>{key}</td>
+                                                                                <td>{valor[key]}</td>
+                                                                            </tr>
+                                                                        ))
+                                                                    }
+                                                                </tbody>
+                                                            </Table>
+                                                        </Collapse>
+                                                    ))
+                                                }
+                                                <Card>
+                                                    <Card.Header>
+                                                        <Button onClick={() => setOpenCapasCollapseEspejo(!openCapasCollapseEspejo)} variant="link">
+                                                            <FontAwesomeIcon icon={faAngleDown} />
+                                                        </Button>
+                                                        <b>Capas</b>
+                                                    </Card.Header>
+                                                </Card>
+                                                {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
+                                                <Collapse in={openCapasCollapseEspejo}>
+                                                    <Accordion>
+                                                        <DragDropContext onDragEnd={handleOnDragEndEspejo}>
+                                                            <Droppable droppableId="capas-espejo">
+                                                                {(provided) => (
+                                                                    // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
+                                                                    <div {...provided.droppableProps} ref={provided.innerRef}> {
+                                                                        capasVisualizadasEspejo.map((capa, index) => (
+                                                                            <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
+                                                                                {(provided) => (
+                                                                                    <Card {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                                                                        <Card.Header>
+                                                                                            <Accordion.Toggle as={Button} variant="link" eventKey={capa.num_capa.toString()}>
+                                                                                                <FontAwesomeIcon icon={faAngleDown} />
+                                                                                            </Accordion.Toggle>
+                                                                                            <Form.Group className="tw-inline-block">
+                                                                                                <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 1)} value={capa.num_capa} />
                                                                                             </Form.Group>
-                                                                                            <Form.Group className="col-6">
-                                                                                                <Form.Label>Escala maxima</Form.Label>
-                                                                                                <Form.Control defaultValue="18" as="select" onChange={(event) => zoomMinMax(event, 1)} name={capa.num_capa} data-zoom="max" data-mapa="1">
-                                                                                                    <option value="0">1:10000 KM</option>
-                                                                                                    <option value="1">1:5000 KM</option>
-                                                                                                    <option value="2">1:2000 KM</option>
-                                                                                                    <option value="3">1:1000 KM</option>
-                                                                                                    <option value="4">1:500 KM</option>
-                                                                                                    <option value="5">1:300 KM</option>
-                                                                                                    <option value="6">1:200 KM</option>
-                                                                                                    <option value="7">1:100 KM</option>
-                                                                                                    <option value="8">1:50 KM</option>
-                                                                                                    <option value="9">1:20 KM</option>
-                                                                                                    <option value="10">1:10 KM</option>
-                                                                                                    <option value="11">1:5 KM</option>
-                                                                                                    <option value="12">1:3 KM</option>
-                                                                                                    <option value="13">1:1 KM</option>
-                                                                                                    <option value="14">1:500 M</option>
-                                                                                                    <option value="15">1:300 M</option>
-                                                                                                    <option value="16">1:200 M</option>
-                                                                                                    <option value="17">1:100 M</option>
-                                                                                                    <option value="18">1:50 M</option>
-                                                                                                </Form.Control>
-                                                                                            </Form.Group>
-                                                                                        </>
-                                                                                    )}
-                                                                            </div>
-                                                                        </ListGroup.Item>
-                                                                    )}
-                                                                </Draggable>
-                                                            ))
-                                                        }
-                                                            {provided.placeholder}
-                                                        </ListGroup>
-                                                    )}
-                                                </Droppable>
-                                            </DragDropContext>
-                                        </Card>
-                                    </div>
-                                    <div className="col-12 tw-mt-8">
-                                        <Map datos={capasVisualizadasEspejo} />
+                                                                                        </Card.Header>
+                                                                                        <Accordion.Collapse eventKey={capa.num_capa.toString()}>
+                                                                                            <Card.Body>
+                                                                                                <Form.Group>
+                                                                                                    <Form.Label>Transparencia</Form.Label>
+                                                                                                    <div className="tw-flex">
+                                                                                                        <span className="tw-mr-6">+</span>
+                                                                                                        <Form.Control custom type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 1)} />
+                                                                                                        <span className="tw-ml-6">-</span>
+                                                                                                    </div>
+                                                                                                </Form.Group>
+                                                                                                {capa.tipo == "wms" &&
+                                                                                                    (
+                                                                                                        <div className="row">
+                                                                                                            <Form.Group className="col-6">
+                                                                                                                <Form.Label>Zoom mínimo</Form.Label>
+                                                                                                                <Form.Control defaultValue="0" as="select" onChange={(event) => zoomMinMax(event, 1)} name={capa.num_capa} data-zoom="min">
+                                                                                                                    <option value="5">5</option>
+                                                                                                                    <option value="6">6</option>
+                                                                                                                    <option value="7">7</option>
+                                                                                                                    <option value="8">8</option>
+                                                                                                                    <option value="9">9</option>
+                                                                                                                    <option value="10">10</option>
+                                                                                                                    <option value="11">11</option>
+                                                                                                                    <option value="12">12</option>
+                                                                                                                    <option value="13">13</option>
+                                                                                                                    <option value="14">14</option>
+                                                                                                                    <option value="15">15</option>
+                                                                                                                    <option value="16">16</option>
+                                                                                                                    <option value="17">17</option>
+                                                                                                                    <option value="18">18</option>
+                                                                                                                </Form.Control>
+                                                                                                            </Form.Group>
+                                                                                                            <Form.Group className="col-6">
+                                                                                                                <Form.Label>Zoom máximo</Form.Label>
+                                                                                                                <Form.Control defaultValue="18" as="select" onChange={(event) => zoomMinMax(event, 1)} name={capa.num_capa} data-zoom="max">
+                                                                                                                    <option value="5">5</option>
+                                                                                                                    <option value="6">6</option>
+                                                                                                                    <option value="7">7</option>
+                                                                                                                    <option value="8">8</option>
+                                                                                                                    <option value="9">9</option>
+                                                                                                                    <option value="10">10</option>
+                                                                                                                    <option value="11">11</option>
+                                                                                                                    <option value="12">12</option>
+                                                                                                                    <option value="13">13</option>
+                                                                                                                    <option value="14">14</option>
+                                                                                                                    <option value="15">15</option>
+                                                                                                                    <option value="16">16</option>
+                                                                                                                    <option value="17">17</option>
+                                                                                                                    <option value="18">18</option>
+                                                                                                                </Form.Control>
+                                                                                                            </Form.Group>
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                            </Card.Body>
+                                                                                        </Accordion.Collapse>
+                                                                                    </Card>
+                                                                                )}
+                                                                            </Draggable>
+                                                                        ))
+                                                                    }
+                                                                        {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
+                                                                        {provided.placeholder}
+                                                                    </div>
+                                                                )}
+                                                            </Droppable>
+                                                        </DragDropContext>
+                                                    </Accordion>
+                                                </Collapse>
+                                            </div>
+                                            <button className="btn btn-light boton-menu-lateral" onClick={() => setMenuLateralEspejo(!menuLateralEspejo)}>
+                                                <FontAwesomeIcon className="tw-cursor-pointer" icon={faCaretLeft} />
+                                            </button>
+                                        </div>
+                                        <ContenedorMapaAnalisis referencia={capturaReferenciaMapa} botones={false} datos={capasVisualizadasEspejo} />
                                     </div>
                                 </div>
                             </div>
                         }
+
+
+
                     </div>
                 </div>
             </div>
