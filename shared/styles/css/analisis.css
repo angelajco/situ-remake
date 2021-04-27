@@ -12,7 +12,41 @@
     padding: .375rem 2rem;
 }
 .coordenadas{
-    position: absolute;
+    position: absolute !important;
     bottom: 0;
     left: 150%;
+}
+
+.contenedor-menu-lateral{
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: flex;
+}
+
+.menu-lateral{
+    background-color: #fff;
+    width: 0px;
+    transition: 0.5s;
+    overflow-x: hidden;
+    height: 100%;
+    z-index: 1015;
+}
+
+.menu-lateral .card-header{
+    padding: 10px;
+}
+
+.boton-menu-lateral{
+    height: 40px;
+    transform: translateY(230px);
+    z-index: 1015;
+}
+
+.leaflet-control{
+    font-family: 'Montserrat', sans-serif !important;
+}
+
+.tilelayer-base{
+    z-index: 0 !important;
 }
