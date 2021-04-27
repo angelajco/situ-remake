@@ -1142,7 +1142,7 @@ nucleo.descargaModelo(`${process.env.ruta}/demos/modelos/MetaModeloHPM_01.xml`)
 
 
 // Funcion de React
-export default function index() {
+export default function planeacionMunicipal() {
 
   // Hooks para rederizar estados y municipios
   const [entidades, setEntidades] = useState([]);

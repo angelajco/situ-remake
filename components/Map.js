@@ -3,7 +3,7 @@ import Head from 'next/head'
 import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, ScaleControl, LayersControl, useMapEvents, useMap, FeatureGroup, ZoomControl } from 'react-leaflet'
 import { useState, useEffect } from 'react'
 import { OverlayTrigger, Table, Tooltip } from 'react-bootstrap'
-import { EditControl } from 'react-leaflet-draw'
+import { EditControl } from 'react-leaflet-draw' 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUndo, faRedo, faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 
@@ -18,6 +18,9 @@ import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
 
 import 'leaflet-draw/dist/leaflet.draw.css'
+
+import 'leaflet-zoombox'
+import 'leaflet-zoombox/L.Control.ZoomBox.css'
 
 const { BaseLayer } = LayersControl;
 
@@ -147,6 +150,29 @@ const Map = (props) => {
                     position: "bottomright"
                 }
             ));
+            var options = {
+                modal: true,
+                title: "Acercar a un área determinada"
+            };
+            var control = L.control.zoomBox(options);
+            mapaReferencia.addControl(control);
+            // L.drawLocal.draw.toolbar.buttons.rectangle = "Dibujar un rectangulo";
+            // L.drawLocal.draw.handlers.rectangle.tooltip.start = "Mantener click y arrastrar para dibujar";
+            mapaReferencia.on('draw:created', function (e) {
+                var type = e.layerType,
+                    layer = e.layer;
+                if (type === 'polyline') {
+                    var distance = 0;
+                    length = layer.getLatLngs().length;
+                    for (var i = 1; i < length; i++) {
+                        distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
+                    }
+                    layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance/1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, {permanent: false, direction:"center"}).openTooltip()
+                } else {
+                    var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                    layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area/10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area/1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area/1000))} m<sup>2</sup></p>`, {permanent: false, direction:"center"}).openTooltip()
+                }
+            })
         }
     }, [mapaReferencia])
 
@@ -220,6 +246,24 @@ const Map = (props) => {
 
             }
         })
+
+        // useEffect(() => {
+        //     L.drawLocal.draw.toolbar.buttons.rectangle = "Dibujar un rectangulo";
+        //     L.drawLocal.draw.handlers.rectangle.tooltip.start = "Mantener click y arrastrar para dibujar";
+        //     mapa.on('draw:created', function (e) {
+        //         var type = e.layerType,
+        //             layer = e.layer;
+        //         if (type === 'rectangle') {
+        //             // mapa.fitBounds(layer.getLatLngs());
+        //             // mapa.removeLayer(layer);
+        //         } else {
+        //             console.log(layer.getLatLngs())
+        //             var area = L.GeometryUtil.geodesicArea(layer.getLatLngs());
+        //             console.log(area)
+        //             layer.bindTooltip(area, {permanent: false, direction:"center"}).openTooltip()
+        //         }
+        //     })
+        // })
 
         useEffect(() => {
             const leyendaCoordenadas = L.control({ position: "bottomleft" });
@@ -355,7 +399,7 @@ const Map = (props) => {
                         <EditControl
                             position='topright'
                             draw={{
-                                rectangle: false,
+                                rectangle: true,
                                 circle: false,
                                 circlemarker: false,
                             }}

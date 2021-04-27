@@ -16,3 +16,9 @@
     bottom: 0;
     left: 150%;
 }
+
+.leaflet-zoom-box-control a {
+    background: #fff url('/images/analisis/frame.svg');
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+}

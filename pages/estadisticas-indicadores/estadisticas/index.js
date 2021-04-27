@@ -7,7 +7,7 @@ import { Accordion, Card, Form } from 'react-bootstrap'
 import Loader from '../../../components/Loader'
 import ModalComponent from '../../../components/ModalComponent'
 
-export default function index() {
+export default function estadisticas() {
 
     const aggregationLevels = [
         {
