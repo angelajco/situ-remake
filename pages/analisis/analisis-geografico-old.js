@@ -23,7 +23,7 @@ const Map = dynamic(
     }
 )
 
-export default function AnalisisGeografico() {
+export default function AnalisisGeograficoOld() {
 
     //Cuando se renderiza el lado del servidor (SSR). Garantiza que el estado del contexto no persista en varias representaciones en el servidor, lo que provocaría discrepancias en las marcas de cliente / servidor después de que se presenten varias solicitudes en el servidor
     resetServerContext();

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
-import { Form, Modal, Button, Table } from 'react-bootstrap'
+import { Form, Modal, Button, Table, Tabs, Tab, Pagination} from 'react-bootstrap'
 import BootstrapTable from 'react-bootstrap-table-next';
 
 import ModalComponent from '../../components/ModalComponent'
+
+import ReactPaginate from 'react-paginate';
 
 export default function ConsultaDocumental() {
 
@@ -21,7 +23,7 @@ export default function ConsultaDocumental() {
     const { register, handleSubmit, watch, clearErrors, setError, errors } = useForm();
 
     const onSubmit = async (data) => {
-        setMuestraTablaBusqueda(true);
+        console.log(data);
     }
 
     const documentos = [0, 1, 2];
@@ -91,8 +93,120 @@ export default function ConsultaDocumental() {
 
             <div className="main">
                 <div className="container">
+                    <div className="row"></div>
                     <div className="row">
+                        <div className="col-12">
+                            <Form onSubmit={handleSubmit(onSubmit)}>
+                                <Tabs className="tabs-consulta" defaultActiveKey="titulo" id="uncontrolled-tab-example">
+                                    <Tab eventKey="titulo" title="TÍTULO">
+                                        <Form.Group controlId="dato">
+                                            <Form.Control name="dato" type="text" ref={register()} />
+                                        </Form.Group>
+                                        <Button variant="outline-secondary" className="btn-admin" type="submit">BUSCAR</Button>
+                                    </Tab>
+                                    <Tab eventKey="descripcion" title="DESCRIPCIÓN">
+                                        <Form.Group controlId="descripcion">
+                                            <Form.Control name="descripcion" type="text" ref={register()} />
+                                        </Form.Group>
+                                        <Button variant="outline-secondary" className="btn-admin" type="submit">BUSCAR</Button>
+                                    </Tab>
+                                    <Tab eventKey="autor" title="AUTOR">
+                                        <Form.Group controlId="autor">
+                                            <Form.Control name="autor" type="text" ref={register()} />
+                                        </Form.Group>
+                                        <Button variant="outline-secondary" className="btn-admin" type="submit">BUSCAR</Button>
+                                    </Tab>
+                                    <Tab eventKey="cobertura" title={<>COBERTURA<br />GEOGRÁFICA</>}>
+                                        <Form.Group controlId="cobertura">
+                                            <Form.Control name="cobertura" type="text" ref={register()} />
+                                        </Form.Group>
+                                        <Button variant="outline-secondary" className="btn-admin" type="submit">BUSCAR</Button>
+                                    </Tab>
+                                    <Tab eventKey="unidad" title={<>UNIDAD<br />RESPONSABLE</>}>
+                                        <Form.Group controlId="unidad">
+                                            <Form.Control name="unidad" type="text" ref={register()} />
+                                        </Form.Group>
+                                        <Button variant="outline-secondary" className="btn-admin" type="submit">BUSCAR</Button>
+                                    </Tab>
+                                    <Tab eventKey="año" title={<>AÑO DE<br />EDICIÓN</>}>
+                                        <Form.Group controlId="año">
+                                            <Form.Control name="año" type="text" ref={register()} />
+                                        </Form.Group>
+                                        <Button variant="outline-secondary" className="btn-admin" type="submit">BUSCAR</Button>
+                                    </Tab>
+                                    <Tab eventKey="tipo" title="TIPO">
+                                        <Form.Group controlId="tipo">
+                                            <Form.Control name="tipo" type="text" ref={register()} />
+                                        </Form.Group>
+                                        <Button variant="outline-secondary" className="btn-admin" type="submit">BUSCAR</Button>
+                                    </Tab>
+                                    <Tab eventKey="tema" title="TEMA">
+                                        <Form.Group controlId="tema">
+                                            <Form.Control name="tema" type="text" ref={register()} />
+                                        </Form.Group>
+                                        <Button variant="outline-secondary" className="btn-admin" type="submit">BUSCAR</Button>
+                                    </Tab>
+                                </Tabs>
+                            </Form>
+                        </div>
+                    </div>
 
+                    <div className="row">
+                        <div className="col-12">
+                            <p className="tw-text-center"><b>LO MÁS BUSCADO</b></p>
+                        </div>
+                        <div className="col-3">
+                            <img src="/images/img-pdf.png" style={{ height: 50 + "px" }}></img>
+                        </div>
+                        <div className="col-3">
+                            <img src="/images/img-pdf.png" style={{ height: 50 + "px" }}></img>
+                        </div>
+                        <div className="col-3">
+                            <img src="/images/img-pdf.png" style={{ height: 50 + "px" }}></img>
+                        </div>
+                        <div className="col-3">
+                            <img src="/images/img-pdf.png" style={{ height: 50 + "px" }}></img>
+                        </div>
+                        <div className="col-3">
+                            <img src="/images/img-pdf.png" style={{ height: 50 + "px" }}></img>
+                        </div>
+                        <div className="col-3">
+                            <img src="/images/img-pdf.png" style={{ height: 50 + "px" }}></img>
+                        </div>
+                        <div className="col-3">
+                            <img src="/images/img-pdf.png" style={{ height: 50 + "px" }}></img>
+                        </div>
+                        <div className="col-3">
+                            <img src="/images/img-pdf.png" style={{ height: 50 + "px" }}></img>
+                        </div>
+                    </div>
+
+
+                    {/* <ReactPaginate
+                        previousLabel={'<'}
+                        nextLabel={'>'}
+                        breakLabel={'...'}
+                        breakClassName={'break-me'}
+                        pageCount={5}
+                        marginPagesDisplayed={2}
+                        pageRangeDisplayed={5}
+                        containerClassName={'pagination'}
+                        activeClassName={'active'}
+                        pageClassName={'page-item'}
+                        pageLinkClassName={'page-link'}
+
+                    /> */}
+
+                    <Pagination>
+                        <Pagination.Prev />
+                        <Pagination.Item>{1}</Pagination.Item>
+                        <Pagination.Item>{2}</Pagination.Item>
+                        <Pagination.Item>{3}</Pagination.Item>
+                        <Pagination.Item>{4}</Pagination.Item>
+                        <Pagination.Next />
+                    </Pagination>
+
+                    {/* <div className="row">
                         <div className="col-12">
                             <Table striped bordered hover>
                                 <thead>
@@ -198,7 +312,8 @@ export default function ConsultaDocumental() {
                             </div>
                         }
 
-                    </div>
+                    </div> */}
+
                 </div>
             </div>
         </>

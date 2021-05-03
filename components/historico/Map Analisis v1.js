@@ -1,5 +1,5 @@
 import Head from 'next/head'
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useContext } from 'react'
 
 import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, useMapEvents, ZoomControl, FeatureGroup } from 'react-leaflet'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
@@ -20,6 +20,12 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 
 import 'leaflet-zoombox'
 import 'leaflet-zoombox/L.Control.ZoomBox.css'
+
+import leafletPip from '@mapbox/leaflet-pip/leaflet-pip'
+
+import * as turf from '@turf/turf'
+
+// import referenciaMapaContext from '../contexts/ContenedorMapaContext'
 
 var _timeline = {
     history: [],
@@ -96,19 +102,21 @@ function useTimeline() {
     return [state, { canUndo, canRedo, update, undo, redo }];
 }
 
+
+var capasDib = null;
+
 export default function Map(props) {
-    //Para guardar las referencias del mapa    
     const [mapaReferencia, setmapaReferencia] = useState(null);
-    props.referencia(mapaReferencia);
+    // const refMapContext = useContext(referenciaMapaContext)
 
-    //Centro y zoom del mapa
-    var centroInicial = [24.26825996870948, -102.88361673036671];
-    var acercamientoInicial = 5;
-
+    //Para guardar las referencias del mapa    
     useEffect(() => {
-
         if (mapaReferencia != null) {
-            
+            // refMapContext.refMap = mapaReferencia;
+            // refMapContext.objL = L;
+            // refMapContext.referenciaMapa();
+            props.referencia(mapaReferencia);
+
             mapaReferencia.addControl(new L.Control.Fullscreen(
                 {
                     title: {
@@ -118,6 +126,7 @@ export default function Map(props) {
                     position: "bottomright"
                 }
             ));
+
             var options = {
                 modal: true,
                 title: "Acercar a un área determinada"
@@ -166,7 +175,6 @@ export default function Map(props) {
             //     position: 'topleft',
             //     sizeModes: ['A4Portrait', 'A4Landscape']
             // }).addTo(mapaReferencia);
-
         }
     }, [mapaReferencia])
 
@@ -181,6 +189,9 @@ export default function Map(props) {
         polyBounds[polyBounds.length -1] = [Math.floor(bounds[0][0].lat), Math.floor(bounds[0][0].lng)]
         result(polyBounds);
     }
+    //Centro y zoom del mapa
+    var centroInicial = [24.26825996870948, -102.88361673036671];
+    var acercamientoInicial = 5;
 
     useEffect(() => {
         L.drawLocal.draw.toolbar.buttons.polyline = "Dibujar una linea"
@@ -249,10 +260,20 @@ export default function Map(props) {
     }
 
     const [tipoCoordenada, setTipoCoordenada] = useState(1)
-    function ControlMovimiento() {
+    function cambiaTipoCoordenada({ target }) {
+        if (target.value == 1) {
+            setTipoCoordenada(1);
+        }
+        else if (target.value == 2) {
+            setTipoCoordenada(2);
+        } else {
+            setTipoCoordenada(3);
+        }
+    }
 
+    function ControlMovimiento() {
         const [coordenadas, setCoordenadas] = useState("")
-        const mapa = useMap()
+        const mapa = useMap();
         const mapaEventos = useMapEvents({
             moveend() {
                 let centroUndoRedo = mapaEventos.getCenter();
@@ -265,6 +286,7 @@ export default function Map(props) {
             },
             mousemove(e) {
                 if (tipoCoordenada == 1) {
+                    console.log("esoy mapa v1");
                     let latlng = {};
                     latlng["lat"] = e.latlng.lat.toFixed(3)
                     latlng["lng"] = e.latlng.lng.toFixed(3)
@@ -292,27 +314,26 @@ export default function Map(props) {
                     let gradoMinutosSegundos = "LatLng(" + latGradoMinutoSegundo + "," + lngGradoMinutoSegundo + ")";
                     setCoordenadas(gradoMinutosSegundos);
                 }
-
             }
         })
 
-        // useEffect(() => {
-        //     L.drawLocal.draw.toolbar.buttons.rectangle = "Dibujar un rectangulo";
-        //     L.drawLocal.draw.handlers.rectangle.tooltip.start = "Mantener click y arrastrar para dibujar";
-        //     mapa.on('draw:created', function (e) {
-        //         var type = e.layerType,
-        //             layer = e.layer;
-        //         if (type === 'rectangle') {
-        //             // mapa.fitBounds(layer.getLatLngs());
-        //             // mapa.removeLayer(layer);
-        //         } else {
-        //             console.log(layer.getLatLngs())
-        //             var area = L.GeometryUtil.geodesicArea(layer.getLatLngs());
-        //             console.log(area)
-        //             layer.bindTooltip(area, {permanent: false, direction:"center"}).openTooltip()
-        //         }
-        //     })
-        // })
+        useEffect(() => {
+            L.drawLocal.draw.toolbar.buttons.rectangle = "Dibujar un rectangulo";
+            L.drawLocal.draw.handlers.rectangle.tooltip.start = "Mantener click y arrastrar para dibujar";
+            mapa.on('draw:created', function (e) {
+                var type = e.layerType,
+                    layer = e.layer;
+                if (type === 'rectangle') {
+                    // mapa.fitBounds(layer.getLatLngs());
+                    // mapa.removeLayer(layer);
+                } else {
+                    console.log(layer.getLatLngs())
+                    var area = L.GeometryUtil.geodesicArea(layer.getLatLngs());
+                    console.log(area)
+                    layer.bindTooltip(area, { permanent: false, direction: "center" }).openTooltip()
+                }
+            })
+        })
 
         useEffect(() => {
             const leyendaCoordenadas = L.control({ position: "bottomleft" });
@@ -347,27 +368,54 @@ export default function Map(props) {
         return null;
     }
 
-    function cambiaTipoCoordenada({ target }) {
-        if (target.value == 1) {
-            setTipoCoordenada(1);
-        }
-        else if (target.value == 2) {
-            setTipoCoordenada(2);
-        } else {
-            setTipoCoordenada(3);
-        }
+    function grupoDibujos(e) {
+        capasDib = e;
     }
 
-    /*Estados para ventana de leyendas*/
-    const [ventana, setVentana] = useState(false)
-    const popupVentana = (tipo) => {
-        if (tipo == 1) {
-            setVentana(true);
-        }
-        else {
-            setVentana(false)
-        }
+    function Dibujos() {
+        let mapaDibujos = useMap();
+        // let layersGeojson = []
+
+        mapaDibujos.on('draw:created', function (e) {
+            capasDib.clearLayers();
+            let layerDibujada = e.layer;
+            capasDib.addLayer(layerDibujada);
+            let puntos = null;
+            if (e.layerType === "marker") {
+                puntos = layerDibujada.getLatLng();
+            } else {
+                puntos = layerDibujada.getLatLngs()
+            }
+            let capasIntersectadas = [];
+            mapaDibujos.eachLayer(function (layer) {
+                if (layer instanceof L.GeoJSON) {
+                    // if (e.layerType === "marker") {
+                    //     let resultsMarker = leafletPip.pointInLayer([puntos.lng, puntos.lat], layer)
+                    //     setRasgosDibujo([resultsMarker[0].feature.properties])
+                    // }
+                    layer.eachLayer(function (layerConFeatures) {
+                        let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
+                        if (seIntersectan != null) {
+                            capasIntersectadas.push(layerConFeatures.feature.properties)
+                        }
+                    })
+                }
+            });
+            if (capasIntersectadas.length != 0) {
+                setRasgosDibujo(capasIntersectadas);
+            }
+            console.log(capasIntersectadas);
+        });
+
+        return null;
     }
+
+    /*Estados para ventana de simbología*/
+    const [ventana, setVentana] = useState(false)
+
+    const [rasgosDibujo, setRasgosDibujo] = useState([])
+    // const [rasgosPoligono, setRasgosPoligono] = useState([])
+    // var rasgosPoligono = []
 
     return (
         <>
@@ -377,12 +425,11 @@ export default function Map(props) {
             </Head>
 
             {ventana &&
-                <Popout title='Simbología' onClosing={() => popupVentana(2)}>
+                <Popout title='Simbología' onClosing={() => setVentana(!ventana)}>
                     <h3><b>Simbología</b></h3>
                     {
                         props.datos.map((capa, index) => {
                             if (capa.habilitado) {
-                                console.log(capa);
                                 if (capa.tipo == "wms") {
                                     return (
                                         <div key={index}>
@@ -421,11 +468,12 @@ export default function Map(props) {
                     </BaseLayer>
                 </LayersControl>
                 <ControlMovimiento />
-                <FeatureGroup>
+                <Dibujos />
+                <FeatureGroup ref={(e) => grupoDibujos(e)}>
                     <EditControl
                         position='topright'
                         draw={{
-                            rectangle: true,
+                            rectangle: false,
                             circle: false,
                             circlemarker: false,
                         }}
@@ -455,8 +503,22 @@ export default function Map(props) {
                     </>
                 }
                 <OverlayTrigger overlay={<Tooltip>Simbología</Tooltip>}>
-                    <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl tw-mt-2" onClick={() => popupVentana(1)} icon={faImages}></FontAwesomeIcon>
+                    <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl tw-mt-2" onClick={() => setVentana(!ventana)} icon={faImages}></FontAwesomeIcon>
                 </OverlayTrigger>
+            </div>
+
+
+            <div className="col-12">
+                {
+                    rasgosDibujo &&
+                    rasgosDibujo.map((valor, index) => {
+                        return (
+                            <div key={index}>
+                                <p>{valor.fid} {valor.CVEGEO} {valor.CVE_ENT} {valor.NOMGEO} {valor.CVE_NUM}</p>
+                            </div>
+                        )
+                    })
+                }
             </div>
 
         </>

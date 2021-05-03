@@ -18,7 +18,8 @@ function capturaReferenciaMapa(mapa) {
     referenciaMapa = mapa;
 }
 
-export default function AnalisisGeograficoCopy() {
+export default function AnalisisGeografico() {
+
     useEffect(() => {
         fetch(`${process.env.ruta}/wa0/lista_capas01`)
             .then(res => res.json())
@@ -34,7 +35,7 @@ export default function AnalisisGeograficoCopy() {
 
     //Acciones del formulario
     const { register, handleSubmit } = useForm();
-    const { register: register1, handleSubmit: handleSubmit1 } = useForm();
+    // const { register: register1, handleSubmit: handleSubmit1 } = useForm();
 
     //Para guardar la columna de la capa espejo
     const [dobleMapa, setDobleMapa] = useState("col-12")
@@ -111,9 +112,7 @@ export default function AnalisisGeograficoCopy() {
         setDatosCapasBackEnd(catalogoCapas);
     }
 
-    //Al seleccionar y añadir una entidad para el mapa original
-    //Para guardar las capas que se van a mostrar
-
+    //Estilos de los geojson
     const estilos = {
         color: "#FF0000",
         fillColor: "#FF7777",
@@ -121,11 +120,25 @@ export default function AnalisisGeograficoCopy() {
         fillOpacity: "1"
     }
 
+
+    //Al seleccionar y añadir una entidad para los mapas
+    //Para guardar las capas que se van a mostrar
     const [capasVisualizadas, setCapasVisualizadas] = useState([])
-    const onSubmit = (data) => {
-        let indice = parseInt(data.capaMapa)
+    const [capasVisualizadasEspejo, setCapasVisualizadasEspejo] = useState([])
+    const onSubmit = (data, e) => {
+        let mapaBase = e.target.dataset.tipo;
+        let arregloBase = null;
+        let datoForm = null;
+        if (e.target.dataset.tipo == 0) {
+            arregloBase = capasVisualizadas;
+            datoForm = data.capaMapa;
+        } else if (e.target.dataset.tipo == 1) {
+            arregloBase = capasVisualizadasEspejo;
+            datoForm = data.capaEspejo;
+        }
+        let indice = parseInt(datoForm)
         let capa = datosCapasBackEnd[indice]
-        if (capasVisualizadas.some(capaVisual => capaVisual.num_capa === capa.indice)) {
+        if (arregloBase.some(capaVisual => capaVisual.num_capa === capa.indice)) {
             return;
         }
         else {
@@ -156,14 +169,20 @@ export default function AnalisisGeograficoCopy() {
                         response['estilos'] = { 'transparencia': 1 };
                         let layer = L.geoJSON(response, {
                             style: estilos,
-                            onEachFeature: function (feature = {}, layer) {
-                                layer.on('click', function () {
+                            nombre: response["nom_capa"],
+                            onEachFeature: function (feature = {}, layerPadre) {
+                                layerPadre.on('click', function () {
+                                    feature.properties["nombre_capa"] = layerPadre.options["nombre"];
                                     setRasgos([feature.properties])
                                 })
                             }
                         });
                         response['layer'] = layer;
-                        setCapasVisualizadas([...capasVisualizadas, response])
+                        if (mapaBase == 0) {
+                            setCapasVisualizadas([...capasVisualizadas, response])
+                        } else if (mapaBase == 1) {
+                            setCapasVisualizadasEspejo([...capasVisualizadasEspejo, response])
+                        }
                         referenciaMapa.addLayer(response.layer)
                     }
                 });
@@ -194,90 +213,176 @@ export default function AnalisisGeograficoCopy() {
                     maxZoom: capaWMS.zoomMaximo,
                 })
                 capaWMS["layer"] = layer;
-                setCapasVisualizadas([...capasVisualizadas, capaWMS])
+                if (mapaBase == 0) {
+                    setCapasVisualizadas([...capasVisualizadas, capaWMS])
+                } else if (mapaBase == 1) {
+                    setCapasVisualizadasEspejo([...capasVisualizadasEspejo, capaWMS])
+                }
                 referenciaMapa.addLayer(capaWMS.layer)
             }
         }
     }
 
-    //Al seleccionar y añadir una entidad para el mapa espejo
-    const [capasVisualizadasEspejo, setCapasVisualizadasEspejo] = useState([])
-    const onSubmitEspejo = (data) => {
-        let indice = parseInt(data.capaEspejo)
-        let capa = datosCapasBackEnd[indice]
-        if (capasVisualizadasEspejo.some(capaVisual => capaVisual.num_capa === capa.indice)) {
-            return;
-        } else {
-            if (capa.tipo == "filtrada") {
-                const owsrootUrl = capa.url;
-                const defaultParameters1 = {
-                    service: 'WFS',
-                    version: '2.0',
-                    request: 'GetFeature',
-                    //sedatu:
-                    typeName: capa.capa,
-                    outputFormat: 'text/javascript',
-                    format_options: 'callback:getJson',
-                    cql_filter: capa.filtro_entidad + "=" + "'" + capa.valor_filtro + "'"
-                };
-                var parameters1 = L.Util.extend(defaultParameters1);
-                var url = owsrootUrl + L.Util.getParamString(parameters1);
-                //Hace la petición para traer los datos de la entidad
-                $.ajax({
-                    jsonpCallback: 'getJson',
-                    url: url,
-                    dataType: 'jsonp',
-                    success: function (response) {
-                        response["num_capa"] = capa.indice;
-                        response["nom_capa"] = capa.titulo;
-                        response["habilitado"] = true;
-                        response['tipo'] = "geojson";
-                        response['estilos'] = { 'transparencia': 1 };
-                        let layer = L.geoJSON(response, {
-                            style: estilos,
-                            onEachFeature: function (feature = {}, layer) {
-                                layer.on('click', function () {
-                                    setRasgosEspejo([feature.properties])
-                                })
-                            }
-                        });
-                        response['layer'] = layer;
-                        setCapasVisualizadasEspejo([...capasVisualizadasEspejo, response])
-                        referenciaMapa.addLayer(response.layer)
-                    }
-                });
-            } else {
-                const capaWMS = {};
-                //Se guardan los datos de la capa
-                capaWMS["attribution"] = "No disponible"
-                capaWMS["url"] = capa.url
-                capaWMS["layers"] = capa.capa
-                capaWMS["format"] = "image/png"
-                capaWMS["transparent"] = "true"
-                capaWMS["tipo"] = "wms"
-                capaWMS["nom_capa"] = capa.titulo;
-                capaWMS["num_capa"] = capa.indice;
-                capaWMS["habilitado"] = true;
-                capaWMS["estilos"] = { 'transparencia': 1 };
-                capaWMS["zoomMinimo"] = 5;
-                capaWMS["zoomMaximo"] = 18;
-                capaWMS["simbologia"] = capa.leyenda;
-                let layer = L.tileLayer.wms(capaWMS.url, {
-                    layers: capaWMS.layers,
-                    format: capaWMS.format,
-                    transparent: capaWMS.transparent,
-                    attribution: capaWMS.attribution,
-                    opacity: capaWMS.estilos.transparencia,
-                    minZoom: capaWMS.zoomMinimo,
-                    maxZoom: capaWMS.zoomMaximo,
-                })
-                capaWMS["layer"] = layer;
+    // const onSubmit = (data, e) => {
+    //     let indice = parseInt(data.capaMapa)
+    //     let capa = datosCapasBackEnd[indice]
+    //     if (capasVisualizadas.some(capaVisual => capaVisual.num_capa === capa.indice)) {
+    //         return;
+    //     }
+    //     else {
+    //         if (capa.tipo == "filtrada") {
+    //             const owsrootUrl = capa.url;
+    //             const defaultParameters1 = {
+    //                 service: 'WFS',
+    //                 version: '2.0',
+    //                 request: 'GetFeature',
+    //                 //sedatu:
+    //                 typeName: capa.capa,
+    //                 outputFormat: 'text/javascript',
+    //                 format_options: 'callback:getJson',
+    //                 cql_filter: capa.filtro_entidad + "=" + "'" + capa.valor_filtro + "'"
+    //             };
+    //             var parameters1 = L.Util.extend(defaultParameters1);
+    //             var url = owsrootUrl + L.Util.getParamString(parameters1);
+    //             //Hace la petición para traer los datos de la entidad
+    //             $.ajax({
+    //                 jsonpCallback: 'getJson',
+    //                 url: url,
+    //                 dataType: 'jsonp',
+    //                 success: function (response) {
+    //                     response["num_capa"] = capa.indice;
+    //                     response["nom_capa"] = capa.titulo;
+    //                     response["habilitado"] = true;
+    //                     response['tipo'] = "geojson";
+    //                     response['estilos'] = { 'transparencia': 1 };
+    //                     let layer = L.geoJSON(response, {
+    //                         style: estilos,
+    //                         nombre: response["nom_capa"],
+    //                         onEachFeature: function (feature = {}, layerPadre) {
+    //                             layerPadre.on('click', function () {
+    //                                 feature.properties["nombre_capa"] = layerPadre.options["nombre"];
+    //                                 setRasgos([feature.properties])
+    //                             })
+    //                         }
+    //                     });
+    //                     response['layer'] = layer;
+    //                     setCapasVisualizadas([...capasVisualizadas, response])
+    //                     referenciaMapa.addLayer(response.layer)
+    //                 }
+    //             });
+    //         } else {
+    //             const capaWMS = {};
+    //             //Se guardan los datos de la capa
+    //             capaWMS["attribution"] = "No disponible"
+    //             capaWMS["url"] = capa.url
+    //             capaWMS["layers"] = capa.capa
+    //             capaWMS["format"] = "image/png"
+    //             capaWMS["transparent"] = "true"
+    //             capaWMS["tipo"] = "wms"
+    //             capaWMS["nom_capa"] = capa.titulo;
+    //             capaWMS["num_capa"] = capa.indice;
+    //             capaWMS["habilitado"] = true;
+    //             capaWMS["estilos"] = { 'transparencia': 1 };
+    //             capaWMS["zoomMinimo"] = 5;
+    //             capaWMS["zoomMaximo"] = 18;
+    //             capaWMS["simbologia"] = capa.leyenda;
 
-                setCapasVisualizadasEspejo([...capasVisualizadasEspejo, capaWMS])
-                referenciaMapa.addLayer(capaWMS.layer)
-            }
-        }
-    }
+    //             let layer = L.tileLayer.wms(capaWMS.url, {
+    //                 layers: capaWMS.layers,
+    //                 format: capaWMS.format,
+    //                 transparent: capaWMS.transparent,
+    //                 attribution: capaWMS.attribution,
+    //                 opacity: capaWMS.estilos.transparencia,
+    //                 minZoom: capaWMS.zoomMinimo,
+    //                 maxZoom: capaWMS.zoomMaximo,
+    //             })
+    //             capaWMS["layer"] = layer;
+    //             setCapasVisualizadas([...capasVisualizadas, capaWMS])
+    //             referenciaMapa.addLayer(capaWMS.layer)
+    //         }
+    //     }
+    // }
+
+    // //Al seleccionar y añadir una entidad para el mapa espejo
+    // // const [capasVisualizadasEspejo, setCapasVisualizadasEspejo] = useState([])
+    // const onSubmitEspejo = (data) => {
+    //     let indice = parseInt(data.capaEspejo)
+    //     let capa = datosCapasBackEnd[indice]
+    //     if (capasVisualizadasEspejo.some(capaVisual => capaVisual.num_capa === capa.indice)) {
+    //         return;
+    //     } else {
+    //         if (capa.tipo == "filtrada") {
+    //             const owsrootUrl = capa.url;
+    //             const defaultParameters1 = {
+    //                 service: 'WFS',
+    //                 version: '2.0',
+    //                 request: 'GetFeature',
+    //                 //sedatu:
+    //                 typeName: capa.capa,
+    //                 outputFormat: 'text/javascript',
+    //                 format_options: 'callback:getJson',
+    //                 cql_filter: capa.filtro_entidad + "=" + "'" + capa.valor_filtro + "'"
+    //             };
+    //             var parameters1 = L.Util.extend(defaultParameters1);
+    //             var url = owsrootUrl + L.Util.getParamString(parameters1);
+    //             //Hace la petición para traer los datos de la entidad
+    //             $.ajax({
+    //                 jsonpCallback: 'getJson',
+    //                 url: url,
+    //                 dataType: 'jsonp',
+    //                 success: function (response) {
+    //                     response["num_capa"] = capa.indice;
+    //                     response["nom_capa"] = capa.titulo;
+    //                     response["habilitado"] = true;
+    //                     response['tipo'] = "geojson";
+    //                     response['estilos'] = { 'transparencia': 1 };
+    //                     let layer = L.geoJSON(response, {
+    //                         style: estilos,
+    //                         nombre: response["nom_capa"],
+    //                         onEachFeature: function (feature = {}, layerPadre) {
+    //                             layerPadre.on('click', function () {
+    //                                 feature.properties["nombre_capa"] = layerPadre.options["nombre"];
+    //                                 setRasgosEspejo([feature.properties])
+    //                             })
+    //                         }
+    //                     });
+    //                     response['layer'] = layer;
+    //                     setCapasVisualizadasEspejo([...capasVisualizadasEspejo, response])
+    //                     referenciaMapa.addLayer(response.layer)
+    //                 }
+    //             });
+    //         } else {
+    //             const capaWMS = {};
+    //             //Se guardan los datos de la capa
+    //             capaWMS["attribution"] = "No disponible"
+    //             capaWMS["url"] = capa.url
+    //             capaWMS["layers"] = capa.capa
+    //             capaWMS["format"] = "image/png"
+    //             capaWMS["transparent"] = "true"
+    //             capaWMS["tipo"] = "wms"
+    //             capaWMS["nom_capa"] = capa.titulo;
+    //             capaWMS["num_capa"] = capa.indice;
+    //             capaWMS["habilitado"] = true;
+    //             capaWMS["estilos"] = { 'transparencia': 1 };
+    //             capaWMS["zoomMinimo"] = 5;
+    //             capaWMS["zoomMaximo"] = 18;
+    //             capaWMS["simbologia"] = capa.leyenda;
+    //             let layer = L.tileLayer.wms(capaWMS.url, {
+    //                 layers: capaWMS.layers,
+    //                 format: capaWMS.format,
+    //                 transparent: capaWMS.transparent,
+    //                 attribution: capaWMS.attribution,
+    //                 opacity: capaWMS.estilos.transparencia,
+    //                 minZoom: capaWMS.zoomMinimo,
+    //                 maxZoom: capaWMS.zoomMaximo,
+    //             })
+    //             capaWMS["layer"] = layer;
+
+    //             setCapasVisualizadasEspejo([...capasVisualizadasEspejo, capaWMS])
+    //             referenciaMapa.addLayer(capaWMS.layer)
+    //         }
+    //     }
+    // }
 
     //Funcion para cambiar el estado del checkbox
     const cambiaCheckbox = ({ target }, mapa) => {
@@ -296,8 +401,7 @@ export default function AnalisisGeograficoCopy() {
                     valor.habilitado = false;
                     referenciaMapa.removeLayer(valor.layer);
                     return valor;
-                }
-                else {
+                } else {
                     valor.habilitado = true;
                     referenciaMapa.addLayer(valor.layer)
                     return valor;
@@ -446,7 +550,7 @@ export default function AnalisisGeograficoCopy() {
 
                                 <div className={dobleMapaVista}>
                                     <p>Capas</p>
-                                    <Form onSubmit={handleSubmit(onSubmit)}>
+                                    <Form onSubmit={handleSubmit(onSubmit)} data-tipo={0}>
                                         <Form.Group className="tw-inline-flex tw-mr-4" controlId="capaMapa">
                                             <Form.Control className=" " as="select" name="capaMapa" required ref={register}>
                                                 <option value=""></option>
@@ -481,7 +585,7 @@ export default function AnalisisGeograficoCopy() {
                                                         <Table striped bordered hover>
                                                             <thead>
                                                                 <tr>
-                                                                    <th colSpan="2" className="tw-text-center">Información de rasgos</th>
+                                                                    <th colSpan="2" className="tw-text-center">{valor["nombre_capa"]}</th>
                                                                 </tr>
                                                                 <tr>
                                                                     <th>Valor</th>
@@ -490,12 +594,16 @@ export default function AnalisisGeograficoCopy() {
                                                             </thead>
                                                             <tbody>
                                                                 {
-                                                                    Object.keys(valor).map((key, indexKey) => (
-                                                                        <tr>
-                                                                            <td key={indexKey}>{key}</td>
-                                                                            <td>{valor[key]}</td>
-                                                                        </tr>
-                                                                    ))
+                                                                    Object.keys(valor).map((key, indexKey) => {
+                                                                        if (key !== "nombre_capa") {
+                                                                            return (
+                                                                                <tr key={indexKey}>
+                                                                                    <td>{key}</td>
+                                                                                    <td>{valor[key]}</td>
+                                                                                </tr>
+                                                                            )
+                                                                        }
+                                                                    })
                                                                 }
                                                             </tbody>
                                                         </Table>
@@ -628,9 +736,11 @@ export default function AnalisisGeograficoCopy() {
 
                                     <div className={dobleMapaVista}>
                                         <p>Capas</p>
-                                        <Form onSubmit={handleSubmit1(onSubmitEspejo)}>
+                                        <Form onSubmit={handleSubmit(onSubmit)} data-tipo={1}>
+                                            {/* <Form onSubmit={handleSubmit1(onSubmitEspejo)}> */}
                                             <Form.Group className="tw-inline-flex tw-mr-4" controlId="capaEspejo">
-                                                <Form.Control as="select" name="capaEspejo" required ref={register1}>
+                                                <Form.Control as="select" name="capaEspejo" required ref={register}>
+                                                    {/* <Form.Control as="select" name="capaEspejo" required ref={register1}> */}
                                                     <option value=""></option>
                                                     {
                                                         datosCapasBackEnd.map((value, index) => {
@@ -662,7 +772,7 @@ export default function AnalisisGeograficoCopy() {
                                                             <Table striped bordered hover>
                                                                 <thead>
                                                                     <tr>
-                                                                        <th colSpan="2" className="tw-text-center">Información de rasgos</th>
+                                                                        <th colSpan="2" className="tw-text-center">{valor["nombre_capa"]}</th>
                                                                     </tr>
                                                                     <tr>
                                                                         <th>Valor</th>
@@ -671,12 +781,16 @@ export default function AnalisisGeograficoCopy() {
                                                                 </thead>
                                                                 <tbody>
                                                                     {
-                                                                        Object.keys(valor).map((key, indexKey) => (
-                                                                            <tr>
-                                                                                <td key={indexKey}>{key}</td>
-                                                                                <td>{valor[key]}</td>
-                                                                            </tr>
-                                                                        ))
+                                                                        Object.keys(valor).map((key, indexKey) => {
+                                                                            if (key !== "nombre_capa") {
+                                                                                return (
+                                                                                    <tr key={indexKey}>
+                                                                                        <td>{key}</td>
+                                                                                        <td>{valor[key]}</td>
+                                                                                    </tr>
+                                                                                )
+                                                                            }
+                                                                        })
                                                                     }
                                                                 </tbody>
                                                             </Table>
