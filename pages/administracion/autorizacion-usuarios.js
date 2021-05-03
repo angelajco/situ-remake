@@ -370,7 +370,10 @@ export default function AutorizacionUsuarios() {
     const pagination = paginationFactory({
         sizePerPage: 10,
         alwaysShowAllBtns: true,
-        sizePerPageList: [10, 25, 50, 100]
+        sizePerPageList: [10, 25, 50, 100],
+        withFirstAndLast: false,
+        prePageTitle: [],
+        nextPageTitle: []
     });
 
     return (

@@ -3,16 +3,16 @@ import React, { useState } from 'react'
 import dynamic from 'next/dynamic'
 import ContenedorPM from './ContenedorPM'
 
-  let MapPlaneacion = null;
-  let municipio = null;
+let MapPlaneacion = null;
+let municipio = null;
 
 export default function SeccionPm(props) {
   const { seccion } = props
   const { cl } = props
 
-  if(municipio != seccion.nucleo.claveMun) {
+  if (municipio != seccion.nucleo.claveMun) {
     municipio = seccion.nucleo.claveMun;
-  //Importa dinámicamente el mapa
+    //Importa dinámicamente el mapa
     MapPlaneacion = dynamic(
       () => import('./MapPlaneacion'),
       {
@@ -66,7 +66,7 @@ export default function SeccionPm(props) {
                                 :
                                 null
                             }
-                            <ContenedorPM contenido = {contenedor.contenido} />
+                            <ContenedorPM contenido={contenedor.contenido} />
                           </div>
                         </div>
                       </div>
