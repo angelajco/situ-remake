@@ -25,83 +25,7 @@ import leafletPip from '@mapbox/leaflet-pip/leaflet-pip'
 
 import * as turf from '@turf/turf'
 
-// import referenciaMapaContext from '../contexts/ContenedorMapaContext'
-
-var _timeline = {
-    history: [],
-    current: [],
-    future: []
-};
-
-//Funcion del timeline undo redo
-var registraMovimiento = true;
-function useTimeline() {
-
-    const [state, setState] = useState([]);
-    const historyLimit = -5
-
-    function _canUndo() {
-        return _timeline.history.length > 1;
-    }
-
-    function _canRedo() {
-        return _timeline.future.length > 0;
-    }
-
-    const canUndo = _canUndo();
-    const canRedo = _canRedo();
-
-    const splitLast = arr => {
-        // split the last item from an array and return a tupple of [rest, last]
-        const length = arr.length;
-        const lastItem = arr[length - 1];
-        const restOfArr = arr.slice(0, length - 1);
-        return [restOfArr, lastItem];
-    };
-
-    const sliceEnd = (arr, size) => {
-        // slice array from to end by size
-        const startIndex = arr.length < size ? 0 : size;
-        const trimmedArr = arr.slice(startIndex, arr.length);
-        return trimmedArr;
-    };
-
-    const update = (value) => {
-        const { history, current } = _timeline;
-        const limitedHistory = sliceEnd(history, historyLimit);
-        _timeline = {
-            history: [...limitedHistory, current],
-            current: value,
-            future: []
-        };
-        setState(_timeline.current);
-    };
-
-    const undo = () => {
-        const { history, current, future } = _timeline;
-        const [restOfArr, lastItem] = splitLast(history);
-        _timeline = {
-            history: restOfArr,
-            current: lastItem,
-            future: [...future, current]
-        };
-        setState(_timeline.current);
-    };
-
-    const redo = () => {
-        const { history, current, future } = _timeline;
-        const [restOfArr, lastItem] = splitLast(future);
-        _timeline = {
-            history: [...history, current],
-            current: lastItem,
-            future: restOfArr
-        };
-        setState(_timeline.current);
-    };
-
-    return [state, { canUndo, canRedo, update, undo, redo }];
-}
-
+import referenciaMapaContext from '../contexts/ContenedorMapaContext'
 
 var capasDib = null;
 
@@ -112,9 +36,6 @@ export default function Map(props) {
     //Para guardar las referencias del mapa    
     useEffect(() => {
         if (mapaReferencia != null) {
-            // refMapContext.refMap = mapaReferencia;
-            // refMapContext.objL = L;
-            // refMapContext.referenciaMapa();
             props.referencia(mapaReferencia);
 
             mapaReferencia.addControl(new L.Control.Fullscreen(
