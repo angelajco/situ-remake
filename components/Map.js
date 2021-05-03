@@ -8,6 +8,8 @@ import { faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg
 import { EditControl } from 'react-leaflet-draw'
 import Popout from 'react-popout'
 
+import * as Turf from '@turf/turf'
+
 const { BaseLayer } = LayersControl;
 //Si no es necesario cargar los marcadores
 // import "leaflet/dist/leaflet.css"
@@ -132,11 +134,32 @@ export default function Map(props) {
                         distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
                     }
                     layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance/1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, {permanent: false, direction:"center"}).openTooltip()
-                } else {
+                } else if(type !== 'marker') {
                     var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                    // generatePolygon(layer.getLatLngs(), function(result) {
+                    //     console.log('polyBounds: ', result);
+                    //     console.log('turf.area: ', Turf.area(Turf.polygon([result])));
+                    // });
                     layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area/10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area/1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area/1000))} m<sup>2</sup></p>`, {permanent: false, direction:"center"}).openTooltip()
                 }
-            })
+            });
+            mapaReferencia.on('draw:edited', function (e) {
+                var layers = e.layers;
+                layers.eachLayer(function (layer) {
+                    if (layer instanceof L.Polyline && !(layer instanceof L.rectangle) && !(layer instanceof L.Polygon)) {
+                        var distance = 0;
+                        length = layer.getLatLngs().length;
+                        for (var i = 1; i < length; i++) {
+                            distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
+                        }
+                        layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance/1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, {permanent: false, direction:"center"}).openTooltip()
+                    } else if(!(layer instanceof L.Marker)) {
+                        var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                        console.log('latlngs: ', layer.getLatLngs())
+                        layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area/10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area/1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area/1000))} m<sup>2</sup></p>`, {permanent: false, direction:"center"}).openTooltip()
+                    }
+                });
+            });
 
             // L.easyPrint({
             //     title: 'Imprimir',
@@ -147,13 +170,25 @@ export default function Map(props) {
         }
     }, [mapaReferencia])
 
+    function generatePolygon(bounds, result) {
+        var polyBounds = [];
+        bounds.map((item) => (
+            item.map((subitem) => (
+                // polyBounds.push([subitem.lat, subitem.lng])
+                polyBounds.push([Math.floor(subitem.lat), Math.floor(subitem.lng)])
+            ))
+        ));
+        polyBounds[polyBounds.length -1] = [Math.floor(bounds[0][0].lat), Math.floor(bounds[0][0].lng)]
+        result(polyBounds);
+    }
+
     useEffect(() => {
         L.drawLocal.draw.toolbar.buttons.polyline = "Dibujar una linea"
         L.drawLocal.draw.toolbar.buttons.polygon = "Dibujar un poligono"
         L.drawLocal.draw.toolbar.buttons.marker = "Dibujar un marcador"
         L.drawLocal.draw.toolbar.buttons.rectangle = "Dibujar un rectangulo";
         L.drawLocal.draw.handlers.rectangle.tooltip.start = "Mantener click y arrastrar para dibujar";
-        // L.drawLocal.draw.handlers.simpleshape.tooltip.end = "Dejar de hacer click para mostrar el dibujo";
+        L.drawLocal.draw.handlers.simpleshape.tooltip.end = "Dejar de hacer click para finalizar el dibujo";
         L.drawLocal.draw.handlers.polyline.error = "<strong>¡Error:</strong> las esquinas de la forma no se pueden cruzar!"
         L.drawLocal.draw.toolbar.actions.title = "Cancelar dibujo"
         L.drawLocal.draw.toolbar.actions.text = "Cancelar"
