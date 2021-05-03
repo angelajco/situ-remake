@@ -2,6 +2,9 @@ import Head from 'next/head'
 import React, { useState, useEffect, useContext } from 'react'
 
 import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvent } from 'react-leaflet'
+import { OverlayTrigger, Tooltip } from 'react-bootstrap'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 
 const { BaseLayer } = LayersControl;
 import { EditControl } from 'react-leaflet-draw'
@@ -20,6 +23,78 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 //Leaflet zoomboz
 import 'leaflet-zoombox'
 import 'leaflet-zoombox/L.Control.ZoomBox.css'
+
+//Funcion del timeline undo redo
+var registraMovimiento = true;
+var _timeline = {
+    history: [],
+    current: [],
+    future: []
+};
+function useTimeline() {
+    const [state, setState] = useState([]);
+    const historyLimit = -5
+    function _canUndo() {
+        return _timeline.history.length > 1;
+    }
+
+    function _canRedo() {
+        return _timeline.future.length > 0;
+    }
+
+    const canUndo = _canUndo();
+    const canRedo = _canRedo();
+
+    const splitLast = arr => {
+        // split the last item from an array and return a tupple of [rest, last]
+        const length = arr.length;
+        const lastItem = arr[length - 1];
+        const restOfArr = arr.slice(0, length - 1);
+        return [restOfArr, lastItem];
+    };
+
+    const sliceEnd = (arr, size) => {
+        // slice array from to end by size
+        const startIndex = arr.length < size ? 0 : size;
+        const trimmedArr = arr.slice(startIndex, arr.length);
+        return trimmedArr;
+    };
+
+    const update = (value) => {
+        const { history, current } = _timeline;
+        const limitedHistory = sliceEnd(history, historyLimit);
+        _timeline = {
+            history: [...limitedHistory, current],
+            current: value,
+            future: []
+        };
+        setState(_timeline.current);
+    };
+
+    const undo = () => {
+        const { history, current, future } = _timeline;
+        const [restOfArr, lastItem] = splitLast(history);
+        _timeline = {
+            history: restOfArr,
+            current: lastItem,
+            future: [...future, current]
+        };
+        setState(_timeline.current);
+    };
+
+    const redo = () => {
+        const { history, current, future } = _timeline;
+        const [restOfArr, lastItem] = splitLast(future);
+        _timeline = {
+            history: [...history, current],
+            current: lastItem,
+            future: restOfArr
+        };
+        setState(_timeline.current);
+    };
+    return [state, { canUndo, canRedo, update, undo, redo }];
+}
+
 
 export default function Map(props) {
     //Para guardar la referencia al mapa cuando se crea
@@ -40,9 +115,9 @@ export default function Map(props) {
     //Para guardar las referencias del mapa    
     useEffect(() => {
         if (mapaReferencia != null) {
-            refMapContext.refMap = mapaReferencia;
-            refMapContext.objL = L;
-            refMapContext.referenciaMapa();
+            // refMapContext.refMap = mapaReferencia;
+            // refMapContext.objL = L;
+            // refMapContext.referenciaMapa();
             props.referencia(mapaReferencia);
 
             mapaReferencia.addControl(new L.Control.Fullscreen(
@@ -62,22 +137,23 @@ export default function Map(props) {
             var control = L.control.zoomBox(options);
             mapaReferencia.addControl(control);
 
-            // mapaReferencia.on('draw:created', function (e) {
-            //     var type = e.layerType,
-            //         layer = e.layer;
-            //     if (type === 'polyline') {
-            //         var distance = 0;
-            //         length = layer.getLatLngs().length;
-            //         for (var i = 1; i < length; i++) {
-            //             distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
-            //             // distance += layer.getLatLngs()[i].distance(layer.getLatLngs()[i - 1]);
-            //         }
-            //         layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance/1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, {permanent: false, direction:"center"}).openTooltip()
-            //     } else {
-            //         var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-            //         layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area/10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area/1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area/1000))} m<sup>2</sup></p>`, {permanent: false, direction:"center"}).openTooltip()
-            //     }
-            // })
+            mapaReferencia.on('draw:edited', function (e) {
+                var layers = e.layers;
+                layers.eachLayer(function (layer) {
+                    if (layer instanceof L.Polyline && !(layer instanceof L.rectangle) && !(layer instanceof L.Polygon)) {
+                        var distance = 0;
+                        length = layer.getLatLngs().length;
+                        for (var i = 1; i < length; i++) {
+                            distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
+                        }
+                        layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
+                    } else if (!(layer instanceof L.Marker)) {
+                        var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                        console.log('latlngs: ', layer.getLatLngs())
+                        layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
+                    }
+                });
+            });
 
             // L.easyPrint({
             //     title: 'Imprimir',
@@ -86,6 +162,18 @@ export default function Map(props) {
             // }).addTo(mapaReferencia);
         }
     }, [mapaReferencia])
+
+    function generatePolygon(bounds, result) {
+        var polyBounds = [];
+        bounds.map((item) => (
+            item.map((subitem) => (
+                // polyBounds.push([subitem.lat, subitem.lng])
+                polyBounds.push([Math.floor(subitem.lat), Math.floor(subitem.lng)])
+            ))
+        ));
+        polyBounds[polyBounds.length - 1] = [Math.floor(bounds[0][0].lat), Math.floor(bounds[0][0].lng)]
+        result(polyBounds);
+    }
 
     //Centro y zoom del mapa
     var centroInicial = [24.26825996870948, -102.88361673036671];
@@ -98,7 +186,7 @@ export default function Map(props) {
         lDrLo.draw.toolbar.buttons.marker = "Dibujar un marcador"
         lDrLo.draw.toolbar.buttons.rectangle = "Dibujar un rectangulo";
         lDrLo.draw.handlers.rectangle.tooltip.start = "Mantener click y arrastrar para dibujar";
-        // lDrLo.draw.handlers.simpleshape.tooltip.end = "Dejar de hacer click para mostrar el dibujo";
+        lDrLo.draw.handlers.simpleshape.tooltip.end = "Dejar de hacer click para mostrar el dibujo";
         lDrLo.draw.handlers.polyline.error = "<strong>¡Error:</strong> las esquinas de la forma no se pueden cruzar!"
         lDrLo.draw.toolbar.actions.title = "Cancelar dibujo"
         lDrLo.draw.toolbar.actions.text = "Cancelar"
@@ -127,6 +215,138 @@ export default function Map(props) {
         lDrLo.edit.handlers.edit.tooltip.subtext = "Clic en cancelar para deshacer los cambios"
         lDrLo.edit.handlers.remove.tooltip.text = "Click en la figura para borrarla."
     }, [])
+
+    const [todos, { canUndo, canRedo, update, undo, redo }] = useTimeline();
+    function MapaMovimientoUndoRedo({ target }) {
+        registraMovimiento = false;
+        if (target.name === 'undo') {
+            if (_timeline.history.length > 1) {
+                undo();
+                let estadoActual = _timeline.current[_timeline.current.length - 1];
+                let estadoActualLatLng = estadoActual.centroUndoRedo;
+                let estadoActualZoom = estadoActual.zoomUndoRedo;
+                mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
+            }
+        }
+        else if (target.name === 'redo') {
+            if (_timeline.future.length > 0) {
+                redo();
+                let estadoActual = _timeline.current[_timeline.current.length - 1];
+                let estadoActualLatLng = estadoActual.centroUndoRedo;
+                let estadoActualZoom = estadoActual.zoomUndoRedo;
+                mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
+            }
+        }
+    }
+
+    const [tipoCoordenada, setTipoCoordenada] = useState(1)
+    function cambiaTipoCoordenada({ target }) {
+        if (target.value == 1) {
+            setTipoCoordenada(1);
+        }
+        else if (target.value == 2) {
+            setTipoCoordenada(2);
+        } else {
+            setTipoCoordenada(3);
+        }
+    }
+
+    function ControlMovimiento() {
+        const [coordenadas, setCoordenadas] = useState("")
+        const mapa = useMap();
+        const mapaEventos = useMapEvents({
+            moveend() {
+                let centroUndoRedo = mapaEventos.getCenter();
+                let zoomUndoRedo = mapaEventos.getZoom();
+                if (registraMovimiento == true) {
+                    const nextTodos = [...todos, { centroUndoRedo, zoomUndoRedo }];
+                    update(nextTodos);
+                }
+                registraMovimiento = true;
+            },
+            mousemove(e) {
+                if (tipoCoordenada == 1) {
+                    console.log("esoy mapa v1");
+                    let latlng = {};
+                    latlng["lat"] = e.latlng.lat.toFixed(3)
+                    latlng["lng"] = e.latlng.lng.toFixed(3)
+                    let latlngString = "LatLng(" + latlng["lat"] + "," + latlng["lng"] + ")"
+                    setCoordenadas(latlngString)
+                }
+                else if (tipoCoordenada == 2) {
+                    let metros = L.CRS.EPSG3857.project(e.latlng);
+                    let metrosString = "LatLng(" + metros.x.toFixed(3) + "," + metros.y.toFixed(3) + ")"
+                    setCoordenadas(metrosString)
+                }
+                else {
+                    let lat = e.latlng.lat;
+                    let latGrado = Math.trunc(lat);
+                    let latMinuto = Math.trunc((Math.abs(lat) - Math.abs(latGrado)) * 60);
+                    let latSegundo = (Math.abs(lat) - Math.abs(latGrado) - (latMinuto / 60)) * 3600;
+                    let latGradoMinutoSegundo = latGrado + "°" + latMinuto + "'" + latSegundo.toFixed(2) + "''";
+
+                    let lng = e.latlng.lng;
+                    let lngGrado = Math.trunc(lng);
+                    let lngMinuto = Math.trunc((Math.abs(lng) - Math.abs(lngGrado)) * 60);
+                    let lngSegundo = (Math.abs(lng) - Math.abs(lngGrado) - (lngMinuto / 60)) * 3600;
+                    let lngGradoMinutoSegundo = lngGrado + "°" + lngMinuto + "'" + lngSegundo.toFixed(2) + "''";
+
+                    let gradoMinutosSegundos = "LatLng(" + latGradoMinutoSegundo + "," + lngGradoMinutoSegundo + ")";
+                    setCoordenadas(gradoMinutosSegundos);
+                }
+            }
+        })
+
+        useEffect(() => {
+            L.drawLocal.draw.toolbar.buttons.rectangle = "Dibujar un rectangulo";
+            L.drawLocal.draw.handlers.rectangle.tooltip.start = "Mantener click y arrastrar para dibujar";
+            mapa.on('draw:created', function (e) {
+                var type = e.layerType,
+                    layer = e.layer;
+                if (type === 'rectangle') {
+                    // mapa.fitBounds(layer.getLatLngs());
+                    // mapa.removeLayer(layer);
+                } else {
+                    console.log(layer.getLatLngs())
+                    var area = L.GeometryUtil.geodesicArea(layer.getLatLngs());
+                    console.log(area)
+                    layer.bindTooltip(area, { permanent: false, direction: "center" }).openTooltip()
+                }
+            })
+        })
+
+        useEffect(() => {
+            const leyendaCoordenadas = L.control({ position: "bottomleft" });
+            leyendaCoordenadas.onAdd = () => {
+                const divCoordenadas = L.DomUtil.create("div", "coordenadas");
+                divCoordenadas.innerHTML = coordenadas + " " + "Zoom:&nbsp" + mapa.getZoom();
+                return divCoordenadas;
+            };
+            leyendaCoordenadas.addTo(mapa);
+            return () => leyendaCoordenadas.remove();
+        }, [coordenadas]);
+
+        useEffect(() => {
+            const botones = L.control({ position: "bottomleft" });
+            botones.onAdd = () => {
+                const botonVistaCompleta = L.DomUtil.create("div", "leaflet-vista-completa leaflet-bar leaflet-control");
+                botonVistaCompleta.innerHTML = "<a href='#' title='Vista completa'></a>"
+                L.DomEvent
+                    .addListener(botonVistaCompleta, 'click', L.DomEvent.stopPropagation)
+                    .addListener(botonVistaCompleta, 'click', L.DomEvent.preventDefault)
+                    .addListener(botonVistaCompleta, 'click', function () {
+                        mapa.setView(centroInicial, acercamientoInicial)
+                    });
+                return botonVistaCompleta;
+            };
+            botones.addTo(mapa);
+            return () => {
+                botones.remove();
+            }
+        }, []);
+
+        return null;
+    }
 
     //Para obtener el grupo de los dibujos
     function grupoDibujos(e) {
@@ -270,8 +490,7 @@ export default function Map(props) {
                         />
                     </BaseLayer>
                 </LayersControl>
-                <Dibujos />
-                {/* <FeatureGroup ref={(e) => grupoDibujos(e)}>
+                <FeatureGroup ref={(e) => grupoDibujos(e)}>
                     <EditControl
                         position='topright'
                         draw={{
@@ -281,9 +500,35 @@ export default function Map(props) {
                         }}
                     >
                     </EditControl>
-                </FeatureGroup> */}
+                </FeatureGroup>
+                <Dibujos />
                 <ControlMovimiento />
             </MapContainer>
+
+            <div className="tw-bg-gray-200 tw-border-solid tw-border-1 tw-border-gray-300 tw-text-right">
+                <select onChange={(e) => cambiaTipoCoordenada(e)} className="tw-mr-5">
+                    <option value='1'>Grados decimales</option>
+                    <option value='2'>Metros</option>
+                    <option value='3'>Grados, minutos y segundos</option>
+                </select>
+                {props.botones == true &&
+                    <>
+                        <OverlayTrigger rootClose overlay={<Tooltip>Vista anterior</Tooltip>}>
+                            <button disabled={!canUndo} className="tw-border-transparent tw-bg-transparent tw-mr-5 tw-border-none" name="undo" onClick={MapaMovimientoUndoRedo}>
+                                <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faArrowLeft} />
+                            </button>
+                        </OverlayTrigger>
+                        <OverlayTrigger rootClose overlay={<Tooltip>Vista posterior</Tooltip>}>
+                            <button disabled={!canRedo} className="tw-border-transparent tw-bg-transparent tw-mr-5 tw-border-none" name="redo" onClick={MapaMovimientoUndoRedo}>
+                                <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faArrowRight}></FontAwesomeIcon>
+                            </button>
+                        </OverlayTrigger>
+                    </>
+                }
+                <OverlayTrigger overlay={<Tooltip>Simbología</Tooltip>}>
+                    <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl tw-mt-2" onClick={() => setVentana(!ventana)} icon={faImages}></FontAwesomeIcon>
+                </OverlayTrigger>
+            </div>
 
             <div className="col-12">
                 {
