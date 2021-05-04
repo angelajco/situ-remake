@@ -10,12 +10,21 @@ import ContenedorMapaAnalisis from '../../components/ContenedorMapaAnalisis'
 
 import catalogoEntidades from "../../shared/jsons/entidades.json";
 
+import { Collapse as CollapsePlugin, UnmountClosed } from 'react-collapse';
+
 import $ from 'jquery'
+import leafletPip from '@mapbox/leaflet-pip/leaflet-pip'
+import * as turf from '@turf/turf'
 
 //Obten referencia del mapa
 var referenciaMapa = null;
 function capturaReferenciaMapa(mapa) {
     referenciaMapa = mapa;
+}
+
+var referenciaMapaEspejo = null;
+function capturaReferenciaMapaEspejo(mapa) {
+    referenciaMapaEspejo = mapa;
 }
 
 export default function AnalisisGeografico() {
@@ -27,6 +36,69 @@ export default function AnalisisGeografico() {
                 (data) => construyeCatalogo(data),
                 (error) => console.log(error)
             )
+    }, [])
+
+    useEffect(() => {
+        setTimeout(() => {
+            referenciaMapa.on('draw:created', function (e) {
+                let layerDibujada = e.layer;
+                let puntos = null;
+                if (e.layerType === "marker") {
+                    puntos = layerDibujada.getLatLng();
+                } else {
+                    puntos = layerDibujada.getLatLngs()
+                }
+                let capasIntersectadas = [];
+                referenciaMapa.eachLayer(function (layer) {
+                    if (layer instanceof L.GeoJSON) {
+                        // if (e.layerType === "marker") {
+                        //     let resultsMarker = leafletPip.pointInLayer([puntos.lng, puntos.lat], layer)
+                        //     setRasgosDibujo([resultsMarker[0].feature.properties])
+                        // }
+                        layer.eachLayer(function (layerConFeatures) {
+                            let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
+                            if (seIntersectan != null) {
+                                layerConFeatures.feature.properties["nombre_capa"] = layer.options["nombre"];
+                                capasIntersectadas.push(layerConFeatures.feature.properties)
+                            }
+                        })
+                    }
+                });
+                if (capasIntersectadas.length != 0) {
+                    setRasgos(capasIntersectadas);
+                }
+            });
+
+            referenciaMapaEspejo.on('draw:created', function (e) {
+                let layerDibujada = e.layer;
+                let puntos = null;
+                if (e.layerType === "marker") {
+                    puntos = layerDibujada.getLatLng();
+                } else {
+                    puntos = layerDibujada.getLatLngs()
+                }
+                let capasIntersectadas = [];
+                referenciaMapaEspejo.eachLayer(function (layer) {
+                    if (layer instanceof L.GeoJSON) {
+                        // if (e.layerType === "marker") {
+                        //     let resultsMarker = leafletPip.pointInLayer([puntos.lng, puntos.lat], layer)
+                        //     setRasgosDibujo([resultsMarker[0].feature.properties])
+                        // }
+                        layer.eachLayer(function (layerConFeatures) {
+                            let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
+                            if (seIntersectan != null) {
+                                layerConFeatures.feature.properties["nombre_capa"] = layer.options["nombre"];
+                                capasIntersectadas.push(layerConFeatures.feature.properties)
+                            }
+                        })
+                    }
+                });
+                if (capasIntersectadas.length != 0) {
+                    setRasgosEspejo(capasIntersectadas);
+                }
+            });
+
+        }, 1000)
     }, [])
 
     //Para guardar los rasgos
@@ -173,17 +245,22 @@ export default function AnalisisGeografico() {
                             onEachFeature: function (feature = {}, layerPadre) {
                                 layerPadre.on('click', function () {
                                     feature.properties["nombre_capa"] = layerPadre.options["nombre"];
-                                    setRasgos([feature.properties])
+                                    if (mapaBase == 0) {
+                                        setRasgos([feature.properties])
+                                    } else if (mapaBase == 1) {
+                                        setRasgosEspejo([feature.properties])
+                                    }
                                 })
                             }
                         });
                         response['layer'] = layer;
                         if (mapaBase == 0) {
                             setCapasVisualizadas([...capasVisualizadas, response])
+                            referenciaMapa.addLayer(response.layer)
                         } else if (mapaBase == 1) {
                             setCapasVisualizadasEspejo([...capasVisualizadasEspejo, response])
+                            referenciaMapaEspejo.addLayer(response.layer)
                         }
-                        referenciaMapa.addLayer(response.layer)
                     }
                 });
             } else {
@@ -215,182 +292,25 @@ export default function AnalisisGeografico() {
                 capaWMS["layer"] = layer;
                 if (mapaBase == 0) {
                     setCapasVisualizadas([...capasVisualizadas, capaWMS])
+                    referenciaMapa.addLayer(capaWMS.layer)
                 } else if (mapaBase == 1) {
                     setCapasVisualizadasEspejo([...capasVisualizadasEspejo, capaWMS])
+                    referenciaMapaEspejo.addLayer(capaWMS.layer)
                 }
-                referenciaMapa.addLayer(capaWMS.layer)
             }
         }
     }
 
-    // const onSubmit = (data, e) => {
-    //     let indice = parseInt(data.capaMapa)
-    //     let capa = datosCapasBackEnd[indice]
-    //     if (capasVisualizadas.some(capaVisual => capaVisual.num_capa === capa.indice)) {
-    //         return;
-    //     }
-    //     else {
-    //         if (capa.tipo == "filtrada") {
-    //             const owsrootUrl = capa.url;
-    //             const defaultParameters1 = {
-    //                 service: 'WFS',
-    //                 version: '2.0',
-    //                 request: 'GetFeature',
-    //                 //sedatu:
-    //                 typeName: capa.capa,
-    //                 outputFormat: 'text/javascript',
-    //                 format_options: 'callback:getJson',
-    //                 cql_filter: capa.filtro_entidad + "=" + "'" + capa.valor_filtro + "'"
-    //             };
-    //             var parameters1 = L.Util.extend(defaultParameters1);
-    //             var url = owsrootUrl + L.Util.getParamString(parameters1);
-    //             //Hace la petición para traer los datos de la entidad
-    //             $.ajax({
-    //                 jsonpCallback: 'getJson',
-    //                 url: url,
-    //                 dataType: 'jsonp',
-    //                 success: function (response) {
-    //                     response["num_capa"] = capa.indice;
-    //                     response["nom_capa"] = capa.titulo;
-    //                     response["habilitado"] = true;
-    //                     response['tipo'] = "geojson";
-    //                     response['estilos'] = { 'transparencia': 1 };
-    //                     let layer = L.geoJSON(response, {
-    //                         style: estilos,
-    //                         nombre: response["nom_capa"],
-    //                         onEachFeature: function (feature = {}, layerPadre) {
-    //                             layerPadre.on('click', function () {
-    //                                 feature.properties["nombre_capa"] = layerPadre.options["nombre"];
-    //                                 setRasgos([feature.properties])
-    //                             })
-    //                         }
-    //                     });
-    //                     response['layer'] = layer;
-    //                     setCapasVisualizadas([...capasVisualizadas, response])
-    //                     referenciaMapa.addLayer(response.layer)
-    //                 }
-    //             });
-    //         } else {
-    //             const capaWMS = {};
-    //             //Se guardan los datos de la capa
-    //             capaWMS["attribution"] = "No disponible"
-    //             capaWMS["url"] = capa.url
-    //             capaWMS["layers"] = capa.capa
-    //             capaWMS["format"] = "image/png"
-    //             capaWMS["transparent"] = "true"
-    //             capaWMS["tipo"] = "wms"
-    //             capaWMS["nom_capa"] = capa.titulo;
-    //             capaWMS["num_capa"] = capa.indice;
-    //             capaWMS["habilitado"] = true;
-    //             capaWMS["estilos"] = { 'transparencia': 1 };
-    //             capaWMS["zoomMinimo"] = 5;
-    //             capaWMS["zoomMaximo"] = 18;
-    //             capaWMS["simbologia"] = capa.leyenda;
-
-    //             let layer = L.tileLayer.wms(capaWMS.url, {
-    //                 layers: capaWMS.layers,
-    //                 format: capaWMS.format,
-    //                 transparent: capaWMS.transparent,
-    //                 attribution: capaWMS.attribution,
-    //                 opacity: capaWMS.estilos.transparencia,
-    //                 minZoom: capaWMS.zoomMinimo,
-    //                 maxZoom: capaWMS.zoomMaximo,
-    //             })
-    //             capaWMS["layer"] = layer;
-    //             setCapasVisualizadas([...capasVisualizadas, capaWMS])
-    //             referenciaMapa.addLayer(capaWMS.layer)
-    //         }
-    //     }
-    // }
-
-    // //Al seleccionar y añadir una entidad para el mapa espejo
-    // // const [capasVisualizadasEspejo, setCapasVisualizadasEspejo] = useState([])
-    // const onSubmitEspejo = (data) => {
-    //     let indice = parseInt(data.capaEspejo)
-    //     let capa = datosCapasBackEnd[indice]
-    //     if (capasVisualizadasEspejo.some(capaVisual => capaVisual.num_capa === capa.indice)) {
-    //         return;
-    //     } else {
-    //         if (capa.tipo == "filtrada") {
-    //             const owsrootUrl = capa.url;
-    //             const defaultParameters1 = {
-    //                 service: 'WFS',
-    //                 version: '2.0',
-    //                 request: 'GetFeature',
-    //                 //sedatu:
-    //                 typeName: capa.capa,
-    //                 outputFormat: 'text/javascript',
-    //                 format_options: 'callback:getJson',
-    //                 cql_filter: capa.filtro_entidad + "=" + "'" + capa.valor_filtro + "'"
-    //             };
-    //             var parameters1 = L.Util.extend(defaultParameters1);
-    //             var url = owsrootUrl + L.Util.getParamString(parameters1);
-    //             //Hace la petición para traer los datos de la entidad
-    //             $.ajax({
-    //                 jsonpCallback: 'getJson',
-    //                 url: url,
-    //                 dataType: 'jsonp',
-    //                 success: function (response) {
-    //                     response["num_capa"] = capa.indice;
-    //                     response["nom_capa"] = capa.titulo;
-    //                     response["habilitado"] = true;
-    //                     response['tipo'] = "geojson";
-    //                     response['estilos'] = { 'transparencia': 1 };
-    //                     let layer = L.geoJSON(response, {
-    //                         style: estilos,
-    //                         nombre: response["nom_capa"],
-    //                         onEachFeature: function (feature = {}, layerPadre) {
-    //                             layerPadre.on('click', function () {
-    //                                 feature.properties["nombre_capa"] = layerPadre.options["nombre"];
-    //                                 setRasgosEspejo([feature.properties])
-    //                             })
-    //                         }
-    //                     });
-    //                     response['layer'] = layer;
-    //                     setCapasVisualizadasEspejo([...capasVisualizadasEspejo, response])
-    //                     referenciaMapa.addLayer(response.layer)
-    //                 }
-    //             });
-    //         } else {
-    //             const capaWMS = {};
-    //             //Se guardan los datos de la capa
-    //             capaWMS["attribution"] = "No disponible"
-    //             capaWMS["url"] = capa.url
-    //             capaWMS["layers"] = capa.capa
-    //             capaWMS["format"] = "image/png"
-    //             capaWMS["transparent"] = "true"
-    //             capaWMS["tipo"] = "wms"
-    //             capaWMS["nom_capa"] = capa.titulo;
-    //             capaWMS["num_capa"] = capa.indice;
-    //             capaWMS["habilitado"] = true;
-    //             capaWMS["estilos"] = { 'transparencia': 1 };
-    //             capaWMS["zoomMinimo"] = 5;
-    //             capaWMS["zoomMaximo"] = 18;
-    //             capaWMS["simbologia"] = capa.leyenda;
-    //             let layer = L.tileLayer.wms(capaWMS.url, {
-    //                 layers: capaWMS.layers,
-    //                 format: capaWMS.format,
-    //                 transparent: capaWMS.transparent,
-    //                 attribution: capaWMS.attribution,
-    //                 opacity: capaWMS.estilos.transparencia,
-    //                 minZoom: capaWMS.zoomMinimo,
-    //                 maxZoom: capaWMS.zoomMaximo,
-    //             })
-    //             capaWMS["layer"] = layer;
-
-    //             setCapasVisualizadasEspejo([...capasVisualizadasEspejo, capaWMS])
-    //             referenciaMapa.addLayer(capaWMS.layer)
-    //         }
-    //     }
-    // }
-
     //Funcion para cambiar el estado del checkbox
     const cambiaCheckbox = ({ target }, mapa) => {
         let mapaBase;
+        let refMap;
         if (mapa == 0) {
             mapaBase = capasVisualizadas;
+            refMap = referenciaMapa;
         } else if (mapa == 1) {
             mapaBase = capasVisualizadasEspejo;
+            refMap = referenciaMapaEspejo;
         }
         //Hace copia a otro arreglo para volver a sobreescribir capasVisualizadas
         let capasVisualisadasActualizado = mapaBase.map((valor) => {
@@ -399,11 +319,11 @@ export default function AnalisisGeografico() {
                 //Si esta habilitado se desabilita, de manera igual en caso contrario
                 if (valor.habilitado) {
                     valor.habilitado = false;
-                    referenciaMapa.removeLayer(valor.layer);
+                    refMap.removeLayer(valor.layer);
                     return valor;
                 } else {
                     valor.habilitado = true;
-                    referenciaMapa.addLayer(valor.layer)
+                    refMap.addLayer(valor.layer)
                     return valor;
                 }
             }
@@ -455,10 +375,13 @@ export default function AnalisisGeografico() {
     //Cambia la escala de la visualización de las capas
     const zoomMinMax = ({ target }, mapa) => {
         let mapaBase;
+        let refMap;
         if (mapa == 0) {
             mapaBase = capasVisualizadas;
+            refMap = referenciaMapa;
         } else if (mapa == 1) {
             mapaBase = capasVisualizadasEspejo;
+            refMap = referenciaMapaEspejo;
         }
         let capasVisualisadasActualizado = mapaBase.map((valor) => {
             //Si es igual a la entidad que se envia, se cambia el zoom
@@ -470,8 +393,8 @@ export default function AnalisisGeografico() {
                     valor.zoomMaximo = target.value
                     valor.layer.options.maxZoom = valor.zoomMaximo;
                 }
-                referenciaMapa.removeLayer(valor.layer)
-                referenciaMapa.addLayer(valor.layer)
+                refMap.removeLayer(valor.layer)
+                refMap.addLayer(valor.layer)
                 return valor;
             }
             // Si no es igual a la entidad que se envia, se envia con los mismos valores
@@ -579,37 +502,57 @@ export default function AnalisisGeografico() {
                                                     <b>Información de rasgos</b>
                                                 </Card.Header>
                                             </Card>
-                                            {rasgos &&
-                                                rasgos.map((valor, index) => (
-                                                    <Collapse in={openRasgosCollapse} key={index}>
-                                                        <Table striped bordered hover>
-                                                            <thead>
-                                                                <tr>
-                                                                    <th colSpan="2" className="tw-text-center">{valor["nombre_capa"]}</th>
-                                                                </tr>
-                                                                <tr>
-                                                                    <th>Valor</th>
-                                                                    <th>Descripción</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {
-                                                                    Object.keys(valor).map((key, indexKey) => {
-                                                                        if (key !== "nombre_capa") {
-                                                                            return (
-                                                                                <tr key={indexKey}>
-                                                                                    <td>{key}</td>
-                                                                                    <td>{valor[key]}</td>
+                                            <Collapse in={openRasgosCollapse}>
+                                                <div>
+                                                    {
+                                                        rasgos.map((valor, index) => (
+                                                            <Accordion key={index}>
+                                                                <Card>
+                                                                    <Card.Header>
+                                                                        <Accordion.Toggle as={Button} variant="link" eventKey="0">
+                                                                            <>
+                                                                                {valor["NOMGEO"]}
+                                                                            </>
+                                                                        </Accordion.Toggle>
+                                                                    </Card.Header>
+                                                                    <Accordion.Collapse eventKey="0">
+                                                                        <Table striped bordered hover>
+                                                                            <thead>
+                                                                                <tr>
+                                                                                    {
+                                                                                        index == 0 &&
+                                                                                        (
+                                                                                            <th key={index} colSpan="2" className="tw-text-center">{valor["nombre_capa"]}</th>
+                                                                                        )
+                                                                                    }
                                                                                 </tr>
-                                                                            )
-                                                                        }
-                                                                    })
-                                                                }
-                                                            </tbody>
-                                                        </Table>
-                                                    </Collapse>
-                                                ))
-                                            }
+                                                                                <tr>
+                                                                                    <th>Valor</th>
+                                                                                    <th>Descripción</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                {
+                                                                                    Object.keys(valor).map((key, indexKey) => {
+                                                                                        if (key !== "nombre_capa") {
+                                                                                            return (
+                                                                                                <tr key={indexKey}>
+                                                                                                    <td>{key}</td>
+                                                                                                    <td>{valor[key]}</td>
+                                                                                                </tr>
+                                                                                            )
+                                                                                        }
+                                                                                    })
+                                                                                }
+                                                                            </tbody>
+                                                                        </Table>
+                                                                    </Accordion.Collapse>
+                                                                </Card>
+                                                            </Accordion>
+                                                        ))
+                                                    }
+                                                </div>
+                                            </Collapse>
                                             <Card>
                                                 <Card.Header>
                                                     <Button onClick={() => setOpenCapasCollapse(!openCapasCollapse)} variant="link">
@@ -765,38 +708,57 @@ export default function AnalisisGeografico() {
                                                         </Button>
                                                         <b>Información de rasgos</b>
                                                     </Card.Header>
-                                                </Card>
-                                                {rasgosEspejo &&
-                                                    rasgosEspejo.map((valor, index) => (
-                                                        <Collapse in={openRasgosCollapseEspejo} key={index}>
-                                                            <Table striped bordered hover>
-                                                                <thead>
-                                                                    <tr>
-                                                                        <th colSpan="2" className="tw-text-center">{valor["nombre_capa"]}</th>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <th>Valor</th>
-                                                                        <th>Descripción</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {
-                                                                        Object.keys(valor).map((key, indexKey) => {
-                                                                            if (key !== "nombre_capa") {
-                                                                                return (
-                                                                                    <tr key={indexKey}>
-                                                                                        <td>{key}</td>
-                                                                                        <td>{valor[key]}</td>
+                                                </Card><Collapse in={openRasgosCollapseEspejo}>
+                                                    <div>
+                                                        {
+                                                            rasgosEspejo.map((valor, index) => (
+                                                                <Accordion key={index}>
+                                                                    <Card>
+                                                                        <Card.Header>
+                                                                            <Accordion.Toggle as={Button} variant="link" eventKey="0">
+                                                                                <>
+                                                                                    {valor["NOMGEO"]}
+                                                                                </>
+                                                                            </Accordion.Toggle>
+                                                                        </Card.Header>
+                                                                        <Accordion.Collapse eventKey="0">
+                                                                            <Table striped bordered hover>
+                                                                                <thead>
+                                                                                    <tr>
+                                                                                        {
+                                                                                            index == 0 &&
+                                                                                            (
+                                                                                                <th key={index} colSpan="2" className="tw-text-center">{valor["nombre_capa"]}</th>
+                                                                                            )
+                                                                                        }
                                                                                     </tr>
-                                                                                )
-                                                                            }
-                                                                        })
-                                                                    }
-                                                                </tbody>
-                                                            </Table>
-                                                        </Collapse>
-                                                    ))
-                                                }
+                                                                                    <tr>
+                                                                                        <th>Valor</th>
+                                                                                        <th>Descripción</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody>
+                                                                                    {
+                                                                                        Object.keys(valor).map((key, indexKey) => {
+                                                                                            if (key !== "nombre_capa") {
+                                                                                                return (
+                                                                                                    <tr key={indexKey}>
+                                                                                                        <td>{key}</td>
+                                                                                                        <td>{valor[key]}</td>
+                                                                                                    </tr>
+                                                                                                )
+                                                                                            }
+                                                                                        })
+                                                                                    }
+                                                                                </tbody>
+                                                                            </Table>
+                                                                        </Accordion.Collapse>
+                                                                    </Card>
+                                                                </Accordion>
+                                                            ))
+                                                        }
+                                                    </div>
+                                                </Collapse>
                                                 <Card>
                                                     <Card.Header>
                                                         <Button onClick={() => setOpenCapasCollapseEspejo(!openCapasCollapseEspejo)} variant="link">
@@ -898,7 +860,7 @@ export default function AnalisisGeografico() {
                                                 <FontAwesomeIcon className="tw-cursor-pointer" icon={faCaretLeft} />
                                             </button>
                                         </div>
-                                        <ContenedorMapaAnalisis referencia={capturaReferenciaMapa} botones={false} datos={capasVisualizadasEspejo} />
+                                        <ContenedorMapaAnalisis referencia={capturaReferenciaMapaEspejo} botones={false} datos={capasVisualizadasEspejo} />
                                     </div>
                                 </div>
                             </div>

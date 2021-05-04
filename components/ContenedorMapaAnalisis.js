@@ -1,14 +1,17 @@
 import dynamic from 'next/dynamic'
-import React, { useEffect, useState, useReducer, createContext, useContext } from 'react'
+import React, { useState } from 'react'
 
 import ContenedorMapaContext from '../contexts/ContenedorMapaContext'
-import UndoRedoContext from '../contexts/UndoRedoContext'
 
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 
 import Popout from 'react-popout'
+
+// var refMapaContenedor = null;
+var objetoLContenedor = null
+var refMapaContenedor = null
 
 const Map = dynamic(
     () => import('./MapAnalisis'),
@@ -18,17 +21,9 @@ const Map = dynamic(
     }
 )
 
-// var refMapaContenedor = null;
-var objetoLContenedor = null
-var refMapaContenedor = null
-
-//Variables para pasar al contexto
-var zoomGlobal;
-var tipoCoordenadaGlobal = 1;
-
 function ContenedorMapaAnalisis(props) {
 
-        // const [estadoCaptura, setEstadoCaptura] = useState({ tipoCoord: tipoCoordenadaGlobal, referenciaMapa: captura })
+    // const [estadoCaptura, setEstadoCaptura] = useState({ tipoCoord: tipoCoordenadaGlobal, referenciaMapa: captura })
 
     // function controlaContexto() {
     //     console.log(props);
@@ -74,8 +69,14 @@ function ContenedorMapaAnalisis(props) {
             }
 
             {/* <ContenedorMapaContext.Provider value={estadoCaptura}> */}
-                <Map referencia={props.referencia} botones={props.botones} datos={props.datos} />
+            <Map referencia={props.referencia} botones={props.botones} datos={props.datos} />
             {/* </ContenedorMapaContext.Provider> */}
+
+            <div className="div-herramientas-contenedor">
+                <OverlayTrigger overlay={<Tooltip>Simbología</Tooltip>}>
+                    <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl iconos-barra-mapa" onClick={() => setVentana(!ventana)} icon={faImages}></FontAwesomeIcon>
+                </OverlayTrigger>
+            </div>
 
         </>
     )

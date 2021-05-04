@@ -1,15 +1,13 @@
 import Head from 'next/head'
 import React, { useState, useEffect, useContext } from 'react'
 
-import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvent } from 'react-leaflet'
+import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents } from 'react-leaflet'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 
 const { BaseLayer } = LayersControl;
 import { EditControl } from 'react-leaflet-draw'
-import leafletPip from '@mapbox/leaflet-pip/leaflet-pip'
-import * as turf from '@turf/turf'
 
 import referenciaMapaContext from '../contexts/ContenedorMapaContext'
 
@@ -101,16 +99,10 @@ export default function Map(props) {
     const [mapaReferencia, setmapaReferencia] = useState(null);
     //Contexto para pasar al contenedor del mapa
     const refMapContext = useContext(referenciaMapaContext)
+    props.referencia(mapaReferencia);
 
     //Para guardar el grupo de capas de dibujo
     var capasDib = null;
-
-    if (props.botones == false) {
-        if (mapaReferencia != null) {
-            mapaReferencia.setZoom(refMapContext.zoom)
-            console.log(refMapContext, "rmc");
-        }
-    }
 
     //Para guardar las referencias del mapa    
     useEffect(() => {
@@ -118,7 +110,6 @@ export default function Map(props) {
             // refMapContext.refMap = mapaReferencia;
             // refMapContext.objL = L;
             // refMapContext.referenciaMapa();
-            props.referencia(mapaReferencia);
 
             mapaReferencia.addControl(new L.Control.Fullscreen(
                 {
@@ -196,6 +187,13 @@ export default function Map(props) {
         lDrLo.edit.handlers.edit.tooltip.text = "Arrastre controladores o marcadores para editar carecaterísticas."
         lDrLo.edit.handlers.edit.tooltip.subtext = "Clic en cancelar para deshacer los cambios"
         lDrLo.edit.handlers.remove.tooltip.text = "Click en la figura para borrarla."
+
+        update([
+            {
+                centroUndoRedo: { lat: 23.26825996870948, lng: -102.88361673036671 },
+                zoomUndoRedo: 5
+            }
+        ]);
     }, [])
 
     const [todos, { canUndo, canRedo, update, undo, redo }] = useTimeline();
@@ -320,8 +318,6 @@ export default function Map(props) {
     //Cuando se dibuja sobre el mapa
     function Dibujos() {
         let mapaDibujos = useMap();
-        // let layersGeojson = []
-
         mapaDibujos.on('draw:created', function (e) {
             var type = e.layerType,
                 layer = e.layer;
@@ -341,6 +337,7 @@ export default function Map(props) {
                 layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area/10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area/1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area/1000))} m<sup>2</sup></p>`, {permanent: false, direction:"center"}).openTooltip()
             }
         });
+
         mapaDibujos.on('draw:edited', function (e) {
             var layers = e.layers;
             layers.eachLayer(function (layer) {
@@ -361,76 +358,6 @@ export default function Map(props) {
 
         return null;
     }
-
-    function ControlMovimiento() {
-        const [coordenadas, setCoordenadas] = useState("")
-        const mapa = useMap()
-        const mouseMap = useMapEvent('mousemove', (e) => {
-            if (refMapContext.tipoCoord == 1) {
-                let latlng = {};
-                latlng["lat"] = e.latlng.lat.toFixed(3)
-                latlng["lng"] = e.latlng.lng.toFixed(3)
-                let latlngString = "LatLng(" + latlng["lat"] + "," + latlng["lng"] + ")"
-                setCoordenadas(latlngString)
-            }
-            else if (refMapContext.tipoCoord == 2) {
-                let metros = L.CRS.EPSG3857.project(e.latlng);
-                let metrosString = "LatLng(" + metros.x.toFixed(3) + "," + metros.y.toFixed(3) + ")"
-                setCoordenadas(metrosString)
-            }
-            else if (refMapContext.tipoCoord == 3) {
-                let lat = e.latlng.lat;
-                let latGrado = Math.trunc(lat);
-                let latMinuto = Math.trunc((Math.abs(lat) - Math.abs(latGrado)) * 60);
-                let latSegundo = (Math.abs(lat) - Math.abs(latGrado) - (latMinuto / 60)) * 3600;
-                let latGradoMinutoSegundo = latGrado + "°" + latMinuto + "'" + latSegundo.toFixed(2) + "''";
-
-                let lng = e.latlng.lng;
-                let lngGrado = Math.trunc(lng);
-                let lngMinuto = Math.trunc((Math.abs(lng) - Math.abs(lngGrado)) * 60);
-                let lngSegundo = (Math.abs(lng) - Math.abs(lngGrado) - (lngMinuto / 60)) * 3600;
-                let lngGradoMinutoSegundo = lngGrado + "°" + lngMinuto + "'" + lngSegundo.toFixed(2) + "''";
-
-                let gradoMinutosSegundos = "LatLng(" + latGradoMinutoSegundo + "," + lngGradoMinutoSegundo + ")";
-                setCoordenadas(gradoMinutosSegundos);
-            }
-        })
-
-        useEffect(() => {
-            const leyendaCoordenadas = L.control({ position: "bottomleft" });
-            leyendaCoordenadas.onAdd = () => {
-                const divCoordenadas = L.DomUtil.create("div", "coordenadas");
-                divCoordenadas.innerHTML = coordenadas + " " + "Zoom:&nbsp" + mapa.getZoom();
-                return divCoordenadas;
-            };
-            leyendaCoordenadas.addTo(mapa);
-            return () => leyendaCoordenadas.remove();
-        }, [coordenadas]);
-
-        useEffect(() => {
-            const botones = L.control({ position: "bottomleft" });
-            botones.onAdd = () => {
-                const botonVistaCompleta = L.DomUtil.create("div", "leaflet-vista-completa leaflet-bar leaflet-control");
-                botonVistaCompleta.innerHTML = "<a href='#' title='Vista completa'></a>"
-                L.DomEvent
-                    .addListener(botonVistaCompleta, 'click', L.DomEvent.stopPropagation)
-                    .addListener(botonVistaCompleta, 'click', L.DomEvent.preventDefault)
-                    .addListener(botonVistaCompleta, 'click', function () {
-                        mapa.setView(centroInicial, acercamientoInicial)
-                    });
-                return botonVistaCompleta;
-            };
-            botones.addTo(mapa);
-            return () => {
-                botones.remove();
-            }
-        }, []);
-
-        return null
-    }
-
-    //Para guardar los rasgos de los dibujos
-    const [rasgosDibujo, setRasgosDibujo] = useState([])
 
     return (
         <>
@@ -475,42 +402,27 @@ export default function Map(props) {
                 <ControlMovimiento />
             </MapContainer>
 
-            <div className="tw-bg-gray-200 tw-border-solid tw-border-1 tw-border-gray-300 tw-text-right">
-                <select onChange={(e) => cambiaTipoCoordenada(e)} className="tw-mr-5">
-                    <option value='1'>Grados decimales</option>
-                    <option value='2'>Metros</option>
-                    <option value='3'>Grados, minutos y segundos</option>
-                </select>
-                {props.botones == true &&
+            <div className="div-herramientas-mapa">
+                {
+                    props.botones == true &&
                     <>
                         <OverlayTrigger rootClose overlay={<Tooltip>Vista anterior</Tooltip>}>
-                            <button disabled={!canUndo} className="tw-border-transparent tw-bg-transparent tw-mr-5 tw-border-none" name="undo" onClick={MapaMovimientoUndoRedo}>
+                            <button disabled={!canUndo} className="tw-p-0 tw-border-transparent tw-bg-transparent tw-mr-5 tw-border-none" name="undo" onClick={MapaMovimientoUndoRedo}>
                                 <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faArrowLeft} />
                             </button>
                         </OverlayTrigger>
                         <OverlayTrigger rootClose overlay={<Tooltip>Vista posterior</Tooltip>}>
-                            <button disabled={!canRedo} className="tw-border-transparent tw-bg-transparent tw-mr-5 tw-border-none" name="redo" onClick={MapaMovimientoUndoRedo}>
+                            <button disabled={!canRedo} className="tw-p-0 tw-border-transparent tw-bg-transparent tw-mr-5 tw-border-none" name="redo" onClick={MapaMovimientoUndoRedo}>
                                 <FontAwesomeIcon className="tw-pointer-events-none tw-text-3xl" icon={faArrowRight}></FontAwesomeIcon>
                             </button>
                         </OverlayTrigger>
                     </>
                 }
-                <OverlayTrigger overlay={<Tooltip>Simbología</Tooltip>}>
-                    <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl tw-mt-2" onClick={() => setVentana(!ventana)} icon={faImages}></FontAwesomeIcon>
-                </OverlayTrigger>
-            </div>
-
-            <div className="col-12">
-                {
-                    rasgosDibujo &&
-                    rasgosDibujo.map((valor, index) => {
-                        return (
-                            <div key={index}>
-                                <p>{valor.fid} {valor.CVEGEO} {valor.CVE_ENT} {valor.NOMGEO} {valor.CVE_NUM}</p>
-                            </div>
-                        )
-                    })
-                }
+                <select onChange={(e) => cambiaTipoCoordenada(e)} className="tw-mr-5 select-cambia-coordenadas">
+                    <option value='1'>Grados decimales</option>
+                    <option value='2'>Metros</option>
+                    <option value='3'>Grados, minutos y segundos</option>
+                </select>
             </div>
 
         </>

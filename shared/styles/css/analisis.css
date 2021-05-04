@@ -57,3 +57,28 @@
 .tilelayer-base{
     z-index: 0 !important;
 }
+
+.div-herramientas-contenedor{
+    border: 1px solid rgba(209, 213, 219);
+    text-align: right;
+    background-color: rgba(229, 231, 235);
+    padding-top: 15px;    
+    height: 70px;
+    border-right: 0;
+}
+
+.div-herramientas-mapa{
+    border: 1px solid rgba(209, 213, 219);
+    /* text-align: right; */
+    background-color: rgba(229, 231, 235);
+    padding-top: 15px;
+    height: 70px;
+    border-left: 0;
+    float: right;
+}
+
+.select-cambia-coordenadas{
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 0;
+}
