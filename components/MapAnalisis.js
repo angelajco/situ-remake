@@ -137,24 +137,6 @@ export default function Map(props) {
             var control = L.control.zoomBox(options);
             mapaReferencia.addControl(control);
 
-            mapaReferencia.on('draw:edited', function (e) {
-                var layers = e.layers;
-                layers.eachLayer(function (layer) {
-                    if (layer instanceof L.Polyline && !(layer instanceof L.rectangle) && !(layer instanceof L.Polygon)) {
-                        var distance = 0;
-                        length = layer.getLatLngs().length;
-                        for (var i = 1; i < length; i++) {
-                            distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
-                        }
-                        layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
-                    } else if (!(layer instanceof L.Marker)) {
-                        var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                        console.log('latlngs: ', layer.getLatLngs())
-                        layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
-                    }
-                });
-            });
-
             // L.easyPrint({
             //     title: 'Imprimir',
             //     position: 'topleft',
@@ -298,24 +280,6 @@ export default function Map(props) {
         })
 
         useEffect(() => {
-            L.drawLocal.draw.toolbar.buttons.rectangle = "Dibujar un rectangulo";
-            L.drawLocal.draw.handlers.rectangle.tooltip.start = "Mantener click y arrastrar para dibujar";
-            mapa.on('draw:created', function (e) {
-                var type = e.layerType,
-                    layer = e.layer;
-                if (type === 'rectangle') {
-                    // mapa.fitBounds(layer.getLatLngs());
-                    // mapa.removeLayer(layer);
-                } else {
-                    console.log(layer.getLatLngs())
-                    var area = L.GeometryUtil.geodesicArea(layer.getLatLngs());
-                    console.log(area)
-                    layer.bindTooltip(area, { permanent: false, direction: "center" }).openTooltip()
-                }
-            })
-        })
-
-        useEffect(() => {
             const leyendaCoordenadas = L.control({ position: "bottomleft" });
             leyendaCoordenadas.onAdd = () => {
                 const divCoordenadas = L.DomUtil.create("div", "coordenadas");
@@ -359,34 +323,40 @@ export default function Map(props) {
         // let layersGeojson = []
 
         mapaDibujos.on('draw:created', function (e) {
-            capasDib.clearLayers();
-            let layerDibujada = e.layer;
-            capasDib.addLayer(layerDibujada);
-            let puntos = null;
-            if (e.layerType === "marker") {
-                puntos = layerDibujada.getLatLng();
-            } else {
-                puntos = layerDibujada.getLatLngs()
+            var type = e.layerType,
+                layer = e.layer;
+            if (type === 'polyline') {
+                var distance = 0;
+                length = layer.getLatLngs().length;
+                for (var i = 1; i < length; i++) {
+                    distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
+                }
+                layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance/1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, {permanent: false, direction:"center"}).openTooltip()
+            } else if(type !== 'marker') {
+                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                // generatePolygon(layer.getLatLngs(), function(result) {
+                //     console.log('polyBounds: ', result);
+                //     console.log('turf.area: ', Turf.area(Turf.polygon([result])));
+                // });
+                layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area/10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area/1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area/1000))} m<sup>2</sup></p>`, {permanent: false, direction:"center"}).openTooltip()
             }
-            let capasIntersectadas = [];
-            mapaDibujos.eachLayer(function (layer) {
-                if (layer instanceof L.GeoJSON) {
-                    // if (e.layerType === "marker") {
-                    //     let resultsMarker = leafletPip.pointInLayer([puntos.lng, puntos.lat], layer)
-                    //     setRasgosDibujo([resultsMarker[0].feature.properties])
-                    // }
-                    layer.eachLayer(function (layerConFeatures) {
-                        let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
-                        if (seIntersectan != null) {
-                            capasIntersectadas.push(layerConFeatures.feature.properties)
-                        }
-                    })
+        });
+        mapaDibujos.on('draw:edited', function (e) {
+            var layers = e.layers;
+            layers.eachLayer(function (layer) {
+                if (layer instanceof L.Polyline && !(layer instanceof L.rectangle) && !(layer instanceof L.Polygon)) {
+                    var distance = 0;
+                    length = layer.getLatLngs().length;
+                    for (var i = 1; i < length; i++) {
+                        distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
+                    }
+                    layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
+                } else if (!(layer instanceof L.Marker)) {
+                    var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                    console.log('latlngs: ', layer.getLatLngs())
+                    layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
                 }
             });
-            if (capasIntersectadas.length != 0) {
-                setRasgosDibujo(capasIntersectadas);
-            }
-            console.log(capasIntersectadas);
         });
 
         return null;
@@ -494,7 +464,7 @@ export default function Map(props) {
                     <EditControl
                         position='topright'
                         draw={{
-                            rectangle: false,
+                            rectangle: true,
                             circle: false,
                             circlemarker: false,
                         }}
