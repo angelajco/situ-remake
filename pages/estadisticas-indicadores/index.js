@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form";
 
 import { Form, Dropdown, MenuItem, DropdownButton } from 'react-bootstrap';
 
-import GenericChart from '../../components/GenericChart';
-import GenericTable from '../../components/GenericTable';
+import GenericChart from '../../components/genericos/GenericChart';
+import GenericTable from '../../components/genericos/GenericTable';
 
 export default function index() {
     
@@ -312,7 +312,7 @@ export default function index() {
     refChartColumn.current = watch("idChartColumn", "");
 
     const GenericMap = dynamic(
-        () => import('../../components/GenericMap'),
+        () => import('../../components/genericos/GenericMap'),
         {
             loading: () => <p>El mapa está cargando</p>,
             ssr: false

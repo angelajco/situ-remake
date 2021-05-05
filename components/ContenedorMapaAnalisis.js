@@ -1,13 +1,17 @@
 import dynamic from 'next/dynamic'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import ContenedorMapaContext from '../contexts/ContenedorMapaContext'
 
-import { OverlayTrigger, Tooltip } from 'react-bootstrap'
+import { OverlayTrigger, Tooltip, Modal, Button } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 
 import Popout from 'react-popout'
+
+import $ from 'jquery'
+
+// const elementClosest = require('element-closest');
 
 // var refMapaContenedor = null;
 var objetoLContenedor = null
@@ -43,6 +47,20 @@ function ContenedorMapaAnalisis(props) {
     /*Estados para ventana de simbología*/
     const [ventana, setVentana] = useState(false)
 
+    function minimizaModal(e) {
+        let modalCompleto = $(e.target).closest(".modal-simbologia")
+        $(modalCompleto).toggleClass("modal-min")
+    }
+
+    const [showModalSimbologia, setShowModalSimbologia] = useState(false);
+
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
+
+    if(typeof window != null){
+        $(document.body).addClass("analisis-geografico-modales");
+    }
+
 
     return (
         <>
@@ -74,10 +92,34 @@ function ContenedorMapaAnalisis(props) {
 
             <div className="div-herramientas-contenedor">
                 <OverlayTrigger overlay={<Tooltip>Simbología</Tooltip>}>
-                    <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl iconos-barra-mapa" onClick={() => setVentana(!ventana)} icon={faImages}></FontAwesomeIcon>
+                    <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl iconos-barra-mapa" onClick={() => setShowModalSimbologia(!showModalSimbologia)} icon={faImages}></FontAwesomeIcon>
                 </OverlayTrigger>
             </div>
 
+            <Modal show={showModalSimbologia} onHide={() => setShowModalSimbologia(!showModalSimbologia)} backdrop={false} keyboard={false} className="tw-pointer-events-none modal-simbologia">
+                <Modal.Header closeButton>
+                    <Modal.Title><b>Simbología</b></Modal.Title>
+                    <button onClick={minimizaModal}>Minimizar</button>
+                </Modal.Header>
+                <Modal.Body>
+                    {
+                        props.datos.map((capa, index) => {
+                            if (capa.habilitado) {
+                                if (capa.tipo == "wms") {
+                                    return (
+                                        <div key={index}>
+                                            <p><b>{capa.nom_capa}</b></p>
+                                            <img src={capa.simbologia}></img>
+                                            <br></br>
+                                            <br></br>
+                                        </div>
+                                    )
+                                }
+                            }
+                        })
+                    }
+                </Modal.Body>
+            </Modal>
         </>
     )
 }

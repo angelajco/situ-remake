@@ -1,4 +1,3 @@
-import Head from 'next/head'
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table } from 'react-bootstrap'
@@ -9,8 +8,6 @@ import { faEdit, faCheck, faAngleDown, faCaretLeft } from '@fortawesome/free-sol
 import ContenedorMapaAnalisis from '../../components/ContenedorMapaAnalisis'
 
 import catalogoEntidades from "../../shared/jsons/entidades.json";
-
-import { Collapse as CollapsePlugin, UnmountClosed } from 'react-collapse';
 
 import $ from 'jquery'
 import leafletPip from '@mapbox/leaflet-pip/leaflet-pip'
@@ -121,6 +118,7 @@ export default function AnalisisGeografico() {
             setDobleMapaVista("col-6");
         } else {
             setPantallaDividida(true)
+            referenciaMapaEspejo._onResize();
             setDobleMapa("col-6");
             setDobleMapaVista("col-12");
         }
@@ -519,12 +517,7 @@ export default function AnalisisGeografico() {
                                                                         <Table striped bordered hover>
                                                                             <thead>
                                                                                 <tr>
-                                                                                    {
-                                                                                        index == 0 &&
-                                                                                        (
-                                                                                            <th key={index} colSpan="2" className="tw-text-center">{valor["nombre_capa"]}</th>
-                                                                                        )
-                                                                                    }
+                                                                                    <th key={index} colSpan="2" className="tw-text-center">{valor["nombre_capa"]}</th>
                                                                                 </tr>
                                                                                 <tr>
                                                                                     <th>Valor</th>
@@ -659,214 +652,203 @@ export default function AnalisisGeografico() {
                             </div>
                         </div>
 
-
-                        {
-                            pantallaDividida &&
-                            <div className="col-6">
-                                <div className="row">
-                                    <div className="col-12 tw-text-center">
-                                        <p>
-                                            {nombreMapaEspejo}
-                                            <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
-                                                <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setmuestraEditarNombreMapaEspejo(false)} icon={faEdit}></FontAwesomeIcon>
-                                            </OverlayTrigger>
-                                        </p>
-                                        <input type="text" hidden={muestraEditarNombreMapaEspejo} onChange={(event) => cambiaNombreMapa(event, 1)} value={nombreMapaEspejo}></input>
-                                        <OverlayTrigger overlay={<Tooltip>Finalizar edición</Tooltip>}>
-                                            <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" hidden={muestraEditarNombreMapaEspejo} onClick={() => setmuestraEditarNombreMapaEspejo(true)} icon={faCheck}></FontAwesomeIcon>
+                        <div className={`col-6 ${pantallaDividida ? "": "esconde-mapa"}`}>
+                            <div className="row">
+                                <div className="col-12 tw-text-center">
+                                    <p>
+                                        {nombreMapaEspejo}
+                                        <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
+                                            <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setmuestraEditarNombreMapaEspejo(false)} icon={faEdit}></FontAwesomeIcon>
                                         </OverlayTrigger>
-                                    </div>
+                                    </p>
+                                    <input type="text" hidden={muestraEditarNombreMapaEspejo} onChange={(event) => cambiaNombreMapa(event, 1)} value={nombreMapaEspejo}></input>
+                                    <OverlayTrigger overlay={<Tooltip>Finalizar edición</Tooltip>}>
+                                        <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" hidden={muestraEditarNombreMapaEspejo} onClick={() => setmuestraEditarNombreMapaEspejo(true)} icon={faCheck}></FontAwesomeIcon>
+                                    </OverlayTrigger>
+                                </div>
 
-                                    <div className={dobleMapaVista}>
-                                        <p>Capas</p>
-                                        <Form onSubmit={handleSubmit(onSubmit)} data-tipo={1}>
-                                            {/* <Form onSubmit={handleSubmit1(onSubmitEspejo)}> */}
-                                            <Form.Group className="tw-inline-flex tw-mr-4" controlId="capaEspejo">
-                                                <Form.Control as="select" name="capaEspejo" required ref={register}>
-                                                    {/* <Form.Control as="select" name="capaEspejo" required ref={register1}> */}
-                                                    <option value=""></option>
+                                <div className={dobleMapaVista}>
+                                    <p>Capas</p>
+                                    <Form onSubmit={handleSubmit(onSubmit)} data-tipo={1}>
+                                        {/* <Form onSubmit={handleSubmit1(onSubmitEspejo)}> */}
+                                        <Form.Group className="tw-inline-flex tw-mr-4" controlId="capaEspejo">
+                                            <Form.Control as="select" name="capaEspejo" required ref={register}>
+                                                {/* <Form.Control as="select" name="capaEspejo" required ref={register1}> */}
+                                                <option value=""></option>
+                                                {
+                                                    datosCapasBackEnd.map((value, index) => {
+                                                        return (
+                                                            <option key={index} value={value.indice}>{value.titulo}</option>
+                                                        )
+                                                    })
+                                                }
+                                            </Form.Control>
+                                        </Form.Group>
+                                        <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR</button>
+                                    </Form>
+                                </div>
+
+                                <div className="col-12 tw-mt-8">
+                                    <div className="contenedor-menu-lateral">
+                                        <div className={menuLateralEspejo ? "tw-w-96 menu-lateral" : "tw-w-0 menu-lateral"}>
+                                            <Card>
+                                                <Card.Header>
+                                                    <Button onClick={() => setOpenRasgosCollapseEspejo(!openRasgosCollapseEspejo)} variant="link">
+                                                        <FontAwesomeIcon icon={faAngleDown} />
+                                                    </Button>
+                                                    <b>Información de rasgos</b>
+                                                </Card.Header>
+                                            </Card><Collapse in={openRasgosCollapseEspejo}>
+                                                <div>
                                                     {
-                                                        datosCapasBackEnd.map((value, index) => {
-                                                            return (
-                                                                <option key={index} value={value.indice}>{value.titulo}</option>
-                                                            )
-                                                        })
-                                                    }
-                                                </Form.Control>
-                                            </Form.Group>
-                                            <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR</button>
-                                        </Form>
-                                    </div>
-
-                                    <div className="col-12 tw-mt-8">
-                                        <div className="contenedor-menu-lateral">
-                                            <div className={menuLateralEspejo ? "tw-w-96 menu-lateral" : "tw-w-0 menu-lateral"}>
-                                                <Card>
-                                                    <Card.Header>
-                                                        <Button onClick={() => setOpenRasgosCollapseEspejo(!openRasgosCollapseEspejo)} variant="link">
-                                                            <FontAwesomeIcon icon={faAngleDown} />
-                                                        </Button>
-                                                        <b>Información de rasgos</b>
-                                                    </Card.Header>
-                                                </Card><Collapse in={openRasgosCollapseEspejo}>
-                                                    <div>
-                                                        {
-                                                            rasgosEspejo.map((valor, index) => (
-                                                                <Accordion key={index}>
-                                                                    <Card>
-                                                                        <Card.Header>
-                                                                            <Accordion.Toggle as={Button} variant="link" eventKey="0">
-                                                                                <>
-                                                                                    {valor["NOMGEO"]}
-                                                                                </>
-                                                                            </Accordion.Toggle>
-                                                                        </Card.Header>
-                                                                        <Accordion.Collapse eventKey="0">
-                                                                            <Table striped bordered hover>
-                                                                                <thead>
-                                                                                    <tr>
-                                                                                        {
-                                                                                            index == 0 &&
-                                                                                            (
-                                                                                                <th key={index} colSpan="2" className="tw-text-center">{valor["nombre_capa"]}</th>
+                                                        rasgosEspejo.map((valor, index) => (
+                                                            <Accordion key={index}>
+                                                                <Card>
+                                                                    <Card.Header>
+                                                                        <Accordion.Toggle as={Button} variant="link" eventKey="0">
+                                                                            <>
+                                                                                {valor["NOMGEO"]}
+                                                                            </>
+                                                                        </Accordion.Toggle>
+                                                                    </Card.Header>
+                                                                    <Accordion.Collapse eventKey="0">
+                                                                        <Table striped bordered hover>
+                                                                            <thead>
+                                                                                <tr>
+                                                                                    <th key={index} colSpan="2" className="tw-text-center">{valor["nombre_capa"]}</th>
+                                                                                </tr>
+                                                                                <tr>
+                                                                                    <th>Valor</th>
+                                                                                    <th>Descripción</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                {
+                                                                                    Object.keys(valor).map((key, indexKey) => {
+                                                                                        if (key !== "nombre_capa") {
+                                                                                            return (
+                                                                                                <tr key={indexKey}>
+                                                                                                    <td>{key}</td>
+                                                                                                    <td>{valor[key]}</td>
+                                                                                                </tr>
                                                                                             )
                                                                                         }
-                                                                                    </tr>
-                                                                                    <tr>
-                                                                                        <th>Valor</th>
-                                                                                        <th>Descripción</th>
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody>
-                                                                                    {
-                                                                                        Object.keys(valor).map((key, indexKey) => {
-                                                                                            if (key !== "nombre_capa") {
-                                                                                                return (
-                                                                                                    <tr key={indexKey}>
-                                                                                                        <td>{key}</td>
-                                                                                                        <td>{valor[key]}</td>
-                                                                                                    </tr>
-                                                                                                )
-                                                                                            }
-                                                                                        })
-                                                                                    }
-                                                                                </tbody>
-                                                                            </Table>
-                                                                        </Accordion.Collapse>
-                                                                    </Card>
-                                                                </Accordion>
-                                                            ))
-                                                        }
-                                                    </div>
-                                                </Collapse>
-                                                <Card>
-                                                    <Card.Header>
-                                                        <Button onClick={() => setOpenCapasCollapseEspejo(!openCapasCollapseEspejo)} variant="link">
-                                                            <FontAwesomeIcon icon={faAngleDown} />
-                                                        </Button>
-                                                        <b>Capas</b>
-                                                    </Card.Header>
-                                                </Card>
-                                                {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
-                                                <Collapse in={openCapasCollapseEspejo}>
-                                                    <Accordion>
-                                                        <DragDropContext onDragEnd={handleOnDragEndEspejo}>
-                                                            <Droppable droppableId="capas-espejo">
-                                                                {(provided) => (
-                                                                    // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
-                                                                    <div {...provided.droppableProps} ref={provided.innerRef}> {
-                                                                        capasVisualizadasEspejo.map((capa, index) => (
-                                                                            <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
-                                                                                {(provided) => (
-                                                                                    <Card {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                                                        <Card.Header>
-                                                                                            <Accordion.Toggle as={Button} variant="link" eventKey={capa.num_capa.toString()}>
-                                                                                                <FontAwesomeIcon icon={faAngleDown} />
-                                                                                            </Accordion.Toggle>
-                                                                                            <Form.Group className="tw-inline-block">
-                                                                                                <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 1)} value={capa.num_capa} />
+                                                                                    })
+                                                                                }
+                                                                            </tbody>
+                                                                        </Table>
+                                                                    </Accordion.Collapse>
+                                                                </Card>
+                                                            </Accordion>
+                                                        ))
+                                                    }
+                                                </div>
+                                            </Collapse>
+                                            <Card>
+                                                <Card.Header>
+                                                    <Button onClick={() => setOpenCapasCollapseEspejo(!openCapasCollapseEspejo)} variant="link">
+                                                        <FontAwesomeIcon icon={faAngleDown} />
+                                                    </Button>
+                                                    <b>Capas</b>
+                                                </Card.Header>
+                                            </Card>
+                                            {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
+                                            <Collapse in={openCapasCollapseEspejo}>
+                                                <Accordion>
+                                                    <DragDropContext onDragEnd={handleOnDragEndEspejo}>
+                                                        <Droppable droppableId="capas-espejo">
+                                                            {(provided) => (
+                                                                // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
+                                                                <div {...provided.droppableProps} ref={provided.innerRef}> {
+                                                                    capasVisualizadasEspejo.map((capa, index) => (
+                                                                        <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
+                                                                            {(provided) => (
+                                                                                <Card {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                                                                    <Card.Header>
+                                                                                        <Accordion.Toggle as={Button} variant="link" eventKey={capa.num_capa.toString()}>
+                                                                                            <FontAwesomeIcon icon={faAngleDown} />
+                                                                                        </Accordion.Toggle>
+                                                                                        <Form.Group className="tw-inline-block">
+                                                                                            <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 1)} value={capa.num_capa} />
+                                                                                        </Form.Group>
+                                                                                    </Card.Header>
+                                                                                    <Accordion.Collapse eventKey={capa.num_capa.toString()}>
+                                                                                        <Card.Body>
+                                                                                            <Form.Group>
+                                                                                                <Form.Label>Transparencia</Form.Label>
+                                                                                                <div className="tw-flex">
+                                                                                                    <span className="tw-mr-6">+</span>
+                                                                                                    <Form.Control custom type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 1)} />
+                                                                                                    <span className="tw-ml-6">-</span>
+                                                                                                </div>
                                                                                             </Form.Group>
-                                                                                        </Card.Header>
-                                                                                        <Accordion.Collapse eventKey={capa.num_capa.toString()}>
-                                                                                            <Card.Body>
-                                                                                                <Form.Group>
-                                                                                                    <Form.Label>Transparencia</Form.Label>
-                                                                                                    <div className="tw-flex">
-                                                                                                        <span className="tw-mr-6">+</span>
-                                                                                                        <Form.Control custom type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.num_capa} onChange={(event) => transparenciaCapas(event, 1)} />
-                                                                                                        <span className="tw-ml-6">-</span>
+                                                                                            {capa.tipo == "wms" &&
+                                                                                                (
+                                                                                                    <div className="row">
+                                                                                                        <Form.Group className="col-6">
+                                                                                                            <Form.Label>Zoom mínimo</Form.Label>
+                                                                                                            <Form.Control defaultValue="0" as="select" onChange={(event) => zoomMinMax(event, 1)} name={capa.num_capa} data-zoom="min">
+                                                                                                                <option value="5">5</option>
+                                                                                                                <option value="6">6</option>
+                                                                                                                <option value="7">7</option>
+                                                                                                                <option value="8">8</option>
+                                                                                                                <option value="9">9</option>
+                                                                                                                <option value="10">10</option>
+                                                                                                                <option value="11">11</option>
+                                                                                                                <option value="12">12</option>
+                                                                                                                <option value="13">13</option>
+                                                                                                                <option value="14">14</option>
+                                                                                                                <option value="15">15</option>
+                                                                                                                <option value="16">16</option>
+                                                                                                                <option value="17">17</option>
+                                                                                                                <option value="18">18</option>
+                                                                                                            </Form.Control>
+                                                                                                        </Form.Group>
+                                                                                                        <Form.Group className="col-6">
+                                                                                                            <Form.Label>Zoom máximo</Form.Label>
+                                                                                                            <Form.Control defaultValue="18" as="select" onChange={(event) => zoomMinMax(event, 1)} name={capa.num_capa} data-zoom="max">
+                                                                                                                <option value="5">5</option>
+                                                                                                                <option value="6">6</option>
+                                                                                                                <option value="7">7</option>
+                                                                                                                <option value="8">8</option>
+                                                                                                                <option value="9">9</option>
+                                                                                                                <option value="10">10</option>
+                                                                                                                <option value="11">11</option>
+                                                                                                                <option value="12">12</option>
+                                                                                                                <option value="13">13</option>
+                                                                                                                <option value="14">14</option>
+                                                                                                                <option value="15">15</option>
+                                                                                                                <option value="16">16</option>
+                                                                                                                <option value="17">17</option>
+                                                                                                                <option value="18">18</option>
+                                                                                                            </Form.Control>
+                                                                                                        </Form.Group>
                                                                                                     </div>
-                                                                                                </Form.Group>
-                                                                                                {capa.tipo == "wms" &&
-                                                                                                    (
-                                                                                                        <div className="row">
-                                                                                                            <Form.Group className="col-6">
-                                                                                                                <Form.Label>Zoom mínimo</Form.Label>
-                                                                                                                <Form.Control defaultValue="0" as="select" onChange={(event) => zoomMinMax(event, 1)} name={capa.num_capa} data-zoom="min">
-                                                                                                                    <option value="5">5</option>
-                                                                                                                    <option value="6">6</option>
-                                                                                                                    <option value="7">7</option>
-                                                                                                                    <option value="8">8</option>
-                                                                                                                    <option value="9">9</option>
-                                                                                                                    <option value="10">10</option>
-                                                                                                                    <option value="11">11</option>
-                                                                                                                    <option value="12">12</option>
-                                                                                                                    <option value="13">13</option>
-                                                                                                                    <option value="14">14</option>
-                                                                                                                    <option value="15">15</option>
-                                                                                                                    <option value="16">16</option>
-                                                                                                                    <option value="17">17</option>
-                                                                                                                    <option value="18">18</option>
-                                                                                                                </Form.Control>
-                                                                                                            </Form.Group>
-                                                                                                            <Form.Group className="col-6">
-                                                                                                                <Form.Label>Zoom máximo</Form.Label>
-                                                                                                                <Form.Control defaultValue="18" as="select" onChange={(event) => zoomMinMax(event, 1)} name={capa.num_capa} data-zoom="max">
-                                                                                                                    <option value="5">5</option>
-                                                                                                                    <option value="6">6</option>
-                                                                                                                    <option value="7">7</option>
-                                                                                                                    <option value="8">8</option>
-                                                                                                                    <option value="9">9</option>
-                                                                                                                    <option value="10">10</option>
-                                                                                                                    <option value="11">11</option>
-                                                                                                                    <option value="12">12</option>
-                                                                                                                    <option value="13">13</option>
-                                                                                                                    <option value="14">14</option>
-                                                                                                                    <option value="15">15</option>
-                                                                                                                    <option value="16">16</option>
-                                                                                                                    <option value="17">17</option>
-                                                                                                                    <option value="18">18</option>
-                                                                                                                </Form.Control>
-                                                                                                            </Form.Group>
-                                                                                                        </div>
-                                                                                                    )}
-                                                                                            </Card.Body>
-                                                                                        </Accordion.Collapse>
-                                                                                    </Card>
-                                                                                )}
-                                                                            </Draggable>
-                                                                        ))
-                                                                    }
-                                                                        {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
-                                                                        {provided.placeholder}
-                                                                    </div>
-                                                                )}
-                                                            </Droppable>
-                                                        </DragDropContext>
-                                                    </Accordion>
-                                                </Collapse>
-                                            </div>
-                                            <button className="btn btn-light boton-menu-lateral" onClick={() => setMenuLateralEspejo(!menuLateralEspejo)}>
-                                                <FontAwesomeIcon className="tw-cursor-pointer" icon={faCaretLeft} />
-                                            </button>
+                                                                                                )}
+                                                                                        </Card.Body>
+                                                                                    </Accordion.Collapse>
+                                                                                </Card>
+                                                                            )}
+                                                                        </Draggable>
+                                                                    ))
+                                                                }
+                                                                    {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
+                                                                    {provided.placeholder}
+                                                                </div>
+                                                            )}
+                                                        </Droppable>
+                                                    </DragDropContext>
+                                                </Accordion>
+                                            </Collapse>
                                         </div>
-                                        <ContenedorMapaAnalisis referencia={capturaReferenciaMapaEspejo} botones={false} datos={capasVisualizadasEspejo} />
+                                        <button className="btn btn-light boton-menu-lateral" onClick={() => setMenuLateralEspejo(!menuLateralEspejo)}>
+                                            <FontAwesomeIcon className="tw-cursor-pointer" icon={faCaretLeft} />
+                                        </button>
                                     </div>
+                                    <ContenedorMapaAnalisis referencia={capturaReferenciaMapaEspejo} botones={false} datos={capasVisualizadasEspejo} />
                                 </div>
                             </div>
-                        }
-
-
+                        </div>
 
                     </div>
                 </div>

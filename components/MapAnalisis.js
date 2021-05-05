@@ -246,7 +246,6 @@ export default function Map(props) {
             },
             mousemove(e) {
                 if (tipoCoordenada == 1) {
-                    console.log("esoy mapa v1");
                     let latlng = {};
                     latlng["lat"] = e.latlng.lat.toFixed(3)
                     latlng["lng"] = e.latlng.lng.toFixed(3)

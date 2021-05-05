@@ -1,17 +1,18 @@
-.leaflet-vista-completa a{
+.leaflet-vista-completa a {
     background: #fff url('/images/analisis/vista-completa.svg');
     background-repeat: no-repeat;
     background-position: 50% 50%;
     background-size: 50%;
 }
 
-.btn-analisis{
+.btn-analisis {
     font-weight: 600;
     background-color: #fff;
     border-radius: 9999px;
     padding: .375rem 2rem;
 }
-.coordenadas{
+
+.coordenadas {
     position: absolute !important;
     bottom: 0;
     left: 150%;
@@ -24,14 +25,14 @@
     background-size: 70%;
 }
 
-.contenedor-menu-lateral{
+.contenedor-menu-lateral {
     position: absolute;
     top: 0;
     height: 100%;
     display: flex;
 }
 
-.menu-lateral{
+.menu-lateral {
     background-color: #fff;
     width: 0px;
     transition: 0.5s;
@@ -40,34 +41,34 @@
     z-index: 1015;
 }
 
-.menu-lateral .card-header{
+.menu-lateral .card-header {
     padding: 10px;
 }
 
-.boton-menu-lateral{
+.boton-menu-lateral {
     height: 40px;
     transform: translateY(230px);
     z-index: 1015;
 }
 
-.leaflet-control{
+.leaflet-control {
     font-family: 'Montserrat', sans-serif !important;
 }
 
-.tilelayer-base{
+.tilelayer-base {
     z-index: 0 !important;
 }
 
-.div-herramientas-contenedor{
+.div-herramientas-contenedor {
     border: 1px solid rgba(209, 213, 219);
     text-align: right;
     background-color: rgba(229, 231, 235);
-    padding-top: 15px;    
+    padding-top: 15px;
     height: 70px;
     border-right: 0;
 }
 
-.div-herramientas-mapa{
+.div-herramientas-mapa {
     border: 1px solid rgba(209, 213, 219);
     /* text-align: right; */
     background-color: rgba(229, 231, 235);
@@ -77,8 +78,37 @@
     float: right;
 }
 
-.select-cambia-coordenadas{
+.select-cambia-coordenadas {
     margin-top: 0;
     margin-bottom: 0;
     padding: 0;
+}
+
+.esconde-mapa {
+    display: none;
+}
+
+/*Modal minimizado*/
+
+body.analisis-geografico-modales{
+    overflow-y: scroll !important;
+}
+
+.modal-min .modal-body,
+.modal-min .modal-footer {
+    display: none;
+}
+
+.minmaxCon {
+    bottom: 1px;
+    left: 1px;
+    position: fixed;
+    z-index: 9999;
+}
+
+.modal-min .modal-dialog {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    margin: 0;
 }
