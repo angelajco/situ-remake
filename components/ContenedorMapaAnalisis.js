@@ -1,3 +1,4 @@
+import Head from 'next/head'
 import dynamic from 'next/dynamic'
 import React, { useState, useEffect } from 'react'
 
@@ -7,11 +8,11 @@ import { OverlayTrigger, Tooltip, Modal, Button } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 
-import Popout from 'react-popout'
 
 import $ from 'jquery'
 
-// const elementClosest = require('element-closest');
+import Draggable from 'react-draggable'; // Both at the same time
+import ModalDialog from 'react-bootstrap/ModalDialog';
 
 // var refMapaContenedor = null;
 var objetoLContenedor = null
@@ -26,6 +27,13 @@ const Map = dynamic(
 )
 
 function ContenedorMapaAnalisis(props) {
+
+    <Head>
+        <script
+            src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
+            integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30="
+            crossorigin="anonymous"></script>
+    </Head>
 
     // const [estadoCaptura, setEstadoCaptura] = useState({ tipoCoord: tipoCoordenadaGlobal, referenciaMapa: captura })
 
@@ -57,35 +65,20 @@ function ContenedorMapaAnalisis(props) {
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
 
-    if(typeof window != null){
-        $(document.body).addClass("analisis-geografico-modales");
+
+    if (typeof window !== 'undefined') {
+        $('body').addClass("analisis-geografico-modales");
+    }
+
+    function DraggableModalDialog(props) {
+        return (
+            <Draggable handle=".modal-header"><ModalDialog className="modal-drag" {...props} /></Draggable>
+        )
     }
 
 
     return (
         <>
-            {ventana &&
-                <Popout title='Simbología' onClosing={() => setVentana(!ventana)}>
-                    <h3><b>Simbología</b></h3>
-                    {
-                        props.datos.map((capa, index) => {
-                            if (capa.habilitado) {
-                                if (capa.tipo == "wms") {
-                                    return (
-                                        <div key={index}>
-                                            <p><b>{capa.nom_capa}</b></p>
-                                            <img src={capa.simbologia}></img>
-                                            <br></br>
-                                            <br></br>
-                                        </div>
-                                    )
-                                }
-                            }
-                        })
-                    }
-                </Popout>
-            }
-
             {/* <ContenedorMapaContext.Provider value={estadoCaptura}> */}
             <Map referencia={props.referencia} botones={props.botones} datos={props.datos} />
             {/* </ContenedorMapaContext.Provider> */}
@@ -96,7 +89,7 @@ function ContenedorMapaAnalisis(props) {
                 </OverlayTrigger>
             </div>
 
-            <Modal show={showModalSimbologia} onHide={() => setShowModalSimbologia(!showModalSimbologia)} backdrop={false} keyboard={false} className="tw-pointer-events-none modal-simbologia">
+            <Modal dialogAs={DraggableModalDialog} show={showModalSimbologia} onHide={() => setShowModalSimbologia(!showModalSimbologia)} backdrop={false} keyboard={false} className="tw-pointer-events-none modal-simbologia">
                 <Modal.Header closeButton>
                     <Modal.Title><b>Simbología</b></Modal.Title>
                     <button onClick={minimizaModal}>Minimizar</button>
@@ -105,6 +98,18 @@ function ContenedorMapaAnalisis(props) {
                     {
                         props.datos.map((capa, index) => {
                             if (capa.habilitado) {
+                                console.log(capa, "capa");
+                                if (capa.tipo == "geojson") {
+                                    return (
+                                        <div key={index}>
+                                            <p><b>{capa.nom_capa}</b></p>
+                                            {/* {capa.simbologia} */}
+                                            <img src={capa.simbologia} alt="" />
+                                            <br></br>
+                                            <br></br>
+                                        </div>
+                                    )
+                                }
                                 if (capa.tipo == "wms") {
                                     return (
                                         <div key={index}>

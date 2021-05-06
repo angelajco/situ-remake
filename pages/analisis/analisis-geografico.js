@@ -190,6 +190,15 @@ export default function AnalisisGeografico() {
         fillOpacity: "1"
     }
 
+    const creaSVG = (nombreCapa) => {
+        var creaSVG = `<svg height='20' xmlns='http://www.w3.org/2000/svg'><rect x='0' y='0' width='15' height='15' fill='#FF7777' stroke='#FF0000' strokeWidth='2'></rect><text x='20' y='15' width='200' height='200' fontSize='12.5' fontWeight='500'>${nombreCapa}</text></svg>`
+        var DOMURL = self.URL || self.webkitURL || self;
+        var svg = new Blob([creaSVG], { type: "image/svg+xml;charset=utf-8" });
+        var url = DOMURL.createObjectURL(svg);
+
+        return url;
+    }
+
 
     //Al seleccionar y añadir una entidad para los mapas
     //Para guardar las capas que se van a mostrar
@@ -252,6 +261,7 @@ export default function AnalisisGeografico() {
                             }
                         });
                         response['layer'] = layer;
+                        response['simbologia'] = creaSVG(capa.titulo)
                         if (mapaBase == 0) {
                             setCapasVisualizadas([...capasVisualizadas, response])
                             referenciaMapa.addLayer(response.layer)
@@ -652,7 +662,7 @@ export default function AnalisisGeografico() {
                             </div>
                         </div>
 
-                        <div className={`col-6 ${pantallaDividida ? "": "esconde-mapa"}`}>
+                        <div className={`col-6 ${pantallaDividida ? "" : "esconde-mapa"}`}>
                             <div className="row">
                                 <div className="col-12 tw-text-center">
                                     <p>

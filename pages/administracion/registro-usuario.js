@@ -268,7 +268,7 @@ export default function Registro() {
             </Head>
 
             <ModalComponent
-                show={show}
+                show={true}
                 datos={datosModal}
                 onHide={handleClose}
                 onClick={handleClose}

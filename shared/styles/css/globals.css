@@ -1,239 +1,147 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;1,600&display=swap');
 @tailwind utilities;
-/*Menu*/
-.idioma-menu #basic-nav-dropdown{
-    color: #fff;
-}
-.idioma-menu #basic-nav-dropdown:hover{
-    @apply tw-text-inst-dorado;
-}
-/*Loader*/
-.tooltip-pass>.tooltip-inner {
-    max-width: 100%;
+/* General */
+
+.navbar-toggler {
+    border: none;
 }
 
-/* footer */
+.custom-max-width {
+    width: 100%;
+}
+
+.titulo-situ {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+}
+
+/* Menu general */
+
+.custom-mt-situ-menu {
+    margin-top: 144px;
+}
 
 .simi-gob-mx {
     font-size: 13pt;
     line-height: 21pt;
-    height: auto;
 }
 
-.simi-gob-mx-situ-menu {
-    font-size: 10pt;
-    line-height: 15pt;
-    height: auto;
+/* Menu paginas */
+
+.idioma-menu #basic-nav-dropdown {
+    color: #fff;
 }
 
-.simi-gob-mx-content {
-    font-size: 10pt;
-    line-height: 16pt;
-    height: auto;
-}
-
-.simi-gob-mx-title {
-    font-size: 16pt;
-    line-height: 26pt;
-    height: auto;
-}
-
-/* ends footer */
-
-/* custom responsive */
-
-@media only screen and (min-width: 769px) {
-    .custom-max-width {
-        width: 100%;
-        max-width: 1200px !important;
-        padding-right: 75px !important;
-        padding-left: 75px !important;
-    }
-
-    .custom-max-width-np {
-        width: 100%;
-        max-width: 1200px !important;
-    }
-
-    .custom-inst-text {
-        font-size: 14pt;
-        text-align: justify;
-    }
-
-    .custom-mx-t-1 {
-        margin-top: 37px !important;
-    }
-    
-    .custom-mx-t-2 {
-        margin-top: 75px !important;
-    }
-
-    .custom-mx-b-1 {
-        margin-bottom: 37px !important;
-    }
-    
-    .custom-mx-x-1 {
-        margin: 37px !important;
-    }
-
-    .custom-px-t-1 {
-        padding-top: 37px !important;
-    }
-
-    .custom-title-2x1 {
-        font-size: 1.5rem !important;
-        line-height: 2rem !important;
-    }
-
-    .stick-footer {
-        background-image: url("/images/index/pleca.svg");
-        background-color: #12322b;
-        background-repeat: repeat-x;
-        height: 50px;
-    }
-
-    footer {
-        background-image: url('/images/index/circuitos_footer_.png');
-        background-repeat: no-repeat;
-        background-position: 10% 11%;
-        background-size: 44% 92%;
-    }
-}
-
-@media only screen and (min-width: 481px) and (max-width : 768px) {
-    .custom-max-width {
-        width: 100%;
-        max-width: 768px !important;
-        padding-right: 37px !important;
-        padding-left: 37px !important;
-    }
-
-    .custom-inst-text {
-        font-size: 10pt;
-        text-align: justify;
-    }
-
-    .custom-mx-t-1 {
-        margin-top: 15px !important;
-    }
-    
-    .custom-mx-t-2 {
-        margin-top: 37px !important;
-    }
-
-    .custom-mx-b-1 {
-        margin-bottom: 15px !important;
-    }
-    
-    .custom-mx-x-1 {
-        margin: 15px !important;
-    }
-
-    .custom-px-t-1 {
-        padding-top: 15px !important;
-    }
-
-    .custom-title-2x1 {
-        font-size: 1.1rem !important;
-        line-height: 1.5rem !important;
-    }
-
-    .stick-footer {
-        background-image: url("/images/index/pleca.svg");
-        background-color: #12322b;
-        background-repeat: repeat-x;
-        height: 40px;
-    }
-
-    footer {
-        background-image: url('/images/index/circuitos_footer_.png');
-        background-repeat: no-repeat;
-        background-position: 50% 90%;
-    }
-}
-
-@media only screen and (max-width: 480px) {
-    .custom-max-width {
-        width: 100%;
-        max-width: 480px !important;
-        padding-right: 37px !important;
-        padding-left: 37px !important;
-    }
-
-    .custom-inst-text {
-        font-size: 8pt;
-        text-align: justify;
-    }
-
-    .custom-mx-t-1 {
-        margin-top: 7px !important;
-    }
-    
-    .custom-mx-t-2 {
-        margin-top: 15px !important;
-    }
-
-    .custom-mx-b-1 {
-        margin-bottom: 7px !important;
-    }
-    
-    .custom-mx-x-1 {
-        margin: 7px !important;
-    }
-
-    .custom-px-t-1 {
-        padding-top: 7px !important;
-    }
-
-    .custom-title-2x1 {
-        font-size: 1rem !important;
-        line-height: 1rem !important;
-    }
-
-    .stick-footer {
-        background-image: url("/images/index/pleca.svg");
-        background-color: #12322b;
-        background-repeat: repeat-x;
-        height: 25px;
-    }
-
-    footer {
-        background-image: url('/images/index/circuitos_footer_.png');
-        background-repeat: no-repeat;
-        background-position: 50% 97%;
-    }
-}
-
-/* ends resposive */
-
-.test-heigth {
-    height: 100px !important;
-}
-
-.interesting-sites-images {
-    width: 90%;
-    height: 200px;
-}
-
-.interesting-sites {
-    background-image: url('/images/index/fondo_sitios_interes.jpg');
-    background-repeat: repeat;
-}
-
-.custom-mt-situ-menu {
-    margin-top: 144px;
+.idioma-menu #basic-nav-dropdown:hover {
+    @apply tw-text-inst-dorado;
 }
 
 .custom-toggler.navbar-toggler .navbar-toggler-icon {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3e%3cpath stroke='rgb(39,108,111)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
-.navbar-toggler {
-    border: none;
+.simi-gob-mx-situ-menu {
+    font-size: 10pt;
+    line-height: 15pt;
+}
+
+/*Loader*/
+
+.tooltip-pass>.tooltip-inner {
+    max-width: 100%;
+}
+
+.loader {
+    /*Hacer el loader pantalla completa*/
+    position: initial !important;
 }
 
 /* body */
 
 body, header, footer {
     font-family: 'Montserrat', sans-serif !important;
+}
+
+body.modal-open,
+body.modal-open .header-principal {
+    padding-right: 0 !important;
+}
+
+/* Footer */
+
+footer {
+    background-image: url('/images/index/circuitos_footer_.png');
+    background-repeat: no-repeat;
+    font-size: 10pt;
+    line-height: 16pt;
+}
+
+.stick-footer {
+    background-image: url("/images/index/pleca.svg");
+    background-color: #12322b;
+    background-repeat: repeat-x;
+}
+
+.simi-gob-mx-title {
+    font-size: 16pt;
+    line-height: 26pt;
+}
+
+/* custom responsive */
+
+@media only screen and (max-width: 768px) {
+    .custom-max-width {
+        padding-right: 37px !important;
+        padding-left: 37px !important;
+    }
+    .titulo-situ {
+        font-size: 1rem !important;
+        line-height: 1.5rem !important;
+    }
+}
+
+@media only screen and (min-width: 481px) and (max-width: 768px) {
+    .custom-max-width {
+        max-width: 768px !important;
+    }
+    .stick-footer {
+        height: 40px;
+    }
+    footer {
+        background-position: 50% 90%;
+    }
+}
+
+@media only screen and (max-width: 576px) {
+    .titulo-situ {
+        line-height: 1rem !important;
+        text-align: left;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .custom-max-width {
+        max-width: 480px !important;
+    }
+    .stick-footer {
+        height: 25px;
+    }
+    footer {
+        background-position: 50% 97%;
+    }
+}
+
+@media only screen and (min-width: 769px) {
+    .custom-max-width {
+        max-width: 1200px !important;
+        padding-right: 75px !important;
+        padding-left: 75px !important;
+    }
+    .stick-footer {
+        height: 50px;
+    }
+    footer {
+        background-position: 10% 11%;
+        background-size: 44% 92%;
+    }
 }
