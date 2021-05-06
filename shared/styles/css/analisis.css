@@ -111,4 +111,9 @@ body.analisis-geografico-modales{
     left: 0;
     bottom: 0;
     margin: 0;
+    transform: none !important;
+}
+
+.modal-simbologia .modal-header{
+    cursor: pointer;
 }

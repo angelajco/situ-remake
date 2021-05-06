@@ -1,0 +1,67 @@
+.interesting-sites-images {
+    width: 90%;
+    height: 200px;
+}
+
+.interesting-sites {
+    background-image: url('/images/index/fondo_sitios_interes.jpg');
+    background-repeat: repeat;
+}
+
+.custom-inst-text {
+    text-align: justify;
+}
+
+@media only screen and (min-width: 769px) {
+    .custom-inst-text {
+        font-size: 14pt;
+    }
+    .custom-mx-t-1 {
+        margin-top: 37px !important;
+    }
+    .custom-mx-t-2 {
+        margin-top: 75px !important;
+    }
+    .custom-mx-b-1 {
+        margin-bottom: 37px !important;
+    }
+    .custom-px-t-1 {
+        padding-top: 37px !important;
+    }
+}
+
+@media only screen and (min-width: 481px) and (max-width: 768px) {
+    .custom-inst-text {
+        font-size: 10pt;
+    }
+    .custom-mx-t-1 {
+        margin-top: 15px !important;
+    }
+    .custom-mx-t-2 {
+        margin-top: 37px !important;
+    }
+    .custom-mx-b-1 {
+        margin-bottom: 15px !important;
+    }
+    .custom-px-t-1 {
+        padding-top: 15px !important;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .custom-inst-text {
+        font-size: 8pt;
+    }
+    .custom-mx-t-1 {
+        margin-top: 7px !important;
+    }
+    .custom-mx-t-2 {
+        margin-top: 15px !important;
+    }
+    .custom-mx-b-1 {
+        margin-bottom: 7px !important;
+    }
+    .custom-px-t-1 {
+        padding-top: 7px !important;
+    }
+}

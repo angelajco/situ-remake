@@ -3,11 +3,6 @@
     display: none;
 }
 
-.loader {
-    /*Hacer el loader pantalla completa*/
-    position: initial !important;
-}
-
 .titulo-h1 {
     font-size: 21pt;
     font-weight: bold;
