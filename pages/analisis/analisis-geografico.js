@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEdit, faCheck, faAngleDown, faCaretLeft } from '@fortawesome/free-solid-svg-icons'
+import { faEdit, faCheck, faAngleDown, faCaretLeft, faFileCsv } from '@fortawesome/free-solid-svg-icons'
+import { CSVLink, CSVDownload } from "react-csv";
 
 import ContenedorMapaAnalisis from '../../components/ContenedorMapaAnalisis'
 
@@ -12,6 +13,7 @@ import catalogoEntidades from "../../shared/jsons/entidades.json";
 import $ from 'jquery'
 import leafletPip from '@mapbox/leaflet-pip/leaflet-pip'
 import * as turf from '@turf/turf'
+import moment from "moment";
 
 //Obten referencia del mapa
 var referenciaMapa = null;
@@ -23,6 +25,11 @@ var referenciaMapaEspejo = null;
 function capturaReferenciaMapaEspejo(mapa) {
     referenciaMapaEspejo = mapa;
 }
+
+let csvData = [];
+let csvDataEspejo = [];
+let csvFileName = '';
+let csvFileNameEspejo = '';
 
 export default function AnalisisGeografico() {
 
@@ -455,6 +462,75 @@ export default function AnalisisGeografico() {
     const [openRasgosCollapse, setOpenRasgosCollapse] = useState(true);
     const [openRasgosCollapseEspejo, setOpenRasgosCollapseEspejo] = useState(true);
 
+    function addToExport(rasgos) {
+        var csvData_ = [];
+        if(rasgos[0]) {
+            Object.keys(rasgos[0]).map(item => {
+                csvData_.push([item, '' + rasgos[0][item]]);
+            })
+            csvData = csvData_.reverse();
+        }
+    }
+
+    function addToExportWithPivot(rasgos) {
+        generateFileName(0, function () {
+            var csvData_ = [];
+            var csvContent = [];
+            if(rasgos[0]) {
+                csvData_.push(Object.keys(rasgos[0]))
+                rasgos.map(rasgo => {
+                    csvContent = [];
+                    Object.keys(rasgo).map(item => {
+                        csvContent.push('' + rasgo[item]);
+                    })
+                    csvData_.push(csvContent);
+                });
+                csvData = csvData_;
+            }
+        });
+    }
+
+    function addToExportWithPivotEspejo(rasgos) {
+        generateFileName(1, function () {
+            var csvData_ = [];
+            var csvContent = [];
+            if(rasgos[0]) {
+                csvData_.push(Object.keys(rasgos[0]))
+                rasgos.map(rasgo => {
+                    csvContent = [];
+                    Object.keys(rasgo).map(item => {
+                        csvContent.push('' + rasgo[item]);
+                    })
+                    csvData_.push(csvContent);
+                });
+                csvDataEspejo = csvData_;
+            }
+        });
+    }
+
+    function generateFileName(option, success) {
+        var f = new Date();
+        var fileName = '';
+        fileName = 'InformacionDeRasgos-';
+        fileName += (f.getDate() < 10 ? '0' : '' ) + f.getDate() + (f.getMonth() < 10 ? '0' : '' ) + (f.getMonth() + 1) +f.getFullYear() + f.getHours() + f.getMinutes() + f.getSeconds();
+        fileName += '-' + option;
+        switch(option) {
+            case 0: 
+                csvFileName = fileName + '.csv';
+            break;
+            case 1:
+                csvFileNameEspejo = fileName + '.csv';
+            break;
+            default:
+                csvFileName = 'export.csv';
+                csvFileNameEspejo = 'export.csv';
+            break;
+        }
+        console.log('csvFileName', csvFileName);
+        console.log('csvFileNameEspejo', csvFileNameEspejo);
+        success();
+    }
+
     return (
         <>
             <div className="main tw-mb-12">
@@ -504,10 +580,27 @@ export default function AnalisisGeografico() {
                                         <div className={menuLateral ? "tw-w-96 menu-lateral" : "tw-w-0 menu-lateral"}>
                                             <Card>
                                                 <Card.Header>
-                                                    <Button onClick={() => setOpenRasgosCollapse(!openRasgosCollapse)} variant="link">
-                                                        <FontAwesomeIcon icon={faAngleDown} />
-                                                    </Button>
-                                                    <b>Información de rasgos</b>
+                                                    <div className="row">
+                                                        <div className="col-9">
+                                                            <Button onClick={() => setOpenRasgosCollapse(!openRasgosCollapse)} variant="link">
+                                                                <FontAwesomeIcon icon={faAngleDown} />
+                                                            </Button>
+                                                            <b>Información de rasgos</b>
+                                                        </div>
+                                                        <div className="col-3">
+                                                            {
+                                                                rasgos[0] &&
+                                                                <div className="row container-fluid d-flex justify-content-around">
+                                                                {
+                                                                    addToExportWithPivot(rasgos)
+                                                                }
+                                                                    <CSVLink data={csvData} filename={csvFileName}>
+                                                                        <FontAwesomeIcon size="2x" icon={faFileCsv} />
+                                                                    </CSVLink>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
                                                 </Card.Header>
                                             </Card>
                                             <Collapse in={openRasgosCollapse}>
@@ -703,10 +796,27 @@ export default function AnalisisGeografico() {
                                         <div className={menuLateralEspejo ? "tw-w-96 menu-lateral" : "tw-w-0 menu-lateral"}>
                                             <Card>
                                                 <Card.Header>
-                                                    <Button onClick={() => setOpenRasgosCollapseEspejo(!openRasgosCollapseEspejo)} variant="link">
-                                                        <FontAwesomeIcon icon={faAngleDown} />
-                                                    </Button>
-                                                    <b>Información de rasgos</b>
+                                                    <div className="row">
+                                                        <div className="col-9">
+                                                            <Button onClick={() => setOpenRasgosCollapseEspejo(!openRasgosCollapseEspejo)} variant="link">
+                                                                <FontAwesomeIcon icon={faAngleDown} />
+                                                            </Button>
+                                                            <b>Información de rasgos</b>
+                                                        </div>
+                                                        <div className="col-3">
+                                                            {
+                                                                rasgosEspejo[0] &&
+                                                                <div className="row container-fluid d-flex justify-content-around">
+                                                                {
+                                                                    addToExportWithPivotEspejo(rasgosEspejo)
+                                                                }
+                                                                    <CSVLink data={csvDataEspejo} filename={csvFileNameEspejo}>
+                                                                        <FontAwesomeIcon size="2x" icon={faFileCsv} />
+                                                                    </CSVLink>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
                                                 </Card.Header>
                                             </Card><Collapse in={openRasgosCollapseEspejo}>
                                                 <div>
