@@ -58,7 +58,7 @@ function ContenedorMapaAnalisis(props) {
     const handleShow = () => setShow(true);
 
     if(typeof window != null){
-        $(document.body).addClass("analisis-geografico-modales");
+        // $(document.body).addClass("analisis-geografico-modales");
     }
 
 
