@@ -22,77 +22,6 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 import 'leaflet-zoombox'
 import 'leaflet-zoombox/L.Control.ZoomBox.css'
 
-//Funcion del timeline undo redo
-var registraMovimiento = true;
-var _timeline = {
-    history: [],
-    current: [],
-    future: []
-};
-function useTimeline() {
-    const [state, setState] = useState([]);
-    const historyLimit = -5
-    function _canUndo() {
-        return _timeline.history.length > 1;
-    }
-
-    function _canRedo() {
-        return _timeline.future.length > 0;
-    }
-
-    const canUndo = _canUndo();
-    const canRedo = _canRedo();
-
-    const splitLast = arr => {
-        // split the last item from an array and return a tupple of [rest, last]
-        const length = arr.length;
-        const lastItem = arr[length - 1];
-        const restOfArr = arr.slice(0, length - 1);
-        return [restOfArr, lastItem];
-    };
-
-    const sliceEnd = (arr, size) => {
-        // slice array from to end by size
-        const startIndex = arr.length < size ? 0 : size;
-        const trimmedArr = arr.slice(startIndex, arr.length);
-        return trimmedArr;
-    };
-
-    const update = (value) => {
-        const { history, current } = _timeline;
-        const limitedHistory = sliceEnd(history, historyLimit);
-        _timeline = {
-            history: [...limitedHistory, current],
-            current: value,
-            future: []
-        };
-        setState(_timeline.current);
-    };
-
-    const undo = () => {
-        const { history, current, future } = _timeline;
-        const [restOfArr, lastItem] = splitLast(history);
-        _timeline = {
-            history: restOfArr,
-            current: lastItem,
-            future: [...future, current]
-        };
-        setState(_timeline.current);
-    };
-
-    const redo = () => {
-        const { history, current, future } = _timeline;
-        const [restOfArr, lastItem] = splitLast(future);
-        _timeline = {
-            history: [...history, current],
-            current: lastItem,
-            future: restOfArr
-        };
-        setState(_timeline.current);
-    };
-    return [state, { canUndo, canRedo, update, undo, redo }];
-}
-
 
 export default function Map(props) {
     //Para guardar la referencia al mapa cuando se crea
@@ -187,37 +116,7 @@ export default function Map(props) {
         lDrLo.edit.handlers.edit.tooltip.text = "Arrastre controladores o marcadores para editar carecaterísticas."
         lDrLo.edit.handlers.edit.tooltip.subtext = "Clic en cancelar para deshacer los cambios"
         lDrLo.edit.handlers.remove.tooltip.text = "Click en la figura para borrarla."
-
-        update([
-            {
-                centroUndoRedo: { lat: 24.26825996870948, lng: -102.88361673036671 },
-                zoomUndoRedo: 5
-            }
-        ]);
     }, [])
-
-    const [todos, { canUndo, canRedo, update, undo, redo }] = useTimeline();
-    function MapaMovimientoUndoRedo({ target }) {
-        registraMovimiento = false;
-        if (target.name === 'undo') {
-            if (_timeline.history.length > 1) {
-                undo();
-                let estadoActual = _timeline.current[_timeline.current.length - 1];
-                let estadoActualLatLng = estadoActual.centroUndoRedo;
-                let estadoActualZoom = estadoActual.zoomUndoRedo;
-                mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
-            }
-        }
-        else if (target.name === 'redo') {
-            if (_timeline.future.length > 0) {
-                redo();
-                let estadoActual = _timeline.current[_timeline.current.length - 1];
-                let estadoActualLatLng = estadoActual.centroUndoRedo;
-                let estadoActualZoom = estadoActual.zoomUndoRedo;
-                mapaReferencia.setView(estadoActualLatLng, estadoActualZoom);
-            }
-        }
-    }
 
     const [tipoCoordenada, setTipoCoordenada] = useState(1)
     function cambiaTipoCoordenada({ target }) {
@@ -235,15 +134,6 @@ export default function Map(props) {
         const [coordenadas, setCoordenadas] = useState("")
         const mapa = useMap();
         const mapaEventos = useMapEvents({
-            moveend() {
-                let centroUndoRedo = mapaEventos.getCenter();
-                let zoomUndoRedo = mapaEventos.getZoom();
-                if (registraMovimiento == true) {
-                    const nextTodos = [...todos, { centroUndoRedo, zoomUndoRedo }];
-                    update(nextTodos);
-                }
-                registraMovimiento = true;
-            },
             mousemove(e) {
                 if (tipoCoordenada == 1) {
                     let latlng = {};
@@ -371,16 +261,6 @@ export default function Map(props) {
                     <option value='2'>Metros</option>
                     <option value='3'>Grados, minutos y segundos</option>
                 </select>
-                <OverlayTrigger rootClose overlay={<Tooltip>Vista anterior</Tooltip>}>
-                    <button disabled={!canUndo} className="botones-barra-mapa" name="undo" onClick={MapaMovimientoUndoRedo}>
-                        <FontAwesomeIcon className="tw-pointer-events-none" icon={faChevronLeft} />
-                    </button>
-                </OverlayTrigger>
-                <OverlayTrigger rootClose overlay={<Tooltip>Vista posterior</Tooltip>}>
-                    <button disabled={!canRedo} className="botones-barra-mapa" name="redo" onClick={MapaMovimientoUndoRedo}>
-                        <FontAwesomeIcon className="tw-pointer-events-none" icon={faChevronRight} />
-                    </button>
-                </OverlayTrigger>
             </div>
 
             <MapContainer whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false} >

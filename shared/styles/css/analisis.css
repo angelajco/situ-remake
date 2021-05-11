@@ -1,3 +1,7 @@
+.col-mapa{
+    background-color: rgba(229, 231, 235);
+}
+
 .leaflet-vista-completa a {
     background: #fff url('/images/analisis/vista-completa.svg');
     background-repeat: no-repeat;
@@ -10,6 +14,11 @@
     background-color: #fff;
     border-radius: 9999px;
     padding: .375rem 2rem;
+}
+
+.btn-dividir-pantalla {
+    font-weight: 600;
+    background-color: transparent;
 }
 
 .coordenadas {
@@ -27,8 +36,8 @@
 
 .contenedor-menu-lateral {
     position: absolute;
-    top: 0;
-    height: 100%;
+    bottom: 0;
+    height: 88%;
     display: flex;
 }
 
@@ -60,22 +69,17 @@
 }
 
 .div-herramientas-contenedor {
-    border: 1px solid rgba(209, 213, 219);
-    text-align: right;
-    background-color: rgba(229, 231, 235);
-    padding-top: 15px;
-    height: 70px;
-    border-right: 0;
-}
-
-.div-herramientas-mapa {
-    border: 1px solid rgba(209, 213, 219);
-    /* text-align: right; */
-    background-color: rgba(229, 231, 235);
     padding-top: 15px;
     height: 70px;
     border-left: 0;
     float: right;
+}
+
+.div-herramientas-mapa {
+    padding-top: 15px;
+    height: 70px;
+    border-left: 0;
+    text-align: right;
 }
 
 .select-cambia-coordenadas {
@@ -88,22 +92,20 @@
     display: none;
 }
 
+.botones-barra-mapa{
+    background-color: #fff;
+    border: 1px solid #000;
+    font-size: 20px;
+}
+
 /*Modal minimizado*/
 
-body.analisis-geografico-modales{
+body.analisis-geografico-modales {
     overflow-y: scroll !important;
 }
 
-.modal-min .modal-body,
-.modal-min .modal-footer {
+.modal-min .modal-body, .modal-min .modal-footer {
     display: none;
-}
-
-.minmaxCon {
-    bottom: 1px;
-    left: 1px;
-    position: fixed;
-    z-index: 9999;
 }
 
 .modal-min .modal-dialog {
@@ -114,6 +116,52 @@ body.analisis-geografico-modales{
     transform: none !important;
 }
 
-.modal-simbologia .modal-header{
-    cursor: pointer;
+.modal-min .boton-minimizar-modal {
+    margin-left: 30px;
+    background-image: url("/public/images/analisis/window-maximize-regular.svg");
+}
+
+.modal-min .modal-content {
+    width: fit-content !important;
+    height: fit-content !important;
+}
+
+.modal-redimensionable {
+    resize: both;
+    overflow: auto;
+}
+
+.boton-minimizar-modal {
+    background-color: white;
+    pointer-events: auto;
+    padding: 0 6px;
+    margin-left: auto;
+    border: none;
+}
+
+.boton-minimizar-modal:not(:disabled):not(.disabled):focus,
+.boton-minimizar-modal:not(:disabled):not(.disabled):hover{
+    opacity: 0.75;
+}
+
+.modal-simbologia .close {
+    padding: 0 6px;
+    margin: 0;
+    background-image: linear-gradient(white, red);
+    margin-left: 10px;
+    color: #fff;
+    opacity: 1;
+}
+
+.modal-simbologia .modal-header {
+    color: #fff;
+    border-bottom: none;
+    align-items: center;
+    padding: 0.5rem;
+    @apply tw-bg-inst-verdec;
+}
+
+.modal-simbologia .modal-body {
+    border: 10px solid;
+    @apply tw-border-inst-verdec;
 }

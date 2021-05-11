@@ -6,13 +6,15 @@ import ContenedorMapaContext from '../contexts/ContenedorMapaContext'
 
 import { OverlayTrigger, Tooltip, Modal, Button } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faImages, faArrowRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
-
+import { faImages } from '@fortawesome/free-solid-svg-icons'
+import { faWindowMaximize, faWindowMinimize } from '@fortawesome/free-regular-svg-icons'
 
 import $ from 'jquery'
 
 import Draggable from 'react-draggable'; // Both at the same time
 import ModalDialog from 'react-bootstrap/ModalDialog';
+
+import ReactModal from 'react-modal-resizable-draggable';
 
 // var refMapaContenedor = null;
 var objetoLContenedor = null
@@ -26,14 +28,15 @@ const Map = dynamic(
     }
 )
 
-function ContenedorMapaAnalisis(props) {
+const MapEspejo = dynamic(
+    () => import('./MapAnalisisEspejo'),
+    {
+        loading: () => <p>El mapa está cargando</p>,
+        ssr: false
+    }
+)
 
-    <Head>
-        <script
-            src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
-            integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30="
-            crossorigin="anonymous"></script>
-    </Head>
+function ContenedorMapaAnalisis(props) {
 
     // const [estadoCaptura, setEstadoCaptura] = useState({ tipoCoord: tipoCoordenadaGlobal, referenciaMapa: captura })
 
@@ -52,23 +55,23 @@ function ContenedorMapaAnalisis(props) {
     //     console.log("captura");
     // }
 
-    /*Estados para ventana de simbología*/
-    const [ventana, setVentana] = useState(false)
-
     function minimizaModal(e) {
-        let modalCompleto = $(e.target).closest(".modal-simbologia")
-        $(modalCompleto).toggleClass("modal-min")
+        let modalCompleto = $(e.target).closest(".modal")
+        $(modalCompleto).toggleClass("modal-min");
+        if ($(modalCompleto).hasClass("modal-min")) {
+            $(modalCompleto).find(".modal-content").removeClass("modal-redimensionable");
+            $(modalCompleto).find(".modal-header").css("pointer-events", "none")
+            setIconoMinimizarSimbologia(true);
+
+        } else {
+            $(modalCompleto).find(".modal-content").addClass("modal-redimensionable");
+            $(modalCompleto).find(".modal-header").css("pointer-events", "initial")
+            setIconoMinimizarSimbologia(false);
+        }
     }
 
     const [showModalSimbologia, setShowModalSimbologia] = useState(false);
-
-    const handleClose = () => setShow(false);
-    const handleShow = () => setShow(true);
-
-
-    if (typeof window !== 'undefined') {
-        $('body').addClass("analisis-geografico-modales");
-    }
+    const [iconoMinimizarSimbologia, setIconoMinimizarSimbologia] = useState(false)
 
     function DraggableModalDialog(props) {
         return (
@@ -76,34 +79,45 @@ function ContenedorMapaAnalisis(props) {
         )
     }
 
+    if (typeof window !== 'undefined') {
+        $('body').addClass("analisis-geografico-modales");
+    }
 
     return (
         <>
-            {/* <ContenedorMapaContext.Provider value={estadoCaptura}> */}
-            <Map referencia={props.referencia} botones={props.botones} datos={props.datos} />
-            {/* </ContenedorMapaContext.Provider> */}
-
             <div className="div-herramientas-contenedor">
                 <OverlayTrigger overlay={<Tooltip>Simbología</Tooltip>}>
-                    <FontAwesomeIcon className="tw-cursor-pointer tw-mr-5 tw-text-3xl iconos-barra-mapa" onClick={() => setShowModalSimbologia(!showModalSimbologia)} icon={faImages}></FontAwesomeIcon>
+                    <button className="botones-barra-mapa" onClick={() => setShowModalSimbologia(!showModalSimbologia)}>
+                        <FontAwesomeIcon icon={faImages}></FontAwesomeIcon>
+                    </button>
                 </OverlayTrigger>
             </div>
 
-            <Modal dialogAs={DraggableModalDialog} show={showModalSimbologia} onHide={() => setShowModalSimbologia(!showModalSimbologia)} backdrop={false} keyboard={false} className="tw-pointer-events-none modal-simbologia">
-                <Modal.Header closeButton>
+            {/* <ContenedorMapaContext.Provider value={estadoCaptura}> */}
+            {
+                props.botones == true
+                ?
+                <Map referencia={props.referencia} datos={props.datos} />
+                :
+                <MapEspejo referencia={props.referencia} datos={props.datos} />
+            }
+            {/* </ContenedorMapaContext.Provider> */}
+
+            <Modal dialogAs={DraggableModalDialog} show={showModalSimbologia} onHide={() => setShowModalSimbologia(!showModalSimbologia)} backdrop={false} keyboard={false} className="tw-pointer-events-none modal-simbologia" contentClassName="modal-redimensionable">
+                <Modal.Header className="tw-cursor-pointer" closeButton >
                     <Modal.Title><b>Simbología</b></Modal.Title>
-                    <button onClick={minimizaModal}>Minimizar</button>
+                    <button className="boton-minimizar-modal" onClick={minimizaModal}>
+                        <FontAwesomeIcon icon={iconoMinimizarSimbologia ? faWindowMaximize : faWindowMinimize} />
+                    </button>
                 </Modal.Header>
                 <Modal.Body>
                     {
                         props.datos.map((capa, index) => {
                             if (capa.habilitado) {
-                                console.log(capa, "capa");
                                 if (capa.tipo == "geojson") {
                                     return (
                                         <div key={index}>
                                             <p><b>{capa.nom_capa}</b></p>
-                                            {/* {capa.simbologia} */}
                                             <img src={capa.simbologia} alt="" />
                                             <br></br>
                                             <br></br>

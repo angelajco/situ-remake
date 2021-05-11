@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.35",
+    "@fortawesome/free-regular-svg-icons": "^5.15.3",
     "@fortawesome/free-solid-svg-icons": "^5.15.3",
     "@fortawesome/react-fontawesome": "^0.1.14",
     "@mapbox/leaflet-pip": "^1.1.0",
@@ -19,7 +20,6 @@
     "bootstrap": "^4.6.0",
     "i18next": "^19.9.2",
     "jquery": "^3.6.0",
-    "jquery-ui": "^1.12.1",
     "leaflet": "^1.7.1",
     "leaflet-draw": "^1.0.4",
     "leaflet-easyprint": "^2.1.9",
@@ -48,6 +48,7 @@
     "react-leaflet-editable": "^0.2.2",
     "react-leaflet-fullscreen": "^1.0.1",
     "react-loading-overlay": "^1.0.1",
+    "react-modal-resizable-draggable": "^0.1.5",
     "react-paginate": "^7.1.2",
     "react-popout": "^1.0.3",
     "recharts": "^2.0.8",

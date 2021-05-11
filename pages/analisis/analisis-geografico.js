@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useContext } from "react"
 import { useForm } from "react-hook-form";
-import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table } from 'react-bootstrap'
+import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEdit, faCheck, faAngleDown, faCaretLeft, faFileCsv } from '@fortawesome/free-solid-svg-icons'
+import { faEdit, faCheck, faAngleDown, faCaretLeft, faFileCsv, faAngleRight } from '@fortawesome/free-solid-svg-icons'
+import { faSquare } from '@fortawesome/free-regular-svg-icons'
 import { CSVLink, CSVDownload } from "react-csv";
 
 import ContenedorMapaAnalisis from '../../components/ContenedorMapaAnalisis'
@@ -13,7 +14,6 @@ import catalogoEntidades from "../../shared/jsons/entidades.json";
 import $ from 'jquery'
 import leafletPip from '@mapbox/leaflet-pip/leaflet-pip'
 import * as turf from '@turf/turf'
-import moment from "moment";
 
 //Obten referencia del mapa
 var referenciaMapa = null;
@@ -102,7 +102,7 @@ export default function AnalisisGeografico() {
                 }
             });
 
-        }, 1000)
+        }, 3000)
     }, [])
 
     //Para guardar los rasgos
@@ -111,7 +111,6 @@ export default function AnalisisGeografico() {
 
     //Acciones del formulario
     const { register, handleSubmit } = useForm();
-    // const { register: register1, handleSubmit: handleSubmit1 } = useForm();
 
     //Para guardar la columna de la capa espejo
     const [dobleMapa, setDobleMapa] = useState("col-12")
@@ -464,7 +463,7 @@ export default function AnalisisGeografico() {
 
     function addToExport(rasgos) {
         var csvData_ = [];
-        if(rasgos[0]) {
+        if (rasgos[0]) {
             Object.keys(rasgos[0]).map(item => {
                 csvData_.push([item, '' + rasgos[0][item]]);
             })
@@ -476,7 +475,7 @@ export default function AnalisisGeografico() {
         generateFileName(0, function () {
             var csvData_ = [];
             var csvContent = [];
-            if(rasgos[0]) {
+            if (rasgos[0]) {
                 csvData_.push(Object.keys(rasgos[0]))
                 rasgos.map(rasgo => {
                     csvContent = [];
@@ -494,7 +493,7 @@ export default function AnalisisGeografico() {
         generateFileName(1, function () {
             var csvData_ = [];
             var csvContent = [];
-            if(rasgos[0]) {
+            if (rasgos[0]) {
                 csvData_.push(Object.keys(rasgos[0]))
                 rasgos.map(rasgo => {
                     csvContent = [];
@@ -512,23 +511,33 @@ export default function AnalisisGeografico() {
         var f = new Date();
         var fileName = '';
         fileName = 'InformacionDeRasgos-';
-        fileName += (f.getDate() < 10 ? '0' : '' ) + f.getDate() + (f.getMonth() < 10 ? '0' : '' ) + (f.getMonth() + 1) +f.getFullYear() + f.getHours() + f.getMinutes() + f.getSeconds();
+        fileName += (f.getDate() < 10 ? '0' : '') + f.getDate() + (f.getMonth() < 10 ? '0' : '') + (f.getMonth() + 1) + f.getFullYear() + f.getHours() + f.getMinutes() + f.getSeconds();
         fileName += '-' + option;
-        switch(option) {
-            case 0: 
+        switch (option) {
+            case 0:
                 csvFileName = fileName + '.csv';
-            break;
+                break;
             case 1:
                 csvFileNameEspejo = fileName + '.csv';
-            break;
+                break;
             default:
                 csvFileName = 'export.csv';
                 csvFileNameEspejo = 'export.csv';
-            break;
+                break;
         }
-        console.log('csvFileName', csvFileName);
-        console.log('csvFileNameEspejo', csvFileNameEspejo);
         success();
+    }
+
+    function CustomToggle({ children, eventKey }) {
+        let actualEventKey = useContext(AccordionContext);
+        let esActualEventKey = actualEventKey === eventKey;
+        const llamaEventKey = useAccordionToggle(eventKey);
+
+        return (
+            <Button onClick={llamaEventKey} variant="link">
+                <FontAwesomeIcon icon={esActualEventKey ? faAngleRight : faAngleDown} />
+            </Button>
+        )
     }
 
     return (
@@ -537,10 +546,12 @@ export default function AnalisisGeografico() {
                 <div className="container">
                     <div className="row">
                         <div className="col-12">
-                            <button className="btn-analisis" onClick={dividirPantalla}>Pantalla dividida</button>
+                            <button className="btn-dividir-pantalla" onClick={dividirPantalla}>
+                                <FontAwesomeIcon icon={faSquare} />
+                            </button>
                         </div>
 
-                        <div className={dobleMapa}>
+                        <div className={`${dobleMapa} col-mapa`}>
                             <div className="row">
                                 <div className="col-12 tw-text-center">
                                     <p>
@@ -582,18 +593,18 @@ export default function AnalisisGeografico() {
                                                 <Card.Header>
                                                     <div className="row">
                                                         <div className="col-9">
-                                                            <Button onClick={() => setOpenRasgosCollapse(!openRasgosCollapse)} variant="link">
-                                                                <FontAwesomeIcon icon={faAngleDown} />
-                                                            </Button>
                                                             <b>Información de rasgos</b>
+                                                            <Button onClick={() => setOpenRasgosCollapse(!openRasgosCollapse)} variant="link">
+                                                                <FontAwesomeIcon icon={openRasgosCollapse ? faAngleDown : faAngleRight} />
+                                                            </Button>
                                                         </div>
                                                         <div className="col-3">
                                                             {
                                                                 rasgos[0] &&
                                                                 <div className="row container-fluid d-flex justify-content-around">
-                                                                {
-                                                                    addToExportWithPivot(rasgos)
-                                                                }
+                                                                    {
+                                                                        addToExportWithPivot(rasgos)
+                                                                    }
                                                                     <CSVLink data={csvData} filename={csvFileName}>
                                                                         <FontAwesomeIcon size="2x" icon={faFileCsv} />
                                                                     </CSVLink>
@@ -609,14 +620,11 @@ export default function AnalisisGeografico() {
                                                         rasgos.map((valor, index) => (
                                                             <Accordion key={index}>
                                                                 <Card>
-                                                                    <Card.Header>
-                                                                        <Accordion.Toggle as={Button} variant="link" eventKey="0">
-                                                                            <>
-                                                                                {valor["NOMGEO"]}
-                                                                            </>
-                                                                        </Accordion.Toggle>
+                                                                    <Card.Header className="tw-flex tw-justify-between tw-items-baseline">
+                                                                        {valor["NOMGEO"]}
+                                                                        <CustomToggle eventKey={index.toString()} />
                                                                     </Card.Header>
-                                                                    <Accordion.Collapse eventKey="0">
+                                                                    <Accordion.Collapse eventKey={index.toString()}>
                                                                         <Table striped bordered hover>
                                                                             <thead>
                                                                                 <tr>
@@ -651,10 +659,10 @@ export default function AnalisisGeografico() {
                                             </Collapse>
                                             <Card>
                                                 <Card.Header>
-                                                    <Button onClick={() => setOpenCapasCollapse(!openCapasCollapse)} variant="link">
-                                                        <FontAwesomeIcon icon={faAngleDown} />
-                                                    </Button>
                                                     <b>Capas</b>
+                                                    <Button onClick={() => setOpenCapasCollapse(!openCapasCollapse)} variant="link">
+                                                        <FontAwesomeIcon icon={openCapasCollapse ? faAngleDown : faAngleRight} />
+                                                    </Button>
                                                 </Card.Header>
                                             </Card>
                                             <Collapse in={openCapasCollapse}>
@@ -669,13 +677,11 @@ export default function AnalisisGeografico() {
                                                                         <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
                                                                             {(provided) => (
                                                                                 <Card {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                                                    <Card.Header>
-                                                                                        <Accordion.Toggle as={Button} variant="link" eventKey={capa.num_capa.toString()}>
-                                                                                            <FontAwesomeIcon icon={faAngleDown} />
-                                                                                        </Accordion.Toggle>
-                                                                                        <Form.Group className="tw-inline-block">
+                                                                                    <Card.Header className="tw-flex tw-justify-between tw-items-baseline">
+                                                                                        <Form.Group>
                                                                                             <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
                                                                                         </Form.Group>
+                                                                                        <CustomToggle eventKey={capa.num_capa.toString()} />
                                                                                     </Card.Header>
                                                                                     <Accordion.Collapse eventKey={capa.num_capa.toString()}>
                                                                                         <Card.Body>
@@ -755,7 +761,7 @@ export default function AnalisisGeografico() {
                             </div>
                         </div>
 
-                        <div className={`col-6 ${pantallaDividida ? "" : "esconde-mapa"}`}>
+                        <div className={`col-6 col-mapa ${pantallaDividida == false && "esconde-mapa"}`}>
                             <div className="row">
                                 <div className="col-12 tw-text-center">
                                     <p>
@@ -798,18 +804,18 @@ export default function AnalisisGeografico() {
                                                 <Card.Header>
                                                     <div className="row">
                                                         <div className="col-9">
-                                                            <Button onClick={() => setOpenRasgosCollapseEspejo(!openRasgosCollapseEspejo)} variant="link">
-                                                                <FontAwesomeIcon icon={faAngleDown} />
-                                                            </Button>
                                                             <b>Información de rasgos</b>
+                                                            <Button onClick={() => setOpenRasgosCollapseEspejo(!openRasgosCollapseEspejo)} variant="link">
+                                                                <FontAwesomeIcon icon={openRasgosCollapseEspejo ? faAngleDown : faAngleRight} />
+                                                            </Button>
                                                         </div>
                                                         <div className="col-3">
                                                             {
                                                                 rasgosEspejo[0] &&
                                                                 <div className="row container-fluid d-flex justify-content-around">
-                                                                {
-                                                                    addToExportWithPivotEspejo(rasgosEspejo)
-                                                                }
+                                                                    {
+                                                                        addToExportWithPivotEspejo(rasgosEspejo)
+                                                                    }
                                                                     <CSVLink data={csvDataEspejo} filename={csvFileNameEspejo}>
                                                                         <FontAwesomeIcon size="2x" icon={faFileCsv} />
                                                                     </CSVLink>
@@ -824,14 +830,11 @@ export default function AnalisisGeografico() {
                                                         rasgosEspejo.map((valor, index) => (
                                                             <Accordion key={index}>
                                                                 <Card>
-                                                                    <Card.Header>
-                                                                        <Accordion.Toggle as={Button} variant="link" eventKey="0">
-                                                                            <>
-                                                                                {valor["NOMGEO"]}
-                                                                            </>
-                                                                        </Accordion.Toggle>
+                                                                    <Card.Header variant="link" className="tw-flex tw-justify-between tw-items-baseline" eventKey={index.toString()}>
+                                                                        {valor["NOMGEO"]}
+                                                                        <CustomToggle eventKey={index.toString()} />
                                                                     </Card.Header>
-                                                                    <Accordion.Collapse eventKey="0">
+                                                                    <Accordion.Collapse eventKey={index.toString()}>
                                                                         <Table striped bordered hover>
                                                                             <thead>
                                                                                 <tr>
@@ -867,7 +870,7 @@ export default function AnalisisGeografico() {
                                             <Card>
                                                 <Card.Header>
                                                     <Button onClick={() => setOpenCapasCollapseEspejo(!openCapasCollapseEspejo)} variant="link">
-                                                        <FontAwesomeIcon icon={faAngleDown} />
+                                                        <FontAwesomeIcon icon={openCapasCollapseEspejo ? faAngleDown : faAngleRight} />
                                                     </Button>
                                                     <b>Capas</b>
                                                 </Card.Header>
@@ -884,13 +887,11 @@ export default function AnalisisGeografico() {
                                                                         <Draggable key={capa.num_capa} draggableId={capa.nom_capa} index={index}>
                                                                             {(provided) => (
                                                                                 <Card {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                                                    <Card.Header>
-                                                                                        <Accordion.Toggle as={Button} variant="link" eventKey={capa.num_capa.toString()}>
-                                                                                            <FontAwesomeIcon icon={faAngleDown} />
-                                                                                        </Accordion.Toggle>
+                                                                                    <Card.Header className="tw-flex tw-justify-between tw-items-baseline">
                                                                                         <Form.Group className="tw-inline-block">
                                                                                             <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 1)} value={capa.num_capa} />
                                                                                         </Form.Group>
+                                                                                        <CustomToggle eventKey={capa.num_capa.toString()} />
                                                                                     </Card.Header>
                                                                                     <Accordion.Collapse eventKey={capa.num_capa.toString()}>
                                                                                         <Card.Body>
