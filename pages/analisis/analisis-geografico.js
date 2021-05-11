@@ -47,25 +47,30 @@ export default function AnalisisGeografico() {
             referenciaMapa.on('draw:created', function (e) {
                 let layerDibujada = e.layer;
                 let puntos = null;
-                if (e.layerType === "marker") {
-                    puntos = layerDibujada.getLatLng();
-                } else {
-                    puntos = layerDibujada.getLatLngs()
+                console.log('e.layerType: ', e.layerType)
+                if(e.layerType !== 'polyline') {
+                    if (e.layerType === "marker") {
+                        puntos = layerDibujada.getLatLng();
+                    } else {
+                        puntos = layerDibujada.getLatLngs()
+                    }
                 }
                 let capasIntersectadas = [];
                 referenciaMapa.eachLayer(function (layer) {
-                    if (layer instanceof L.GeoJSON) {
-                        // if (e.layerType === "marker") {
-                        //     let resultsMarker = leafletPip.pointInLayer([puntos.lng, puntos.lat], layer)
-                        //     setRasgosDibujo([resultsMarker[0].feature.properties])
-                        // }
-                        layer.eachLayer(function (layerConFeatures) {
-                            let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
-                            if (seIntersectan != null) {
-                                layerConFeatures.feature.properties["nombre_capa"] = layer.options["nombre"];
-                                capasIntersectadas.push(layerConFeatures.feature.properties)
-                            }
-                        })
+                    if(e.layerType !== 'polyline') {
+                        if (layer instanceof L.GeoJSON) {
+                            // if (e.layerType === "marker") {
+                            //     let resultsMarker = leafletPip.pointInLayer([puntos.lng, puntos.lat], layer)
+                            //     setRasgosDibujo([resultsMarker[0].feature.properties])
+                            // }
+                            layer.eachLayer(function (layerConFeatures) {
+                                let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
+                                if (seIntersectan != null) {
+                                    layerConFeatures.feature.properties["nombre_capa"] = layer.options["nombre"];
+                                    capasIntersectadas.push(layerConFeatures.feature.properties)
+                                }
+                            })
+                        }
                     }
                 });
                 if (capasIntersectadas.length != 0) {
@@ -83,18 +88,20 @@ export default function AnalisisGeografico() {
                 }
                 let capasIntersectadas = [];
                 referenciaMapaEspejo.eachLayer(function (layer) {
-                    if (layer instanceof L.GeoJSON) {
-                        // if (e.layerType === "marker") {
-                        //     let resultsMarker = leafletPip.pointInLayer([puntos.lng, puntos.lat], layer)
-                        //     setRasgosDibujo([resultsMarker[0].feature.properties])
-                        // }
-                        layer.eachLayer(function (layerConFeatures) {
-                            let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
-                            if (seIntersectan != null) {
-                                layerConFeatures.feature.properties["nombre_capa"] = layer.options["nombre"];
-                                capasIntersectadas.push(layerConFeatures.feature.properties)
-                            }
-                        })
+                    if(e.layerType !== 'polyline') {
+                        if (layer instanceof L.GeoJSON) {
+                            // if (e.layerType === "marker") {
+                            //     let resultsMarker = leafletPip.pointInLayer([puntos.lng, puntos.lat], layer)
+                            //     setRasgosDibujo([resultsMarker[0].feature.properties])
+                            // }
+                            layer.eachLayer(function (layerConFeatures) {
+                                let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
+                                if (seIntersectan != null) {
+                                    layerConFeatures.feature.properties["nombre_capa"] = layer.options["nombre"];
+                                    capasIntersectadas.push(layerConFeatures.feature.properties)
+                                }
+                            })
+                        }
                     }
                 });
                 if (capasIntersectadas.length != 0) {
