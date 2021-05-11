@@ -1203,13 +1203,22 @@ export default function planeacionMunicipal() {
 
   }
 
+  let municiposFiltrados_ = [];
+  const [municiposFiltrados, setMuniciposFiltrados] = useState([]);
+  function onChangeEntidad() {
+    municipios.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
+      municiposFiltrados_.push(munFiltrado)
+    ));
+    setMuniciposFiltrados(municiposFiltrados_)
+  }
+
   return (
     <>
       <div className="container-fluid custom-max-width custom-mx-b-1">
         <div className="row">
           <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-xs-12">
             <Form.Group controlId="id_entidad">
-              <Form.Control as="select" name="id_entidad" required ref={register}>
+              <Form.Control as="select" name="id_entidad" required ref={register} onChange={() => {onChangeEntidad()}}>
                 <option value="" hidden>Entidad</option>
                 {entidades.map((value, index) => (
                   <option key={index} value={value.id_entidades}>
@@ -1224,7 +1233,7 @@ export default function planeacionMunicipal() {
               <Form.Control as="select" name="id_municipio" required ref={register}>
                 <option value="" hidden>Municipio</option>
                 {
-                  municipios.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
+                  municiposFiltrados.filter(mun => mun.cve_ent == refEntidad.current).map((munFiltrado, index) => (
                     <option key={index} value={munFiltrado.id_municipios}>
                       {munFiltrado.nombre_municipio}
                     </option>
