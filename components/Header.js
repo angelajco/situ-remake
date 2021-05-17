@@ -1,12 +1,21 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSearch } from '@fortawesome/free-solid-svg-icons'
-import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap'
+import { faSearch, faGlobeAmericas } from '@fortawesome/free-solid-svg-icons'
+import { Navbar, Nav, NavDropdown } from 'react-bootstrap'
+import { useTranslation } from "react-i18next"
 
-import Link from 'next/link'
 
 export default function Header() {
+    const { i18n } = useTranslation();
 
-    let noActive = 'tw-text-white tw-text-sm hover:tw-text-inst-dorado hover:tw-no-underline tw-px-3 simi-gob-mx'
+    let noActive = 'tw-text-white tw-text-sm hover:tw-text-inst-dorado hover:tw-no-underline tw-px-3'
+
+    const changeLanguage = lng => {
+        localStorage.setItem("idioma", lng);
+        i18n.changeLanguage(lng);
+    };
+
+    var hola = (<FontAwesomeIcon icon={faGlobeAmericas} />);
+
     return (
         <>
             <div className="fixed-top header-principal">
@@ -29,6 +38,10 @@ export default function Header() {
                                 <a href="https://www.gob.mx/busqueda?utf8=%E2%9C%93" target="_blank" className={noActive}>
                                     <FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>
                                 </a>
+                                <NavDropdown title={<span>Idioma&nbsp;<FontAwesomeIcon icon={faGlobeAmericas} /></span>} id="basic-nav-dropdown" className="tw-text-sm tw-px-3 boton-idioma" >
+                                    <NavDropdown.Item onClick={() => changeLanguage('es')}>Español</NavDropdown.Item>
+                                    <NavDropdown.Item onClick={() => changeLanguage('en')}>Inglés</NavDropdown.Item>
+                                </NavDropdown>
                             </Nav>
                         </Navbar.Collapse>
                     </div>

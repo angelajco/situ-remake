@@ -104,7 +104,8 @@ body.analisis-geografico-modales {
     overflow-y: scroll !important;
 }
 
-.modal-min .modal-body, .modal-min .modal-footer {
+.modal-min .modal-body,
+.modal-min .modal-footer {
     display: none;
 }
 
@@ -127,8 +128,8 @@ body.analisis-geografico-modales {
 }
 
 .modal-redimensionable {
-    resize: both;
-    overflow: auto;
+    resize: both !important;
+    overflow: auto !important;
 }
 
 .boton-minimizar-modal {
@@ -139,21 +140,21 @@ body.analisis-geografico-modales {
     border: none;
 }
 
-.boton-minimizar-modal:not(:disabled):not(.disabled):focus,
-.boton-minimizar-modal:not(:disabled):not(.disabled):hover{
-    opacity: 0.75;
+.boton-minimizar-modal:hover{
+    opacity: 0.75 !important;
 }
 
-.modal-simbologia .close {
+.modal-analisis .close {
     padding: 0 6px;
     margin: 0;
     background-image: linear-gradient(white, red);
     margin-left: 10px;
     color: #fff;
     opacity: 1;
+    pointer-events: auto;
 }
 
-.modal-simbologia .modal-header {
+.modal-analisis .modal-header {
     color: #fff;
     border-bottom: none;
     align-items: center;
@@ -161,7 +162,7 @@ body.analisis-geografico-modales {
     @apply tw-bg-inst-verdec;
 }
 
-.modal-simbologia .modal-body {
+.modal-analisis .modal-body {
     border: 10px solid;
     @apply tw-border-inst-verdec;
 }

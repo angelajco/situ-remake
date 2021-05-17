@@ -96,26 +96,26 @@ export default function Map(props) {
         lDrLo.draw.toolbar.finish.text = "Finalizar"
         lDrLo.draw.toolbar.undo.title = "Borrar último punto dibujado"
         lDrLo.draw.toolbar.undo.text = "Borrar último punto"
-        lDrLo.draw.handlers.marker.tooltip.start = "Clic en el mapa para poner un marcador."
-        lDrLo.draw.handlers.polygon.tooltip.start = "Clic para empezar a dibujar una forma."
-        lDrLo.draw.handlers.polygon.tooltip.cont = "Clic para continuar dibujando la forma."
-        lDrLo.draw.handlers.polygon.tooltip.end = "Clic en el primer punto para cerrar esta forma."
-        lDrLo.draw.handlers.polyline.tooltip.start = "Clic para empezar a dibujar una linea."
-        lDrLo.draw.handlers.polyline.tooltip.cont = "Clic para continuar dibujando la linea."
-        lDrLo.draw.handlers.polyline.tooltip.end = "Clic en el último punto para finalizar la linea."
+        lDrLo.draw.handlers.marker.tooltip.start = "Clic en el mapa para poner un marcador"
+        lDrLo.draw.handlers.polygon.tooltip.start = "Clic para empezar a dibujar una forma"
+        lDrLo.draw.handlers.polygon.tooltip.cont = "Clic para continuar dibujando la forma"
+        lDrLo.draw.handlers.polygon.tooltip.end = "Clic en el primer punto para cerrar esta forma"
+        lDrLo.draw.handlers.polyline.tooltip.start = "Clic para empezar a dibujar una linea"
+        lDrLo.draw.handlers.polyline.tooltip.cont = "Clic para continuar dibujando la linea"
+        lDrLo.draw.handlers.polyline.tooltip.end = "Clic en el último punto para finalizar la linea"
         lDrLo.edit.toolbar.actions.save.title = "Guardar cambios"
         lDrLo.edit.toolbar.actions.save.text = "Guardar"
         lDrLo.edit.toolbar.actions.cancel.title = "Cancelar edición, descartar todos los cambios"
         lDrLo.edit.toolbar.actions.cancel.text = "Cancelar"
-        lDrLo.edit.toolbar.actions.clearAll.title = "Limpiar todas las capas"
+        lDrLo.edit.toolbar.actions.clearAll.title = "Limpiar todo"
         lDrLo.edit.toolbar.actions.clearAll.text = "Limpiar todo"
-        lDrLo.edit.toolbar.buttons.edit = "Editar capas"
-        lDrLo.edit.toolbar.buttons.editDisabled = "No hay capas para editar"
-        lDrLo.edit.toolbar.buttons.remove = "Borrar capas"
-        lDrLo.edit.toolbar.buttons.removeDisabled = "No hay capas para borrar"
-        lDrLo.edit.handlers.edit.tooltip.text = "Arrastre controladores o marcadores para editar carecaterísticas."
+        lDrLo.edit.toolbar.buttons.edit = "Editar polígonos"
+        lDrLo.edit.toolbar.buttons.editDisabled = "No hay elementos para editar"
+        lDrLo.edit.toolbar.buttons.remove = "Limpiar mapa"
+        lDrLo.edit.toolbar.buttons.removeDisabled = "No hay elementos para eliminar"
+        lDrLo.edit.handlers.edit.tooltip.text = "Arrastre controladores o marcadores para editar características"
         lDrLo.edit.handlers.edit.tooltip.subtext = "Clic en cancelar para deshacer los cambios"
-        lDrLo.edit.handlers.remove.tooltip.text = "Click en la figura para borrarla."
+        lDrLo.edit.handlers.remove.tooltip.text = "Clic en la figura para borrarla"
     }, [])
 
     const [tipoCoordenada, setTipoCoordenada] = useState(1)
@@ -216,7 +216,7 @@ export default function Map(props) {
                 for (var i = 1; i < length; i++) {
                     distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
                 }
-                layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
+                layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
             } else if (type !== 'marker') {
                 var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                 // generatePolygon(layer.getLatLngs(), function(result) {
@@ -236,7 +236,7 @@ export default function Map(props) {
                     for (var i = 1; i < length; i++) {
                         distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
                     }
-                    layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
+                    layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
                 } else if (!(layer instanceof L.Marker)) {
                     var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                     console.log('latlngs: ', layer.getLatLngs())

@@ -12,11 +12,7 @@ import axios from 'axios'
 import Cookies from 'universal-cookie'
 const cookies = new Cookies()
 
-import { useTranslation } from "react-i18next"
-
 export default function Menu() {
-
-    const { i18n } = useTranslation();
 
     // Estado para guardar el token
     const [tokenSesion, setTokenSesion] = useState(false)
@@ -108,21 +104,12 @@ export default function Menu() {
         cookies.remove('Usuario', { path: "/" })
     }
 
-    const changeLanguage = lng => {
-        localStorage.setItem("idioma", lng);
-        i18n.changeLanguage(lng);
-    };
-
     return (
         <Navbar expand="lg" className="tw-text-center tw-bg-white justify-content-center custom-mt-situ-menu custom-mt-situ-menu">
             <div className="row custom-max-width">
                 <Navbar.Toggle aria-controls="basic-navbar-nav" className="ml-auto custom-toggler" />
                 <Navbar.Collapse id="basic-navbar-nav" className="justify-content-center">
                     <Nav className="tw-py-2">
-                        <NavDropdown title="CAMBIO DE IDIOMA" id="basic-nav-dropdown" className="md:tw-mb-3 tw-font-semibold md:tw-ml-0 tw-ml-5 tw-text-titulo hover:tw-text-inst-verdef hover:tw-no-underline hover:tw-font-bold">
-                            <NavDropdown.Item onClick={() => changeLanguage('es')}>Español</NavDropdown.Item>
-                            <NavDropdown.Item onClick={() => changeLanguage('en')}>Inglés</NavDropdown.Item>
-                        </NavDropdown>
                         <Link href="/">
                             <a className={deshabilitarInicio ? active : noActive}>INICIO</a>
                         </Link>

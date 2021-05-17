@@ -1,11 +1,13 @@
 import { useEffect, useState, useContext } from "react"
-import { useForm } from "react-hook-form";
-import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle } from 'react-bootstrap'
+import { Controller, useForm } from "react-hook-form";
+import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEdit, faCheck, faAngleDown, faCaretLeft, faFileCsv, faAngleRight } from '@fortawesome/free-solid-svg-icons'
-import { faSquare } from '@fortawesome/free-regular-svg-icons'
+import { faEdit, faCheck, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable } from '@fortawesome/free-solid-svg-icons'
 import { CSVLink, CSVDownload } from "react-csv";
+import { Typeahead } from 'react-bootstrap-typeahead';
+
+import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 import ContenedorMapaAnalisis from '../../components/ContenedorMapaAnalisis'
 
@@ -26,10 +28,10 @@ function capturaReferenciaMapaEspejo(mapa) {
     referenciaMapaEspejo = mapa;
 }
 
-let csvData = [];
-let csvDataEspejo = [];
-let csvFileName = '';
-let csvFileNameEspejo = '';
+// var csvData = []
+// var csvDataEspejo = [];
+// var csvFileName = '';
+// var csvFileNameEspejo = '';
 
 export default function AnalisisGeografico() {
 
@@ -47,8 +49,7 @@ export default function AnalisisGeografico() {
             referenciaMapa.on('draw:created', function (e) {
                 let layerDibujada = e.layer;
                 let puntos = null;
-                console.log('e.layerType: ', e.layerType)
-                if(e.layerType !== 'polyline') {
+                if (e.layerType !== 'polyline') {
                     if (e.layerType === "marker") {
                         puntos = layerDibujada.getLatLng();
                     } else {
@@ -57,7 +58,7 @@ export default function AnalisisGeografico() {
                 }
                 let capasIntersectadas = [];
                 referenciaMapa.eachLayer(function (layer) {
-                    if(e.layerType !== 'polyline') {
+                    if (e.layerType !== 'polyline') {
                         if (layer instanceof L.GeoJSON) {
                             // if (e.layerType === "marker") {
                             //     let resultsMarker = leafletPip.pointInLayer([puntos.lng, puntos.lat], layer)
@@ -88,7 +89,7 @@ export default function AnalisisGeografico() {
                 }
                 let capasIntersectadas = [];
                 referenciaMapaEspejo.eachLayer(function (layer) {
-                    if(e.layerType !== 'polyline') {
+                    if (e.layerType !== 'polyline') {
                         if (layer instanceof L.GeoJSON) {
                             // if (e.layerType === "marker") {
                             //     let resultsMarker = leafletPip.pointInLayer([puntos.lng, puntos.lat], layer)
@@ -111,13 +112,6 @@ export default function AnalisisGeografico() {
 
         }, 3000)
     }, [])
-
-    //Para guardar los rasgos
-    const [rasgos, setRasgos] = useState([])
-    const [rasgosEspejo, setRasgosEspejo] = useState([])
-
-    //Acciones del formulario
-    const { register, handleSubmit } = useForm();
 
     //Para guardar la columna de la capa espejo
     const [dobleMapa, setDobleMapa] = useState("col-12")
@@ -195,16 +189,8 @@ export default function AnalisisGeografico() {
         setDatosCapasBackEnd(catalogoCapas);
     }
 
-    //Estilos de los geojson
-    const estilos = {
-        color: "#FF0000",
-        fillColor: "#FF7777",
-        opacity: "1",
-        fillOpacity: "1"
-    }
-
     const creaSVG = (nombreCapa) => {
-        var creaSVG = `<svg height='20' xmlns='http://www.w3.org/2000/svg'><rect x='0' y='0' width='15' height='15' fill='#FF7777' stroke='#FF0000' strokeWidth='2'></rect><text x='20' y='15' width='200' height='200' fontSize='12.5' fontWeight='500'>${nombreCapa}</text></svg>`
+        var creaSVG = `<svg height='20' xmlns='http://www.w3.org/2000/svg'><rect x='0' y='0' width='15' height='15' fill='#FF7777' stroke='#FF0000' strokeWidth='2'></rect><text x='20' y='15' width='200' height='200' fontSize='12.5' fontWeight='500' font-family='Montserrat, sans-serif'>${nombreCapa}</text></svg>`
         var DOMURL = self.URL || self.webkitURL || self;
         var svg = new Blob([creaSVG], { type: "image/svg+xml;charset=utf-8" });
         var url = DOMURL.createObjectURL(svg);
@@ -213,23 +199,38 @@ export default function AnalisisGeografico() {
     }
 
 
-    //Al seleccionar y añadir una entidad para los mapas
     //Para guardar las capas que se van a mostrar
-    const [capasVisualizadas, setCapasVisualizadas] = useState([])
-    const [capasVisualizadasEspejo, setCapasVisualizadasEspejo] = useState([])
+    const [capasVisualizadas, setCapasVisualizadas] = useState([]);
+    const [capasVisualizadasEspejo, setCapasVisualizadasEspejo] = useState([]);
+    //Estilos de los geojson
+    const estilos = {
+        color: "#FF0000",
+        fillColor: "#FF7777",
+        opacity: "1",
+        fillOpacity: "1"
+    }
+    //Para guardar los rasgos
+    const [rasgos, setRasgos] = useState([])
+    const [rasgosEspejo, setRasgosEspejo] = useState([])
+    //Acciones del formulario
+    const { register, handleSubmit, control, errors } = useForm();
+    //Al seleccionar y añadir una entidad para los mapas
     const onSubmit = (data, e) => {
         let mapaBase = e.target.dataset.tipo;
         let arregloBase = null;
-        let datoForm = null;
-        if (e.target.dataset.tipo == 0) {
+        // let datoForm = null;
+        let capa = data.capaAgregar[0];
+        console.log(data, "data")
+        if (mapaBase == 0) {
             arregloBase = capasVisualizadas;
-            datoForm = data.capaMapa;
-        } else if (e.target.dataset.tipo == 1) {
+            // datoForm = data.capaMapa;
+        } else if (mapaBase == 1) {
             arregloBase = capasVisualizadasEspejo;
-            datoForm = data.capaEspejo;
+            // datoForm = data.capaEspejo;
         }
-        let indice = parseInt(datoForm)
-        let capa = datosCapasBackEnd[indice]
+        // let indice = parseInt(datoForm)
+        // console.log(indice, "indice")
+        // let capa = datosCapasBackEnd[indice]
         if (arregloBase.some(capaVisual => capaVisual.num_capa === capa.indice)) {
             return;
         }
@@ -322,19 +323,60 @@ export default function AnalisisGeografico() {
         }
     }
 
-    //Funcion para cambiar el estado del checkbox
-    const cambiaCheckbox = ({ target }, mapa) => {
-        let mapaBase;
-        let refMap;
+    //Para guardar los atributos
+    const [atributos, setAtributos] = useState([]);
+    const [atributosEspejo, setAtributosEspejo] = useState([]);
+    //Para mostrar el modal de atributos
+    const [showModalAtributos, setShowModalAtributos] = useState(false)
+    const [showModalAtributosEspejo, setShowModalAtributosEspejo] = useState(false)
+    //Para asignar atributos
+    const muestraAtributos = (capa, mapa) => {
         if (mapa == 0) {
-            mapaBase = capasVisualizadas;
+            setAtributos(capa.features)
+            if (showModalAtributos == false) {
+                setShowModalAtributos(true)
+            }
+        } else if (mapa == 1) {
+            setAtributosEspejo(capa.features)
+            if (showModalAtributosEspejo == false) {
+                setShowModalAtributosEspejo(true)
+            }
+        }
+    }
+
+    //Para eliminar capas
+    const eliminaCapa = (capa, mapa) => {
+        let arrCapasBase;
+        let refMap
+        if (mapa == 0) {
+            arrCapasBase = capasVisualizadas;
             refMap = referenciaMapa;
         } else if (mapa == 1) {
-            mapaBase = capasVisualizadasEspejo;
+            arrCapasBase = capasVisualizadasEspejo
+            refMap = referenciaMapaEspejo;
+        }
+        refMap.removeLayer(capa.layer)
+        let arrTemp = arrCapasBase.filter(capaArr => capaArr.num_capa != capa.num_capa)
+        if (mapa == 0) {
+            setCapasVisualizadas(arrTemp);
+        } else if (mapa == 1) {
+            setCapasVisualizadasEspejo(arrTemp);
+        }
+    }
+
+    //Funcion para cambiar el estado del checkbox
+    const cambiaCheckbox = ({ target }, mapa) => {
+        let arrCapasBase;
+        let refMap;
+        if (mapa == 0) {
+            arrCapasBase = capasVisualizadas;
+            refMap = referenciaMapa;
+        } else if (mapa == 1) {
+            arrCapasBase = capasVisualizadasEspejo;
             refMap = referenciaMapaEspejo;
         }
         //Hace copia a otro arreglo para volver a sobreescribir capasVisualizadas
-        let capasVisualisadasActualizado = mapaBase.map((valor) => {
+        let capasVisualisadasActualizado = arrCapasBase.map((valor) => {
             //Si es igual a la entidad que se envia, se cambia el checkbox
             if (valor.num_capa == target.value) {
                 //Si esta habilitado se desabilita, de manera igual en caso contrario
@@ -362,14 +404,14 @@ export default function AnalisisGeografico() {
 
     //Cambia la transparencia de las capas
     const transparenciaCapas = ({ target }, mapa) => {
-        let mapaBase;
+        let arrCapasBase;
         if (mapa == 0) {
-            mapaBase = capasVisualizadas;
+            arrCapasBase = capasVisualizadas;
         } else if (mapa == 1) {
-            mapaBase = capasVisualizadasEspejo;
+            arrCapasBase = capasVisualizadasEspejo;
         }
         //Hace copia a otro arreglo para volver a sobreescribir capasVisualizadas
-        let capasVisualisadasActualizado = mapaBase.map((valor) => {
+        let capasVisualisadasActualizado = arrCapasBase.map((valor) => {
             //Si es igual a la entidad que se envia, se cambia la transparencia
             if (valor.num_capa == target.name) {
                 valor.estilos.transparencia = target.value;
@@ -395,16 +437,16 @@ export default function AnalisisGeografico() {
 
     //Cambia la escala de la visualización de las capas
     const zoomMinMax = ({ target }, mapa) => {
-        let mapaBase;
+        let arrCapasBase;
         let refMap;
         if (mapa == 0) {
-            mapaBase = capasVisualizadas;
+            arrCapasBase = capasVisualizadas;
             refMap = referenciaMapa;
         } else if (mapa == 1) {
-            mapaBase = capasVisualizadasEspejo;
+            arrCapasBase = capasVisualizadasEspejo;
             refMap = referenciaMapaEspejo;
         }
-        let capasVisualisadasActualizado = mapaBase.map((valor) => {
+        let capasVisualisadasActualizado = arrCapasBase.map((valor) => {
             //Si es igual a la entidad que se envia, se cambia el zoom
             if (valor.num_capa == target.name) {
                 if (target.dataset.zoom == "min") {
@@ -468,55 +510,37 @@ export default function AnalisisGeografico() {
     const [openRasgosCollapse, setOpenRasgosCollapse] = useState(true);
     const [openRasgosCollapseEspejo, setOpenRasgosCollapseEspejo] = useState(true);
 
-    function addToExport(rasgos) {
-        var csvData_ = [];
-        if (rasgos[0]) {
-            Object.keys(rasgos[0]).map(item => {
-                csvData_.push([item, '' + rasgos[0][item]]);
-            })
-            csvData = csvData_.reverse();
-        }
-    }
-
-    function addToExportWithPivot(rasgos) {
-        generateFileName(0, function () {
-            var csvData_ = [];
-            var csvContent = [];
-            if (rasgos[0]) {
-                csvData_.push(Object.keys(rasgos[0]))
-                rasgos.map(rasgo => {
+    //Para exportar en CSV la información de rasgos
+    var csvData = []
+    var csvDataEspejo = [];
+    var csvFileName = '';
+    var csvFileNameEspejo = '';
+    //Añade los valores al archivo
+    function addToExportWithPivot(rasgosObtenidos, mapa) {
+        generateFileName(mapa, function () {
+            let csvData_ = [];
+            let csvContent = [];
+            if (rasgosObtenidos[0]) {
+                csvData_.push(Object.keys(rasgosObtenidos[0]))
+                rasgosObtenidos.map(rasgo => {
                     csvContent = [];
                     Object.keys(rasgo).map(item => {
-                        csvContent.push('' + rasgo[item]);
+                        csvContent.push(rasgo[item]);
                     })
                     csvData_.push(csvContent);
                 });
-                csvData = csvData_;
+                if (mapa == 0) {
+                    csvData = csvData_;
+                } else if (mapa == 1) {
+                    csvDataEspejo = csvData_;
+                }
             }
         });
     }
-
-    function addToExportWithPivotEspejo(rasgos) {
-        generateFileName(1, function () {
-            var csvData_ = [];
-            var csvContent = [];
-            if (rasgos[0]) {
-                csvData_.push(Object.keys(rasgos[0]))
-                rasgos.map(rasgo => {
-                    csvContent = [];
-                    Object.keys(rasgo).map(item => {
-                        csvContent.push('' + rasgo[item]);
-                    })
-                    csvData_.push(csvContent);
-                });
-                csvDataEspejo = csvData_;
-            }
-        });
-    }
-
+    //Asigna los valores a los archivos
     function generateFileName(option, success) {
-        var f = new Date();
-        var fileName = '';
+        let f = new Date();
+        let fileName = '';
         fileName = 'InformacionDeRasgos-';
         fileName += (f.getDate() < 10 ? '0' : '') + f.getDate() + (f.getMonth() < 10 ? '0' : '') + (f.getMonth() + 1) + f.getFullYear() + f.getHours() + f.getMinutes() + f.getSeconds();
         fileName += '-' + option;
@@ -535,6 +559,7 @@ export default function AnalisisGeografico() {
         success();
     }
 
+    //Para personalizar las flechitas de los collapse
     function CustomToggle({ children, eventKey }) {
         let actualEventKey = useContext(AccordionContext);
         let esActualEventKey = actualEventKey === eventKey;
@@ -547,18 +572,75 @@ export default function AnalisisGeografico() {
         )
     }
 
+    const [showModalAgregarCapas, setShowModalAgregarCapas] = useState(false)
+    const [showModalAgregarCapasEspejo, setShowModalAgregarCapasEspejo] = useState(false)
+
     return (
         <>
+            <Modal show={showModalAgregarCapas} onHide={() => setShowModalAgregarCapas(!showModalAgregarCapas)}
+                keyboard={false}>
+                <Modal.Header closeButton >
+                    <Modal.Title><b>Agrega capas</b></Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form onSubmit={handleSubmit(onSubmit)} data-tipo={0}>
+                        <Controller
+                            as={Typeahead}
+                            control={control}
+                            options={datosCapasBackEnd}
+                            labelKey="titulo"
+                            id="buscadorCapas"
+                            name="capaAgregar"
+                            rules={{ required: true }}
+                            defaultValue=""
+                            filterBy={["tipo"]}
+                            placeholder="Escoge o escribe una capa"
+                            clearButton
+                            emptyLabel="No se encontraron resultados"
+                        />
+                        {errors.capaAgregar && <p className="tw-text-red-600">Este campo es obligatorio</p>}
+                        <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR</button>
+                    </Form>
+                </Modal.Body>
+            </Modal>
+
+            <Modal show={showModalAgregarCapasEspejo} onHide={() => setShowModalAgregarCapasEspejo(!showModalAgregarCapasEspejo)}
+                keyboard={false}>
+                <Modal.Header closeButton >
+                    <Modal.Title><b>Agrega capas</b></Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form onSubmit={handleSubmit(onSubmit)} data-tipo={1}>
+                        <Controller
+                            as={Typeahead}
+                            control={control}
+                            options={datosCapasBackEnd}
+                            labelKey="titulo"
+                            id="buscadorCapasEspejo"
+                            name="capaAgregar"
+                            rules={{ required: true }}
+                            defaultValue=""
+                            filterBy={["tipo"]}
+                            placeholder="Escoge o escribe una capa"
+                            clearButton
+                            emptyLabel="No se encontraron resultados"
+                        />
+                        {errors.capaAgregar && <p className="tw-text-red-600">Este campo es obligatorio</p>}
+                        <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR</button>
+                    </Form>
+                </Modal.Body>
+            </Modal>
+
             <div className="main tw-mb-12">
                 <div className="container">
                     <div className="row">
-                        <div className="col-12">
+                        <div className="col-12 tw-mb-6">
                             <button className="btn-dividir-pantalla" onClick={dividirPantalla}>
-                                <FontAwesomeIcon icon={faSquare} />
+                                <img src="/images/analisis/pantalla-dividida.png" title="Pantalla dividida"></img>
                             </button>
                         </div>
 
-                        <div className={`${dobleMapa} col-mapa`}>
+                        <div className={`${dobleMapa} col-mapa tw-pt-6`}>
                             <div className="row">
                                 <div className="col-12 tw-text-center">
                                     <p>
@@ -574,10 +656,26 @@ export default function AnalisisGeografico() {
                                 </div>
 
                                 <div className={dobleMapaVista}>
-                                    <p>Capas</p>
+                                    <button className="btn-analisis" onClick={() => setShowModalAgregarCapas(true)}>Agregar capas</button>
+                                    {/* <p>Capas</p>
                                     <Form onSubmit={handleSubmit(onSubmit)} data-tipo={0}>
                                         <Form.Group className="tw-inline-flex tw-mr-4" controlId="capaMapa">
-                                            <Form.Control className=" " as="select" name="capaMapa" required ref={register}>
+                                            <Controller
+                                                as={Typeahead}
+                                                control={control}
+                                                options={datosCapasBackEnd}
+                                                labelKey="titulo"
+                                                id="buscadorCapas"
+                                                name="capaMapa"
+                                                rules={{ required: true }}
+                                                defaultValue=""
+                                                filterBy={["tipo"]}
+                                                placeholder="Escoge o escribe una capa"
+                                                clearButton
+                                                emptyLabel="No se encontraron resultados"
+                                            />
+                                            {errors.capaMapa && <p className="tw-text-red-600">Este campo es obligatorio</p>} */}
+                                    {/* <Form.Control as="select" name="capaMapa" required ref={register}>
                                                 <option value=""></option>
                                                 {
                                                     datosCapasBackEnd.map((value, index) => {
@@ -587,10 +685,10 @@ export default function AnalisisGeografico() {
                                                     })
                                                 }
                                             </Form.Control>
-                                        </Form.Group>
+                                        {/* </Form.Group>
                                         <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR
                                         </button>
-                                    </Form>
+                                    </Form> */}
                                 </div>
 
                                 <div className="col-12 tw-mt-8">
@@ -605,19 +703,17 @@ export default function AnalisisGeografico() {
                                                                 <FontAwesomeIcon icon={openRasgosCollapse ? faAngleDown : faAngleRight} />
                                                             </Button>
                                                         </div>
-                                                        <div className="col-3">
-                                                            {
-                                                                rasgos[0] &&
-                                                                <div className="row container-fluid d-flex justify-content-around">
-                                                                    {
-                                                                        addToExportWithPivot(rasgos)
-                                                                    }
-                                                                    <CSVLink data={csvData} filename={csvFileName}>
-                                                                        <FontAwesomeIcon size="2x" icon={faFileCsv} />
-                                                                    </CSVLink>
-                                                                </div>
-                                                            }
-                                                        </div>
+                                                        {
+                                                            rasgos[0] &&
+                                                            <div className="col-3">
+                                                                {
+                                                                    addToExportWithPivot(rasgos, 0)
+                                                                }
+                                                                <CSVLink data={csvData} filename={csvFileName}>
+                                                                    <FontAwesomeIcon size="2x" icon={faFileCsv} />
+                                                                </CSVLink>
+                                                            </div>
+                                                        }
                                                     </div>
                                                 </Card.Header>
                                             </Card>
@@ -688,6 +784,15 @@ export default function AnalisisGeografico() {
                                                                                         <Form.Group>
                                                                                             <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
                                                                                         </Form.Group>
+                                                                                        {
+                                                                                            capa.tipo === "geojson" &&
+                                                                                            <Button onClick={() => muestraAtributos(capa, 0)} variant="link">
+                                                                                                <FontAwesomeIcon icon={faTable} />
+                                                                                            </Button>
+                                                                                        }
+                                                                                        <Button onClick={() => eliminaCapa(capa, 0)} variant="link">
+                                                                                            <FontAwesomeIcon icon={faTrash} />
+                                                                                        </Button>
                                                                                         <CustomToggle eventKey={capa.num_capa.toString()} />
                                                                                     </Card.Header>
                                                                                     <Accordion.Collapse eventKey={capa.num_capa.toString()}>
@@ -763,12 +868,15 @@ export default function AnalisisGeografico() {
                                             <FontAwesomeIcon className="tw-cursor-pointer" icon={faCaretLeft} />
                                         </button>
                                     </div>
-                                    <ContenedorMapaAnalisis referencia={capturaReferenciaMapa} botones={true} datos={capasVisualizadas} />
+                                    <ContenedorMapaAnalisis referencia={capturaReferenciaMapa} botones={true} datos={capasVisualizadas}
+                                        datosAtributos={atributos}
+                                        modalAtributos={showModalAtributos}
+                                        setModalAtributos={setShowModalAtributos} />
                                 </div>
                             </div>
                         </div>
 
-                        <div className={`col-6 col-mapa ${pantallaDividida == false && "esconde-mapa"}`}>
+                        <div className={`col-6 col-mapa tw-pt-6 ${pantallaDividida == false && "esconde-mapa"}`}>
                             <div className="row">
                                 <div className="col-12 tw-text-center">
                                     <p>
@@ -784,12 +892,11 @@ export default function AnalisisGeografico() {
                                 </div>
 
                                 <div className={dobleMapaVista}>
-                                    <p>Capas</p>
+                                    <button className="btn-analisis" onClick={() => setShowModalAgregarCapasEspejo(true)}>Agregar capas</button>
+                                    {/* <p>Capas</p>
                                     <Form onSubmit={handleSubmit(onSubmit)} data-tipo={1}>
-                                        {/* <Form onSubmit={handleSubmit1(onSubmitEspejo)}> */}
                                         <Form.Group className="tw-inline-flex tw-mr-4" controlId="capaEspejo">
                                             <Form.Control as="select" name="capaEspejo" required ref={register}>
-                                                {/* <Form.Control as="select" name="capaEspejo" required ref={register1}> */}
                                                 <option value=""></option>
                                                 {
                                                     datosCapasBackEnd.map((value, index) => {
@@ -801,7 +908,7 @@ export default function AnalisisGeografico() {
                                             </Form.Control>
                                         </Form.Group>
                                         <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR</button>
-                                    </Form>
+                                    </Form> */}
                                 </div>
 
                                 <div className="col-12 tw-mt-8">
@@ -816,19 +923,17 @@ export default function AnalisisGeografico() {
                                                                 <FontAwesomeIcon icon={openRasgosCollapseEspejo ? faAngleDown : faAngleRight} />
                                                             </Button>
                                                         </div>
-                                                        <div className="col-3">
-                                                            {
-                                                                rasgosEspejo[0] &&
-                                                                <div className="row container-fluid d-flex justify-content-around">
-                                                                    {
-                                                                        addToExportWithPivotEspejo(rasgosEspejo)
-                                                                    }
-                                                                    <CSVLink data={csvDataEspejo} filename={csvFileNameEspejo}>
-                                                                        <FontAwesomeIcon size="2x" icon={faFileCsv} />
-                                                                    </CSVLink>
-                                                                </div>
-                                                            }
-                                                        </div>
+                                                        {
+                                                            rasgosEspejo[0] &&
+                                                            <div className="col-3">
+                                                                {
+                                                                    addToExportWithPivot(rasgosEspejo, 1)
+                                                                }
+                                                                <CSVLink data={csvDataEspejo} filename={csvFileNameEspejo}>
+                                                                    <FontAwesomeIcon size="2x" icon={faFileCsv} />
+                                                                </CSVLink>
+                                                            </div>
+                                                        }
                                                     </div>
                                                 </Card.Header>
                                             </Card><Collapse in={openRasgosCollapseEspejo}>
@@ -898,6 +1003,15 @@ export default function AnalisisGeografico() {
                                                                                         <Form.Group className="tw-inline-block">
                                                                                             <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 1)} value={capa.num_capa} />
                                                                                         </Form.Group>
+                                                                                        {
+                                                                                            capa.tipo === "geojson" &&
+                                                                                            <Button onClick={() => muestraAtributos(capa, 1)} variant="link">
+                                                                                                <FontAwesomeIcon icon={faTable} />
+                                                                                            </Button>
+                                                                                        }
+                                                                                        <Button onClick={() => eliminaCapa(capa, 1)} variant="link">
+                                                                                            <FontAwesomeIcon icon={faTrash} />
+                                                                                        </Button>
                                                                                         <CustomToggle eventKey={capa.num_capa.toString()} />
                                                                                     </Card.Header>
                                                                                     <Accordion.Collapse eventKey={capa.num_capa.toString()}>
@@ -973,7 +1087,10 @@ export default function AnalisisGeografico() {
                                             <FontAwesomeIcon className="tw-cursor-pointer" icon={faCaretLeft} />
                                         </button>
                                     </div>
-                                    <ContenedorMapaAnalisis referencia={capturaReferenciaMapaEspejo} botones={false} datos={capasVisualizadasEspejo} />
+                                    <ContenedorMapaAnalisis referencia={capturaReferenciaMapaEspejo} botones={false} datos={capasVisualizadasEspejo}
+                                        datosAtributos={atributosEspejo}
+                                        modalAtributos={showModalAtributosEspejo}
+                                        setModalAtributos={setShowModalAtributosEspejo} />
                                 </div>
                             </div>
                         </div>
@@ -981,6 +1098,41 @@ export default function AnalisisGeografico() {
                     </div>
                 </div>
             </div>
+
+            <div className="container">
+                <div className="row">
+                    {
+                        atributos.length != 0 &&
+                        <div className="col-6">
+                            <Table striped bordered hover>
+                                <thead>
+                                    <tr>
+                                        <th>fid</th>
+                                        <th>CVEGEO</th>
+                                        <th>CVE_ENT</th>
+                                        <th>CVE_MUN</th>
+                                        <th>NOMGEO</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {
+                                        atributos.map((value, index) => (
+                                            <tr key={index}>
+                                                <td>{value.properties.fid}</td>
+                                                <td>{value.properties.CVEGEO}</td>
+                                                <td>{value.properties.CVE_ENT}</td>
+                                                <td>{value.properties.CVE_MUN}</td>
+                                                <td>{value.properties.NOMGEO}</td>
+                                            </tr>
+                                        ))
+                                    }
+                                </tbody>
+                            </Table>
+                        </div>
+                    }
+                </div>
+            </div>
+
         </>
     )
 }

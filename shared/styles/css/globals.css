@@ -25,6 +25,16 @@
     font-size: 13pt;
     line-height: 21pt;
 }
+.boton-idioma a.dropdown-toggle{
+    color: #fff !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+    padding: 0 !important;
+}
+
+.boton-idioma a:hover{
+    @apply tw-text-inst-dorado !important;
+}
 
 /* Menu paginas */
 
