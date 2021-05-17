@@ -3,9 +3,9 @@ import { useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEdit, faCheck, faAngleDown, faCaretLeft, faFileCsv, faAngleRight } from '@fortawesome/free-solid-svg-icons'
+import { faEdit, faCheck, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faDownload } from '@fortawesome/free-solid-svg-icons'
 import { faSquare } from '@fortawesome/free-regular-svg-icons'
-import { CSVLink, CSVDownload } from "react-csv";
+import { CSVLink } from "react-csv";
 
 import ContenedorMapaAnalisis from '../../components/ContenedorMapaAnalisis'
 
@@ -212,7 +212,6 @@ export default function AnalisisGeografico() {
         return url;
     }
 
-
     //Al seleccionar y añadir una entidad para los mapas
     //Para guardar las capas que se van a mostrar
     const [capasVisualizadas, setCapasVisualizadas] = useState([])
@@ -254,6 +253,9 @@ export default function AnalisisGeografico() {
                     url: url,
                     dataType: 'jsonp',
                     success: function (response) {
+                        console.log('response filtrada: ', response)
+                        var download = JSON.stringify(response)
+                        // setGeoJsonFiles
                         response["num_capa"] = capa.indice;
                         response["nom_capa"] = capa.titulo;
                         response["habilitado"] = true;
@@ -275,11 +277,12 @@ export default function AnalisisGeografico() {
                         });
                         response['layer'] = layer;
                         response['simbologia'] = creaSVG(capa.titulo)
+                        response.download = download;
                         if (mapaBase == 0) {
                             setCapasVisualizadas([...capasVisualizadas, response])
                             referenciaMapa.addLayer(response.layer)
                         } else if (mapaBase == 1) {
-                            setCapasVisualizadasEspejo([...capasVisualizadasEspejo, response])
+                            setCapasVisualizadasEspejo([...capasVisualizadasEspejo, response, download])
                             referenciaMapaEspejo.addLayer(response.layer)
                         }
                     }
@@ -299,7 +302,6 @@ export default function AnalisisGeografico() {
                 capaWMS["estilos"] = { 'transparencia': 1 };
                 capaWMS["zoomMinimo"] = 5;
                 capaWMS["zoomMaximo"] = 18;
-                capaWMS["simbologia"] = capa.leyenda;
 
                 let layer = L.tileLayer.wms(capaWMS.url, {
                     layers: capaWMS.layers,
@@ -311,9 +313,12 @@ export default function AnalisisGeografico() {
                     maxZoom: capaWMS.zoomMaximo,
                 })
                 capaWMS["layer"] = layer;
+                console.log('response filtrada: ', layer)
                 if (mapaBase == 0) {
                     setCapasVisualizadas([...capasVisualizadas, capaWMS])
                     referenciaMapa.addLayer(capaWMS.layer)
+                    // var download = JSON.stringify(response)
+                    // console.log(capaWMS.layer);
                 } else if (mapaBase == 1) {
                     setCapasVisualizadasEspejo([...capasVisualizadasEspejo, capaWMS])
                     referenciaMapaEspejo.addLayer(capaWMS.layer)
@@ -743,6 +748,15 @@ export default function AnalisisGeografico() {
                                                                                                         </Form.Group>
                                                                                                     </div>
                                                                                                 )}
+                                                                                                <hr/>
+                                                                                                <div className="row container-fluid d-flex justify-content-center">
+                                                                                                    <a className="tw-text-titulo tw-font-bold" href={`data:text/json;charset=utf-8,${encodeURIComponent(capa.download)}`} download={`${capa.num_capa}_${capa.nom_capa}.json`}>
+                                                                                                        <FontAwesomeIcon size="2x" icon={faDownload} />
+                                                                                                    </a>
+                                                                                                    {/* <button className="btn-analisis" type="submit" onClick={() => {processFiles(capa)}}>
+                                                                                                        Descargar
+                                                                                                    </button> */}
+                                                                                                </div>
                                                                                         </Card.Body>
                                                                                     </Accordion.Collapse>
                                                                                 </Card>
