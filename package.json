@@ -43,8 +43,8 @@
     "react-draggable": "^4.4.3",
     "react-hook-form": "^6.15.7",
     "react-i18next": "^11.8.15",
-    "react-leaflet": "^3.1.0",
-    "react-leaflet-draw": "^0.19.7",
+    "react-leaflet": "^3.2.0",
+    "react-leaflet-draw": "^0.19.8",
     "react-leaflet-easyprint": "^2.0.0",
     "react-leaflet-editable": "^0.2.2",
     "react-leaflet-fullscreen": "^1.0.1",
@@ -53,6 +53,7 @@
     "react-paginate": "^7.1.2",
     "react-popout": "^1.0.3",
     "recharts": "^2.0.8",
+    "shp-write": "^0.3.2",
     "tailwindcss": "^2.1.2",
     "universal-cookie": "^4.0.4"
   }
