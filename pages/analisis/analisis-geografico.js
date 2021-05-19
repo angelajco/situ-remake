@@ -3,7 +3,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEdit, faCheck, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload  } from '@fortawesome/free-solid-svg-icons'
+import { faEdit, faCheck, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight } from '@fortawesome/free-solid-svg-icons'
 import { faSquare } from '@fortawesome/free-regular-svg-icons'
 import { CSVLink } from "react-csv";
 import { Typeahead } from 'react-bootstrap-typeahead';
@@ -221,7 +221,6 @@ export default function AnalisisGeografico() {
         let arregloBase = null;
         // let datoForm = null;
         let capa = data.capaAgregar[0];
-        console.log(data, "data")
         if (mapaBase == 0) {
             arregloBase = capasVisualizadas;
             // datoForm = data.capaMapa;
@@ -256,7 +255,6 @@ export default function AnalisisGeografico() {
                     url: url,
                     dataType: 'jsonp',
                     success: function (response) {
-                        console.log('response filtrada: ', response)
                         var download = JSON.stringify(response)
                         // setGeoJsonFiles
                         response["num_capa"] = capa.indice;
@@ -305,6 +303,7 @@ export default function AnalisisGeografico() {
                 capaWMS["estilos"] = { 'transparencia': 1 };
                 capaWMS["zoomMinimo"] = 5;
                 capaWMS["zoomMaximo"] = 18;
+                capaWMS['simbologia'] = capa.leyenda;
 
                 let layer = L.tileLayer.wms(capaWMS.url, {
                     layers: capaWMS.layers,
@@ -316,7 +315,6 @@ export default function AnalisisGeografico() {
                     maxZoom: capaWMS.zoomMaximo,
                 })
                 capaWMS["layer"] = layer;
-                console.log('response filtrada: ', layer)
                 if (mapaBase == 0) {
                     setCapasVisualizadas([...capasVisualizadas, capaWMS])
                     referenciaMapa.addLayer(capaWMS.layer)
@@ -339,12 +337,12 @@ export default function AnalisisGeografico() {
     //Para asignar atributos
     const muestraAtributos = (capa, mapa) => {
         if (mapa == 0) {
-            setAtributos(capa.features)
+            setAtributos([capa.features, capa.nom_capa])
             if (showModalAtributos == false) {
                 setShowModalAtributos(true)
             }
         } else if (mapa == 1) {
-            setAtributosEspejo(capa.features)
+            setAtributosEspejo([capa.features, capa.nom_capa])
             if (showModalAtributosEspejo == false) {
                 setShowModalAtributosEspejo(true)
             }
@@ -585,7 +583,7 @@ export default function AnalisisGeografico() {
     return (
         <>
             <Modal show={showModalAgregarCapas} onHide={() => setShowModalAgregarCapas(!showModalAgregarCapas)}
-                keyboard={false}>
+                keyboard={false} className="modal-analisis" contentClassName="modal-redimensionable">
                 <Modal.Header closeButton >
                     <Modal.Title><b>Agrega capas</b></Modal.Title>
                 </Modal.Header>
@@ -606,13 +604,13 @@ export default function AnalisisGeografico() {
                             emptyLabel="No se encontraron resultados"
                         />
                         {errors.capaAgregar && <p className="tw-text-red-600">Este campo es obligatorio</p>}
-                        <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR</button>
+                        <button className="tw-mt-6 btn-analisis" type="submit">AGREGAR</button>
                     </Form>
                 </Modal.Body>
             </Modal>
 
             <Modal show={showModalAgregarCapasEspejo} onHide={() => setShowModalAgregarCapasEspejo(!showModalAgregarCapasEspejo)}
-                keyboard={false}>
+                keyboard={false} className="modal-analisis" contentClassName="modal-redimensionable">
                 <Modal.Header closeButton >
                     <Modal.Title><b>Agrega capas</b></Modal.Title>
                 </Modal.Header>
@@ -633,7 +631,7 @@ export default function AnalisisGeografico() {
                             emptyLabel="No se encontraron resultados"
                         />
                         {errors.capaAgregar && <p className="tw-text-red-600">Este campo es obligatorio</p>}
-                        <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR</button>
+                        <button className="tw-mt-6 btn-analisis" type="submit">AGREGAR</button>
                     </Form>
                 </Modal.Body>
             </Modal>
@@ -663,39 +661,10 @@ export default function AnalisisGeografico() {
                                 </div>
 
                                 <div className={dobleMapaVista}>
-                                    <button className="btn-analisis" onClick={() => setShowModalAgregarCapas(true)}>Agregar capas</button>
-                                    {/* <p>Capas</p>
-                                    <Form onSubmit={handleSubmit(onSubmit)} data-tipo={0}>
-                                        <Form.Group className="tw-inline-flex tw-mr-4" controlId="capaMapa">
-                                            <Controller
-                                                as={Typeahead}
-                                                control={control}
-                                                options={datosCapasBackEnd}
-                                                labelKey="titulo"
-                                                id="buscadorCapas"
-                                                name="capaMapa"
-                                                rules={{ required: true }}
-                                                defaultValue=""
-                                                filterBy={["tipo"]}
-                                                placeholder="Escoge o escribe una capa"
-                                                clearButton
-                                                emptyLabel="No se encontraron resultados"
-                                            />
-                                            {errors.capaMapa && <p className="tw-text-red-600">Este campo es obligatorio</p>} */}
-                                    {/* <Form.Control as="select" name="capaMapa" required ref={register}>
-                                                <option value=""></option>
-                                                {
-                                                    datosCapasBackEnd.map((value, index) => {
-                                                        return (
-                                                            <option key={index} value={value.indice}>{value.titulo}</option>
-                                                        )
-                                                    })
-                                                }
-                                            </Form.Control>
-                                        {/* </Form.Group>
-                                        <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR
-                                        </button>
-                                    </Form> */}
+                                    <button className="botones-barra-mapa tw-py-1" onClick={() => setShowModalAgregarCapas(true)}>
+                                        <img src="/images/analisis/agregar-capas.png" alt="Agregar capas" />
+                                    </button>
+
                                 </div>
 
                                 <div className="col-12 tw-mt-8">
@@ -855,15 +824,15 @@ export default function AnalisisGeografico() {
                                                                                                         </Form.Group>
                                                                                                     </div>
                                                                                                 )}
-                                                                                                <hr/>
-                                                                                                <div className="row container-fluid d-flex justify-content-center">
-                                                                                                    <a className="tw-text-titulo tw-font-bold" href={`data:text/json;charset=utf-8,${encodeURIComponent(capa.download)}`} download={`${capa.num_capa}_${capa.nom_capa}.json`}>
-                                                                                                        <FontAwesomeIcon size="2x" icon={faDownload} />
-                                                                                                    </a>
-                                                                                                    {/* <button className="btn-analisis" type="submit" onClick={() => {processFiles(capa)}}>
+                                                                                            <hr />
+                                                                                            <div className="row container-fluid d-flex justify-content-center">
+                                                                                                <a className="tw-text-titulo tw-font-bold" href={`data:text/json;charset=utf-8,${encodeURIComponent(capa.download)}`} download={`${capa.num_capa}_${capa.nom_capa}.json`}>
+                                                                                                    <FontAwesomeIcon size="2x" icon={faDownload} />
+                                                                                                </a>
+                                                                                                {/* <button className="btn-analisis" type="submit" onClick={() => {processFiles(capa)}}>
                                                                                                         Descargar
                                                                                                     </button> */}
-                                                                                                </div>
+                                                                                            </div>
                                                                                         </Card.Body>
                                                                                     </Accordion.Collapse>
                                                                                 </Card>
@@ -881,7 +850,7 @@ export default function AnalisisGeografico() {
                                             </Collapse>
                                         </div>
                                         <button className="btn btn-light boton-menu-lateral" onClick={() => setMenuLateral(!menuLateral)}>
-                                            <FontAwesomeIcon className="tw-cursor-pointer" icon={faCaretLeft} />
+                                            <FontAwesomeIcon className="tw-cursor-pointer" icon={menuLateral ? faCaretLeft : faCaretRight} />
                                         </button>
                                     </div>
                                     <ContenedorMapaAnalisis referencia={capturaReferenciaMapa} botones={true} datos={capasVisualizadas}
@@ -908,23 +877,9 @@ export default function AnalisisGeografico() {
                                 </div>
 
                                 <div className={dobleMapaVista}>
-                                    <button className="btn-analisis" onClick={() => setShowModalAgregarCapasEspejo(true)}>Agregar capas</button>
-                                    {/* <p>Capas</p>
-                                    <Form onSubmit={handleSubmit(onSubmit)} data-tipo={1}>
-                                        <Form.Group className="tw-inline-flex tw-mr-4" controlId="capaEspejo">
-                                            <Form.Control as="select" name="capaEspejo" required ref={register}>
-                                                <option value=""></option>
-                                                {
-                                                    datosCapasBackEnd.map((value, index) => {
-                                                        return (
-                                                            <option key={index} value={value.indice}>{value.titulo}</option>
-                                                        )
-                                                    })
-                                                }
-                                            </Form.Control>
-                                        </Form.Group>
-                                        <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR</button>
-                                    </Form> */}
+                                    <button className="botones-barra-mapa tw-py-1" onClick={() => setShowModalAgregarCapasEspejo(true)}>
+                                        <img src="/images/analisis/agregar-capas.png" alt="Agregar capas" />
+                                    </button>
                                 </div>
 
                                 <div className="col-12 tw-mt-8">
@@ -1112,40 +1067,6 @@ export default function AnalisisGeografico() {
                         </div>
 
                     </div>
-                </div>
-            </div>
-
-            <div className="container">
-                <div className="row">
-                    {
-                        atributos.length != 0 &&
-                        <div className="col-6">
-                            <Table striped bordered hover>
-                                <thead>
-                                    <tr>
-                                        <th>fid</th>
-                                        <th>CVEGEO</th>
-                                        <th>CVE_ENT</th>
-                                        <th>CVE_MUN</th>
-                                        <th>NOMGEO</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {
-                                        atributos.map((value, index) => (
-                                            <tr key={index}>
-                                                <td>{value.properties.fid}</td>
-                                                <td>{value.properties.CVEGEO}</td>
-                                                <td>{value.properties.CVE_ENT}</td>
-                                                <td>{value.properties.CVE_MUN}</td>
-                                                <td>{value.properties.NOMGEO}</td>
-                                            </tr>
-                                        ))
-                                    }
-                                </tbody>
-                            </Table>
-                        </div>
-                    }
                 </div>
             </div>
 

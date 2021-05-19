@@ -346,7 +346,7 @@ export default function Map(props) {
                     for (var i = 1; i < length; i++) {
                         distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
                     }
-                    layer.bindTooltip(`<p class="text-center">Distacia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
+                    layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
                 } else if (!(layer instanceof L.Marker)) {
                     var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                     console.log('latlngs: ', layer.getLatLngs())

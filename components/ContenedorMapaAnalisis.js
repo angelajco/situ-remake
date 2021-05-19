@@ -11,7 +11,7 @@ import { faWindowMaximize, faWindowMinimize, faWindowRestore } from '@fortawesom
 
 import $ from 'jquery'
 
-import Draggable from 'react-draggable'; // Both at the same time
+import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
 
 // var refMapaContenedor = null;
@@ -79,7 +79,7 @@ function ContenedorMapaAnalisis(props) {
 
     function DraggableModalDialog(props) {
         return (
-            <Draggable handle=".modal-header"><ModalDialog className="modal-drag" {...props} /></Draggable>
+            <Draggable handle=".modal-header"><ModalDialog  {...props} /></Draggable>
         )
     }
 
@@ -87,11 +87,20 @@ function ContenedorMapaAnalisis(props) {
         $('body').addClass("analisis-geografico-modales");
     }
 
+    function remueveTabindex() {
+        setShowModalSimbologia(true);
+        setTimeout(function () {
+            $('.modal-analisis').removeAttr("tabindex");
+        }, 1000);
+    }
+
     return (
         <>
             <div className="div-herramientas-contenedor">
                 <OverlayTrigger overlay={<Tooltip>Simbología</Tooltip>}>
-                    <button className="botones-barra-mapa" onClick={() => setShowModalSimbologia(true)}>
+                    {/* <button className="botones-barra-mapa" onClick={() => setShowModalSimbologia(true)}> 
+                    */}
+                    <button className="botones-barra-mapa" onClick={remueveTabindex}>
                         <FontAwesomeIcon icon={faImages}></FontAwesomeIcon>
                     </button>
                 </OverlayTrigger>
@@ -108,11 +117,11 @@ function ContenedorMapaAnalisis(props) {
             {/* </ContenedorMapaContext.Provider> */}
 
             <Modal dialogAs={DraggableModalDialog} show={showModalSimbologia} onHide={() => setShowModalSimbologia(!showModalSimbologia)} backdrop={false} keyboard={false} className="tw-pointer-events-none modal-analisis modal-simbologia" contentClassName="modal-redimensionable">
-                <Modal.Header className="tw-cursor-pointer" closeButton >
+                <Modal.Header className="tw-cursor-pointer" closeButton>
                     <Modal.Title><b>Simbología</b></Modal.Title>
                     <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e, 0)}>
                         {/* <img className="icono-minimizar tw-w-4" src="/images/analisis/window-minimize-regular.svg" /> */}
-                        <FontAwesomeIcon icon={faWindowRestore}/>
+                        <FontAwesomeIcon icon={faWindowRestore} />
                     </button>
                 </Modal.Header>
                 <Modal.Body>
@@ -150,12 +159,15 @@ function ContenedorMapaAnalisis(props) {
                     <Modal.Title><b>Atributos</b></Modal.Title>
                     <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e, 1)}>
                         {/* <img className="icono-minimizar tw-w-4" src="/images/analisis/window-minimize-regular.svg" /> */}
-                        <FontAwesomeIcon icon={faWindowRestore}/>
+                        <FontAwesomeIcon icon={faWindowRestore} />
                     </button>
                 </Modal.Header>
                 <Modal.Body className="tw-overflow-y-auto">
                     <Table striped bordered hover responsive>
                         <thead>
+                            <tr className="tw-text-center">
+                                <th colSpan="5">{props.datosAtributos.length != 0 && props.datosAtributos[1]}</th>
+                            </tr>
                             <tr>
                                 <th>fid</th>
                                 <th>CVEGEO</th>
@@ -166,7 +178,8 @@ function ContenedorMapaAnalisis(props) {
                         </thead>
                         <tbody>
                             {
-                                props.datosAtributos.map((value, index) => (
+                                props.datosAtributos.length != 0 &&
+                                props.datosAtributos[0].map((value, index) => (
                                     <tr key={index}>
                                         <td>{value.properties.fid}</td>
                                         <td>{value.properties.CVEGEO}</td>

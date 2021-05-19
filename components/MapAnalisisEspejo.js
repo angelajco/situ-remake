@@ -29,6 +29,10 @@ export default function Map(props) {
     //Contexto para pasar al contenedor del mapa
     const refMapContext = useContext(referenciaMapaContext)
     props.referencia(mapaReferencia);
+    /*********************Esta linea se descomenta en el analisis 2**********************/
+    if (props.referenciaAnalisis != undefined) {
+        props.referenciaAnalisis(mapaReferencia);
+    }
 
     //Para guardar el grupo de capas de dibujo
     var capasDib = null;
