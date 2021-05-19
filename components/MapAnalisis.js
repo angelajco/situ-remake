@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import React, { useState, useEffect, useContext } from 'react'
 
-import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents } from 'react-leaflet'
+import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents, GeoJSON } from 'react-leaflet'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
@@ -21,6 +21,7 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 //Leaflet zoomboz
 import 'leaflet-zoombox'
 import 'leaflet-zoombox/L.Control.ZoomBox.css'
+import shpjs from 'shpjs'
 
 //Funcion del timeline undo redo
 var registraMovimiento = true;
@@ -358,6 +359,24 @@ export default function Map(props) {
         return null;
     }
 
+    function addShapeFile(data) {
+        processShapeFile(data, function(result) {
+            console.log('data: ', data);
+            console.log('L: ', L);
+            console.log('result: ', result)
+            // new L.ShapeFile(data);
+            // new L.Shapefile(data);
+            // L.shapefile(data);
+            // console.log('L.Shapefile(file.data): ', L.Shapefile(data));
+        });
+    }
+
+    function processShapeFile(data, success){
+        shpjs(data).then(function(geojson){
+            success(geojson);
+        });
+    }
+
     return (
         <>
             <Head>
@@ -416,6 +435,21 @@ export default function Map(props) {
                 </FeatureGroup>
                 <Dibujos />
                 <ControlMovimiento />
+                {
+                    props.fileUpload && (
+                        props.fileUpload.map((file, index) =>
+                            file.type == 'json' ? (
+                                <GeoJSON key={index}
+                                    data={file.data}
+                                />
+                            ) :
+                            file.type == 'zip' ? (
+                                addShapeFile(file.data)
+                            ) :
+                            ''
+                        )
+                    )
+                }
             </MapContainer>
 
         </>

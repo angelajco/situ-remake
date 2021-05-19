@@ -54,6 +54,7 @@
     "react-popout": "^1.0.3",
     "recharts": "^2.0.8",
     "shp-write": "^0.3.2",
+    "shpjs": "^3.6.3",
     "tailwindcss": "^2.1.2",
     "universal-cookie": "^4.0.4"
   }

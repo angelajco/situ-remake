@@ -39,7 +39,7 @@ function ContenedorMapaAnalisis(props) {
     // const [estadoCaptura, setEstadoCaptura] = useState({ tipoCoord: tipoCoordenadaGlobal, referenciaMapa: captura })
 
     // function controlaContexto() {
-    //     console.log(props);
+        // console.log(props);
     //     setEstadoCaptura(
     //         { tipoCoord: tipoCoordenadaGlobal, zoom: zoomGlobal }
     //     );
@@ -110,9 +110,9 @@ function ContenedorMapaAnalisis(props) {
             {
                 props.botones == true
                     ?
-                    <Map referencia={props.referencia} datos={props.datos} />
+                    <Map referencia={props.referencia} datos={props.datos} fileUpload={props.fileUpload}/>
                     :
-                    <MapEspejo referencia={props.referencia} datos={props.datos} />
+                    <MapEspejo referencia={props.referencia} datos={props.datos} fileUpload={props.fileUpload}/>
             }
             {/* </ContenedorMapaContext.Provider> */}
 
