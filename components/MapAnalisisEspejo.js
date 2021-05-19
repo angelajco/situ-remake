@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import React, { useState, useEffect, useContext } from 'react'
 
-import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents } from 'react-leaflet'
+import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents, GeoJSON } from 'react-leaflet'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
@@ -296,6 +296,17 @@ export default function Map(props) {
                 </FeatureGroup>
                 <Dibujos />
                 <ControlMovimiento />
+                {
+                    props.fileUpload && (
+                        props.fileUpload.map((file, index) =>
+                            file.type == 'json' && (
+                                <GeoJSON key={index}
+                                    data={file.data}
+                                />
+                            )
+                        )
+                    )
+                }
             </MapContainer>
 
         </>

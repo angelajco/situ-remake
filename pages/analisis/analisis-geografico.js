@@ -11,6 +11,7 @@ import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 import ContenedorMapaAnalisis from '../../components/ContenedorMapaAnalisis'
+import ModalComponent from '../../components/ModalComponent'
 
 import catalogoEntidades from "../../shared/jsons/entidades.json";
 
@@ -128,7 +129,7 @@ export default function AnalisisGeografico() {
             setPantallaDividida(true)
             referenciaMapaEspejo._onResize();
             setDobleMapa("col-6");
-            setDobleMapaVista("col-12");
+            // setDobleMapaVista("col-12");
         }
     }
 
@@ -256,7 +257,6 @@ export default function AnalisisGeografico() {
                     url: url,
                     dataType: 'jsonp',
                     success: function (response) {
-                        console.log('response filtrada: ', response)
                         var download = JSON.stringify(response)
                         // setGeoJsonFiles
                         response["num_capa"] = capa.indice;
@@ -280,7 +280,7 @@ export default function AnalisisGeografico() {
                         });
                         response['layer'] = layer;
                         response['simbologia'] = creaSVG(capa.titulo)
-                        response.download = download;
+                        response.download = [{num_capa: response.num_capa, nom_capa: response.nom_capa, link: download, tipo: 'GeoJSON'}];
                         if (mapaBase == 0) {
                             setCapasVisualizadas([...capasVisualizadas, response])
                             referenciaMapa.addLayer(response.layer)
@@ -316,12 +316,16 @@ export default function AnalisisGeografico() {
                     maxZoom: capaWMS.zoomMaximo,
                 })
                 capaWMS["layer"] = layer;
-                console.log('response filtrada: ', layer)
+                var url = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaWMS.layer.wmsParams.layers}&outputFormat=`
+                var download = [
+                    {num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `${url}KML`, tipo: 'KML'},
+                    {num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaWMS.layer.wmsParams.layers}&bbox=-180,-90,180,90`, tipo: 'KMZ'},
+                    {num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `${url}SHAPE-ZIP`, tipo: 'SHAPE'}
+                ];
+                capaWMS.download = download;
                 if (mapaBase == 0) {
                     setCapasVisualizadas([...capasVisualizadas, capaWMS])
                     referenciaMapa.addLayer(capaWMS.layer)
-                    // var download = JSON.stringify(response)
-                    // console.log(capaWMS.layer);
                 } else if (mapaBase == 1) {
                     setCapasVisualizadasEspejo([...capasVisualizadasEspejo, capaWMS])
                     referenciaMapaEspejo.addLayer(capaWMS.layer)
@@ -582,8 +586,107 @@ export default function AnalisisGeografico() {
     const [showModalAgregarCapas, setShowModalAgregarCapas] = useState(false)
     const [showModalAgregarCapasEspejo, setShowModalAgregarCapasEspejo] = useState(false)
 
+    const [show, setShow] = useState(false);
+    const [datosModal, setDatosModal] = useState(
+        {
+            title: '',
+            body: ''
+        }
+    );
+    const [fileUpload, setFileUpload] = useState([]);
+    const [fileUploadEspejo, setFileUploadEspejo] = useState([]);
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
+
+    function renderModalDownload(items) {
+        setDatosModal({
+            title: `Descarga de ${items[0].nom_capa}`,
+            body: <ul>
+                {
+                    items.map((item, index) => (
+                        <li key={index} className="tw-text-titulo tw-font-bold" type="disc">
+                            <a className="tw-text-black" href={
+                                item.tipo == 'GeoJSON'?
+                                    `data:text/json;charset=utf-8,${encodeURIComponent(item.link)}` :
+                                    item.link
+                            } download={
+                                item.tipo == 'GeoJSON'?
+                                    `${item.num_capa}_${item.nom_capa}.json` :
+                                    `${item.num_capa}_${item.nom_capa}`
+                            }>{item.tipo}</a>
+                        </li>
+                    ))
+                }
+            </ul>,
+            redireccion: null,
+            nombreBoton: 'Cerrar'
+        });
+        handleShow();
+    }
+
+    function processInputFile(event, option) {
+        var fileType = event.target.files[0].name;
+        fileType = fileType.substring(fileType.indexOf('.') + 1);
+        switch (fileType) {
+            case 'json':
+                var fileReader = new FileReader();
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = loaded => {
+                    if (option === 0)
+                        setFileUpload([...fileUpload, {data: JSON.parse(loaded.target.result), type: fileType}]);
+                    else
+                        setFileUploadEspejo([...fileUploadEspejo, {data: JSON.parse(loaded.target.result), type: fileType}]);
+                };
+            break;
+            case 'kml':
+                setDatosModal({
+                    title: 'En construcción',
+                    body: 'Funcionalidad en construcción',
+                    redireccion: null,
+                    nombreBoton: 'Cerrar'
+                });
+                handleShow();
+            break;
+            case 'kmz':
+                setDatosModal({
+                    title: 'En construcción',
+                    body: 'Funcionalidad en construcción',
+                    redireccion: null,
+                    nombreBoton: 'Cerrar'
+                });
+                handleShow();
+            break;
+            case 'zip':
+                var fileReader = new FileReader();
+                fileReader.readAsArrayBuffer(event.target.files[0]);
+                fileReader.onload = loaded => {
+                    if (option === 0) {
+                        setFileUpload([...fileUpload, {data: loaded, type: fileType}]);
+                    } else {
+                        setFileUploadEspejo([...fileUploadEspejo, {data: loaded, type: fileType}]);
+                    }
+                };
+            break;
+            default:
+                setDatosModal({
+                    title: 'Error!!!',
+                    body: 'Archivo no soportado',
+                    redireccion: null,
+                    nombreBoton: 'Cerrar'
+                });
+                handleShow();
+            break;
+        }
+    }
+
     return (
         <>
+            <ModalComponent
+                show={show}
+                datos={datosModal}
+                onHide={handleClose}
+                onClick={handleClose}
+            />
             <Modal show={showModalAgregarCapas} onHide={() => setShowModalAgregarCapas(!showModalAgregarCapas)}
                 keyboard={false}>
                 <Modal.Header closeButton >
@@ -697,7 +800,10 @@ export default function AnalisisGeografico() {
                                         </button>
                                     </Form> */}
                                 </div>
-
+                                {/* <div className={dobleMapaVista}>
+                                    <input type="file" name="file" onChange={(e) => processInputFile(e, 0)} id="uploadFIleButton" hidden/>
+                                    <label className="btn-analisis uploadFIleButtonLabel"  htmlFor="uploadFIleButton">Cargar archivo</label>
+                                </div> */}
                                 <div className="col-12 tw-mt-8">
                                     <div className="contenedor-menu-lateral">
                                         <div className={menuLateral ? "tw-w-96 menu-lateral" : "tw-w-0 menu-lateral"}>
@@ -857,12 +963,13 @@ export default function AnalisisGeografico() {
                                                                                                 )}
                                                                                                 <hr/>
                                                                                                 <div className="row container-fluid d-flex justify-content-center">
-                                                                                                    <a className="tw-text-titulo tw-font-bold" href={`data:text/json;charset=utf-8,${encodeURIComponent(capa.download)}`} download={`${capa.num_capa}_${capa.nom_capa}.json`}>
-                                                                                                        <FontAwesomeIcon size="2x" icon={faDownload} />
-                                                                                                    </a>
-                                                                                                    {/* <button className="btn-analisis" type="submit" onClick={() => {processFiles(capa)}}>
-                                                                                                        Descargar
-                                                                                                    </button> */}
+                                                                                                    {
+                                                                                                        <a className="tw-text-titulo tw-font-bold" style={{cursor: 'pointer'}} onClick={() => (renderModalDownload(capa.download))}>
+                                                                                                            <OverlayTrigger overlay={<Tooltip>{`Descargar (${capa.download.length} disponible(s))`}</Tooltip>}>
+                                                                                                                <FontAwesomeIcon className="tw-px-1" size="2x" icon={faDownload} />
+                                                                                                            </OverlayTrigger>
+                                                                                                        </a>
+                                                                                                    }
                                                                                                 </div>
                                                                                         </Card.Body>
                                                                                     </Accordion.Collapse>
@@ -887,7 +994,8 @@ export default function AnalisisGeografico() {
                                     <ContenedorMapaAnalisis referencia={capturaReferenciaMapa} botones={true} datos={capasVisualizadas}
                                         datosAtributos={atributos}
                                         modalAtributos={showModalAtributos}
-                                        setModalAtributos={setShowModalAtributos} />
+                                        setModalAtributos={setShowModalAtributos}
+                                        fileUpload={fileUpload} />
                                 </div>
                             </div>
                         </div>
@@ -926,6 +1034,10 @@ export default function AnalisisGeografico() {
                                         <button className="btn-analisis tw-inline-flex" type="submit">AGREGAR</button>
                                     </Form> */}
                                 </div>
+                                {/* <div className={dobleMapaVista}>
+                                    <input type="file" name="file" onChange={(e) => processInputFile(e, 1)} id="uploadFIleButtonEspejo" hidden/>
+                                    <label className="btn-analisis uploadFIleButtonLabel"  htmlFor="uploadFIleButtonEspejo">Cargar archivo</label>
+                                </div> */}
 
                                 <div className="col-12 tw-mt-8">
                                     <div className="contenedor-menu-lateral">
@@ -1106,7 +1218,8 @@ export default function AnalisisGeografico() {
                                     <ContenedorMapaAnalisis referencia={capturaReferenciaMapaEspejo} botones={false} datos={capasVisualizadasEspejo}
                                         datosAtributos={atributosEspejo}
                                         modalAtributos={showModalAtributosEspejo}
-                                        setModalAtributos={setShowModalAtributosEspejo} />
+                                        setModalAtributos={setShowModalAtributosEspejo}
+                                        fileUpload={fileUploadEspejo} />
                                 </div>
                             </div>
                         </div>
