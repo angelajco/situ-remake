@@ -639,13 +639,14 @@ export default function AnalisisGeografico() {
                 };
             break;
             case 'kml':
-                setDatosModal({
-                    title: 'En construcción',
-                    body: 'Funcionalidad en construcción',
-                    redireccion: null,
-                    nombreBoton: 'Cerrar'
-                });
-                handleShow();
+                var fileReader = new FileReader();
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = loaded => {
+                    if (option === 0)
+                        setFileUpload([...fileUpload, {data: loaded.target.result, type: fileType}]);
+                    else
+                        setFileUploadEspejo([...fileUploadEspejo, {data: loaded.target.result, type: fileType}]);
+                };
             break;
             case 'kmz':
                 setDatosModal({
@@ -656,17 +657,17 @@ export default function AnalisisGeografico() {
                 });
                 handleShow();
             break;
-            case 'zip':
-                var fileReader = new FileReader();
-                fileReader.readAsArrayBuffer(event.target.files[0]);
-                fileReader.onload = loaded => {
-                    if (option === 0) {
-                        setFileUpload([...fileUpload, {data: loaded, type: fileType}]);
-                    } else {
-                        setFileUploadEspejo([...fileUploadEspejo, {data: loaded, type: fileType}]);
-                    }
-                };
-            break;
+            // case 'zip':
+            //     var fileReader = new FileReader();
+            //     fileReader.readAsDataURL(event.target.files[0]);//ArrayBuffer(event.target.files[0]);
+            //     fileReader.onload = loaded => {
+            //         if (option === 0) {
+            //             setFileUpload([...fileUpload, {data: loaded, type: fileType}]);
+            //         } else {
+            //             setFileUploadEspejo([...fileUploadEspejo, {data: loaded, type: fileType}]);
+            //         }
+            //     };
+            // break;
             default:
                 setDatosModal({
                     title: 'Error!!!',
@@ -771,10 +772,10 @@ export default function AnalisisGeografico() {
                                     </button>
 
                                 </div>
-                                {/* <div className={dobleMapaVista}>
+                                <div className={dobleMapaVista}>
                                     <input type="file" name="file" onChange={(e) => processInputFile(e, 0)} id="uploadFIleButton" hidden/>
                                     <label className="btn-analisis uploadFIleButtonLabel"  htmlFor="uploadFIleButton">Cargar archivo</label>
-                                </div> */}
+                                </div>
                                 <div className="col-12 tw-mt-8">
                                     <div className="contenedor-menu-lateral">
                                         <div className={menuLateral ? "tw-w-96 menu-lateral" : "tw-w-0 menu-lateral"}>
@@ -991,10 +992,10 @@ export default function AnalisisGeografico() {
                                         <img src="/images/analisis/agregar-capas.png" alt="Agregar capas" />
                                     </button>
                                 </div>
-                                {/* <div className={dobleMapaVista}>
+                                <div className={dobleMapaVista}>
                                     <input type="file" name="file" onChange={(e) => processInputFile(e, 1)} id="uploadFIleButtonEspejo" hidden/>
                                     <label className="btn-analisis uploadFIleButtonLabel"  htmlFor="uploadFIleButtonEspejo">Cargar archivo</label>
-                                </div> */}
+                                </div>
 
                                 <div className="col-12 tw-mt-8">
                                     <div className="contenedor-menu-lateral">

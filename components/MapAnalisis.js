@@ -5,8 +5,9 @@ import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomContr
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import ReactLeafletKml from 'react-leaflet-kml';
 
-const { BaseLayer } = LayersControl;
+const { BaseLayer, Overlay } = LayersControl;
 import { EditControl } from 'react-leaflet-draw'
 
 import referenciaMapaContext from '../contexts/ContenedorMapaContext'
@@ -21,7 +22,6 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 //Leaflet zoomboz
 import 'leaflet-zoombox'
 import 'leaflet-zoombox/L.Control.ZoomBox.css'
-import shpjs from 'shpjs'
 
 //Funcion del timeline undo redo
 var registraMovimiento = true;
@@ -360,21 +360,12 @@ export default function Map(props) {
     }
 
     function addShapeFile(data) {
-        processShapeFile(data, function(result) {
-            console.log('data: ', data);
-            console.log('L: ', L);
-            console.log('result: ', result)
-            // new L.ShapeFile(data);
-            // new L.Shapefile(data);
-            // L.shapefile(data);
-            // console.log('L.Shapefile(file.data): ', L.Shapefile(data));
-        });
-    }
-
-    function processShapeFile(data, success){
-        shpjs(data).then(function(geojson){
-            success(geojson);
-        });
+        console.log('data: ', data);
+        console.log('L: ', L);
+        // new L.ShapeFile(data);
+        // new L.Shapefile(data);
+        // L.shapefile(data);
+        // console.log('L.Shapefile(file.data): ', L.Shapefile(data));
     }
 
     return (
@@ -445,6 +436,10 @@ export default function Map(props) {
                             ) :
                             file.type == 'zip' ? (
                                 addShapeFile(file.data)
+                            ) :
+                            file.type == 'kml' ? (
+                                <ReactLeafletKml key={index}
+                                    kml={new DOMParser().parseFromString(file.data, 'text/xml')} />
                             ) :
                             ''
                         )
