@@ -2,7 +2,7 @@ import dynamic from 'next/dynamic'
 
 import React, { useState, useEffect, useContext } from 'react'
 import { Controller, useForm } from "react-hook-form";
-import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal } from 'react-bootstrap'
+import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight } from '@fortawesome/free-solid-svg-icons'
 import { faWindowRestore } from '@fortawesome/free-regular-svg-icons'
@@ -233,6 +233,12 @@ function ContenedorNew(props) {
         }
     }
 
+
+    const { register: registraServicio, handleSubmit: handleAgregaServicio } = useForm();
+    const agregaServicio = (data) => {
+        console.log(data, "data servicio")
+    }
+
     //Para guardar los atributos
     const [atributos, setAtributos] = useState([]);
     //Para mostrar el modal de atributos
@@ -241,7 +247,7 @@ function ContenedorNew(props) {
     const muestraAtributos = (capa) => {
         setAtributos([capa.features, capa.nom_capa])
         // if (showModalAtributos == false) {
-            setShowModalAtributos(true)
+        setShowModalAtributos(true)
         // }
     }
 
@@ -415,9 +421,9 @@ function ContenedorNew(props) {
         )
     }
 
-    function remueveTabindexModalMovible(){
+    function remueveTabindexModalMovible() {
         // setTimeout(function () {
-            $('.modal-analisis').removeAttr("tabindex");
+        $('.modal-analisis').removeAttr("tabindex");
         // }, 1000);
     }
 
@@ -436,24 +442,41 @@ function ContenedorNew(props) {
                     <Modal.Title><b>Agrega capas</b></Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form onSubmit={handleSubmit(onSubmit)}>
-                        <Controller
-                            as={Typeahead}
-                            control={control}
-                            options={datosCapasBackEnd}
-                            labelKey="titulo"
-                            id="buscadorCapas"
-                            name="capaAgregar"
-                            rules={{ required: true }}
-                            defaultValue=""
-                            // filterBy={["tipo"]}
-                            placeholder="Escoge o escribe una capa"
-                            clearButton
-                            emptyLabel="No se encontraron resultados"
-                        />
-                        {errors.capaAgregar && <p className="tw-text-red-600">Este campo es obligatorio</p>}
-                        <button className="tw-mt-6 btn-analisis" type="submit">AGREGAR</button>
-                    </Form>
+                    <Tabs defaultActiveKey="sedatu">
+                        <Tab eventKey="sedatu" title="Agregar capa">
+                            <Form onSubmit={handleSubmit(onSubmit)}>
+                                <Controller
+                                    as={Typeahead}
+                                    control={control}
+                                    options={datosCapasBackEnd}
+                                    labelKey="titulo"
+                                    id="buscadorCapas"
+                                    name="capaAgregar"
+                                    rules={{ required: true }}
+                                    defaultValue=""
+                                    // filterBy={["tipo"]}
+                                    placeholder="Escoge o escribe una capa"
+                                    clearButton
+                                    emptyLabel="No se encontraron resultados"
+                                />
+                                {errors.capaAgregar && <p className="tw-text-red-600">Este campo es obligatorio</p>}
+                                <button className="tw-mt-6 btn-analisis" type="submit">AGREGAR</button>
+                            </Form>
+                        </Tab>
+                        <Tab eventKey="servicios" title="Agregar servicio">
+                            <Form onSubmit={handleAgregaServicio(agregaServicio)}>
+                                <Form.Group controlId="urlServicio">
+                                    <Form.Label>URL</Form.Label>
+                                    <Form.Control name="urlServicio" required ref={registraServicio} />
+                                </Form.Group>
+                                <Form.Group controlId="nombreServicio">
+                                    <Form.Label>Nombre</Form.Label>
+                                    <Form.Control name="nombreServicio" ref={registraServicio}/>
+                                </Form.Group>
+                                <button className="tw-mt-6 btn-analisis" type="submit">CONSULTAR</button>
+                            </Form>
+                        </Tab>
+                    </Tabs>
                 </Modal.Body>
             </Modal>
 
