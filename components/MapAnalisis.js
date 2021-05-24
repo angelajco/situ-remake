@@ -22,7 +22,9 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 //Leaflet zoomboz
 import 'leaflet-zoombox'
 import 'leaflet-zoombox/L.Control.ZoomBox.css'
-
+//Leaflet easybutton
+import 'leaflet-easybutton/src/easy-button.css'
+import 'leaflet-easybutton/src/easy-button.js'
 //Funcion del timeline undo redo
 var registraMovimiento = true;
 var _timeline = {
@@ -134,6 +136,25 @@ export default function Map(props) {
             //     position: 'topleft',
             //     sizeModes: ['A4Portrait', 'A4Landscape']
             // }).addTo(mapaReferencia);
+            
+            L.easyButton('<img src="/images/analisis/lupa_negativa.png" width=25px height=25px>', function(btn, map){
+                
+                let zoomActual = mapaReferencia.getZoom();
+                
+                console.log(zoomActual);
+                
+                if (zoomActual === 5)
+                    {
+                        
+                    }
+                else{
+                    let nuevoZoom = zoomActual - 4;
+
+                mapaReferencia.setZoom(nuevoZoom);
+                    }
+              //  var antarctica = [-77,70];
+               // map.setView(antarctica);
+            }).addTo(mapaReferencia);
         }
     }, [mapaReferencia])
 
