@@ -1,5 +1,3 @@
-import dynamic from 'next/dynamic'
-
 import React, { useState, useEffect, useContext } from 'react'
 import { Controller, useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap'
@@ -14,6 +12,8 @@ import $ from 'jquery'
 import * as turf from '@turf/turf'
 import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
+import axios from 'axios'
+import dynamic from 'next/dynamic'
 
 import catalogoEntidades from "../shared/jsons/entidades.json";
 
@@ -246,13 +246,28 @@ function ContenedorMapaAnalisis(props) {
     const [guardaServicio, setGuardaServicio] = useState([])
     const { register: registraServicio, handleSubmit: handleAgregaServicio } = useForm();
     const agregaServicio = (data) => {
-        console.log(data, "data servicio")
-        // fetch(`${process.env.ruta}/wa/publico/ENDPOINT&${data.urlServicio}&&${data.nombreServicio}`)
-        //     .then(res => res.json())
-        //     .then(
-        //         (data) => setGuardaServicio(guardaServicio),
-        //         (error) => console.log(error)
-        //     )
+        var req = new XMLHttpRequest();
+        req.open("GET", "https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities");
+        req.setRequestHeader("Access-Control-Allow-Origin", "*");
+        // req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        req.setRequestHeader("Content-Type", "text/plain");
+        req.send();
+        
+        console.log(req, "oReq")
+        
+        req.onreadystatechange = function () {
+            console.log(req, "reqfunciton")
+        }
+        
+        // $.ajax({
+        //     type: "GET" ,
+        //     url: "https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities" ,
+        //     dataType: "xml" ,
+        //     success: function(xml) {
+        //         console.log(xml, "x,l")
+        //     }       
+        // });
+
         setGuardaServicio([
             {
                 "Nombre": "geonode:CONAVI",
@@ -530,7 +545,8 @@ function ContenedorMapaAnalisis(props) {
         handleShow();
     }
 
-    const processInputFile = (event) => {
+    function processInputFile(event) {
+        console.log(referenciaMapa, "ref map")
         var fileType = event.target.files[0].name;
         fileType = fileType.substring(fileType.indexOf('.') + 1);
         switch (fileType) {

@@ -16,7 +16,7 @@ const cookies = new Cookies()
 
 //Importa dinámicamente el mapa
 const Map = dynamic(
-    () => import('../../components/historico/Map Analisis Old'),
+    () => import('../../components/historico/MapAnalisis-old-v1'),
     {
         loading: () => <p>El mapa está cargando</p>,
         ssr: false
