@@ -21,6 +21,8 @@ import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 import ModalComponent from './ModalComponent'
 
+import shpjs from 'shpjs'
+
 const Map = dynamic(
     () => import('./MapAnalisis'),
     {
@@ -497,7 +499,8 @@ function ContenedorMapaAnalisis(props) {
             body: ''
         }
     );
-    const [fileUpload, setFileUpload] = useState([]);
+    const [fileUpload, setFileUpload] = useState();
+    const [mapEnabled, setMapEnabled] = useState(false)
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
 
@@ -527,7 +530,7 @@ function ContenedorMapaAnalisis(props) {
         handleShow();
     }
 
-    function processInputFile(event) {
+    const processInputFile = (event) => {
         var fileType = event.target.files[0].name;
         fileType = fileType.substring(fileType.indexOf('.') + 1);
         switch (fileType) {
@@ -535,32 +538,47 @@ function ContenedorMapaAnalisis(props) {
                 var fileReader = new FileReader();
                 fileReader.readAsText(event.target.files[0], "UTF-8");
                 fileReader.onload = loaded => {
-                    setFileUpload([...fileUpload, { data: JSON.parse(loaded.target.result), type: fileType }]);
+                    setFileUpload({ data: JSON.parse(loaded.target.result), type: fileType });
+                    // setMapEnabled(!mapEnabled)
+                    //setFileUpload([...fileUpload, { data: JSON.parse(loaded.target.result), type: fileType }]);
                 };
-                break;
+            break;
             case 'kml':
                 var fileReader = new FileReader();
                 fileReader.readAsText(event.target.files[0], "UTF-8");
                 fileReader.onload = loaded => {
-                    setFileUpload([...fileUpload, { data: loaded.target.result, type: fileType }]);
+                    setFileUpload({ data: JSON.parse(loaded.target.result), type: fileType });
+                    //setFileUpload([...fileUpload, { data: loaded.target.result, type: fileType }]);
                 };
-                break;
+            break;
             case 'kmz':
-                setDatosModal({
-                    title: 'En construcción',
-                    body: 'Funcionalidad en construcción',
-                    redireccion: null,
-                    nombreBoton: 'Cerrar'
-                });
-                handleShow();
-                break;
-            // case 'zip':
-            //     var fileReader = new FileReader();
-            //     fileReader.readAsDataURL(event.target.files[0]);//ArrayBuffer(event.target.files[0]);
-            //     fileReader.onload = loaded => {
-            //             setFileUpload([...fileUpload, {data: loaded, type: fileType}]);
-            //     };
-            // break;
+                var fileReader = new FileReader();
+                fileReader.readAsArrayBuffer(event.target.files[0]);
+                fileReader.onload = loaded => {
+                    var JSZip = require("jszip");
+                    var zipped = new JSZip();
+                    zipped.loadAsync(loaded.currentTarget.result).then(unzippedFiles =>  {
+                        Object.keys(unzippedFiles.files).map(key => {
+                            if(key.includes('kml')){
+                                unzippedFiles.files[key].async("string").then(content => {
+                                    setFileUpload({ data: content, type: 'kml' });
+                                    //setFileUpload([...fileUpload, { data: content, type: 'kml' }]);
+                                })
+                            }
+                        })
+                    });
+                };
+            break;
+            case 'zip':
+                var fileReader = new FileReader();
+                fileReader.readAsArrayBuffer(event.target.files[0]);
+                fileReader.onload = loaded => {
+                    shpjs(loaded.currentTarget.result).then(function(result) {
+                        setFileUpload({ data: result, type: 'json' });
+                        //setFileUpload([...fileUpload, { data: result, type: 'json' }]);
+                    });
+                };
+            break;
             default:
                 setDatosModal({
                     title: 'Error!!!',
@@ -569,8 +587,12 @@ function ContenedorMapaAnalisis(props) {
                     nombreBoton: 'Cerrar'
                 });
                 handleShow();
-                break;
+            break;
         }
+    }
+
+    function testClick() {
+        console.log('click')
     }
 
     return (
@@ -917,7 +939,7 @@ function ContenedorMapaAnalisis(props) {
                     </button>
                 </OverlayTrigger>
                 <OverlayTrigger overlay={<Tooltip>Agregar archivo</Tooltip>}>
-                    <label htmlFor="uploadFIleButton" className="tw-mb-0 tw-cursor-pointer">
+                    <label htmlFor="uploadFIleButton" className="tw-mb-0 tw-cursor-pointer" onClick={() => setMapEnabled(!mapEnabled)}>
                         <button className="botones-barra-mapa tw-pointer-events-none">
                             <input type="file" name="file" onChange={(e) => processInputFile(e)} id="uploadFIleButton" hidden />
                             <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
@@ -927,7 +949,9 @@ function ContenedorMapaAnalisis(props) {
 
 
             </div>
-
+            {/* {
+                mapEnabled == true ? <p>si</p> : <p>no</p>
+            } */}
             {
                 props.botones == true
                     ?

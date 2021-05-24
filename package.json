@@ -20,6 +20,7 @@
     "bootstrap": "^4.6.0",
     "i18next": "^19.9.2",
     "jquery": "^3.6.0",
+    "jszip": "^3.6.0",
     "leaflet": "^1.7.1",
     "leaflet-draw": "^1.0.4",
     "leaflet-easyprint": "^2.1.9",

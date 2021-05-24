@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import ReactLeafletKml from 'react-leaflet-kml';
 
-const { BaseLayer, Overlay } = LayersControl;
+const { BaseLayer } = LayersControl;
 import { EditControl } from 'react-leaflet-draw'
 
 import referenciaMapaContext from '../contexts/ContenedorMapaContext'
@@ -104,6 +104,12 @@ export default function Map(props) {
 
     //Para guardar el grupo de capas de dibujo
     var capasDib = null;
+
+    const [loadedFiles, setLoadedFiles] = useState([]);
+    useEffect(() => {
+        if(props.fileUpload)
+            setLoadedFiles([...loadedFiles, props.fileUpload]);
+    }, [props.fileUpload]);
 
     //Para guardar las referencias del mapa    
     useEffect(() => {
@@ -359,15 +365,6 @@ export default function Map(props) {
         return null;
     }
 
-    function addShapeFile(data) {
-        console.log('data: ', data);
-        console.log('L: ', L);
-        // new L.ShapeFile(data);
-        // new L.Shapefile(data);
-        // L.shapefile(data);
-        // console.log('L.Shapefile(file.data): ', L.Shapefile(data));
-    }
-
     return (
         <>
             <Head>
@@ -427,15 +424,12 @@ export default function Map(props) {
                 <Dibujos />
                 <ControlMovimiento />
                 {
-                    props.fileUpload && (
-                        props.fileUpload.map((file, index) =>
+                    loadedFiles.length > 0 && (
+                        loadedFiles.map((file, index) =>
                             file.type == 'json' ? (
                                 <GeoJSON key={index}
                                     data={file.data}
                                 />
-                            ) :
-                            file.type == 'zip' ? (
-                                addShapeFile(file.data)
                             ) :
                             file.type == 'kml' ? (
                                 <ReactLeafletKml key={index}

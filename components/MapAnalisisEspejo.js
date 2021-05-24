@@ -34,8 +34,16 @@ export default function Map(props) {
         props.referenciaAnalisis(mapaReferencia);
     }
 
+    console.log('espejo: ', props.fileUpload);
+
     //Para guardar el grupo de capas de dibujo
     var capasDib = null;
+
+    const [loadedFiles, setLoadedFiles] = useState([]);
+    useEffect(() => {
+        if(props.fileUpload)
+            setLoadedFiles([...loadedFiles, props.fileUpload]);
+    }, [props.fileUpload]);
 
     //Para guardar las referencias del mapa    
     useEffect(() => {
@@ -301,13 +309,18 @@ export default function Map(props) {
                 <Dibujos />
                 <ControlMovimiento />
                 {
-                    props.fileUpload && (
-                        props.fileUpload.map((file, index) =>
-                            file.type == 'json' && (
+                    loadedFiles.length > 0 && (
+                        loadedFiles.map((file, index) =>
+                            file.type == 'json' ? (
                                 <GeoJSON key={index}
                                     data={file.data}
                                 />
-                            )
+                            ) :
+                            file.type == 'kml' ? (
+                                <ReactLeafletKml key={index}
+                                    kml={new DOMParser().parseFromString(file.data, 'text/xml')} />
+                            ) :
+                            ''
                         )
                     )
                 }
