@@ -7,6 +7,7 @@ import { faWindowRestore } from '@fortawesome/free-regular-svg-icons'
 import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd'
 import { CSVLink } from "react-csv";
 import { Typeahead } from 'react-bootstrap-typeahead';
+import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware'
 
 import $ from 'jquery'
 import * as turf from '@turf/turf'
@@ -14,14 +15,14 @@ import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
 import axios from 'axios'
 import dynamic from 'next/dynamic'
+import shpjs from 'shpjs'
 
-import catalogoEntidades from "../shared/jsons/entidades.json";
+import { cors } from 'cors'
 
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 import ModalComponent from './ModalComponent'
-
-import shpjs from 'shpjs'
+import catalogoEntidades from "../shared/jsons/entidades.json";
 
 const Map = dynamic(
     () => import('./MapAnalisis'),
@@ -101,6 +102,7 @@ function ContenedorMapaAnalisis(props) {
     useEffect(() => {
         setTimeout(() => {
             referenciaMapa.on('draw:created', function (e) {
+                console.log(referenciaMapa, "mapa")
                 let layerDibujada = e.layer;
                 let puntos = null;
                 if (e.layerType !== 'polyline') {
@@ -246,27 +248,72 @@ function ContenedorMapaAnalisis(props) {
     const [guardaServicio, setGuardaServicio] = useState([])
     const { register: registraServicio, handleSubmit: handleAgregaServicio } = useForm();
     const agregaServicio = (data) => {
-        var req = new XMLHttpRequest();
-        req.open("GET", "https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities");
-        req.setRequestHeader("Access-Control-Allow-Origin", "*");
+        // var hola = axios.get("http://maya.puec.unam.mx/geoserver/ows?service=WMS&version=1.1.0&request=GetCapabilities", {
+        //     headers: {
+        //         'Access-Control-Allow-Origin': true,
+        //         "Access-Control-Allow-Origin": "*",
+        //         "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept",
+        //         'Acces-Control-Allow-Methods': 'GET, POST, PATCH, DELETE',
+        //         "Content-Type": "application/x-www-form-urlencoded"
+        //     }
+        // }).then(res => {
+        //     console.log(res, "res")
+        // })
+        // console.log(hola, "hola")
+        // var apiProxy = createProxyMiddleware({
+        //     target: "https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities",
+        //     onProxyRes: responseInterceptor(function (responseBuffer, proxyRes, req, res)  {
+        //         console.log(responseBuffer, "buffer");
+        //         console.log(proxyRes, "proxyRes");
+        //         console.log(req, "req");
+        //         console.log(res, "res");
+        //     })
+        // });
+        // console.log(apiProxy, "apiproxy");
+
+        var x = new XMLHttpRequest();
+        // x.open("GET", "https://cors-anywhere.herokuapp.com/https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities");
+        // x.onload = x.onerror = function() {
+        //     console.log(x, "xXXXXXX")
+        // };
+        // x.send();
+
+        // console.log(x, "x2")
+        // x.onreadystatechange = function () {
+        //         console.log(x, "x3")
+        //     }
+
+
+        // var req = new XMLHttpRequest();
+        // req.open("GET", "http://maya.puec.unam.mx/geoserver/ows?service=WMS&version=1.1.0&request=GetCapabilities");
+        // req.setRequestHeader("Access-Control-Allow-Origin", "*");
+        // req.setRequestHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        // req.setRequestHeader('Acces-Control-Allow-Methods','GET, POST, PATCH, DELETE');
         // req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        req.setRequestHeader("Content-Type", "text/plain");
-        req.send();
-        
-        console.log(req, "oReq")
-        
+        // req.send();
+        // console.log(req, "oReq")
+        // req.onreadystatechange = function () {
+        //     console.log(req, "reqfunciton")
+        // }
+
+        // $.ajax({
+        //     type: "GET",
+        //     url: "https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities",
+        //     contentType: "application/json; charset=utf-8",
+        //     dataType: "jsonp",
+        //     success: function (xml) {
+        //         console.log(xml, "x,l")
+        //     }
+        // });
+
+        var req = new XMLHttpRequest();
+        // req.open("GET", "https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities");
+        req.open("GET", "http://maya.puec.unam.mx/geoserver/ows?service=WMS&version=1.1.0&request=GetCapabilities");
         req.onreadystatechange = function () {
             console.log(req, "reqfunciton")
         }
-        
-        // $.ajax({
-        //     type: "GET" ,
-        //     url: "https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities" ,
-        //     dataType: "xml" ,
-        //     success: function(xml) {
-        //         console.log(xml, "x,l")
-        //     }       
-        // });
+        req.send();
+        console.log(req, "req")
 
         setGuardaServicio([
             {
@@ -558,7 +605,7 @@ function ContenedorMapaAnalisis(props) {
                     // setMapEnabled(!mapEnabled)
                     //setFileUpload([...fileUpload, { data: JSON.parse(loaded.target.result), type: fileType }]);
                 };
-            break;
+                break;
             case 'kml':
                 var fileReader = new FileReader();
                 fileReader.readAsText(event.target.files[0], "UTF-8");
@@ -566,16 +613,16 @@ function ContenedorMapaAnalisis(props) {
                     setFileUpload({ data: JSON.parse(loaded.target.result), type: fileType });
                     //setFileUpload([...fileUpload, { data: loaded.target.result, type: fileType }]);
                 };
-            break;
+                break;
             case 'kmz':
                 var fileReader = new FileReader();
                 fileReader.readAsArrayBuffer(event.target.files[0]);
                 fileReader.onload = loaded => {
                     var JSZip = require("jszip");
                     var zipped = new JSZip();
-                    zipped.loadAsync(loaded.currentTarget.result).then(unzippedFiles =>  {
+                    zipped.loadAsync(loaded.currentTarget.result).then(unzippedFiles => {
                         Object.keys(unzippedFiles.files).map(key => {
-                            if(key.includes('kml')){
+                            if (key.includes('kml')) {
                                 unzippedFiles.files[key].async("string").then(content => {
                                     setFileUpload({ data: content, type: 'kml' });
                                     //setFileUpload([...fileUpload, { data: content, type: 'kml' }]);
@@ -584,17 +631,17 @@ function ContenedorMapaAnalisis(props) {
                         })
                     });
                 };
-            break;
+                break;
             case 'zip':
                 var fileReader = new FileReader();
                 fileReader.readAsArrayBuffer(event.target.files[0]);
                 fileReader.onload = loaded => {
-                    shpjs(loaded.currentTarget.result).then(function(result) {
+                    shpjs(loaded.currentTarget.result).then(function (result) {
                         setFileUpload({ data: result, type: 'json' });
                         //setFileUpload([...fileUpload, { data: result, type: 'json' }]);
                     });
                 };
-            break;
+                break;
             default:
                 setDatosModal({
                     title: 'Error!!!',
@@ -603,7 +650,7 @@ function ContenedorMapaAnalisis(props) {
                     nombreBoton: 'Cerrar'
                 });
                 handleShow();
-            break;
+                break;
         }
     }
 
@@ -961,6 +1008,7 @@ function ContenedorMapaAnalisis(props) {
                             <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
                         </button>
                     </label>
+
                 </OverlayTrigger>
 
 

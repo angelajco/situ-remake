@@ -34,14 +34,12 @@ export default function Map(props) {
         props.referenciaAnalisis(mapaReferencia);
     }
 
-    console.log('espejo: ', props.fileUpload);
-
     //Para guardar el grupo de capas de dibujo
     var capasDib = null;
 
     const [loadedFiles, setLoadedFiles] = useState([]);
     useEffect(() => {
-        if(props.fileUpload)
+        if (props.fileUpload)
             setLoadedFiles([...loadedFiles, props.fileUpload]);
     }, [props.fileUpload]);
 
@@ -316,11 +314,11 @@ export default function Map(props) {
                                     data={file.data}
                                 />
                             ) :
-                            file.type == 'kml' ? (
-                                <ReactLeafletKml key={index}
-                                    kml={new DOMParser().parseFromString(file.data, 'text/xml')} />
-                            ) :
-                            ''
+                                file.type == 'kml' ? (
+                                    <ReactLeafletKml key={index}
+                                        kml={new DOMParser().parseFromString(file.data, 'text/xml')} />
+                                ) :
+                                    ''
                         )
                     )
                 }

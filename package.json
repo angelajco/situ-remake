@@ -18,6 +18,8 @@
     "autoprefixer": "^10.2.5",
     "axios": "^0.21.1",
     "bootstrap": "^4.6.0",
+    "cors": "^2.8.5",
+    "http-proxy-middleware": "^2.0.0",
     "i18next": "^19.9.2",
     "jquery": "^3.6.0",
     "jszip": "^3.6.0",
