@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react'
 import { Controller, useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload } from '@fortawesome/free-solid-svg-icons'
+import { faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faDotCircle, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import { faWindowRestore } from '@fortawesome/free-regular-svg-icons'
 import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd'
 import { CSVLink } from "react-csv";
@@ -41,6 +41,10 @@ const MapEspejo = dynamic(
 )
 
 function ContenedorMapaAnalisis(props) {
+    const [mainLayer, setMainLayer] = useState();
+    useEffect(() => {
+        console.log('useEffect.mainLayer: ', mainLayer)
+    }, [mainLayer]);
     
     //Obten referencia del mapa
     var referenciaMapa = null;
@@ -104,6 +108,7 @@ function ContenedorMapaAnalisis(props) {
             referenciaMapa.on('draw:created', function (e) {
                 let layerDibujada = e.layer;
                 let puntos = null;
+                console.log('layerDibujada: ', layerDibujada);
                 if (e.layerType !== 'polyline') {
                     if (e.layerType === "marker") {
                         puntos = layerDibujada.getLatLng();
@@ -119,6 +124,8 @@ function ContenedorMapaAnalisis(props) {
                                 let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
                                 if (seIntersectan != null) {
                                     layerConFeatures.feature.properties["nombre_capa"] = layer.options["nombre"];
+                                    console.log('layerConFeatures.feature.properties: ', layerConFeatures.feature.properties);
+                                    console.log('mainLayer: ', mainLayer);
                                     capasIntersectadas.push(layerConFeatures.feature.properties)
                                 }
                             })
@@ -201,6 +208,7 @@ function ContenedorMapaAnalisis(props) {
                         response['layer'] = layer;
                         response['simbologia'] = creaSVG(capa.titulo)
                         response.download = [{ num_capa: response.num_capa, nom_capa: response.nom_capa, link: download, tipo: 'GeoJSON' }];
+                        response.cveEnt = capa.valor_filtro;
                         setCapasVisualizadas([...capasVisualizadas, response])
                         referenciaMapa.addLayer(response.layer)
                     }
@@ -551,7 +559,6 @@ function ContenedorMapaAnalisis(props) {
         remueveTabindexModalMovible();
     }
 
-
     //Para las descargas
     const [show, setShow] = useState(false);
     const [datosModal, setDatosModal] = useState(
@@ -561,9 +568,9 @@ function ContenedorMapaAnalisis(props) {
         }
     );
     const [fileUpload, setFileUpload] = useState();
-    const [mapEnabled, setMapEnabled] = useState(false)
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
+
 
     function renderModalDownload(items) {
         setDatosModal({
@@ -601,16 +608,13 @@ function ContenedorMapaAnalisis(props) {
                 fileReader.readAsText(event.target.files[0], "UTF-8");
                 fileReader.onload = loaded => {
                     setFileUpload({ data: JSON.parse(loaded.target.result), type: fileType });
-                    // setMapEnabled(!mapEnabled)
-                    //setFileUpload([...fileUpload, { data: JSON.parse(loaded.target.result), type: fileType }]);
                 };
                 break;
             case 'kml':
                 var fileReader = new FileReader();
                 fileReader.readAsText(event.target.files[0], "UTF-8");
                 fileReader.onload = loaded => {
-                    setFileUpload({ data: JSON.parse(loaded.target.result), type: fileType });
-                    //setFileUpload([...fileUpload, { data: loaded.target.result, type: fileType }]);
+                    setFileUpload({ data: loaded.target.result, type: fileType });
                 };
                 break;
             case 'kmz':
@@ -624,7 +628,6 @@ function ContenedorMapaAnalisis(props) {
                             if (key.includes('kml')) {
                                 unzippedFiles.files[key].async("string").then(content => {
                                     setFileUpload({ data: content, type: 'kml' });
-                                    //setFileUpload([...fileUpload, { data: content, type: 'kml' }]);
                                 })
                             }
                         })
@@ -637,7 +640,6 @@ function ContenedorMapaAnalisis(props) {
                 fileReader.onload = loaded => {
                     shpjs(loaded.currentTarget.result).then(function (result) {
                         setFileUpload({ data: result, type: 'json' });
-                        //setFileUpload([...fileUpload, { data: result, type: 'json' }]);
                     });
                 };
                 break;
@@ -653,8 +655,7 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
-    function testClick() {
-        console.log('click')
+    function changeMainLayer(layer) {
     }
 
     return (
@@ -893,8 +894,12 @@ function ContenedorMapaAnalisis(props) {
                                                             <Card.Header className="tw-flex tw-justify-between tw-items-baseline">
                                                                 <Form.Group>
                                                                     <Form.Check type="checkbox" inline defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
-                                                                    <Form.Check id={`radio-${capa.num_capa}`} type="radio" inline value={capa.num_capa}/>
                                                                 </Form.Group>
+                                                                {/* <OverlayTrigger overlay={<Tooltip>Capa activa/inactiva</Tooltip>}>
+                                                                    <Button onClick={() => setMainLayer(capa.cveEnt)} variant="link">
+                                                                        <FontAwesomeIcon icon={faDotCircle} />
+                                                                    </Button>
+                                                                </OverlayTrigger> */}
                                                                 {
                                                                     capa.tipo === "geojson" &&
                                                                     <Button onClick={() => muestraAtributos(capa)} variant="link">
@@ -1002,7 +1007,7 @@ function ContenedorMapaAnalisis(props) {
                     </button>
                 </OverlayTrigger>
                 <OverlayTrigger overlay={<Tooltip>Agregar archivo</Tooltip>}>
-                    <label htmlFor={`uploadFIleButton${props.botones == false && `Espejo`}`} className="tw-mb-0 tw-cursor-pointer" onClick={() => setMapEnabled(!mapEnabled)}>
+                    <label htmlFor={`uploadFIleButton${props.botones == false && `Espejo`}`} className="tw-mb-0 tw-cursor-pointer">
                         <button className="botones-barra-mapa tw-pointer-events-none">
                             <input type="file" name="file" onChange={(e) => processInputFile(e)} id={`uploadFIleButton${props.botones == false && `Espejo`}`} hidden />
                             <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
