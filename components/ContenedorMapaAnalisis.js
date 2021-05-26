@@ -40,13 +40,13 @@ const MapEspejo = dynamic(
     }
 )
 
-//Obten referencia del mapa
-var referenciaMapa = null;
-function capturaReferenciaMapa(mapa) {
-    referenciaMapa = mapa;
-}
-
 function ContenedorMapaAnalisis(props) {
+    
+    //Obten referencia del mapa
+    var referenciaMapa = null;
+    function capturaReferenciaMapa(mapa) {
+        referenciaMapa = mapa;
+    }
 
     useEffect(() => {
         //Datos para construir el catalogo
@@ -102,7 +102,6 @@ function ContenedorMapaAnalisis(props) {
     useEffect(() => {
         setTimeout(() => {
             referenciaMapa.on('draw:created', function (e) {
-                console.log(referenciaMapa, "mapa")
                 let layerDibujada = e.layer;
                 let puntos = null;
                 if (e.layerType !== 'polyline') {
