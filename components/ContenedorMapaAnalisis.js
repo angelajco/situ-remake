@@ -892,7 +892,8 @@ function ContenedorMapaAnalisis(props) {
                                                         <Card {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
                                                             <Card.Header className="tw-flex tw-justify-between tw-items-baseline">
                                                                 <Form.Group>
-                                                                    <Form.Check type="checkbox" defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
+                                                                    <Form.Check type="checkbox" inline defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
+                                                                    <Form.Check id={`radio-${capa.num_capa}`} type="radio" inline value={capa.num_capa}/>
                                                                 </Form.Group>
                                                                 {
                                                                     capa.tipo === "geojson" &&
@@ -1001,20 +1002,15 @@ function ContenedorMapaAnalisis(props) {
                     </button>
                 </OverlayTrigger>
                 <OverlayTrigger overlay={<Tooltip>Agregar archivo</Tooltip>}>
-                    <label htmlFor="uploadFIleButton" className="tw-mb-0 tw-cursor-pointer" onClick={() => setMapEnabled(!mapEnabled)}>
+                    <label htmlFor={`uploadFIleButton${props.botones == false && `Espejo`}`} className="tw-mb-0 tw-cursor-pointer" onClick={() => setMapEnabled(!mapEnabled)}>
                         <button className="botones-barra-mapa tw-pointer-events-none">
-                            <input type="file" name="file" onChange={(e) => processInputFile(e)} id="uploadFIleButton" hidden />
+                            <input type="file" name="file" onChange={(e) => processInputFile(e)} id={`uploadFIleButton${props.botones == false && `Espejo`}`} hidden />
                             <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
                         </button>
                     </label>
 
                 </OverlayTrigger>
-
-
             </div>
-            {/* {
-                mapEnabled == true ? <p>si</p> : <p>no</p>
-            } */}
             {
                 props.botones == true
                     ?

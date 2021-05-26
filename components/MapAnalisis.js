@@ -357,10 +357,6 @@ export default function Map(props) {
                 layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
             } else if (type !== 'marker') {
                 var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                // generatePolygon(layer.getLatLngs(), function(result) {
-                //     console.log('polyBounds: ', result);
-                //     console.log('turf.area: ', Turf.area(Turf.polygon([result])));
-                // });
                 layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
             }
         });
@@ -382,7 +378,7 @@ export default function Map(props) {
                 }
             });
         });
-
+        
         return null;
     }
 
