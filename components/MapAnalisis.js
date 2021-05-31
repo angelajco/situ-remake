@@ -12,6 +12,8 @@ import { EditControl } from 'react-leaflet-draw'
 
 import referenciaMapaContext from '../contexts/ContenedorMapaContext'
 
+
+
 //Si no es necesario cargar los marcadores
 // import "leaflet/dist/leaflet.css"
 //FullScreen
@@ -96,6 +98,53 @@ function useTimeline() {
     return [state, { canUndo, canRedo, update, undo, redo }];
 }
 
+L.Personal = L.Handler.extend({
+    addHooks: function () {
+        console.log("estoy en addHook")
+        console.log(this, "this")
+        L.DomEvent.on(document, 'mousedown', this._onMouseDown, this);
+    },
+
+    removeHooks: function () {
+        L.DomEvent.off(document, 'mousedown', this._onMouseDown, this);
+    },
+
+    _onMouseDown: function (e) {
+        this._startPoint = this._map.mouseEventToContainerPoint(e);
+        L.DomEvent.on(document, {
+            mousemove: this._onMouseMove,
+            mouseup: this._onMouseUp,
+        }, this);
+        console.log("estoy en down", this._startPoint)
+    },
+
+    _onMouseMove: function (e) {
+        this._point = this._map.mouseEventToContainerPoint(e);
+        let bounds = new L.Bounds(this._point, this._startPoint);
+        // create an orange rectangle
+        console.log("estoy en mouve", bounds)
+    },
+
+    _finish: function () {
+        L.DomEvent.off(document, {
+            mousemove: this._onMouseMove,
+            mouseup: this._onMouseUp,
+        }, this);
+    },
+
+    _onMouseUp: function (e) {
+        this._finish();
+
+        let boundsDos = new L.LatLngBounds(
+            this._map.containerPointToLatLng(this._startPoint),
+            this._map.containerPointToLatLng(this._point)
+        );
+        L.rectangle(boundsDos, { color: "#ff7800", weight: 1 }).addTo(this._map);
+        console.log("estoy en up", boundsDos)
+    },
+});
+
+L.Map.addInitHook('addHandler', 'personal', L.Personal);
 
 export default function Map(props) {
     //Para guardar la referencia al mapa cuando se crea
@@ -109,13 +158,13 @@ export default function Map(props) {
 
     const [loadedFiles, setLoadedFiles] = useState([]);
     useEffect(() => {
-        if(props.fileUpload)
+        if (props.fileUpload)
             setLoadedFiles([...loadedFiles, props.fileUpload]);
     }, [props.fileUpload]);
 
     //Para guardar las referencias del mapa    
     useEffect(() => {
-        if (mapaReferencia != null) {
+        if (mapaReferencia != undefined) {
             // refMapContext.refMap = mapaReferencia;
             // refMapContext.objL = L;
             // refMapContext.referenciaMapa();
@@ -142,24 +191,11 @@ export default function Map(props) {
             //     position: 'topleft',
             //     sizeModes: ['A4Portrait', 'A4Landscape']
             // }).addTo(mapaReferencia);
-            
-            L.easyButton('<img src="/images/analisis/lupa_negativa.png" width=25px height=25px>', function(btn, map){
-                
-                let zoomActual = mapaReferencia.getZoom();
-                
-                console.log(zoomActual);
-                
-                if (zoomActual === 5)
-                    {
-                        
-                    }
-                else{
-                    let nuevoZoom = zoomActual - 4;
 
-                mapaReferencia.setZoom(nuevoZoom);
-                    }
-              //  var antarctica = [-77,70];
-               // map.setView(antarctica);
+            L.easyButton('<img src="/images/analisis/lupa_negativa.png" width=25px height=25px>', function (btn, map) {
+                map.dragging.disable();
+                map.personal.addHooks();
+                // map.boxZoom.addHooks();
             }).addTo(mapaReferencia);
         }
     }, [mapaReferencia])
@@ -378,7 +414,7 @@ export default function Map(props) {
                 }
             });
         });
-        
+
         return null;
     }
 
@@ -407,7 +443,7 @@ export default function Map(props) {
                 </OverlayTrigger>
             </div>
 
-            <MapContainer whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false} >
+            <MapContainer whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={0} zoomControl={false}>
                 <ScaleControl maxWidth="100" />
                 <ZoomControl position="bottomright" zoomInTitle="Acercar" zoomOutTitle="Alejar" />
 
@@ -448,11 +484,11 @@ export default function Map(props) {
                                     data={file.data}
                                 />
                             ) :
-                            file.type == 'kml' ? (
-                                <ReactLeafletKml key={index}
-                                    kml={new DOMParser().parseFromString(file.data, 'text/xml')} />
-                            ) :
-                            ''
+                                file.type == 'kml' ? (
+                                    <ReactLeafletKml key={index}
+                                        kml={new DOMParser().parseFromString(file.data, 'text/xml')} />
+                                ) :
+                                    ''
                         )
                     )
                 }

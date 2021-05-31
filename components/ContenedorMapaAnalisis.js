@@ -1,21 +1,24 @@
-import React, { useState, useEffect, useContext } from 'react'
+import React, { useState, useEffect, useContext } from 'react';
 import { Controller, useForm } from "react-hook-form";
-import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faDotCircle, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
-import { faWindowRestore } from '@fortawesome/free-regular-svg-icons'
-import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd'
+import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faDotCircle, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
+import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 import { CSVLink } from "react-csv";
 import { Typeahead } from 'react-bootstrap-typeahead';
-import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware'
+import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
 
-import $ from 'jquery'
-import * as turf from '@turf/turf'
+import $ from 'jquery';
+import * as turf from '@turf/turf';
 import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
-import axios from 'axios'
-import dynamic from 'next/dynamic'
-import shpjs from 'shpjs'
+import axios from 'axios';
+import dynamic from 'next/dynamic';
+import shpjs from 'shpjs';
+import convert from 'xml-js';
+import xml2js from 'xml2js'
+import xpath from 'xml2js-xpath'
 
 import { cors } from 'cors'
 
@@ -45,7 +48,7 @@ function ContenedorMapaAnalisis(props) {
     useEffect(() => {
         console.log('useEffect.mainLayer: ', mainLayer)
     }, [mainLayer]);
-    
+
     //Obten referencia del mapa
     var referenciaMapa = null;
     function capturaReferenciaMapa(mapa) {
@@ -136,7 +139,7 @@ function ContenedorMapaAnalisis(props) {
                     setRasgos(capasIntersectadas);
                 }
             });
-        }, 3000)
+        }, 5000)
     }, [])
 
     const creaSVG = (nombreCapa) => {
@@ -240,9 +243,11 @@ function ContenedorMapaAnalisis(props) {
                     maxZoom: capaWMS.zoomMaximo,
                 })
                 capaWMS["layer"] = layer;
-                var url = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaWMS.layer.wmsParams.layers}&outputFormat=`
+                var url = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaWMS.layers}&outputFormat=`
                 var download = [
-                    { num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `${url}KML`, tipo: 'KML' }, { num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaWMS.layer.wmsParams.layers}&bbox=-180,-90,180,90`, tipo: 'KMZ' }, { num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `${url}SHAPE-ZIP`, tipo: 'SHAPE' }
+                    { num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `${url}KML`, tipo: 'KML' },
+                    { num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaWMS.layers}&bbox=-180,-90,180,90`, tipo: 'KMZ' },
+                    { num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `${url}SHAPE-ZIP`, tipo: 'SHAPE' }
                 ];
                 capaWMS.download = download;
                 setCapasVisualizadas([...capasVisualizadas, capaWMS])
@@ -253,96 +258,55 @@ function ContenedorMapaAnalisis(props) {
 
     //Para agregar un servicio de otra identidad
     const [guardaServicio, setGuardaServicio] = useState([])
+    const [avisoServicio, setAvisoServicio] = useState("")
     const { register: registraServicio, handleSubmit: handleAgregaServicio } = useForm();
     const agregaServicio = (data) => {
-        // var hola = axios.get("http://maya.puec.unam.mx/geoserver/ows?service=WMS&version=1.1.0&request=GetCapabilities", {
-        //     headers: {
-        //         'Access-Control-Allow-Origin': true,
-        //         "Access-Control-Allow-Origin": "*",
-        //         "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept",
-        //         'Acces-Control-Allow-Methods': 'GET, POST, PATCH, DELETE',
-        //         "Content-Type": "application/x-www-form-urlencoded"
-        //     }
-        // }).then(res => {
-        //     console.log(res, "res")
-        // })
-        // console.log(hola, "hola")
-        // var apiProxy = createProxyMiddleware({
-        //     target: "https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities",
-        //     onProxyRes: responseInterceptor(function (responseBuffer, proxyRes, req, res)  {
-        //         console.log(responseBuffer, "buffer");
-        //         console.log(proxyRes, "proxyRes");
-        //         console.log(req, "req");
-        //         console.log(res, "res");
-        //     })
-        // });
-        // console.log(apiProxy, "apiproxy");
-
-        var x = new XMLHttpRequest();
-        // x.open("GET", "https://cors-anywhere.herokuapp.com/https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities");
-        // x.onload = x.onerror = function() {
-        //     console.log(x, "xXXXXXX")
-        // };
-        // x.send();
-
-        // console.log(x, "x2")
-        // x.onreadystatechange = function () {
-        //         console.log(x, "x3")
-        //     }
-
-
-        // var req = new XMLHttpRequest();
-        // req.open("GET", "http://maya.puec.unam.mx/geoserver/ows?service=WMS&version=1.1.0&request=GetCapabilities");
-        // req.setRequestHeader("Access-Control-Allow-Origin", "*");
-        // req.setRequestHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-        // req.setRequestHeader('Acces-Control-Allow-Methods','GET, POST, PATCH, DELETE');
-        // req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        // req.send();
-        // console.log(req, "oReq")
-        // req.onreadystatechange = function () {
-        //     console.log(req, "reqfunciton")
-        // }
-
-        // $.ajax({
-        //     type: "GET",
-        //     url: "https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities",
-        //     contentType: "application/json; charset=utf-8",
-        //     dataType: "jsonp",
-        //     success: function (xml) {
-        //         console.log(xml, "x,l")
-        //     }
-        // });
-
-        var req = new XMLHttpRequest();
-        // req.open("GET", "https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities");
-        req.open("GET", "http://maya.puec.unam.mx/geoserver/ows?service=WMS&version=1.1.0&request=GetCapabilities");
-        req.onreadystatechange = function () {
-            console.log(req, "reqfunciton")
-        }
+        setGuardaServicio([])
+        setAvisoServicio("")
+        // https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities
+        // http://maya.puec.unam.mx/geoserver/ows?service=WMS&version=1.1.0&request=GetCapabilities
+        let req = new XMLHttpRequest();
+        req.open("GET", `${data.urlServicio}?service=WMS&request=GetCapabilities`);
         req.send();
-        console.log(req, "req")
-
-        setGuardaServicio([
-            {
-                "Nombre": "geonode:CONAVI",
-                "SRS": "EPSG:4326",
-                "Titulo": "CONAVI",
-                "LegendURL": "No existe"
-            },
-            {
-                "Nombre": "geonode:CONAVI b",
-                "SRS": "EPSG:4326",
-                "Titulo": "CONAVI b",
-                "LegendURL": "No existe"
-            }]
-        )
+        req.onreadystatechange = function () {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    xml2js.parseString(req.response, (err, result) => {
+                        if (err) {
+                            setAvisoServicio("El servicio no está disponible o agrego una URL erronea, favor de verificar.")
+                        } else {
+                            let matches = xpath.find(result, "//Layer/Layer/@opaque");
+                            if (matches.length != 0) {
+                                if (data.nombreServicio) {
+                                    let resultMatchName = matches.find(match => match.Title[0].toLowerCase() == data.nombreServicio.toLowerCase())
+                                    if (resultMatchName == undefined) {
+                                        setAvisoServicio("El título que está consultando, no existe en este servicio.")
+                                    } else {
+                                        setGuardaServicio([[resultMatchName], data.urlServicio]);
+                                    }
+                                }
+                                else {
+                                    setGuardaServicio([matches, data.urlServicio]);
+                                }
+                            }
+                            else {
+                                setAvisoServicio("El servicio no está disponible o agrego una URL erronea, favor de verificar.")
+                            }
+                        }
+                    })
+                }
+                else {
+                    setAvisoServicio("El servicio no está disponible o agrego una URL erronea, favor de verificar.")
+                }
+            }
+        }
     }
+
     const agregaCapaServicio = (capaServicio) => {
-        console.log(capaServicio, "capaServicio")
         let capaWMS = {};
         capaWMS["attribution"] = "No disponible"
-        capaWMS["url"] = capaServicio.url
-        capaWMS["layers"] = capaServicio.Nombre
+        capaWMS["url"] = guardaServicio[1]
+        capaWMS["layers"] = capaServicio.Name
         capaWMS["format"] = "image/png"
         capaWMS["transparent"] = "true"
         capaWMS["tipo"] = "wms"
@@ -352,7 +316,7 @@ function ContenedorMapaAnalisis(props) {
         capaWMS["estilos"] = { 'transparencia': 1 };
         capaWMS["zoomMinimo"] = 5;
         capaWMS["zoomMaximo"] = 18;
-        capaWMS['simbologia'] = capaServicio.LegendURL;
+        capaWMS['simbologia'] = capaServicio.Style[0]["LegendURL"][0]["OnlineResource"][0]["$"]["xlink:href"];
 
         let layer = L.tileLayer.wms(capaWMS.url, {
             layers: capaWMS.layers,
@@ -364,9 +328,10 @@ function ContenedorMapaAnalisis(props) {
             maxZoom: capaWMS.zoomMaximo,
         })
         capaWMS["layer"] = layer;
-        console.log(capaWMS, "WMS QUE SE AGREGARÍA")
-        // referenciaMapa.addLayer(capaWMS.layer)
+        referenciaMapa.addLayer(capaWMS.layer)
         setShowModalAgregarCapas(false);
+        setGuardaServicio([])
+        setAvisoServicio("")
     }
 
     //Para guardar los atributos
@@ -698,10 +663,11 @@ function ContenedorMapaAnalisis(props) {
                             <Form className="tw-mt-4" onSubmit={handleAgregaServicio(agregaServicio)}>
                                 <Form.Group controlId="urlServicio">
                                     <Form.Label>URL</Form.Label>
-                                    <Form.Control name="urlServicio" required ref={registraServicio} />
+                                    <Form.Control type="url" name="urlServicio" ref={registraServicio} />
+                                    <Form.Text muted>Agregue una URL de la siguiente manera "https://www.dominio.com/ows"</Form.Text>
                                 </Form.Group>
                                 <Form.Group controlId="nombreServicio">
-                                    <Form.Label>Nombre</Form.Label>
+                                    <Form.Label>Título de la capa</Form.Label>
                                     <Form.Control name="nombreServicio" ref={registraServicio} />
                                 </Form.Group>
                                 <button className="btn-analisis" type="submit">CONSULTAR</button>
@@ -711,13 +677,18 @@ function ContenedorMapaAnalisis(props) {
                                 <>
                                     <p className="tw-mt-4">Selecciona una capa</p>
                                     {
-                                        guardaServicio.map((valorServicio, index) => (
+                                        guardaServicio[0].map((valorServicio, index) => (
                                             <a onClick={() => agregaCapaServicio(valorServicio)} key={index} className="tw-cursor-pointer tw-block">
-                                                {valorServicio.Titulo}
+                                                {valorServicio.Title}
                                             </a>
                                         ))
                                     }
                                 </>
+                            }
+                            {
+                                avisoServicio != "" && (
+                                    <p className="tw-mt-4">{avisoServicio}</p>
+                                )
                             }
                         </Tab>
                     </Tabs>
