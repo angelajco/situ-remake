@@ -170,3 +170,13 @@ body.analisis-geografico-modales {
     border: 10px solid;
     @apply tw-border-titulo;
 }
+
+.modal-identify {
+    width: 750px;
+    height: 670px;
+}
+
+.custom-modal-body {
+    height: 370px;
+    overflow-y: scroll;
+}
