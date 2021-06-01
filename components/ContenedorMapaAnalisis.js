@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Controller, useForm } from "react-hook-form";
-import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faDotCircle, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
-import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
-import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
+import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle } from '@fortawesome/free-solid-svg-icons'
+import { faWindowRestore } from '@fortawesome/free-regular-svg-icons'
+import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd'
 import { CSVLink } from "react-csv";
 import { Typeahead } from 'react-bootstrap-typeahead';
-import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
+import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware'
+import * as toPdf from '@react-pdf/renderer';
+import * as htmlToImage from 'html-to-image';
 
 import $ from 'jquery';
 import * as turf from '@turf/turf';
@@ -44,11 +46,9 @@ const MapEspejo = dynamic(
 )
 
 function ContenedorMapaAnalisis(props) {
-    const [mainLayer, setMainLayer] = useState();
-    useEffect(() => {
-        console.log('useEffect.mainLayer: ', mainLayer)
-    }, [mainLayer]);
 
+    const[polygonDrawer, setPolygonDrawer] = useState();
+    
     //Obten referencia del mapa
     var referenciaMapa = null;
     function capturaReferenciaMapa(mapa) {
@@ -108,33 +108,59 @@ function ContenedorMapaAnalisis(props) {
 
     useEffect(() => {
         setTimeout(() => {
+            setPolygonDrawer(new L.Draw.Circle(referenciaMapa));
             referenciaMapa.on('draw:created', function (e) {
                 let layerDibujada = e.layer;
                 let puntos = null;
-                console.log('layerDibujada: ', layerDibujada);
+                var circlepoly;
                 if (e.layerType !== 'polyline') {
                     if (e.layerType === "marker") {
                         puntos = layerDibujada.getLatLng();
                     } else {
-                        puntos = layerDibujada.getLatLngs()
+                        if (e.layerType !== "circle") {
+                            puntos = layerDibujada.getLatLngs()
+                        } else {
+                            var d2r = Math.PI / 180;
+                            var r2d = 180 / Math.PI;
+                            // rectangulo
+                            // var earthsradius = 4507000;
+                            // var points = 4;
+                            //circulo
+                            var earthsradius = 6379000;
+                            var points = 999;
+                            var rlat = (layerDibujada.options.radius / earthsradius) * r2d;
+                            var rlng = rlat / Math.cos(layerDibujada._latlng.lat * d2r);
+                            var extp = new Array();
+                            for (var i=0; i < points+1; i++)
+                            {
+                               var theta = Math.PI * (i / (points/2));
+                               var ex = layerDibujada._latlng.lng + (rlng * Math.cos(theta));
+                               var ey = layerDibujada._latlng.lat + (rlat * Math.sin(theta));
+                               extp.push(new L.LatLng(ey, ex));
+                            }
+                            circlepoly = new L.Polygon(extp);
+                            referenciaMapa.removeLayer(layerDibujada);
+                        }
                     }
                 }
                 let capasIntersectadas = [];
-                referenciaMapa.eachLayer(function (layer) {
-                    if (e.layerType !== 'polyline') {
-                        if (layer instanceof L.GeoJSON) {
-                            layer.eachLayer(function (layerConFeatures) {
-                                let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
-                                if (seIntersectan != null) {
-                                    layerConFeatures.feature.properties["nombre_capa"] = layer.options["nombre"];
-                                    console.log('layerConFeatures.feature.properties: ', layerConFeatures.feature.properties);
-                                    console.log('mainLayer: ', mainLayer);
-                                    capasIntersectadas.push(layerConFeatures.feature.properties)
-                                }
-                            })
+                if(circlepoly) {
+                    identifyLayers(circlepoly);
+                } else {
+                    referenciaMapa.eachLayer(function (layer) {
+                        if (e.layerType !== 'polyline') {
+                            if (layer instanceof L.GeoJSON) {
+                                layer.eachLayer(function (layerConFeatures) {
+                                    let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
+                                    if (seIntersectan != null) {
+                                        layerConFeatures.feature.properties["nombre_capa"] = layer.options["nombre"];
+                                        capasIntersectadas.push(layerConFeatures.feature.properties)
+                                    }
+                                })
+                            }
                         }
-                    }
-                });
+                    });
+                }
                 if (capasIntersectadas.length != 0) {
                     setRasgos(capasIntersectadas);
                 }
@@ -212,6 +238,7 @@ function ContenedorMapaAnalisis(props) {
                         response['simbologia'] = creaSVG(capa.titulo)
                         response.download = [{ num_capa: response.num_capa, nom_capa: response.nom_capa, link: download, tipo: 'GeoJSON' }];
                         response.cveEnt = capa.valor_filtro;
+                        response.isActive = false;
                         setCapasVisualizadas([...capasVisualizadas, response])
                         referenciaMapa.addLayer(response.layer)
                     }
@@ -229,7 +256,7 @@ function ContenedorMapaAnalisis(props) {
                 capaWMS["num_capa"] = capa.indice;
                 capaWMS["habilitado"] = true;
                 capaWMS["estilos"] = { 'transparencia': 1 };
-                capaWMS["zoomMinimo"] = 5;
+                capaWMS["zoomMinimo"] = 0;
                 capaWMS["zoomMaximo"] = 18;
                 capaWMS['simbologia'] = capa.leyenda;
 
@@ -250,6 +277,7 @@ function ContenedorMapaAnalisis(props) {
                     { num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `${url}SHAPE-ZIP`, tipo: 'SHAPE' }
                 ];
                 capaWMS.download = download;
+                capaWMS.isActive = false;
                 setCapasVisualizadas([...capasVisualizadas, capaWMS])
                 referenciaMapa.addLayer(capaWMS.layer)
             }
@@ -448,8 +476,8 @@ function ContenedorMapaAnalisis(props) {
     const [openRasgosCollapse, setOpenRasgosCollapse] = useState(true);
 
     //Para exportar en CSV la información de rasgos
-    var csvData = []
-    var csvFileName = '';
+    var [csvData, setCsvData] = useState([]);
+    const [csvFileName, setCsvFileName] = useState('');
     //Añade los valores al archivo
     function addToExportWithPivot(rasgosObtenidos) {
         generateFileName(function () {
@@ -464,7 +492,7 @@ function ContenedorMapaAnalisis(props) {
                     })
                     csvData_.push(csvContent);
                 });
-                csvData = csvData_;
+                setCsvData(csvData_);
             }
         });
     }
@@ -474,7 +502,7 @@ function ContenedorMapaAnalisis(props) {
         let fileName = '';
         fileName = 'InformacionDeRasgos-';
         fileName += (f.getDate() < 10 ? '0' : '') + f.getDate() + (f.getMonth() < 10 ? '0' : '') + (f.getMonth() + 1) + f.getFullYear() + f.getHours() + f.getMinutes() + f.getSeconds();
-        csvFileName = fileName + '.csv';
+        setCsvFileName(fileName);
         success();
     }
 
@@ -517,10 +545,22 @@ function ContenedorMapaAnalisis(props) {
         $('.modal-analisis').removeAttr("tabindex");
     }
 
-    const [showModalAgregarCapas, setShowModalAgregarCapas] = useState(false)
+    const [showModalAgregarCapas, setShowModalAgregarCapas] = useState(false);
     const [showModalSimbologia, setShowModalSimbologia] = useState(false);
+    const [showModalIdentify, setShowModalIdentify] = useState(false);
+    const [isIdentifyActive, setIdentify] = useState(false);
+    const [selectedToIdentify, setSelectedToIdentify] = useState([]);
+    const [savedToIdentify, setSavedToIdentify] = useState([]);
     const handleShowModalSimbologia = () => {
         setShowModalSimbologia(true);
+        remueveTabindexModalMovible();
+    }
+    const handleShowModalIdentify = () => {
+        setShowModalIdentify(true);
+        remueveTabindexModalMovible();
+    }
+    const handleCloseModalIdentify = () => {
+        setShowModalIdentify(false);
         remueveTabindexModalMovible();
     }
 
@@ -534,8 +574,9 @@ function ContenedorMapaAnalisis(props) {
     );
     const [fileUpload, setFileUpload] = useState();
     const handleClose = () => setShow(false);
-    const handleShow = () => setShow(true);
-
+    const handleShow = () => setShow(true);    
+    const [identifyOption, setIdentifyOption] = useState();
+    const [pdfContent, setPdfcontent] = useState();
 
     function renderModalDownload(items) {
         setDatosModal({
@@ -564,7 +605,6 @@ function ContenedorMapaAnalisis(props) {
     }
 
     function processInputFile(event) {
-        console.log(referenciaMapa, "ref map")
         var fileType = event.target.files[0].name;
         fileType = fileType.substring(fileType.indexOf('.') + 1);
         switch (fileType) {
@@ -574,14 +614,14 @@ function ContenedorMapaAnalisis(props) {
                 fileReader.onload = loaded => {
                     setFileUpload({ data: JSON.parse(loaded.target.result), type: fileType });
                 };
-                break;
+            break;
             case 'kml':
                 var fileReader = new FileReader();
                 fileReader.readAsText(event.target.files[0], "UTF-8");
                 fileReader.onload = loaded => {
                     setFileUpload({ data: loaded.target.result, type: fileType });
                 };
-                break;
+            break;
             case 'kmz':
                 var fileReader = new FileReader();
                 fileReader.readAsArrayBuffer(event.target.files[0]);
@@ -598,7 +638,7 @@ function ContenedorMapaAnalisis(props) {
                         })
                     });
                 };
-                break;
+            break;
             case 'zip':
                 var fileReader = new FileReader();
                 fileReader.readAsArrayBuffer(event.target.files[0]);
@@ -607,7 +647,7 @@ function ContenedorMapaAnalisis(props) {
                         setFileUpload({ data: result, type: 'json' });
                     });
                 };
-                break;
+            break;
             default:
                 setDatosModal({
                     title: 'Error!!!',
@@ -616,11 +656,291 @@ function ContenedorMapaAnalisis(props) {
                     nombreBoton: 'Cerrar'
                 });
                 handleShow();
-                break;
+            break;
         }
     }
 
-    function changeMainLayer(layer) {
+    useEffect(() => {
+        if(polygonDrawer) {
+            if(isIdentifyActive == true) {
+                handleShowModalIdentify();
+                polygonDrawer.enable();
+            } else {
+                polygonDrawer.disable();
+            }
+        }
+    }, [isIdentifyActive]);
+
+    function identifyLayers(poly) {
+        if(poly) {
+            let capasIntersectadas = [];
+            referenciaMapa.eachLayer(function (layer) {
+                if (layer instanceof L.GeoJSON) {
+                    let features = [];
+                    layer.eachLayer(function (layerConFeatures) {
+                        let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), poly.toGeoJSON())
+                        if (seIntersectan != null) {
+                            features.push(layerConFeatures.feature.properties);
+                        }
+                    })
+                    if(features.length > 0)
+                        capasIntersectadas.push({layer: layer.options.nombre, features: features});
+                }
+            });
+            setSavedToIdentify(capasIntersectadas);
+            setIdentify(false);
+        }
+    }
+
+    function changeIdentifyType() {
+        switch (parseInt(identifyOption)) {
+            case 1:
+                setSelectedToIdentify(savedToIdentify);
+                prepareDataToExport(savedToIdentify, function(data) {
+                    addToExportWithPivot(data);
+                    // setTimeout(() => {
+                    //     generatePdf(savedToIdentify.length, function() {
+                    //         console.log('pdkOk!!!');
+                    //     });
+                    // }, 2000);
+                });
+            break;
+            case 2:
+                setSelectedToIdentify([savedToIdentify[savedToIdentify.length - 1]]);
+                prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function(data) {
+                    addToExportWithPivot(data);
+                    // setTimeout(() => {
+                    //     generatePdf(1, function() {
+                    //         console.log('pdkOk!!!');
+                    //     });
+                    // }, 2000);
+                });
+            break;
+            case 3:
+                includeActiveLayer(function(array, isActive) {
+                    setSelectedToIdentify(isActive == true ? [array[0]] : []);
+                    prepareDataToExport(isActive == true ? [array[0]] : [], function(data) {
+                        addToExportWithPivot(data);
+                        // setTimeout(() => {
+                        //     generatePdf(1, function() {
+                        //         console.log('pdkOk!!!');
+                        //     });
+                        // }, 2000);
+                    });
+                });
+            break;
+            default:
+                console.log('parseInt(identifyOption): ', parseInt(identifyOption))
+            break;
+        }
+    }
+
+    function includeActiveLayer(success) {
+        var tempArray = [];
+        var tempFeatures = [];
+        var isActive = false;
+        capasVisualizadas.filter(displayed => displayed.isActive == true).map((active) => {
+            savedToIdentify.map((saved) => {
+                if(saved.layer == active.nom_capa) {
+                    active.features.map((feature) => {
+                        tempFeatures.push(feature.properties)
+                        isActive = true;
+                    });
+                    tempArray.push({layer: active.nom_capa, features: tempFeatures});
+                }
+            });
+        });
+        success(tempArray, isActive);
+    }
+
+    const [pdfDocument, setPdfDocument] = useState(<toPdf.Document></toPdf.Document>);
+    const styles = toPdf.StyleSheet.create({
+        page: {
+            // flexDirection: 'row',
+            backgroundColor: '#FFFFFF'
+        },
+        section: {
+            margin: 10,
+            padding: 10,
+            flexGrow: 1
+        }
+    });
+
+    function prepareDataToExport(data, success) {
+        var tempArray = [];
+        data.map((layer) => {
+            layer.features.map((feature) => {
+                tempArray.push(feature)
+            });
+        });
+        success(tempArray);
+    }
+
+    function enableLayer(index) {
+        var tempArray = [];
+        capasVisualizadas.map((capa, index_) => {
+            capa.isActive = (index == index_);
+            tempArray.push(capa);
+        });
+        // setActiveLayer(capasVisualizadas[index]);
+        setCapasVisualizadas(tempArray);
+    }
+
+    // function generatePdf(success) {
+    //     var nodeMap = document.getElementById('id-export-Map');
+    //     var tables = [];
+    //     var map;
+    //     htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
+    //         map = dataUrlMap;
+    //         selectedToIdentify.map((selected, index) => {
+    //             var nodeTables = document.getElementById(`identify-table-${index}`);
+    //             htmlToImage.toPng(nodeTables).then(function (dataUrlTables) {
+    //                 var img = new Image();
+    //                 img.src = dataUrlTables;
+    //                 document.body.appendChild(img);
+    //                 tables.push(dataUrlTables)
+    //             }).catch(function (error) {
+    //                 console.log('errorTables: ', error);
+    //                 setDatosModal({
+    //                     title: 'Error!!!',
+    //                     body: 'No se pudó generar el contenido del PDF',
+    //                     redireccion: null,
+    //                     nombreBoton: 'Cerrar'
+    //                 });
+    //                 handleShow();
+    //             });
+    //         });
+    //     }).catch(function (error) {
+    //         setDatosModal({
+    //             title: 'Error!!!',
+    //             body: 'No se pudó generar el contenido del PDF',
+    //             redireccion: null,
+    //             nombreBoton: 'Cerrar'
+    //         });
+    //         handleShow();
+    //     });
+    //     setPdfDocument(//TODO revisar los errores del catch
+    //         <toPdf.Document> 
+    //             <toPdf.Page size="A4" style={styles.page} wrap>
+    //                 <toPdf.View style={styles.section}>
+    //                     <toPdf.Text>MAPA</toPdf.Text>
+    //                     <toPdf.Image src={map}/>
+    //                 </toPdf.View>
+    //                 <toPdf.View style={styles.section}>
+    //                     <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
+    //                     {
+    //                         tables.map((table) => {
+    //                             <toPdf.Image src={table}/>
+    //                         })
+    //                     }
+    //                 </toPdf.View>
+    //             </toPdf.Page>
+    //         </toPdf.Document>
+    //     );
+    //     success();
+    // }
+
+    // function generatePdf(length, success) {
+    //     var nodeMap = document.getElementById('id-export-Map');
+    //     var content;
+    //     var tables= [];
+    //     htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
+    //         content = 
+    //             <toPdf.View style={styles.section}>
+    //                 <toPdf.Text>MAPA</toPdf.Text>
+    //                 <toPdf.Image src={dataUrlMap}/>
+    //             </toPdf.View>;
+    //         for (let index = 0; index < length; index++) {
+    //             var nodeTables = document.getElementById(`identify-table-${index}`);
+    //             tables.push(nodeTables);
+    //         }
+    //         setTimeout(() => {
+    //             tables.map((table) => {
+    //                 setTimeout(() => {
+    //                     console.log(table)
+    //                     htmlToImage.toPng(table).then(function (dataUrlTables) {
+    //                         var img = new Image();
+    //                         img.src = dataUrlTables;
+    //                         document.body.appendChild(img);
+    //                         content = content + 
+    //                             <toPdf.View style={styles.section}>
+    //                                 <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
+    //                                 <toPdf.Image src={dataUrlTables}/>
+    //                             </toPdf.View>;
+    //                     }).catch(function (error) {
+    //                         console.log('errorTables: ', error);
+    //                         setDatosModal({
+    //                             title: 'Error!!!',
+    //                             body: 'No se pudó generar el contenido del PDF',
+    //                             redireccion: null,
+    //                             nombreBoton: 'Cerrar'
+    //                         });
+    //                         handleShow();
+    //                     });
+    //                 }, 2000);
+    //             })
+    //         }, 2000);
+    //         setPdfDocument(//TODO revisar los errores del catch
+    //             <toPdf.Document> 
+    //                 <toPdf.Page size="A4" style={styles.page} wrap>
+    //                     {content}
+    //                 </toPdf.Page>
+    //             </toPdf.Document>
+    //         );
+    //         success();
+    //     }).catch(function (error) {
+    //         console.log('errorMap: ', error);
+    //         setDatosModal({
+    //             title: 'Error!!!',
+    //             body: 'No se pudó generar el contenido del PDF',
+    //             redireccion: null,
+    //             nombreBoton: 'Cerrar'
+    //         });
+    //         handleShow();
+    //     });
+    // }
+
+    function generatePdf(success) {
+        var nodeMap = document.getElementById('id-export-Map');
+        var nodeTables = document.getElementById('identify-tables');
+        htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
+            htmlToImage.toPng(nodeTables).then(function (dataUrlTables) {
+                var img = new Image();
+                img.src = dataUrlTables;
+                document.body.appendChild(img);
+                setPdfDocument(//TODO revisar los errores del catch
+                    <toPdf.Document> 
+                        <toPdf.Page size="A4" style={styles.page} wrap>
+                            <toPdf.View style={styles.section}>
+                                <toPdf.Text>MAPA</toPdf.Text>
+                                <toPdf.Image src={dataUrlMap}/>
+                            </toPdf.View>
+                            <toPdf.View style={styles.section}>
+                                <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
+                                <toPdf.Image src={dataUrlTables}/>
+                            </toPdf.View>
+                        </toPdf.Page>
+                    </toPdf.Document>
+                );
+                success();
+            }).catch(function (error) {
+                setDatosModal({
+                    title: 'Error!!!',
+                    body: 'No se pudó generar el contenido del PDF',
+                    redireccion: null,
+                    nombreBoton: 'Cerrar'
+                });
+                handleShow();
+            });
+        }).catch(function (error) {
+            setDatosModal({
+                title: 'Error!!!',
+                body: 'No se pudó generar el contenido del PDF',
+                redireccion: null,
+                nombreBoton: 'Cerrar'
+            });
+            handleShow();
+        });
     }
 
     return (
@@ -774,6 +1094,119 @@ function ContenedorMapaAnalisis(props) {
                 </Modal.Body>
             </Modal>
 
+            <Modal dialogAs={DraggableModalDialog} show={showModalIdentify} backdrop={false} keyboard={false} contentClassName="modal-redimensionable modal-identify"
+                onHide={() => handleCloseModalIdentify()} className="tw-pointer-events-none modal-analisis modal-simbologia">
+                <Modal.Header className="tw-cursor-pointer" closeButton>
+                    <Modal.Title><b>Identificar</b></Modal.Title>
+                    <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
+                        <FontAwesomeIcon icon={faWindowRestore} />
+                    </button>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className="row">
+                        <div className="col-8">
+                            <Form.Group>
+                                <Form.Control as="select" onChange={(e) => setIdentifyOption(e.target.value)}>
+                                    <option value='' hidden>Aplicar a:</option>
+                                    <option value='1'>Todas</option>
+                                    <option value='2'>Superior</option>
+                                    <option value='3'>Activa</option>
+                                </Form.Control>
+                            </Form.Group>
+                        </div>
+                        {/* <div className="col-4">
+                            <Form.Group>
+                                <Form.Control as="select" onChange={(e) => setSelectedLayer(e.target.value)}>
+                                    <option value='' hidden>Capa</option>
+                                    {
+                                        savedToIdentify.length > 0 &&
+                                            savedToIdentify.map((selected, index) => (
+                                                selected &&
+                                                    <option key={index} value={index}>{selected.layer}</option>
+                                            ))
+                                    }
+                                </Form.Control>
+                            </Form.Group>
+                        </div> */}
+                        <div className="col-4">
+                            <button className="btn-analisis" onClick={() => changeIdentifyType()}>APLICAR</button>
+                        </div>
+                    </div>
+                    <div className="custom-modal-body custom-mx-t-1">
+                        <div className="row">
+                            <div id="identify-tables" className="col-12">
+                                {
+                                    selectedToIdentify.length > 0 &&
+                                        selectedToIdentify.map((selected, index) => (
+                                            selected &&
+                                            <div id={`identify-table-${index}`} key={index}>
+                                                <Table striped bordered hover responsive>
+                                                    <thead>
+                                                        <tr className="tw-text-center">
+                                                            <th colSpan={selected.features.length ? Object.keys(selected.features[0]).length : 5}>{selected.layer}</th>
+                                                        </tr>
+                                                        <tr>
+                                                            {
+                                                                Object.keys(selected.features[0]).map((header, index_) => (
+                                                                        <th key={index_}>{header}</th>
+                                                                    )
+                                                                )
+                                                            }
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {
+                                                            selected.features.map((content, index__) => (
+                                                                    <tr key={index__}>
+                                                                        {
+                                                                            Object.keys(selected.features[0]).map((header_, index___) => (
+                                                                                <td key={index___}>{content[header_]}</td>
+                                                                                )
+                                                                            )
+                                                                        }
+                                                                    </tr>
+                                                                )
+                                                            )
+                                                        }
+                                                    </tbody>
+                                                </Table>
+                                            </div>
+                                        )
+                                    )
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    {
+                        selectedToIdentify.length > 0 &&
+                            <div className="row custom-mx-t-1">
+                                <div className="col-12 d-flex justify-content-around">
+                                    {/* <OverlayTrigger overlay={<Tooltip>{`Exportar CSV`}</Tooltip>}>
+                                        <CSVLink data={csvData} filename={`${csvFileName}.csv`}>
+                                            <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFileCsv} />
+                                        </CSVLink>
+                                    </OverlayTrigger> */}
+                                    {/* <OverlayTrigger overlay={<Tooltip>{`Exportar PDF`}</Tooltip>}>
+                                        <Button className="tw-px-0 tw-pt-0" onClick={() => downloadPdf()} variant="link">
+                                            <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFilePdf} />
+                                        </Button>
+                                    </OverlayTrigger> */}
+                                    {/* <OverlayTrigger overlay={<Tooltip>{`Exportar PDF`}</Tooltip>}>
+                                        <toPdf.PDFDownloadLink id="download-pdf" document={pdfDocument} fileName={`${csvFileName}.pdf`}>
+                                            {
+                                                ({ blob, url, loading, error }) =>
+                                                    loading ?
+                                                        <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFilePdf} /> :
+                                                        <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFilePdf} />
+                                            }
+                                        </toPdf.PDFDownloadLink>
+                                    </OverlayTrigger> */}
+                                </div>
+                            </div>
+                    }
+                </Modal.Body>
+            </Modal>
+
             <div className="contenedor-menu-lateral">
                 <div className={menuLateral ? "tw-w-96 menu-lateral" : "tw-w-0 menu-lateral"}>
                     <Card>
@@ -866,11 +1299,11 @@ function ContenedorMapaAnalisis(props) {
                                                                 <Form.Group>
                                                                     <Form.Check type="checkbox" inline defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event, 0)} value={capa.num_capa} />
                                                                 </Form.Group>
-                                                                {/* <OverlayTrigger overlay={<Tooltip>Capa activa/inactiva</Tooltip>}>
-                                                                    <Button onClick={() => setMainLayer(capa.cveEnt)} variant="link">
-                                                                        <FontAwesomeIcon icon={faDotCircle} />
+                                                                <OverlayTrigger overlay={<Tooltip>Establecer como activa</Tooltip>}>
+                                                                    <Button onClick={() => enableLayer(index)} variant="link">
+                                                                        <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
                                                                     </Button>
-                                                                </OverlayTrigger> */}
+                                                                </OverlayTrigger>
                                                                 {
                                                                     capa.tipo === "geojson" &&
                                                                     <Button onClick={() => muestraAtributos(capa)} variant="link">
@@ -984,7 +1417,16 @@ function ContenedorMapaAnalisis(props) {
                             <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
                         </button>
                     </label>
-
+                </OverlayTrigger>
+                <OverlayTrigger overlay={<Tooltip>Identificar</Tooltip>}>
+                    <button className="botones-barra-mapa" onClick={() => setIdentify(true)}>
+                        <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
+                    </button>
+                </OverlayTrigger>
+                <OverlayTrigger overlay={<Tooltip>Paneo</Tooltip>}>
+                    <button className="botones-barra-mapa" onClick={() => setIdentify(false)}>
+                        <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
+                    </button>
                 </OverlayTrigger>
             </div>
             {

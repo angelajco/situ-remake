@@ -94,11 +94,14 @@ export default function Map(props) {
     useEffect(() => {
         let lDrLo = L.drawLocal;
         lDrLo.draw.toolbar.buttons.polyline = "Dibujar una linea"
+        lDrLo.draw.toolbar.buttons.polyline = "Dibujar una linea"
         lDrLo.draw.toolbar.buttons.polygon = "Dibujar un poligono"
         lDrLo.draw.toolbar.buttons.marker = "Dibujar un marcador"
         lDrLo.draw.toolbar.buttons.rectangle = "Dibujar un rectangulo";
-        lDrLo.draw.handlers.rectangle.tooltip.start = "Mantener click y arrastrar para dibujar";
-        lDrLo.draw.handlers.simpleshape.tooltip.end = "Dejar de hacer click para mostrar el dibujo";
+        lDrLo.draw.handlers.rectangle.tooltip.start = "Mantener clic y arrastrar para dibujar";
+        lDrLo.draw.handlers.circle.tooltip.start = "Mantener clic y arrastrar para identificar capas";
+        lDrLo.draw.handlers.circle.radius = "Radio";
+        lDrLo.draw.handlers.simpleshape.tooltip.end = "Dejar de hacer clic para finalizar";
         lDrLo.draw.handlers.polyline.error = "<strong>¡Error:</strong> las esquinas de la forma no se pueden cruzar!"
         lDrLo.draw.toolbar.actions.title = "Cancelar dibujo"
         lDrLo.draw.toolbar.actions.text = "Cancelar"
@@ -227,7 +230,7 @@ export default function Map(props) {
                     distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
                 }
                 layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
-            } else if (type !== 'marker') {
+            } else if (type !== 'marker' && type !== 'circle') {
                 var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                 layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
             }
@@ -243,7 +246,7 @@ export default function Map(props) {
                         distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
                     }
                     layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
-                } else if (!(layer instanceof L.Marker)) {
+                } else if (!(layer instanceof L.Marker) && !(layer instanceof L.Circle)) {
                     var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                     console.log('latlngs: ', layer.getLatLngs())
                     layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
@@ -269,7 +272,7 @@ export default function Map(props) {
                 </select>
             </div>
 
-            <MapContainer whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false} >
+            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false} >
                 <ScaleControl maxWidth="100" />
                 <ZoomControl position="bottomright" zoomInTitle="Acercar" zoomOutTitle="Alejar" />
 
