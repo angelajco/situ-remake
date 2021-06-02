@@ -3,7 +3,7 @@ import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEdit, faCheck } from '@fortawesome/free-solid-svg-icons'
 
-import ContenedorMapaAnalisis from '../../components/ContenedorMapaAnalisis'
+import ContenedorMapaAnalisis from '../../components/ContenedorMapaAnalisis-2'
 
 var referenciaMapaEspejoAnalisis = null;
 function capturaReferenciaMapaEspejo(mapa) {
