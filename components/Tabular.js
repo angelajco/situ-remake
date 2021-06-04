@@ -37,30 +37,32 @@ export default function Tabular(props) {
       {
         (tabular.datosDisponibles)
           ?
-          <table className="tw-w-full table-hover">
-            <thead className="tw-bg-titulo" >
-              <tr>
+          <div className="table-responsive">
+            <table className="tw-w-full table-hover">
+              <thead className="tw-bg-titulo" >
+                <tr>
+                  {
+                    tabular.columnas.map((encabezado, index) => (
+                      <th className="tw-px-2 tw-text-white text-center" key={index}>{tabular.encabezadoColumna(encabezado)}</th>
+                    ))
+                  }
+                </tr>
+              </thead>
+              <tbody>
                 {
-                  tabular.columnas.map((encabezado, index) => (
-                    <th className="tw-px-2 tw-text-white text-center" key={index}>{tabular.encabezadoColumna(encabezado)}</th>
+                  tabular.contenidoTabla().map((item, index) => (
+                    <tr key={index}>
+                      {
+                        contenidoFormateado.map((item2, index2) => (
+                          <td className={item2.clases} key={index2}>{item2.valor}</td>
+                        ))
+                      }
+                    </tr>
                   ))
                 }
-              </tr>
-            </thead>
-            <tbody>
-              {
-                tabular.contenidoTabla().map((item, index) => (
-                  <tr key={index}>
-                    {
-                      contenidoFormateado.map((item2, index2) => (
-                        <td className={item2.clases} key={index2}>{item2.valor}</td>
-                      ))
-                    }
-                  </tr>
-                ))
-              }
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
           :
           null
       }

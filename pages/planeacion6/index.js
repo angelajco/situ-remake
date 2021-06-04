@@ -243,12 +243,13 @@ class ModeloContenido {
     } else {
       return ''
     }
-
     for (let index = 0; index < this.tablas.length; index++) {
       if (idTabla === this.tablas[index].id) {
         for (let i = 0; i < this.tablas[index].columnas.length; i++) {
           if (this.tablas[index].columnas[i].id === columna) {
-            return this.tablas[index].columnas[i].encabezado ?? this.tablas[index].columnas[i].nombre
+            return this.tablas[index].columnas[i].encabezado ??
+              this.tablas[index].columnas[i].nombre ?? 
+              this.tablas[index].columnas[i].columna
           }
         }
       }

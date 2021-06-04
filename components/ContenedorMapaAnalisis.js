@@ -696,37 +696,33 @@ function ContenedorMapaAnalisis(props) {
         switch (parseInt(identifyOption)) {
             case 1:
                 setSelectedToIdentify(savedToIdentify);
-                prepareDataToExport(savedToIdentify, function(data) {
-                    addToExportWithPivot(data);
-                    // setTimeout(() => {
-                    //     generatePdf(savedToIdentify.length, function() {
-                    //         console.log('pdkOk!!!');
-                    //     });
-                    // }, 2000);
-                });
+                // prepareDataToExport(savedToIdentify, function(data) {
+                //     addToExportWithPivot(data);
+                //     generatePdf(savedToIdentify, function() {
+                //         console.log('pdkOk!!!');
+                //     });
+                // });
             break;
             case 2:
-                setSelectedToIdentify([savedToIdentify[savedToIdentify.length - 1]]);
-                prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function(data) {
-                    addToExportWithPivot(data);
-                    // setTimeout(() => {
+                getTopLayer(function(index) {
+                    setSelectedToIdentify([savedToIdentify[index]]);
+                    // prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function(data) {
+                    //     addToExportWithPivot(data);
                     //     generatePdf(1, function() {
                     //         console.log('pdkOk!!!');
                     //     });
-                    // }, 2000);
+                    // });
                 });
             break;
             case 3:
-                includeActiveLayer(function(array, isActive) {
-                    setSelectedToIdentify(isActive == true ? [array[0]] : []);
-                    prepareDataToExport(isActive == true ? [array[0]] : [], function(data) {
-                        addToExportWithPivot(data);
-                        // setTimeout(() => {
-                        //     generatePdf(1, function() {
-                        //         console.log('pdkOk!!!');
-                        //     });
-                        // }, 2000);
-                    });
+                includeActiveLayer(function(index, isActive) {
+                    setSelectedToIdentify(isActive == true ? [savedToIdentify[index]] : []);
+                    // prepareDataToExport(isActive == true ? [array[0]] : [], function(data) {
+                    //     addToExportWithPivot(data);
+                    //     generatePdf(1, function() {
+                    //         console.log('pdkOk!!!');
+                    //     });
+                    // });
                 });
             break;
             default:
@@ -736,21 +732,28 @@ function ContenedorMapaAnalisis(props) {
     }
 
     function includeActiveLayer(success) {
-        var tempArray = [];
-        var tempFeatures = [];
         var isActive = false;
+        var index;
         capasVisualizadas.filter(displayed => displayed.isActive == true).map((active) => {
-            savedToIdentify.map((saved) => {
+            savedToIdentify.map((saved, index_) => {
                 if(saved.layer == active.nom_capa) {
-                    active.features.map((feature) => {
-                        tempFeatures.push(feature.properties)
-                        isActive = true;
-                    });
-                    tempArray.push({layer: active.nom_capa, features: tempFeatures});
+                    index = index_;
+                    isActive = true;
                 }
             });
         });
-        success(tempArray, isActive);
+        success(index, isActive);
+    }
+
+    function getTopLayer(success) {
+        var index;
+        var topLayer = capasVisualizadas[0];
+        savedToIdentify.map((saved, index_) => {
+            if(saved.layer == topLayer.nom_capa) {
+                index = index_;
+            }
+        });
+        success(index);
     }
 
     const [pdfDocument, setPdfDocument] = useState(<toPdf.Document></toPdf.Document>);
@@ -840,99 +843,48 @@ function ContenedorMapaAnalisis(props) {
     //     success();
     // }
 
-    // function generatePdf(length, success) {
-    //     var nodeMap = document.getElementById('id-export-Map');
-    //     var content;
-    //     var tables= [];
-    //     htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
-    //         content = 
-    //             <toPdf.View style={styles.section}>
-    //                 <toPdf.Text>MAPA</toPdf.Text>
-    //                 <toPdf.Image src={dataUrlMap}/>
-    //             </toPdf.View>;
-    //         for (let index = 0; index < length; index++) {
-    //             var nodeTables = document.getElementById(`identify-table-${index}`);
-    //             tables.push(nodeTables);
-    //         }
-    //         setTimeout(() => {
-    //             tables.map((table) => {
-    //                 setTimeout(() => {
-    //                     console.log(table)
-    //                     htmlToImage.toPng(table).then(function (dataUrlTables) {
-    //                         var img = new Image();
-    //                         img.src = dataUrlTables;
-    //                         document.body.appendChild(img);
-    //                         content = content + 
-    //                             <toPdf.View style={styles.section}>
-    //                                 <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
-    //                                 <toPdf.Image src={dataUrlTables}/>
-    //                             </toPdf.View>;
-    //                     }).catch(function (error) {
-    //                         console.log('errorTables: ', error);
-    //                         setDatosModal({
-    //                             title: 'Error!!!',
-    //                             body: 'No se pudó generar el contenido del PDF',
-    //                             redireccion: null,
-    //                             nombreBoton: 'Cerrar'
-    //                         });
-    //                         handleShow();
-    //                     });
-    //                 }, 2000);
-    //             })
-    //         }, 2000);
-    //         setPdfDocument(//TODO revisar los errores del catch
-    //             <toPdf.Document> 
-    //                 <toPdf.Page size="A4" style={styles.page} wrap>
-    //                     {content}
-    //                 </toPdf.Page>
-    //             </toPdf.Document>
-    //         );
-    //         success();
-    //     }).catch(function (error) {
-    //         console.log('errorMap: ', error);
-    //         setDatosModal({
-    //             title: 'Error!!!',
-    //             body: 'No se pudó generar el contenido del PDF',
-    //             redireccion: null,
-    //             nombreBoton: 'Cerrar'
-    //         });
-    //         handleShow();
-    //     });
-    // }
-
-    function generatePdf(success) {
+    function generatePdf(items, success) {
         var nodeMap = document.getElementById('id-export-Map');
-        var nodeTables = document.getElementById('identify-tables');
+        var content;
         htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
-            htmlToImage.toPng(nodeTables).then(function (dataUrlTables) {
-                var img = new Image();
-                img.src = dataUrlTables;
-                document.body.appendChild(img);
-                setPdfDocument(//TODO revisar los errores del catch
-                    <toPdf.Document> 
-                        <toPdf.Page size="A4" style={styles.page} wrap>
-                            <toPdf.View style={styles.section}>
-                                <toPdf.Text>MAPA</toPdf.Text>
-                                <toPdf.Image src={dataUrlMap}/>
-                            </toPdf.View>
-                            <toPdf.View style={styles.section}>
-                                <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
-                                <toPdf.Image src={dataUrlTables}/>
-                            </toPdf.View>
-                        </toPdf.Page>
-                    </toPdf.Document>
-                );
-                success();
-            }).catch(function (error) {
-                setDatosModal({
-                    title: 'Error!!!',
-                    body: 'No se pudó generar el contenido del PDF',
-                    redireccion: null,
-                    nombreBoton: 'Cerrar'
+            content = 
+                <toPdf.View style={styles.section}>
+                    <toPdf.Text>MAPA</toPdf.Text>
+                    <toPdf.Image src={dataUrlMap}/>
+                </toPdf.View>;
+            console.log('items: ', items)
+            items.map((item, index) => {
+                var nodeTable= document.getElementById(`identify-table-${index}`);
+                htmlToImage.toPng(nodeTable).then(function (dataUrlTables) {
+                    var img = new Image();
+                    img.src = dataUrlTables;
+                    document.body.appendChild(img);
+                    // content = content + 
+                    //     <toPdf.View style={styles.section}>
+                    //         <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
+                    //         <toPdf.Image src={dataUrlTables}/>
+                    //     </toPdf.View>;
+                }).catch(function (error) {
+                    console.log('errorTables: ', error);
+                    setDatosModal({
+                        title: 'Error!!!',
+                        body: 'No se pudó generar el contenido del PDF',
+                        redireccion: null,
+                        nombreBoton: 'Cerrar'
+                    });
+                    handleShow();
                 });
-                handleShow();
             });
+            setPdfDocument(//TODO revisar los errores del catch
+                <toPdf.Document> 
+                    <toPdf.Page size="A4" style={styles.page} wrap>
+                        {content}
+                    </toPdf.Page>
+                </toPdf.Document>
+            );
+            success();
         }).catch(function (error) {
+            console.log('errorMap: ', error);
             setDatosModal({
                 title: 'Error!!!',
                 body: 'No se pudó generar el contenido del PDF',
@@ -942,6 +894,49 @@ function ContenedorMapaAnalisis(props) {
             handleShow();
         });
     }
+
+    // function generatePdf(success) {
+    //     var nodeMap = document.getElementById('id-export-Map');
+    //     var nodeTables = document.getElementById('identify-tables');
+    //     htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
+    //         htmlToImage.toPng(nodeTables).then(function (dataUrlTables) {
+    //             var img = new Image();
+    //             img.src = dataUrlTables;
+    //             document.body.appendChild(img);
+    //             setPdfDocument(//TODO revisar los errores del catch
+    //                 <toPdf.Document> 
+    //                     <toPdf.Page size="A4" style={styles.page} wrap>
+    //                         <toPdf.View style={styles.section}>
+    //                             <toPdf.Text>MAPA</toPdf.Text>
+    //                             <toPdf.Image src={dataUrlMap}/>
+    //                         </toPdf.View>
+    //                         <toPdf.View style={styles.section}>
+    //                             <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
+    //                             <toPdf.Image src={dataUrlTables}/>
+    //                         </toPdf.View>
+    //                     </toPdf.Page>
+    //                 </toPdf.Document>
+    //             );
+    //             success();
+    //         }).catch(function (error) {
+    //             setDatosModal({
+    //                 title: 'Error!!!',
+    //                 body: 'No se pudó generar el contenido del PDF',
+    //                 redireccion: null,
+    //                 nombreBoton: 'Cerrar'
+    //             });
+    //             handleShow();
+    //         });
+    //     }).catch(function (error) {
+    //         setDatosModal({
+    //             title: 'Error!!!',
+    //             body: 'No se pudó generar el contenido del PDF',
+    //             redireccion: null,
+    //             nombreBoton: 'Cerrar'
+    //         });
+    //         handleShow();
+    //     });
+    // }
 
     return (
         <>
