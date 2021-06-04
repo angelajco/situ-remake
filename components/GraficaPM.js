@@ -1,6 +1,13 @@
 import { data } from 'autoprefixer';
 import React, { useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from 'recharts';
+import * as bs from 'react-bootstrap'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faImages, faSquareFull } from '@fortawesome/free-solid-svg-icons'
+import Draggable from 'react-draggable';
+import ModalDialog from 'react-bootstrap/ModalDialog';
+
+import $ from 'jquery';
 
 export default function GraficaPM(props) {
 
@@ -12,13 +19,21 @@ export default function GraficaPM(props) {
   const cambia = () => {
     setRefrescaGrafica(refrescaGrafica + 1)
   }
-
-  // console.log('Grafica', grafica)
   grafica.refrescarContenido = cambia
 
   // const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#e5d8', '#ffe280'];
   const COLORS = grafica.tablaColores()
   const RADIAN = Math.PI / 180;
+  
+  const [showModalSimbologia, setShowModalSimbologia] = useState(false);
+  const handleShowModalSimbologia = () => {
+      setShowModalSimbologia(true);
+      remueveTabindexModalMovible();
+  }
+
+  function remueveTabindexModalMovible() {
+    $('.modal-analisis').removeAttr("tabindex");
+  }
 
   const renderCustomizedLabel = ({
     cx, cy, midAngle, innerRadius, outerRadius, percent, index,
@@ -51,28 +66,63 @@ export default function GraficaPM(props) {
   const alto = parseInt(grafica.alto)
 
   // console.log('DATOS DE GRAFICA DE PAY: ', datosPay)
+  function DraggableModalDialog(props) {
+    return (
+      <Draggable handle=".modal-header"><ModalDialog  {...props} /></Draggable>
+    )
+  }
 
   switch (grafica.tipo) {
     case "pay":
-      return <PieChart width={ancho} height={alto}>
-        <Pie
-          data={datosPay}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          label={renderCustomizedLabel}
-          outerRadius={150}
-          fill="#8884d8"
-          dataKey="value"
-        >
-          {datosPay.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip />
-        <Legend 
-          iconSize={30}/>
-      </PieChart>;
+      return <div>
+        <bs.Modal dialogAs={DraggableModalDialog} show={showModalSimbologia} backdrop={false} keyboard={false} contentClassName="modal-redimensionable modal-simbologia-planeacion"
+          onHide={() => setShowModalSimbologia(!showModalSimbologia)} className="tw-pointer-events-none modal-analisis modal-simbologia">
+          <bs.Modal.Header className="tw-cursor-pointer" closeButton>
+              <bs.Modal.Title><b>Simbología</b></bs.Modal.Title>
+          </bs.Modal.Header>
+          <bs.Modal.Body>
+            <div className="custom-modal-body-planeacion">
+              {
+                datosPay.map((entry, index) => (
+                  <div key={index} className="row">
+                    <div className="col-4">
+                      <FontAwesomeIcon style={{color: COLORS[index]}} icon={faSquareFull}></FontAwesomeIcon>
+                    </div>
+                    <div className="col-8">
+                      {entry.name}
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+          </bs.Modal.Body>
+        </bs.Modal>
+        <PieChart width={ancho} height={alto}>
+          <Pie
+            data={datosPay}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={renderCustomizedLabel}
+            outerRadius={150}
+            fill="#8884d8"
+            dataKey="value"
+          >
+            {datosPay.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip />
+          {/* <Legend layout="horizontal" wrapperStyle={{overflowX: 'auto'}}
+            iconSize={30}/> */}
+        </PieChart>        
+        <bs.OverlayTrigger overlay={<bs.Tooltip>Simbología</bs.Tooltip>}>
+          <button className="botones-barra-mapa" onClick={handleShowModalSimbologia}>
+            <FontAwesomeIcon icon={faImages}></FontAwesomeIcon>
+          </button>
+        </bs.OverlayTrigger>
+        {/* <GetLegends/> */}
+      </div>;
     case "barra":
       // for (let index = 0; index < datosPay.length; index++) {
       //   const element = datosPay[index];
@@ -82,8 +132,8 @@ export default function GraficaPM(props) {
       // }
       return <ResponsiveContainer height={alto}>
         <BarChart
-          width={500}
-          height={300}
+          width={ancho}
+          height={alto}
           data={datosPay}
           margin={{
             top: 20,
@@ -95,7 +145,12 @@ export default function GraficaPM(props) {
           <XAxis dataKey="name" />
           <YAxis />
           <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="value" stackId="a" fill={COLORS[0]} />
+          {/* <Bar dataKey="value" stackId="a" fill={COLORS[0]} /> */}
+          <Bar dataKey="value" stackId="a">
+            {datosPay.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index]} />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     default:
