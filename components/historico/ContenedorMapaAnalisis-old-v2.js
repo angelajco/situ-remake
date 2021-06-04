@@ -23,8 +23,8 @@ import xpath from 'xml2js-xpath'
 
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
-import ModalComponent from './ModalComponent'
-import catalogoEntidades from "../shared/jsons/entidades.json";
+import ModalComponent from '../ModalComponent'
+import catalogoEntidades from "../../shared/jsons/entidades.json";
 
 const Map = dynamic(
     () => import('./MapAnalisis'),
@@ -117,6 +117,7 @@ function ContenedorMapaAnalisis(props) {
         setDatosCapasBackEnd(catalogoCapas);
     }
 
+    const [guardaGraficos, setGuardaGraficos] = useState([])
     useEffect(() => {
         setTimeout(() => {
             setPolygonDrawer(new L.Draw.Circle(referenciaMapa));

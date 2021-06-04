@@ -169,6 +169,7 @@ body.analisis-geografico-modales {
 .modal-analisis .modal-body {
     border: 10px solid;
     @apply tw-border-titulo;
+    overflow-y: auto;
 }
 
 .modal-identify {
