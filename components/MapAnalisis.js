@@ -11,7 +11,7 @@ const { BaseLayer } = LayersControl;
 import { EditControl } from 'react-leaflet-draw'
 
 import referenciaMapaContext from '../contexts/ContenedorMapaContext'
-
+import 'leaflet-easyprint'
 
 
 //Si no es necesario cargar los marcadores
@@ -469,7 +469,6 @@ export default function Map(props) {
                     <EditControl
                         position='topright'
                         draw={{
-                            rectangle: true,
                             circle: false,
                             circlemarker: false,
                         }}

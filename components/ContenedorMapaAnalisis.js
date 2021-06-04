@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle } from '@fortawesome/free-solid-svg-icons';
@@ -23,6 +23,7 @@ import xpath from 'xml2js-xpath'
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 import ModalComponent from './ModalComponent'
+import ModalAnalisis from './ModalAnalisis'
 import catalogoEntidades from "../shared/jsons/entidades.json";
 
 const Map = dynamic(
@@ -58,16 +59,12 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
-    const [arregloCapasBackEnd, setArregloCapasBackEnd] = useState([])
-    const [arregloMetadatosCapasBackEnd, setArregloMetadatosCapasBackEnd] = useState([])
-
     useEffect(() => {
         //Datos para construir el catalogo
         fetch(`${process.env.ruta}/wa/publico/getCapas/`)
             .then(res => res.json())
             .then(
                 (data) => {
-                    construyeCatalogo(data)
                     setArregloCapasBackEnd(data)
                 },
                 (error) => console.log(error)
@@ -77,57 +74,23 @@ function ContenedorMapaAnalisis(props) {
             .then(res => res.json())
             .then(
                 (data) => {
-                    setArregloMetadatosCapasBackEnd(data);
+                    construyeCatalogo(data);
                 },
                 (error) => console.log(error)
             )
 
-        fetch(`${process.env.ruta}/wa/publico/getMetadatosCapas/5`)
-            .then(res => res.json())
-            .then(
-                (data) => console.log(data, "getMetadatosCapas"),
-                (error) => console.log(error)
-            )
+        // fetch(`${process.env.ruta}/wa/publico/getMetadatosCapas/5`)
+        //     .then(res => res.json())
+        //     .then(
+        //         (data) => console.log(data, "getMetadatosCapas"),
+        //         (error) => console.log(error)
+        //     )
 
     }, [])
 
-    //Para guardar los datos de las capas del BackEnd
-    const [datosCapasBackEnd, setDatosCapasBackEnd] = useState([])
-    function construyeCatalogo(capasBackEnd) {
-        //Para guardar la información de las capas que viene desde el backend, sirve como arreglo temporal
-        let catalogoCapas = [];
-        let otrasCapas = [];
-
-        capasBackEnd.map(value => {
-            if (value.titulo == "Limite Municipal") {
-                for (let i = 0; i < 32; i++) {
-                    let capa = {};
-                    capa.titulo = "Municipios de " + catalogoEntidades[i].entidad;
-                    capa.url = value.url;
-                    capa.capa = value["nombre_capa"];
-                    capa.filtro_entidad = value.filtro_entidad;
-                    capa.valor_filtro = catalogoEntidades[i].id;
-                    capa.wfs = value.wfs;
-                    capa.wms = value.wms;
-                    capa.indice = catalogoCapas.length;
-                    capa.tipo = "filtrada"
-                    catalogoCapas.push(capa);
-                }
-            } else {
-                otrasCapas.push(value)
-            }
-        })
-
-        otrasCapas.map(value => {
-            value.indice = catalogoCapas.length;
-            value.tipo = "mosaico";
-            catalogoCapas.push(value)
-        })
-        setDatosCapasBackEnd(catalogoCapas);
-    }
-
     useEffect(() => {
         if (capturoReferenciaMapa == true) {
+            setPolygonDrawer(new L.Draw.Circle(referenciaMapa));
             referenciaMapa.on('draw:created', function (e) {
                 let layerDibujada = e.layer;
                 let puntos = null;
@@ -186,6 +149,38 @@ function ContenedorMapaAnalisis(props) {
         }
     }, [capturoReferenciaMapa])
 
+    //Variables para guardar los datos de las capas, metadatos de la api
+    const [arregloCapasBackEnd, setArregloCapasBackEnd] = useState([])
+    const [arregloMetadatosCapasBackEnd, setArregloMetadatosCapasBackEnd] = useState([])
+    const [listaMetadatosCapasBackEnd, setListaMetadatosCapasBackEnd] = useState([])
+    function construyeCatalogo(metadatosCapasApi) {
+        let listaTitulos = [];
+        let listaTemas = [];
+        let listaSubtemas = [];
+        let listaPalabras = [];
+        metadatosCapasApi.map(value => {
+            if (value.titulo) {
+                listaTitulos.push(value.titulo)
+            }
+            if (value.tema) {
+                listaTemas.push(value.tema)
+            }
+            if (value.subtema) {
+                listaSubtemas.push(value.subtema)
+            }
+            if (value.palabras_clave) {
+                value.palabras_clave.split(",").map(valueKey => {
+                    listaPalabras.push(valueKey.trim())
+                })
+            }
+        })
+        let uniqueTemas = [...new Set(listaTemas)]
+        let uniqueSubtemas = [...new Set(listaSubtemas)]
+        let uniquePalabras = [...new Set(listaPalabras)]
+        setListaMetadatosCapasBackEnd([listaTitulos, uniqueTemas, uniqueSubtemas, uniquePalabras])
+        setArregloMetadatosCapasBackEnd(metadatosCapasApi)
+    }
+
     const creaSVG = (nombreCapa) => {
         var creaSVG = `<svg height='20' xmlns='http://www.w3.org/2000/svg'><rect x='0' y='0' width='15' height='15' fill='#FF7777' stroke='#FF0000' strokeWidth='2'></rect><text x='20' y='15' width='200' height='200' fontSize='12.5' fontWeight='500' font-family='Montserrat, sans-serif'>${nombreCapa}</text></svg>`
         var DOMURL = self.URL || self.webkitURL || self;
@@ -197,7 +192,7 @@ function ContenedorMapaAnalisis(props) {
     //Al seleccionar y añadir una entidad para los mapas
     //Para guardar las capas que se van a mostrar
     const [capasVisualizadas, setCapasVisualizadas] = useState([]);
-    //Estilos de los geojson
+    //Estilos de los geojson (wfs)
     const estilos = {
         color: "#FF0000",
         fillColor: "#FF7777",
@@ -206,98 +201,6 @@ function ContenedorMapaAnalisis(props) {
     }
     //Para guardar los rasgos
     const [rasgos, setRasgos] = useState([])
-    //Acciones del formulario
-    const { register, handleSubmit, control, errors } = useForm();
-    //Al seleccionar y añadir una entidad para los mapas
-    const onSubmit = (data) => {
-        let capa = data.capaAgregar[0];
-        if (capasVisualizadas.some(capaVisual => capaVisual.num_capa === capa.indice)) {
-            return;
-        }
-        else {
-            if (capa.tipo == "mosaico") {
-                let capaWMS = {};
-                //Se guardan los datos de la capa
-                capaWMS["attribution"] = "No disponible"
-                capaWMS["url"] = capa.url
-                capaWMS["layers"] = capa["nombre_capa"]
-                capaWMS["format"] = capa.wms
-                capaWMS["transparent"] = "true"
-                capaWMS["tipo"] = "wms"
-                capaWMS["nom_capa"] = capa.titulo;
-                capaWMS["num_capa"] = capa.indice;
-                capaWMS["habilitado"] = true;
-                capaWMS["estilos"] = { 'transparencia': 1 };
-                capaWMS["zoomMinimo"] = 5;
-                capaWMS["zoomMaximo"] = 18;
-                capaWMS['simbologia'] = capa["leyenda_simb"];
-
-                let layer = L.tileLayer.wms(capaWMS.url, {
-                    layers: capaWMS.layers,
-                    format: capaWMS.format,
-                    transparent: capaWMS.transparent,
-                    attribution: capaWMS.attribution,
-                    opacity: capaWMS.estilos.transparencia,
-                    minZoom: capaWMS.zoomMinimo,
-                    maxZoom: capaWMS.zoomMaximo,
-                })
-                capaWMS["layer"] = layer;
-                var url = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaWMS.layers}&outputFormat=`
-                var download = [
-                    { num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `${url}KML`, tipo: 'KML' },
-                    { num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaWMS.layers}&bbox=-180,-90,180,90`, tipo: 'KMZ' },
-                    { num_capa: capaWMS.num_capa, nom_capa: capaWMS.nom_capa, link: `${url}SHAPE-ZIP`, tipo: 'SHAPE' }
-                ];
-                capaWMS.download = download;
-                setCapasVisualizadas([...capasVisualizadas, capaWMS])
-                referenciaMapa.addLayer(capaWMS.layer)
-            } else if (capa.tipo == "filtrada") {
-                const owsrootUrl = capa.url;
-                const defaultParameters1 = {
-                    service: 'WFS',
-                    version: '2.0',
-                    request: 'GetFeature',
-                    typeName: capa.capa,
-                    outputFormat: 'text/javascript',
-                    format_options: 'callback:getJson',
-                    cql_filter: capa.filtro_entidad + "=" + "'" + capa.valor_filtro + "'"
-                };
-                var parameters1 = L.Util.extend(defaultParameters1);
-                var url = owsrootUrl + L.Util.getParamString(parameters1);
-                //Hace la petición para traer los datos de la entidad
-                $.ajax({
-                    jsonpCallback: 'getJson',
-                    url: url,
-                    dataType: 'jsonp',
-                    success: function (response) {
-                        var download = JSON.stringify(response)
-                        // setGeoJsonFiles
-                        response["num_capa"] = capa.indice;
-                        response["nom_capa"] = capa.titulo;
-                        response["habilitado"] = true;
-                        response['tipo'] = "geojson";
-                        response['estilos'] = { 'transparencia': 1 };
-                        let layer = L.geoJSON(response, {
-                            style: estilos,
-                            nombre: response["nom_capa"],
-                            onEachFeature: function (feature = {}, layerPadre) {
-                                layerPadre.on('click', function () {
-                                    feature.properties["nombre_capa"] = layerPadre.options["nombre"];
-                                    setRasgos([feature.properties])
-                                })
-                            }
-                        });
-                        response['layer'] = layer;
-                        response['simbologia'] = creaSVG(capa.titulo)
-                        response.download = [{ num_capa: response.num_capa, nom_capa: response.nom_capa, link: download, tipo: 'GeoJSON' }];
-                        response.cveEnt = capa.valor_filtro;
-                        setCapasVisualizadas([...capasVisualizadas, response])
-                        referenciaMapa.addLayer(response.layer)
-                    }
-                });
-            }
-        }
-    }
 
     //Para agregar un servicio de otra identidad
     const [guardaServicio, setGuardaServicio] = useState([])
@@ -319,18 +222,7 @@ function ContenedorMapaAnalisis(props) {
                         } else {
                             let matches = xpath.find(result, "//Layer/Layer/@opaque");
                             if (matches.length != 0) {
-                                // if (data.nombreServicio) {
-                                //     let resultMatchName = matches.find(match => match.Title[0].toLowerCase() == data.nombreServicio.toLowerCase())
-                                //     if (resultMatchName == undefined) {
-                                //         setAvisoServicio("El título que está consultando, no existe en este servicio.")
-                                //     } else {
-                                //         setGuardaServicio([[resultMatchName], data.urlServicio]);
-                                //     }
-                                // }
-                                // else {
-                                // }
                                 setGuardaServicio([matches, data.urlServicio]);
-                                // setGuardaServicio(matches);
                             }
                             else {
                                 setAvisoServicio("El servicio no está disponible o agrego una URL erronea, favor de verificar.")
@@ -345,50 +237,140 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
-    const agregaCapaServicio = (capaServicio) => {
-        let capaWMS = {};
-        capaWMS["attribution"] = "No disponible"
-        capaWMS["url"] = guardaServicio[1]
-        capaWMS["layers"] = capaServicio[0].Name[0]
-        capaWMS["format"] = "image/png"
-        capaWMS["transparent"] = "true"
-        capaWMS["tipo"] = "wms"
-        capaWMS["nom_capa"] = capaServicio[0].Title[0];
-        capaWMS["habilitado"] = true;
-        capaWMS["estilos"] = { 'transparencia': 1 };
-        capaWMS["zoomMinimo"] = 5;
-        capaWMS["zoomMaximo"] = 18;
-        capaWMS['simbologia'] = capaServicio[0].Style[0]["LegendURL"][0]["OnlineResource"][0]["$"]["xlink:href"];
-        capaWMS.isActive = false;
-
-        let layer = L.tileLayer.wms(capaWMS.url, {
-            layers: capaWMS.layers,
-            format: capaWMS.format,
-            transparent: capaWMS.transparent,
-            attribution: capaWMS.attribution,
-            opacity: capaWMS.estilos.transparencia,
-            minZoom: capaWMS.zoomMinimo,
-            maxZoom: capaWMS.zoomMaximo,
-        })
-        capaWMS["layer"] = layer;
-        referenciaMapa.addLayer(capaWMS.layer)
-        setCapasVisualizadas([...capasVisualizadas, capaWMS])
+    //Para agregar capas WMS, ya sea de la ide o de un servicio
+    const agregaCapaWMS = (capa, fuente) => {
         setShowModalAgregarCapas(false);
-        setGuardaServicio([])
-        setAvisoServicio("")
+        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === capa.titulo)) {
+            return;
+        } else {
+            let capaWMS = {};
+            capaWMS["attribution"] = "No disponible"
+            capaWMS["transparent"] = "true"
+            capaWMS["tipo"] = "wms"
+            capaWMS["habilitado"] = true;
+            capaWMS["transparencia"] = 1;
+            capaWMS["zoomMinimo"] = 5;
+            capaWMS["zoomMaximo"] = 18;
+            capaWMS.isActive = false;
+            //fuente = 0, proviene de la IDE
+            //fuente = 1, proviene de un servicio
+            if (fuente == 0) {
+                capaWMS["url"] = capa.url
+                capaWMS["layers"] = capa["nombre_capa"]
+                capaWMS["format"] = capa.wms
+                capaWMS["nom_capa"] = capa.titulo;
+                capaWMS['simbologia'] = capa["leyenda_simb"];
+                let url = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaWMS.layers}&outputFormat=`
+                let download = [
+                    { nom_capa: capaWMS.nom_capa, link: `${url}KML`, tipo: 'KML' },
+                    { nom_capa: capaWMS.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaWMS.layers}&bbox=-180,-90,180,90`, tipo: 'KMZ' },
+                    { nom_capa: capaWMS.nom_capa, link: `${url}SHAPE-ZIP`, tipo: 'SHAPE' }
+                ];
+                capaWMS.download = download;
+            } else if (fuente == 1) {
+                capaWMS["url"] = guardaServicio[1]
+                capaWMS["layers"] = capa[0].Name[0]
+                capaWMS["format"] = "image/png"
+                capaWMS["nom_capa"] = capa[0].Title[0];
+                capaWMS['simbologia'] = capa[0].Style[0]["LegendURL"][0]["OnlineResource"][0]["$"]["xlink:href"];
+            }
+            let layer = L.tileLayer.wms(capaWMS.url, {
+                layers: capaWMS.layers,
+                format: capaWMS.format,
+                transparent: capaWMS.transparent,
+                attribution: capaWMS.attribution,
+                opacity: capaWMS.transparencia,
+                minZoom: capaWMS.zoomMinimo,
+                maxZoom: capaWMS.zoomMaximo,
+            })
+            capaWMS["layer"] = layer;
+            referenciaMapa.addLayer(capaWMS.layer)
+            setCapasVisualizadas([...capasVisualizadas, capaWMS])
+        }
+    }
+
+    //Para mostrar el catalogo entidades
+    const [municipiosMostrarListado, setMunicipiosMostrarListado] = useState(false)
+
+    const agregaCapaWFS = (capaEntidad) => {
+        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === capaEntidad.titulo)) {
+            return;
+        }
+        else {
+            const owsrootUrl = capaEntidad.url;
+            const defaultParameters = {
+                service: 'WFS',
+                version: '2.0',
+                request: 'GetFeature',
+                typeName: capaEntidad.capa,
+                outputFormat: 'text/javascript',
+                format_options: 'callback:getJson',
+                cql_filter: capaEntidad.filtro_entidad + "=" + "'" + capaEntidad.valor_filtro + "'"
+            };
+            var parameters = L.Util.extend(defaultParameters);
+            var url = owsrootUrl + L.Util.getParamString(parameters);
+            //Hace la petición para traer los datos de la entidad
+            $.ajax({
+                jsonpCallback: 'getJson',
+                url: url,
+                dataType: 'jsonp',
+                success: function (response) {
+                    response["nom_capa"] = capaEntidad.titulo;
+                    response["habilitado"] = true;
+                    response['tipo'] = capaEntidad.tipo;
+                    response['transparencia'] = 1;
+                    response['simbologia'] = creaSVG(capaEntidad.titulo)
+                    response.download = [{ nom_capa: response.nom_capa, link: JSON.stringify(response), tipo: 'GeoJSON' }];
+                    response.cveEnt = capaEntidad.valor_filtro;
+                    response.isActive = false;
+                    let layer = L.geoJSON(response, {
+                        style: estilos,
+                        nombre: response["nom_capa"],
+                        onEachFeature: function (feature = {}, layerPadre) {
+                            layerPadre.on('click', function () {
+                                feature.properties["nombre_capa"] = layerPadre.options["nombre"];
+                                setRasgos([feature.properties])
+                            })
+                        }
+                    });
+                    response['layer'] = layer;
+                    setCapasVisualizadas([...capasVisualizadas, response])
+                    referenciaMapa.addLayer(response.layer)
+                }
+            });
+        }
+    }
+
+    const construyeEntidadCapa = (entidad, capaFusionEntidad) => {
+        if (entidad != undefined) {
+            setShowModalAgregarCapas(false);
+            let capaEntidad = {};
+            capaEntidad.titulo = "Municipios de " + entidad.entidad;
+            capaEntidad.url = capaFusionEntidad.url;
+            capaEntidad.capa = capaFusionEntidad.nombre_capa;
+            capaEntidad.filtro_entidad = capaFusionEntidad.filtro_entidad;
+            capaEntidad.tipo = "wfs";
+            capaEntidad.valor_filtro = entidad.id;
+            capaEntidad.wfs = capaFusionEntidad.wfs;
+            capaEntidad.wms = capaFusionEntidad.wms;
+            agregaCapaWFS(capaEntidad)
+        }
     }
 
     //Para buscar los metadatos de la capa
-    const { register: registraMetadatos, handleSubmit: handleSubmitMetadatos } = useForm();
-    const [avisoBusquedaCapas, setAvisoBusquedaCapas] = useState("")
-    const [capasBusqueda, setCapasBusqueda] = useState("")
+    const { register: registraMetadatos, handleSubmit: handleSubmitMetadatos, control } = useForm();
+    const [avisoBusquedaCapasIde, setAvisoBusquedaCapasIde] = useState("")
+    const [capasBusquedaIde, setCapasBusquedaIde] = useState([])
     const buscaMetadatos = (data) => {
-        setAvisoBusquedaCapas("")
+        setCapasBusquedaIde([])
+        setBotonesAgregaCapaIdeWFSWMS([])
+        setMunicipiosMostrarListado(false)
+        setAvisoBusquedaCapasIde("")
         let capasId = [];
         let capasArr = [];
         if (data.titulo) {
             let tituloMet;
-            tituloMet = arregloMetadatosCapasBackEnd.filter(metadato => metadato.titulo.toLowerCase() == data.titulo.toLowerCase()).map(metadato => metadato["id_capa"]);
+            tituloMet = arregloMetadatosCapasBackEnd.filter(metadato => metadato.titulo == data.titulo).map(metadato => metadato["id_capa"]);
             if (tituloMet.length != 0) {
                 tituloMet.map(value => capasId.push(value))
             }
@@ -396,7 +378,7 @@ function ContenedorMapaAnalisis(props) {
         if (data.palabrasClave) {
             arregloMetadatosCapasBackEnd.map(value => {
                 value["palabras_clave"].split(",").map(valueKey => {
-                    if (valueKey.trim().toLowerCase() == data.palabrasClave.trim().toLowerCase()) {
+                    if (valueKey.trim() == data.palabrasClave) {
                         capasId.push(value["id_capa"])
                     }
                 })
@@ -404,14 +386,14 @@ function ContenedorMapaAnalisis(props) {
         }
         if (data.tema) {
             let temaMet;
-            temaMet = arregloMetadatosCapasBackEnd.filter(metadato => metadato.tema.toLowerCase() == data.tema.toLowerCase()).map(metadato => metadato["id_capa"]);
+            temaMet = arregloMetadatosCapasBackEnd.filter(metadato => metadato.tema == data.tema).map(metadato => metadato["id_capa"]);
             if (temaMet.length != 0) {
                 temaMet.map(value => capasId.push(value))
             }
         }
         if (data.subtema) {
             let subtemaMet;
-            subtemaMet = arregloMetadatosCapasBackEnd.filter(metadato => metadato.subtema.toLowerCase() == data.subtema.toLowerCase()).map(metadato => metadato["id_capa"]);
+            subtemaMet = arregloMetadatosCapasBackEnd.filter(metadato => metadato.subtema == data.subtema).map(metadato => metadato["id_capa"]);
             if (subtemaMet.length != 0) {
                 subtemaMet.map(value => capasId.push(value))
             }
@@ -423,54 +405,24 @@ function ContenedorMapaAnalisis(props) {
                 let capaBack = arregloCapasBackEnd.filter(capasBack => capasBack["id_capa"] == value)
                 capasArr.push(...capaBack)
             })
-            if (capasArr.lengt != 0) {
-                setCapasBusqueda(capasArr)
-            } else {
-                setAvisoBusquedaCapas("No se encontraron capas con estos criterios")
-            }
+            setCapasBusquedaIde(capasArr)
         } else {
-            setAvisoBusquedaCapas("No se encontraron capas con estos criterios")
+            setAvisoBusquedaCapasIde("Selecciona al menos un criterio")
         }
     }
 
-    const agregaCapaBusqueda = (capa) => {
-        setShowModalAgregarCapas(false);
-        let capaWMS = {};
-        capaWMS["attribution"] = "No disponible"
-        capaWMS["url"] = capa.url
-        capaWMS["layers"] = capa["nombre_capa"]
-        capaWMS["format"] = capa.wms
-        capaWMS["transparent"] = "true"
-        capaWMS["tipo"] = "wms"
-        capaWMS["nom_capa"] = capa.titulo;
-        capaWMS["habilitado"] = true;
-        capaWMS["estilos"] = { 'transparencia': 1 };
-        capaWMS["zoomMinimo"] = 5;
-        capaWMS["zoomMaximo"] = 18;
-        capaWMS['simbologia'] = capa["leyenda_simb"];
-
-        let layer = L.tileLayer.wms(capaWMS.url, {
-            layers: capaWMS.layers,
-            format: capaWMS.format,
-            transparent: capaWMS.transparent,
-            attribution: capaWMS.attribution,
-            opacity: capaWMS.estilos.transparencia,
-            minZoom: capaWMS.zoomMinimo,
-            maxZoom: capaWMS.zoomMaximo,
-        })
-        capaWMS["layer"] = layer;
-        var url = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaWMS.layers}&outputFormat=`
-        var download = [
-            { nom_capa: capaWMS.nom_capa, link: `${url}KML`, tipo: 'KML' },
-            { nom_capa: capaWMS.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaWMS.layers}&bbox=-180,-90,180,90`, tipo: 'KMZ' },
-            { nom_capa: capaWMS.nom_capa, link: `${url}SHAPE-ZIP`, tipo: 'SHAPE' }
-        ];
-        capaWMS.download = download;
-        capaWMS.isActive = false;
-        setCapasVisualizadas([...capasVisualizadas, capaWMS])
-        referenciaMapa.addLayer(capaWMS.layer)
+    const [botonesAgregaCapaIdeWFSWMS, setBotonesAgregaCapaIdeWFSWMS] = useState([false, null])
+    const agregaCapaBusquedaIde = (capaIde) => {
+        setBotonesAgregaCapaIdeWFSWMS([])
+        setMunicipiosMostrarListado(false)
+        if (capaIde != undefined) {
+            if (capaIde.id_capa == "3") {
+                setBotonesAgregaCapaIdeWFSWMS([true, capaIde])
+            } else {
+                agregaCapaWMS(capaIde, 0)
+            }
+        }
     }
-
 
     //Para guardar los atributos
     const [atributos, setAtributos] = useState([]);
@@ -520,12 +472,12 @@ function ContenedorMapaAnalisis(props) {
         let capasVisualisadasActualizado = capasVisualizadas.map((valor) => {
             //Si es igual a la entidad que se envia, se cambia la transparencia
             if (valor.nom_capa == target.name) {
-                valor.estilos.transparencia = target.value;
-                if (valor.tipo == "geojson") {
-                    valor.layer.setStyle({ opacity: valor.estilos.transparencia, fillOpacity: valor.estilos.transparencia })
+                valor.transparencia = target.value;
+                if (valor.tipo == "wfs") {
+                    valor.layer.setStyle({ opacity: valor.transparencia, fillOpacity: valor.transparencia })
                 }
                 else if (valor.tipo == "wms") {
-                    valor.layer.setOpacity(valor.estilos.transparencia)
+                    valor.layer.setOpacity(valor.transparencia)
                 }
                 return valor;
             }
@@ -654,8 +606,13 @@ function ContenedorMapaAnalisis(props) {
     const [showModalAgregarCapas, setShowModalAgregarCapas] = useState(false)
     function handleShowModalAgregarCapas() {
         setShowModalAgregarCapas(true);
-        setAvisoBusquedaCapas("");
-        setCapasBusqueda([]);
+        //Capas de la IDE
+        setCapasBusquedaIde([]);
+        setAvisoBusquedaCapasIde("");
+        setBotonesAgregaCapaIdeWFSWMS([])
+        //Capas de servicio
+        setGuardaServicio([]);
+        setAvisoServicio("");
     }
 
     function remueveTabindexModalMovible() {
@@ -672,32 +629,28 @@ function ContenedorMapaAnalisis(props) {
     const [showModalIdentify, setShowModalIdentify] = useState(false);
     const handleShowModalIdentify = () => {
         setShowModalIdentify(true);
-        remueveTabindexModalMovible();
+        setTimeout(() => {
+            remueveTabindexModalMovible();
+        });
     }
-    const handleCloseModalIdentify = () => {
-        setShowModalIdentify(false);
-        remueveTabindexModalMovible();
-    }
+
     const [isIdentifyActive, setIdentify] = useState(false);
     const [selectedToIdentify, setSelectedToIdentify] = useState([]);
     const [savedToIdentify, setSavedToIdentify] = useState([]);
 
-    //Para las descargas
-    const [show, setShow] = useState(false);
-    const [datosModal, setDatosModal] = useState(
+    //Modal general que no se minimiza ni se expande
+    const [showModalAnalisis, setShowModalAnalisis] = useState(false);
+    const handleCloseModalAnalisis = () => setShowModalAnalisis(false);
+    const [datosModalAnalisis, setDatosModalAnalisis] = useState(
         {
             title: '',
             body: ''
         }
     );
-    const [fileUpload, setFileUpload] = useState();
-    const handleClose = () => setShow(false);
-    const handleShow = () => setShow(true);
-    const [identifyOption, setIdentifyOption] = useState();
-    const [pdfContent, setPdfcontent] = useState();
 
+    //Para pintar modal de descargas
     function renderModalDownload(items) {
-        setDatosModal({
+        setDatosModalAnalisis({
             title: `Descarga de ${items[0].nom_capa}`,
             body: <ul>
                 {
@@ -716,12 +669,16 @@ function ContenedorMapaAnalisis(props) {
                     ))
                 }
             </ul>,
-            redireccion: null,
-            nombreBoton: 'Cerrar'
         });
-        handleShow();
+        setShowModalAnalisis(true);
     }
 
+
+    const [identifyOption, setIdentifyOption] = useState();
+    const [pdfContent, setPdfcontent] = useState();
+
+    //Para subir archivos
+    const [fileUpload, setFileUpload] = useState();
     function processInputFile(event) {
         var fileType = event.target.files[0].name;
         fileType = fileType.substring(fileType.indexOf('.') + 1);
@@ -767,15 +724,16 @@ function ContenedorMapaAnalisis(props) {
                 };
                 break;
             default:
-                setDatosModal({
-                    title: 'Error!!!',
+                console.log("entre a default")
+                setDatosModalAnalisis({
+                    title: '¡Error!',
                     body: 'Archivo no soportado',
-                    redireccion: null,
-                    nombreBoton: 'Cerrar'
                 });
-                handleShow();
+                console.log(showModalAnalisis, "valor");
+                setShowModalAnalisis(true)
                 break;
         }
+        // event.target.value = "";
     }
 
     useEffect(() => {
@@ -1042,39 +1000,43 @@ function ContenedorMapaAnalisis(props) {
                 );
                 success();
             }).catch(function (error) {
-                setDatosModal({
-                    title: 'Error!!!',
+                setDatosModalAnalisis({
+                    title: '¡Error!',
                     body: 'No se pudó generar el contenido del PDF',
-                    redireccion: null,
-                    nombreBoton: 'Cerrar'
                 });
-                handleShow();
+                setShowModalAnalisis(true)
             });
         }).catch(function (error) {
-            setDatosModal({
-                title: 'Error!!!',
+            setDatosModalAnalisis({
+                title: '¡Error!',
                 body: 'No se pudó generar el contenido del PDF',
-                redireccion: null,
-                nombreBoton: 'Cerrar'
             });
-            handleShow();
+            setShowModalAnalisis(true)
         });
     }
 
-
+    //Datos
     const [valoresSubtemasDatos, setValoresSubtemasDatos] = useState(false)
+    const [valoresTablasDatos, setValoresTablasDatos] = useState(false)
     const temaDato = () => {
         setValoresSubtemasDatos(true)
     }
-    var tituloConsultas = 'Consultas<br />prediseñadas'
+    const subtemaDatos = () => {
+        setValoresTablasDatos(true)
+    }
+
+    //Consultas prediseñadas
+    const [valoresConsultaConsultas, setValoresConsultaConsultas] = useState(false)
+    const temaConsultas = () => {
+        setValoresConsultaConsultas(true)
+    }
 
     return (
         <>
-            <ModalComponent
-                show={show}
-                datos={datosModal}
-                onHide={handleClose}
-                onClick={handleClose}
+            <ModalAnalisis
+                show={showModalAnalisis}
+                datos={datosModalAnalisis}
+                onHide={handleCloseModalAnalisis}
             />
 
             <Modal show={showModalAgregarCapas} onHide={() => setShowModalAgregarCapas(!showModalAgregarCapas)}
@@ -1085,38 +1047,105 @@ function ContenedorMapaAnalisis(props) {
                 <Modal.Body>
                     <Tabs defaultActiveKey="sedatu">
                         <Tab eventKey="sedatu" title="Capa">
-                            <Form className="tw-mt-4 tw-mb-4" onSubmit={handleSubmitMetadatos(buscaMetadatos)}>
-                                <Form.Group controlId="titulo">
-                                    <Form.Label>Título de la capa</Form.Label>
-                                    <Form.Control type="text" name="titulo" ref={registraMetadatos} />
-                                </Form.Group>
-                                <Form.Group controlId="palabrasClave">
-                                    <Form.Label>Palabras clave</Form.Label>
-                                    <Form.Control name="palabrasClave" ref={registraMetadatos} />
-                                </Form.Group>
-                                <Form.Group controlId="tema">
-                                    <Form.Label>Tema</Form.Label>
-                                    <Form.Control name="tema" ref={registraMetadatos} />
-                                </Form.Group>
-                                <Form.Group controlId="subtema">
-                                    <Form.Label>Subtema</Form.Label>
-                                    <Form.Control name="subtema" ref={registraMetadatos} />
-                                </Form.Group>
-                                <button className="btn-analisis" type="submit">BUSCAR</button>
-                            </Form>
                             {
-                                capasBusqueda.length != 0 &&
-                                capasBusqueda.map((value, index) => (
-                                    <a onClick={() => agregaCapaBusqueda(value)} key={index} className="tw-cursor-pointer tw-block">
-                                        {value.titulo}
-                                    </a>
-                                ))
+                                listaMetadatosCapasBackEnd.length != 0 &&
+                                <Form className="tw-mt-4 tw-mb-4" onSubmit={handleSubmitMetadatos(buscaMetadatos)}>
+                                    <Controller
+                                        as={Typeahead}
+                                        control={control}
+                                        options={listaMetadatosCapasBackEnd[0]}
+                                        id="titulo-capa"
+                                        name="titulo"
+                                        defaultValue=""
+                                        placeholder="Escoge o escribe un título"
+                                        clearButton
+                                        emptyLabel="No se encontraron resultados"
+                                        className="tw-mb-4"
+                                    />
+                                    <Controller
+                                        as={Typeahead}
+                                        control={control}
+                                        options={listaMetadatosCapasBackEnd[1]}
+                                        id="tema-capa"
+                                        name="tema"
+                                        defaultValue=""
+                                        placeholder="Escoge o escribe un tema"
+                                        clearButton
+                                        emptyLabel="No se encontraron resultados"
+                                        className="tw-mb-4"
+                                    />
+                                    <Controller
+                                        as={Typeahead}
+                                        control={control}
+                                        options={listaMetadatosCapasBackEnd[2]}
+                                        id="subtema-capa"
+                                        name="subtema"
+                                        defaultValue=""
+                                        placeholder="Escoge o escribe un subtema"
+                                        clearButton
+                                        emptyLabel="No se encontraron resultados"
+                                        className="tw-mb-4"
+                                    />
+                                    <Controller
+                                        as={Typeahead}
+                                        control={control}
+                                        options={listaMetadatosCapasBackEnd[3]}
+                                        id="palabrasClave-capa"
+                                        name="palabrasClave"
+                                        defaultValue=""
+                                        placeholder="Escoge o escribe una palabra clave"
+                                        clearButton
+                                        emptyLabel="No se encontraron resultados"
+                                        className="tw-mb-4"
+                                    />
+                                    <button className="btn-analisis" type="submit">BUSCAR</button>
+                                </Form>
                             }
                             {
-                                avisoBusquedaCapas &&
-                                (
-                                    <p>{avisoBusquedaCapas}</p>
-                                )
+                                [
+                                    avisoBusquedaCapasIde && (
+                                        <p key="1">{avisoBusquedaCapasIde}</p>
+                                    ),
+                                    capasBusquedaIde.length != 0 && (
+                                        <Typeahead
+                                            key="2"
+                                            id="agregaCapaBusquedaIde"
+                                            labelKey={"titulo"}
+                                            options={capasBusquedaIde}
+                                            placeholder="Selecciona una capa"
+                                            onChange={(capaBuscada) => agregaCapaBusquedaIde(capaBuscada[0])}
+                                            defaultValue=""
+                                            clearButton
+                                            paginationText="Desplegar más resultados"
+                                            emptyLabel="No se encontraron resultados"
+                                            className="tw-mb-4"
+                                        />
+                                    ),
+                                    botonesAgregaCapaIdeWFSWMS[0] == true &&
+                                    (
+                                        <div key="3">
+                                            <p>Selecciona como quieres agregar esta capa</p>
+                                            <div className="d-flex tw-justify-around tw-mb-4">
+                                                <Button variant="light" onClick={() => agregaCapaWMS(botonesAgregaCapaIdeWFSWMS[1], 0)}>Mosaico</Button>
+                                                <Button variant="light" onClick={() => setMunicipiosMostrarListado(true)}>Elementos</Button>
+                                            </div>
+                                            {
+                                                municipiosMostrarListado &&
+                                                <Typeahead
+                                                    id="municipiosMostrarListado"
+                                                    labelKey={"entidad"}
+                                                    options={catalogoEntidades}
+                                                    placeholder="Selecciona una entidad"
+                                                    onChange={(entidad) => construyeEntidadCapa(entidad[0], botonesAgregaCapaIdeWFSWMS[1])}
+                                                    defaultValue=""
+                                                    clearButton
+                                                    paginationText="Desplegar más resultados"
+                                                    emptyLabel="No se encontraron resultados"
+                                                />
+                                            }
+                                        </div>
+                                    )
+                                ]
                             }
                         </Tab>
                         <Tab eventKey="servicios" title="Servicio">
@@ -1136,7 +1165,7 @@ function ContenedorMapaAnalisis(props) {
                                         labelKey={(valores) => `${valores["Title"]}`}
                                         options={guardaServicio[0]}
                                         placeholder="Selecciona una capa"
-                                        onChange={agregaCapaServicio}
+                                        onChange={(servicio) => agregaCapaWMS(servicio, 1)}
                                         defaultValue=""
                                         clearButton
                                         paginationText="Desplegar más resultados"
@@ -1152,7 +1181,7 @@ function ContenedorMapaAnalisis(props) {
                         </Tab>
                         <Tab eventKey="datos" title="Datos">
                             <Form className="tw-mt-4">
-                                <Form.Group controlId="temas">
+                                <Form.Group controlId="temasDatos">
                                     <Form.Label>Temas</Form.Label>
                                     <Form.Control onChange={temaDato} as="select">
                                         <option value=""></option>
@@ -1165,9 +1194,9 @@ function ContenedorMapaAnalisis(props) {
                                 </Form.Group>
                                 {
                                     valoresSubtemasDatos == true &&
-                                    <Form.Group controlId="subtemas">
+                                    <Form.Group controlId="subtemasDatos">
                                         <Form.Label>Subtemas</Form.Label>
-                                        <Form.Control as="select">
+                                        <Form.Control onChange={subtemaDatos} as="select">
                                             <option value=""></option>
                                             <option>Subtema 1</option>
                                             <option>Subtema 2</option>
@@ -1177,16 +1206,58 @@ function ContenedorMapaAnalisis(props) {
                                         </Form.Control>
                                     </Form.Group>
                                 }
+                                {
+                                    valoresTablasDatos == true &&
+                                    <Form.Group controlId="tablasDatos">
+                                        <Form.Label>Tablas</Form.Label>
+                                        <Form.Control as="select">
+                                            <option value=""></option>
+                                            <option>Tabla 1</option>
+                                            <option>Tabla 2</option>
+                                            <option>Tabla 3</option>
+                                            <option>Tabla 4</option>
+                                            <option>Tabla 5</option>
+                                        </Form.Control>
+                                    </Form.Group>
+                                }
                                 <button className="btn-analisis" type="submit">CONSULTAR</button>
                             </Form>
                         </Tab>
-                        <Tab eventKey="consultas" title={<>Consultas<br />prediseñadas</>}></Tab>
+                        <Tab eventKey="consultas" title={<>Consultas<br />prediseñadas</>}>
+                            <Form className="tw-mt-4">
+                                <Form.Group controlId="temasConsultas">
+                                    <Form.Label>Temas</Form.Label>
+                                    <Form.Control onChange={temaConsultas} as="select">
+                                        <option value=""></option>
+                                        <option>Tema 1</option>
+                                        <option>Tema 2</option>
+                                        <option>Tema 3</option>
+                                        <option>Tema 4</option>
+                                        <option>Tema 5</option>
+                                    </Form.Control>
+                                </Form.Group>
+                                {
+                                    valoresConsultaConsultas == true &&
+                                    <Form.Group controlId="consultaConsultas">
+                                        <Form.Label>Consulta</Form.Label>
+                                        <Form.Control as="select">
+                                            <option value=""></option>
+                                            <option>Consulta 1</option>
+                                            <option>Consulta 2</option>
+                                            <option>Consulta 3</option>
+                                            <option>Consulta 4</option>
+                                            <option>Consulta 5</option>
+                                        </Form.Control>
+                                    </Form.Group>
+                                }
+                            </Form>
+                        </Tab>
                     </Tabs>
                 </Modal.Body>
             </Modal>
 
             <Modal dialogAs={DraggableModalDialog} show={showModalSimbologia} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
-                onHide={() => setShowModalSimbologia(!showModalSimbologia)} className="tw-pointer-events-none modal-analisis modal-simbologia">
+                onHide={() => setShowModalSimbologia(!showModalSimbologia)} className="tw-pointer-events-none modal-analisis">
                 <Modal.Header className="tw-cursor-pointer" closeButton>
                     <Modal.Title><b>Simbología</b></Modal.Title>
                     <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
@@ -1197,35 +1268,21 @@ function ContenedorMapaAnalisis(props) {
                 <Modal.Body>
                     {
                         capasVisualizadas.map((capa, index) => {
-                            if (capa.habilitado) {
-                                if (capa.tipo == "geojson") {
-                                    return (
-                                        <div key={index}>
-                                            <p><b>{capa.nom_capa}</b></p>
-                                            <img src={capa.simbologia} alt="" />
-                                            <br></br>
-                                            <br></br>
-                                        </div>
-                                    )
-                                }
-                                if (capa.tipo == "wms") {
-                                    return (
-                                        <div key={index}>
-                                            <p><b>{capa.nom_capa}</b></p>
-                                            <img src={capa.simbologia}></img>
-                                            <br></br>
-                                            <br></br>
-                                        </div>
-                                    )
-                                }
-                            }
+                            capa.habilitado && (
+                                <div key={index}>
+                                    <p><b>{capa.nom_capa}</b></p>
+                                    <img src={capa.simbologia}></img>
+                                    <br></br>
+                                    <br></br>
+                                </div>
+                            )
                         })
                     }
                 </Modal.Body>
             </Modal>
 
             <Modal dialogAs={DraggableModalDialog} show={showModalAtributos} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
-                onHide={() => setShowModalAtributos(!showModalAtributos)} className="tw-pointer-events-none modal-analisis modal-atributos">
+                onHide={() => setShowModalAtributos(!showModalAtributos)} className="tw-pointer-events-none modal-analisis">
                 <Modal.Header className="tw-cursor-pointer" closeButton >
                     <Modal.Title><b>Atributos</b></Modal.Title>
                     <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
@@ -1264,8 +1321,8 @@ function ContenedorMapaAnalisis(props) {
                 </Modal.Body>
             </Modal>
 
-            <Modal dialogAs={DraggableModalDialog} show={showModalIdentify} backdrop={false} keyboard={false} contentClassName="modal-redimensionable modal-identify"
-                onHide={() => handleCloseModalIdentify()} className="tw-pointer-events-none modal-analisis modal-simbologia">
+            <Modal dialogAs={DraggableModalDialog} show={showModalIdentify} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
+                onHide={() => setShowModalIdentify(false)} className="tw-pointer-events-none modal-analisis">
                 <Modal.Header className="tw-cursor-pointer" closeButton>
                     <Modal.Title><b>Identificar</b></Modal.Title>
                     <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
@@ -1475,7 +1532,7 @@ function ContenedorMapaAnalisis(props) {
                                                                     </Button>
                                                                 </OverlayTrigger>
                                                                 {
-                                                                    capa.tipo === "geojson" &&
+                                                                    capa.tipo === "wfs" &&
                                                                     <Button onClick={() => muestraAtributos(capa)} variant="link">
                                                                         <FontAwesomeIcon icon={faTable} />
                                                                     </Button>
@@ -1544,7 +1601,7 @@ function ContenedorMapaAnalisis(props) {
                                                                                 <hr />
                                                                                 <div className="d-flex justify-content-center">
                                                                                     {
-                                                                                        <a className="tw-text-titulo tw-font-bold" style={{ cursor: 'pointer' }} onClick={() => (renderModalDownload(capa.download))}>
+                                                                                        <a className="tw-text-titulo tw-font-bold tw-cursor-pointer" onClick={() => renderModalDownload(capa.download)}>
                                                                                             <OverlayTrigger overlay={<Tooltip>{`Descargar (${capa.download.length} disponible(s))`}</Tooltip>}>
                                                                                                 <FontAwesomeIcon className="tw-px-1" size="2x" icon={faDownload} />
                                                                                             </OverlayTrigger>
@@ -1589,7 +1646,7 @@ function ContenedorMapaAnalisis(props) {
                 <OverlayTrigger overlay={<Tooltip>Agregar archivo</Tooltip>}>
                     <label htmlFor={`uploadFIleButton${props.botones == false && `Espejo`}`} className="tw-mb-0 tw-cursor-pointer">
                         <button className="botones-barra-mapa tw-pointer-events-none">
-                            <input type="file" name="file" onChange={(e) => processInputFile(e)} id={`uploadFIleButton${props.botones == false && `Espejo`}`} hidden />
+                            <input type="file" name="file" onChange={(e) => processInputFile(e)} onClick={(e) => e.target.value = null} id={`uploadFIleButton${props.botones == false && `Espejo`}`} hidden />
                             <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
                         </button>
                     </label>
