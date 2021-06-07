@@ -166,3 +166,10 @@ footer {
     overflow-y: auto;
     overflow-x: auto;
 }
+
+.custom-chart-legens-container {
+    overflow-y: auto;
+    height: 75px;
+    margin-left: unset !important;
+    margin-right: unset !important;
+}
