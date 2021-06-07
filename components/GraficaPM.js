@@ -115,13 +115,22 @@ export default function GraficaPM(props) {
           <Tooltip />
           {/* <Legend layout="horizontal" wrapperStyle={{overflowX: 'auto'}}
             iconSize={30}/> */}
-        </PieChart>        
-        <bs.OverlayTrigger overlay={<bs.Tooltip>Simbología</bs.Tooltip>}>
+        </PieChart>
+        <div className="row custom-chart-legens-container">
+          {
+            datosPay.map((entry, index) => (
+              <div key={index} className="col-6">
+                <FontAwesomeIcon className="tw-mr-2" style={{color: COLORS[index]}} icon={faSquareFull}></FontAwesomeIcon>
+                {entry.name}
+              </div>
+            ))
+          }
+        </div>
+        {/* <bs.OverlayTrigger overlay={<bs.Tooltip>Simbología</bs.Tooltip>}>
           <button className="botones-barra-mapa" onClick={handleShowModalSimbologia}>
             <FontAwesomeIcon icon={faImages}></FontAwesomeIcon>
           </button>
-        </bs.OverlayTrigger>
-        {/* <GetLegends/> */}
+        </bs.OverlayTrigger> */}
       </div>;
     case "barra":
       // for (let index = 0; index < datosPay.length; index++) {
