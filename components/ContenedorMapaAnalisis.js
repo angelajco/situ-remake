@@ -329,7 +329,7 @@ function ContenedorMapaAnalisis(props) {
                         onEachFeature: function (feature = {}, layerPadre) {
                             layerPadre.on('click', function () {
                                 feature.properties["nombre_capa"] = layerPadre.options["nombre"];
-                                setRasgos([feature.properties])
+                                setRasgos([feature.properties]);
                             })
                         }
                     });
@@ -1136,7 +1136,7 @@ function ContenedorMapaAnalisis(props) {
                                 )
                             }
                         </Tab>
-                        <Tab eventKey="datos" title="Datos">
+                        {/* <Tab eventKey="datos" title="Datos">
                             <Form className="tw-mt-4">
                                 <Form.Group controlId="temasDatos">
                                     <Form.Label>Temas</Form.Label>
@@ -1208,7 +1208,7 @@ function ContenedorMapaAnalisis(props) {
                                     </Form.Group>
                                 }
                             </Form>
-                        </Tab>
+                        </Tab> */}
                     </Tabs>
                 </Modal.Body>
             </Modal>
