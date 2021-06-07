@@ -983,6 +983,11 @@ function ContenedorMapaAnalisis(props) {
         setValoresConsultaConsultas(true)
     }
 
+    useEffect(() => 
+    {
+        addToExportWithPivot(rasgos)
+    },[rasgos]);
+
     return (
         <>
             <ModalAnalisis
@@ -1400,10 +1405,7 @@ function ContenedorMapaAnalisis(props) {
                                 {
                                     rasgos[0] &&
                                     <div className="col-3">
-                                        {
-                                            addToExportWithPivot(rasgos)
-                                        }
-                                        <CSVLink data={csvData} filename={csvFileName}>
+                                        <CSVLink data={csvData} filename={`${csvFileName}.csv`}>
                                             <FontAwesomeIcon size="2x" icon={faFileCsv} />
                                         </CSVLink>
                                     </div>
