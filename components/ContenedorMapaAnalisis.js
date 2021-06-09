@@ -772,33 +772,36 @@ function ContenedorMapaAnalisis(props) {
         switch (parseInt(identifyOption)) {
             case 1:
                 setSelectedToIdentify(savedToIdentify);
-                // prepareDataToExport(savedToIdentify, function(data) {
-                //     addToExportWithPivot(data);
-                //     generatePdf(savedToIdentify, function() {
-                //         console.log('pdkOk!!!');
-                //     });
-                // });
+                prepareDataToExport(savedToIdentify, function(data) {
+                    addToExportWithPivot(data);
+                    // generatePdf(savedToIdentify.length, function() {
+                    //     console.log('pdfOk!!!');
+                    //     console.log('pdfDocument!!!', pdfDocument);
+                    // });
+                });
             break;
             case 2:
                 getTopLayer(function(index) {
                     setSelectedToIdentify([savedToIdentify[index]]);
-                    // prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function(data) {
-                    //     addToExportWithPivot(data);
-                    //     generatePdf(1, function() {
-                    //         console.log('pdkOk!!!');
-                    //     });
-                    // });
+                    prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function(data) {
+                        addToExportWithPivot(data);
+                        // generatePdf(1, function() {
+                        //     console.log('pdfOk!!!');
+                        //     console.log('pdfDocument!!!', pdfDocument);
+                        // });
+                    });
                 });
             break;
             case 3:
                 includeActiveLayer(function(index, isActive) {
                     setSelectedToIdentify(isActive == true ? [savedToIdentify[index]] : []);
-                    // prepareDataToExport(isActive == true ? [array[0]] : [], function(data) {
-                    //     addToExportWithPivot(data);
-                    //     generatePdf(1, function() {
-                    //         console.log('pdkOk!!!');
-                    //     });
-                    // });
+                    prepareDataToExport(isActive == true ? [savedToIdentify[index]] : [], function(data) {
+                        addToExportWithPivot(data);
+                        // generatePdf(1, function() {
+                        //     console.log('pdfOk!!!');
+                        //     console.log('pdfDocument!!!', pdfDocument);
+                        // });
+                    });
                 });
             break;
             default:
@@ -866,106 +869,147 @@ function ContenedorMapaAnalisis(props) {
         setCapasVisualizadas(tempArray);
     }
 
-    // function generatePdf(success) {
-    //     var nodeMap = document.getElementById('id-export-Map');
-    //     var tables = [];
-    //     var map;
-    //     htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
-    //         map = dataUrlMap;
-    //         selectedToIdentify.map((selected, index) => {
-    //             var nodeTables = document.getElementById(`identify-table-${index}`);
-    //             htmlToImage.toPng(nodeTables).then(function (dataUrlTables) {
-    //                 var img = new Image();
-    //                 img.src = dataUrlTables;
-    //                 document.body.appendChild(img);
-    //                 tables.push(dataUrlTables)
-    //             }).catch(function (error) {
-    //                 console.log('errorTables: ', error);
-    //                 setDatosModal({
-    //                     title: 'Error!!!',
-    //                     body: 'No se pudó generar el contenido del PDF',
-    //                     redireccion: null,
-    //                     nombreBoton: 'Cerrar'
-    //                 });
-    //                 handleShow();
-    //             });
-    //         });
-    //     }).catch(function (error) {
-    //         setDatosModal({
-    //             title: 'Error!!!',
-    //             body: 'No se pudó generar el contenido del PDF',
-    //             redireccion: null,
-    //             nombreBoton: 'Cerrar'
-    //         });
-    //         handleShow();
-    //     });
-    //     setPdfDocument(//TODO revisar los errores del catch
-    //         <toPdf.Document> 
-    //             <toPdf.Page size="A4" style={styles.page} wrap>
-    //                 <toPdf.View style={styles.section}>
-    //                     <toPdf.Text>MAPA</toPdf.Text>
-    //                     <toPdf.Image src={map}/>
-    //                 </toPdf.View>
-    //                 <toPdf.View style={styles.section}>
-    //                     <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
-    //                     {
-    //                         tables.map((table) => {
-    //                             <toPdf.Image src={table}/>
-    //                         })
-    //                     }
-    //                 </toPdf.View>
-    //             </toPdf.Page>
-    //         </toPdf.Document>
-    //     );
-    //     success();
-    // }
-
-    function generatePdf(items, success) {
+    function generatePdf(length, success) {
         var nodeMap = document.getElementById('id-export-Map');
-        var content;
         htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
-            content = 
-                <toPdf.View style={styles.section}>
-                    <toPdf.Text>MAPA</toPdf.Text>
-                    <toPdf.Image src={dataUrlMap}/>
-                </toPdf.View>;
-            console.log('items: ', items)
-            items.map((item, index) => {
-                var nodeTable= document.getElementById(`identify-table-${index}`);
-                htmlToImage.toPng(nodeTable).then(function (dataUrlTables) {
-                    var img = new Image();
-                    img.src = dataUrlTables;
-                    document.body.appendChild(img);
-                    // content = content + 
-                    //     <toPdf.View style={styles.section}>
-                    //         <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
-                    //         <toPdf.Image src={dataUrlTables}/>
-                    //     </toPdf.View>;
-                }).catch(function (error) {
-                    console.log('errorTables: ', error);
-                    setDatosModalAnalisis({
-                        title: '¡Error!',
-                        body: 'No se pudó generar el contenido del PDF',
-                    });
-                    setShowModalAnalisis(true)
+            setTimeout(() => {
+                generateTables(length, function(tables) {
+                    setPdfDocument(//TODO revisar los errores del catch
+                        <toPdf.Document> 
+                            <toPdf.Page size="A4" style={styles.page} wrap>
+                                <toPdf.View style={styles.section}>
+                                    <toPdf.Text>MAPA</toPdf.Text>
+                                    <toPdf.Image src={dataUrlMap}/>
+                                </toPdf.View>
+                                <toPdf.View style={styles.section}>
+                                    <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
+                                    {
+                                        tables.map((table) => {
+                                            <toPdf.Image src={table}/>
+                                        })
+                                    }
+                                </toPdf.View>
+                            </toPdf.Page>
+                        </toPdf.Document>
+                    );
+                    success();
                 });
-            });
-            setPdfDocument(//TODO revisar los errores del catch
-                <toPdf.Document> 
-                    <toPdf.Page size="A4" style={styles.page} wrap>
-                        {content}
-                    </toPdf.Page>
-                </toPdf.Document>
-            );
-            success();
+            }, 3000);
         }).catch(function (error) {
+            console.log('errorMap: ', error);
             setDatosModalAnalisis({
                 title: '¡Error!',
-                body: 'No se pudó generar el contenido del PDF',
+                body: 'No se pudó generar el contenido del PDF (mapa)',
             });
             setShowModalAnalisis(true)
         });
     }
+
+    function generateTables(length, success) {
+        var tables = [];
+        for(var index = 0; index < length; index ++) {
+            var nodeTables = document.getElementById(`identify-table-${index}`);
+            htmlToImage.toPng(nodeTables).then(function (dataUrlTables) {
+                var img = new Image();
+                img.src = dataUrlTables;
+                document.body.appendChild(img);
+                tables.push(dataUrlTables)
+            }).catch(function (error) {
+                console.log('errorTables: ', error);
+                setDatosModalAnalisis({
+                    title: '¡Error!',
+                    body: 'No se pudó generar el contenido del PDF (tablas)',
+                });
+                setShowModalAnalisis(true)
+            });
+        }
+        success(tables);
+    }
+
+    // useEffect(() => {
+    //     if(selectedToIdentify.length > 0) {
+    //         var nodeMap = document.getElementById('id-export-Map');
+    //         htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
+    //             setTimeout(() => {
+    //                 generateTables(selectedToIdentify.length, function(tables) {
+    //                     setPdfDocument(//TODO revisar los errores del catch
+    //                         <toPdf.Document> 
+    //                             <toPdf.Page size="A4" style={styles.page} wrap>
+    //                                 <toPdf.View style={styles.section}>
+    //                                     <toPdf.Text>MAPA</toPdf.Text>
+    //                                     <toPdf.Image src={dataUrlMap}/>
+    //                                 </toPdf.View>
+    //                                 <toPdf.View style={styles.section}>
+    //                                     <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
+    //                                     {
+    //                                         tables.map((table) => {
+    //                                             <toPdf.Image src={table}/>
+    //                                         })
+    //                                     }
+    //                                 </toPdf.View>
+    //                             </toPdf.Page>
+    //                         </toPdf.Document>
+    //                     );
+    //                 });
+    //                 console.log('pdfOk!!!');
+    //             }, 3000);
+    //         }).catch(function (error) {
+    //             console.log('errorMap: ', error);
+    //             setDatosModalAnalisis({
+    //                 title: '¡Error!',
+    //                 body: 'No se pudó generar el contenido del PDF (mapa)',
+    //             });
+    //             setShowModalAnalisis(true)
+    //         });
+    //     }
+    // }, [selectedToIdentify]);
+
+    // function generatePdf(items, success) {
+    //     var nodeMap = document.getElementById('id-export-Map');
+    //     var content;
+    //     htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
+    //         content = 
+    //             <toPdf.View style={styles.section}>
+    //                 <toPdf.Text>MAPA</toPdf.Text>
+    //                 <toPdf.Image src={dataUrlMap}/>
+    //             </toPdf.View>;
+    //         console.log('items: ', items)
+    //         items.map((item, index) => {
+    //             var nodeTable= document.getElementById(`identify-table-${index}`);
+    //             htmlToImage.toPng(nodeTable).then(function (dataUrlTables) {
+    //                 var img = new Image();
+    //                 img.src = dataUrlTables;
+    //                 document.body.appendChild(img);
+    //                 // content = content + 
+    //                 //     <toPdf.View style={styles.section}>
+    //                 //         <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
+    //                 //         <toPdf.Image src={dataUrlTables}/>
+    //                 //     </toPdf.View>;
+    //             }).catch(function (error) {
+    //                 console.log('errorTables: ', error);
+    //                 setDatosModalAnalisis({
+    //                     title: '¡Error!',
+    //                     body: 'No se pudó generar el contenido del PDF',
+    //                 });
+    //                 setShowModalAnalisis(true)
+    //             });
+    //         });
+    //         setPdfDocument(//TODO revisar los errores del catch
+    //             <toPdf.Document> 
+    //                 <toPdf.Page size="A4" style={styles.page} wrap>
+    //                     {content}
+    //                 </toPdf.Page>
+    //             </toPdf.Document>
+    //         );
+    //         success();
+    //     }).catch(function (error) {
+    //         setDatosModalAnalisis({
+    //             title: '¡Error!',
+    //             body: 'No se pudó generar el contenido del PDF',
+    //         });
+    //         setShowModalAnalisis(true)
+    //     });
+    // }
 
     //Datos
     const [valoresSubtemasDatos, setValoresSubtemasDatos] = useState(false)
@@ -1278,7 +1322,7 @@ function ContenedorMapaAnalisis(props) {
                 </Modal.Body>
             </Modal>
 
-            <Modal dialogAs={DraggableModalDialog} show={showModalIdentify} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
+            <Modal dialogAs={DraggableModalDialog} show={showModalIdentify} backdrop={false} keyboard={false} contentClassName="modal-redimensionable modal-identify"
                 onHide={() => setShowModalIdentify(false)} className="tw-pointer-events-none modal-analisis">
                 <Modal.Header className="tw-cursor-pointer" closeButton>
                     <Modal.Title><b>Identificar</b></Modal.Title>
@@ -1298,20 +1342,6 @@ function ContenedorMapaAnalisis(props) {
                                 </Form.Control>
                             </Form.Group>
                         </div>
-                        {/* <div className="col-4">
-                            <Form.Group>
-                                <Form.Control as="select" onChange={(e) => setSelectedLayer(e.target.value)}>
-                                    <option value='' hidden>Capa</option>
-                                    {
-                                        savedToIdentify.length > 0 &&
-                                            savedToIdentify.map((selected, index) => (
-                                                selected &&
-                                                    <option key={index} value={index}>{selected.layer}</option>
-                                            ))
-                                    }
-                                </Form.Control>
-                            </Form.Group>
-                        </div> */}
                         <div className="col-4">
                             <button className="btn-analisis" onClick={() => changeIdentifyType()}>APLICAR</button>
                         </div>
@@ -1324,7 +1354,7 @@ function ContenedorMapaAnalisis(props) {
                                     selectedToIdentify.map((selected, index) => (
                                         selected &&
                                         <div id={`identify-table-${index}`} key={index}>
-                                            <Table striped bordered hover responsive>
+                                            <Table striped bordered hover>
                                                 <thead>
                                                     <tr className="tw-text-center">
                                                         <th colSpan={selected.features.length ? Object.keys(selected.features[0]).length : 5}>{selected.layer}</th>
@@ -1365,26 +1395,21 @@ function ContenedorMapaAnalisis(props) {
                         selectedToIdentify.length > 0 &&
                         <div className="row custom-mx-t-1">
                             <div className="col-12 d-flex justify-content-around">
-                                {/* <OverlayTrigger overlay={<Tooltip>{`Exportar CSV`}</Tooltip>}>
-                                        <CSVLink data={csvData} filename={`${csvFileName}.csv`}>
-                                            <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFileCsv} />
-                                        </CSVLink>
-                                    </OverlayTrigger> */}
+                                <OverlayTrigger overlay={<Tooltip>{`Exportar CSV`}</Tooltip>}>
+                                    <CSVLink data={csvData} filename={`${csvFileName}.csv`}>
+                                        <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFileCsv} />
+                                    </CSVLink>
+                                </OverlayTrigger>
                                 {/* <OverlayTrigger overlay={<Tooltip>{`Exportar PDF`}</Tooltip>}>
-                                        <Button className="tw-px-0 tw-pt-0" onClick={() => downloadPdf()} variant="link">
-                                            <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFilePdf} />
-                                        </Button>
-                                    </OverlayTrigger> */}
-                                {/* <OverlayTrigger overlay={<Tooltip>{`Exportar PDF`}</Tooltip>}>
-                                        <toPdf.PDFDownloadLink id="download-pdf" document={pdfDocument} fileName={`${csvFileName}.pdf`}>
-                                            {
-                                                ({ blob, url, loading, error }) =>
-                                                    loading ?
-                                                        <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFilePdf} /> :
-                                                        <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFilePdf} />
-                                            }
-                                        </toPdf.PDFDownloadLink>
-                                    </OverlayTrigger> */}
+                                    <toPdf.PDFDownloadLink id="download-pdf" document={pdfDocument} fileName={`${csvFileName}.pdf`}>
+                                        {
+                                            ({ blob, url, loading, error }) =>
+                                                loading ?
+                                                    <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFilePdf} /> :
+                                                    <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFilePdf} />
+                                        }
+                                    </toPdf.PDFDownloadLink>
+                                </OverlayTrigger> */}
                             </div>
                         </div>
                     }

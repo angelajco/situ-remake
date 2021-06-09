@@ -248,7 +248,7 @@ class ModeloContenido {
         for (let i = 0; i < this.tablas[index].columnas.length; i++) {
           if (this.tablas[index].columnas[i].id === columna) {
             return this.tablas[index].columnas[i].encabezado ??
-              this.tablas[index].columnas[i].nombre ?? 
+              (this.tablas[index].columnas[i].nombre !== null && this.tablas[index].columnas[i].nombre.length > 0) ? this.tablas[index].columnas[i].nombre : null ?? 
               this.tablas[index].columnas[i].columna
           }
         }
@@ -560,11 +560,15 @@ class TablaDatos {
       dataType: 'json'
     })
       .done(function (respuesta) {
-        tablaPadre.tituloTabla = respuesta.nombre_tabla
-        tablaPadre.columnas = respuesta.columnas
-        tablaPadre.datos = respuesta.datos
-        tablaPadre.etiquetaID = respuesta.etiqueta_funcional
-        tablaPadre.nucleo.modelo.cargaAsincrona()
+        if(respuesta.datos != null) {
+          tablaPadre.tituloTabla = respuesta.nombre_tabla
+          tablaPadre.columnas = respuesta.columnas
+          tablaPadre.datos = respuesta.datos
+          tablaPadre.etiquetaID = respuesta.etiqueta_funcional
+          tablaPadre.nucleo.modelo.cargaAsincrona()
+        } else {
+          alert('No se encontró información')
+        }
       })
       .fail(function (error) {
         console.log(error);
@@ -1255,7 +1259,7 @@ export default function planeacionMunicipal() {
       <div className="container-fluid custom-max-width custom-mx-b-1">
         {
           secciones.map((seccion, index) => (
-            <SeccionPm key={index} seccion={seccion} cl={capturaL} />
+              <SeccionPm key={index} seccion={seccion} cl={capturaL} />
           ))
         }
       </div>

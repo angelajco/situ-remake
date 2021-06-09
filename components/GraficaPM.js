@@ -1,13 +1,8 @@
 import { data } from 'autoprefixer';
 import React, { useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from 'recharts';
-import * as bs from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faImages, faSquareFull } from '@fortawesome/free-solid-svg-icons'
-import Draggable from 'react-draggable';
-import ModalDialog from 'react-bootstrap/ModalDialog';
-
-import $ from 'jquery';
+import { faSquareFull } from '@fortawesome/free-solid-svg-icons'
 
 export default function GraficaPM(props) {
 
@@ -24,16 +19,6 @@ export default function GraficaPM(props) {
   // const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#e5d8', '#ffe280'];
   const COLORS = grafica.tablaColores()
   const RADIAN = Math.PI / 180;
-  
-  const [showModalSimbologia, setShowModalSimbologia] = useState(false);
-  const handleShowModalSimbologia = () => {
-      setShowModalSimbologia(true);
-      remueveTabindexModalMovible();
-  }
-
-  function remueveTabindexModalMovible() {
-    $('.modal-analisis').removeAttr("tabindex");
-  }
 
   const renderCustomizedLabel = ({
     cx, cy, midAngle, innerRadius, outerRadius, percent, index,
@@ -66,37 +51,10 @@ export default function GraficaPM(props) {
   const alto = parseInt(grafica.alto)
 
   // console.log('DATOS DE GRAFICA DE PAY: ', datosPay)
-  function DraggableModalDialog(props) {
-    return (
-      <Draggable handle=".modal-header"><ModalDialog  {...props} /></Draggable>
-    )
-  }
 
   switch (grafica.tipo) {
     case "pay":
       return <div>
-        <bs.Modal dialogAs={DraggableModalDialog} show={showModalSimbologia} backdrop={false} keyboard={false} contentClassName="modal-redimensionable modal-simbologia-planeacion"
-          onHide={() => setShowModalSimbologia(!showModalSimbologia)} className="tw-pointer-events-none modal-analisis modal-simbologia">
-          <bs.Modal.Header className="tw-cursor-pointer" closeButton>
-              <bs.Modal.Title><b>Simbología</b></bs.Modal.Title>
-          </bs.Modal.Header>
-          <bs.Modal.Body>
-            <div className="custom-modal-body-planeacion">
-              {
-                datosPay.map((entry, index) => (
-                  <div key={index} className="row">
-                    <div className="col-4">
-                      <FontAwesomeIcon style={{color: COLORS[index]}} icon={faSquareFull}></FontAwesomeIcon>
-                    </div>
-                    <div className="col-8">
-                      {entry.name}
-                    </div>
-                  </div>
-                ))
-              }
-            </div>
-          </bs.Modal.Body>
-        </bs.Modal>
         <PieChart width={ancho} height={alto}>
           <Pie
             data={datosPay}
@@ -113,8 +71,6 @@ export default function GraficaPM(props) {
             ))}
           </Pie>
           <Tooltip />
-          {/* <Legend layout="horizontal" wrapperStyle={{overflowX: 'auto'}}
-            iconSize={30}/> */}
         </PieChart>
         <div className="row custom-chart-legens-container">
           {
@@ -126,11 +82,6 @@ export default function GraficaPM(props) {
             ))
           }
         </div>
-        {/* <bs.OverlayTrigger overlay={<bs.Tooltip>Simbología</bs.Tooltip>}>
-          <button className="botones-barra-mapa" onClick={handleShowModalSimbologia}>
-            <FontAwesomeIcon icon={faImages}></FontAwesomeIcon>
-          </button>
-        </bs.OverlayTrigger> */}
       </div>;
     case "barra":
       // for (let index = 0; index < datosPay.length; index++) {
