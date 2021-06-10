@@ -22,7 +22,6 @@ import xpath from 'xml2js-xpath'
 
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
-import ModalComponent from './ModalComponent'
 import ModalAnalisis from './ModalAnalisis'
 import catalogoEntidades from "../shared/jsons/entidades.json";
 
@@ -61,6 +60,16 @@ function ContenedorMapaAnalisis(props) {
 
     useEffect(() => {
         //Datos para construir el catalogo
+        fetch(`${process.env.ruta}/wa/publico/getMetadatosCapas/`)
+            .then(res => res.json())
+            .then(
+                (data) => {
+                    construyeCatalogoTemas(data);
+                    setArregloMetadatosCapasBackEnd(data)
+                },
+                (error) => console.log(error)
+            )
+
         fetch(`${process.env.ruta}/wa/publico/getCapas/`)
             .then(res => res.json())
             .then(
@@ -69,23 +78,6 @@ function ContenedorMapaAnalisis(props) {
                 },
                 (error) => console.log(error)
             )
-
-        fetch(`${process.env.ruta}/wa/publico/getMetadatosCapas/`)
-            .then(res => res.json())
-            .then(
-                (data) => {
-                    construyeCatalogo(data);
-                },
-                (error) => console.log(error)
-            )
-
-        // fetch(`${process.env.ruta}/wa/publico/getMetadatosCapas/5`)
-        //     .then(res => res.json())
-        //     .then(
-        //         (data) => console.log(data, "getMetadatosCapas"),
-        //         (error) => console.log(error)
-        //     )
-
     }, [])
 
     useEffect(() => {
@@ -151,36 +143,141 @@ function ContenedorMapaAnalisis(props) {
 
     //Variables para guardar los datos de las capas, metadatos de la api
     const [arregloCapasBackEnd, setArregloCapasBackEnd] = useState([])
+    //Guarda los metadatos de las capas
     const [arregloMetadatosCapasBackEnd, setArregloMetadatosCapasBackEnd] = useState([])
+    //Para guardar los TEMAS de metadatos
+    const [listaMetadatosTemasCapasBackEnd, setListaMetadatosTemasCapasBackEnd] = useState([])
+    //Para guardar los SUBTEMAS de metadatos
+    const [listaMetadatosSubtemasCapasBackEnd, setListaMetadatosSubtemasCapasBackEnd] = useState([])
+    //Para guardar los titulos de los metadatos en busqueda basica
+    const [listaMetadatosTitulosCapasBackEnd, setListaMetadatosTitulosCapasBackEnd] = useState([])
+    //Para el resto de los metadatos
     const [listaMetadatosCapasBackEnd, setListaMetadatosCapasBackEnd] = useState([])
-    function construyeCatalogo(metadatosCapasApi) {
-        let listaTitulos = [];
+
+    //Para guardar temporalmente el subtema1
+    const [subtemaUnoTemporal, setSubtemaUnoTemporal] = useState([])
+
+    //Para traer los temas de los metadatos de primera instancia, asi como las palabras clave
+    function construyeCatalogoTemas(metadatosCapasApi) {
         let listaTemas = [];
-        let listaSubtemas = [];
         let listaPalabras = [];
         metadatosCapasApi.map(value => {
-            if (value.titulo) {
-                listaTitulos.push(value.titulo)
-            }
             if (value.tema) {
                 listaTemas.push(value.tema)
             }
-            if (value.subtema) {
-                listaSubtemas.push(value.subtema)
-            }
             if (value.palabras_clave) {
-                value.palabras_clave.split(",").map(valueKey => {
-                    listaPalabras.push(valueKey.trim())
+                value.palabras_clave.split(",").map(valuePalabra => {
+                    listaPalabras.push(valuePalabra.trim())
                 })
             }
         })
-        let uniqueTemas = [...new Set(listaTemas)]
+        //Guarda los temas que se van a presentar al usuario
+        let uniqueTemas = [...new Set(listaTemas)];
+        setListaMetadatosTemasCapasBackEnd(uniqueTemas)
+        //Asigna el primer valor por default de los temas para mostrar los subtemas
+        let listaSubtemas = metadatosCapasApi.filter(metadato => metadato.tema == uniqueTemas[0]).map(metadato => metadato["subtema"]);
         let uniqueSubtemas = [...new Set(listaSubtemas)]
-        let uniquePalabras = [...new Set(listaPalabras)]
-        setListaMetadatosCapasBackEnd([listaTitulos, uniqueTemas, uniqueSubtemas, uniquePalabras])
-        setArregloMetadatosCapasBackEnd(metadatosCapasApi)
+        setListaMetadatosSubtemasCapasBackEnd(uniqueSubtemas)
+        //Asigna el primer valor para los titulos
+        setSubtemaUnoTemporal([uniqueSubtemas[0]])
+        //Guarda los metadatos restantes que se mostraran al usuario
+        let uniquePalabras = [...new Set(listaPalabras)];
+        setListaMetadatosCapasBackEnd(uniquePalabras)
     }
 
+    useEffect(() => {
+        if (subtemaUnoTemporal.length != 0 && arregloCapasBackEnd.length != 0) {
+            let listaTitulos = arregloCapasBackEnd.filter(metadato => metadato.subtema == subtemaUnoTemporal[0]);
+            setListaMetadatosTitulosCapasBackEnd(listaTitulos)
+        }
+    }, [subtemaUnoTemporal, arregloCapasBackEnd])
+
+    //Funcion que construye los subtemas al escoger un tema
+    function construyeCatalogoSubtemas(tema) {
+        setListaMetadatosTitulosCapasBackEnd([])
+        let listaSubtemas = arregloMetadatosCapasBackEnd.filter(metadato => metadato.tema == tema).map(metadato => metadato["subtema"]);
+        let uniqueSubtemas = [...new Set(listaSubtemas)]
+        setListaMetadatosSubtemasCapasBackEnd(uniqueSubtemas)
+    }
+
+    //Función que construye los titulos al escoger un subtema
+    function contruyeCatalogoTitulo(subtema) {
+        let listaTitulos = arregloCapasBackEnd.filter(metadato => metadato.subtema == subtema);
+        setListaMetadatosTitulosCapasBackEnd(listaTitulos)
+    }
+
+    //Para cuando se agrega una entidad
+    const construyeEntidadCapa = (entidad, capaFusionEntidad) => {
+        if (entidad != undefined) {
+            let capaEntidad = {};
+            capaEntidad.titulo = "Municipios de " + entidad.entidad;
+            capaEntidad.url = capaFusionEntidad.url;
+            capaEntidad.capa = capaFusionEntidad.nombre_capa;
+            capaEntidad.filtro_entidad = capaFusionEntidad.filtro_entidad;
+            capaEntidad.tipo = "wfs";
+            capaEntidad.valor_filtro = entidad.id;
+            capaEntidad.wfs = capaFusionEntidad.wfs;
+            capaEntidad.wms = capaFusionEntidad.wms;
+            agregaCapaWFS(capaEntidad)
+        }
+    }
+
+    //Para dar aviso que no se ha agregado una opcion valida
+    const [avisoBusquedaCapasIde, setAvisoBusquedaCapasIde] = useState("")
+    //Para la busqueda avanzada, mostrar o no
+    const [busquedaAvanzada, setBusquedaAvanzada] = useState(false)
+    function cambiaBusquedaAvanzada() {
+        setBusquedaAvanzada(!busquedaAvanzada)
+        //busqueda general
+        setBotonesAgregaCapaIdeWFSWMS([])
+        //busqueda avanzada
+        setListaMetadatosTitulosBusquedaAvanzada([])
+    }
+    //Para guardar los titulos de los metadatos en busqueda avanzada
+    const [listaMetadatosTitulosBusquedaAvanzada, setListaMetadatosTitulosBusquedaAvanzada] = useState([])
+    //Para buscar los metadatos de la capa
+    const { register: registraMetadatos, handleSubmit: handleSubmitMetadatos, control } = useForm();
+    const busquedaAvanzadaMetadatos = (data) => {
+        setListaMetadatosTitulosBusquedaAvanzada([])
+        let capasId = [];
+        let capasArr = [];
+        if (data.palabrasClave) {
+            arregloMetadatosCapasBackEnd.map(value => {
+                value["palabras_clave"].split(",").map(valueKey => {
+                    if (valueKey.trim() == data.palabrasClave) {
+                        capasId.push(value["id_capa"])
+                    }
+                })
+            })
+        }
+        if (capasId.length != 0) {
+            let unique = [...new Set(capasId)]
+            unique.map(value => {
+                let capaBack = arregloCapasBackEnd.filter(capasBack => capasBack["id_capa"] == value)
+                capasArr.push(...capaBack)
+            })
+            setListaMetadatosTitulosBusquedaAvanzada(capasArr)
+        } else {
+            setAvisoBusquedaCapasIde("Selecciona al menos un criterio")
+        }
+    }
+
+    //Muestra los botones de mosaico o elementos
+    const [botonesAgregaCapaIdeWFSWMS, setBotonesAgregaCapaIdeWFSWMS] = useState([false, null])
+    //Checa si se tienen que mostrar los botnes de mosaico o elementos o no
+    const agregaCapaBusquedaIde = (capaIde) => {
+        setBotonesAgregaCapaIdeWFSWMS([])
+        setMunicipiosMostrarListado(false)
+        if (capaIde != undefined) {
+            if (capaIde.id_capa == "3") {
+                setBotonesAgregaCapaIdeWFSWMS([true, capaIde])
+            } else {
+                agregaCapaWMS(capaIde, 0)
+            }
+        }
+    }
+
+    //Para crear la simbologia de las capas WMS
     const creaSVG = (nombreCapa) => {
         var creaSVG = `<svg height='20' xmlns='http://www.w3.org/2000/svg'><rect x='0' y='0' width='15' height='15' fill='#FF7777' stroke='#FF0000' strokeWidth='2'></rect><text x='20' y='15' width='200' height='200' fontSize='12.5' fontWeight='500' font-family='Montserrat, sans-serif'>${nombreCapa}</text></svg>`
         var DOMURL = self.URL || self.webkitURL || self;
@@ -189,7 +286,6 @@ function ContenedorMapaAnalisis(props) {
         return url;
     }
 
-    //Al seleccionar y añadir una entidad para los mapas
     //Para guardar las capas que se van a mostrar
     const [capasVisualizadas, setCapasVisualizadas] = useState([]);
     //Estilos de los geojson (wfs)
@@ -241,6 +337,11 @@ function ContenedorMapaAnalisis(props) {
     const agregaCapaWMS = (capa, fuente) => {
         setShowModalAgregarCapas(false);
         if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === capa.titulo)) {
+            setDatosModalAnalisis({
+                title: "Capa existente",
+                body: "La capa ya se ha agregado anteriormente"
+            });
+            setShowModalAnalisis(true);
             return;
         } else {
             let capaWMS = {};
@@ -282,10 +383,16 @@ function ContenedorMapaAnalisis(props) {
                 opacity: capaWMS.transparencia,
                 minZoom: capaWMS.zoomMinimo,
                 maxZoom: capaWMS.zoomMaximo,
+
             })
             capaWMS["layer"] = layer;
             referenciaMapa.addLayer(capaWMS.layer)
-            setCapasVisualizadas([...capasVisualizadas, capaWMS])
+            setCapasVisualizadas([...capasVisualizadas, capaWMS]);
+            setDatosModalAnalisis({
+                title: "Capa agregada",
+                body: "La capa se ha agregado con exito"
+            });
+            setShowModalAnalisis(true);
         }
     }
 
@@ -293,7 +400,13 @@ function ContenedorMapaAnalisis(props) {
     const [municipiosMostrarListado, setMunicipiosMostrarListado] = useState(false)
 
     const agregaCapaWFS = (capaEntidad) => {
+        setShowModalAgregarCapas(false);
         if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === capaEntidad.titulo)) {
+            setDatosModalAnalisis({
+                title: "Capa existente",
+                body: "La capa ya se ha agregado anteriormente"
+            })
+            setShowModalAnalisis(true);
             return;
         }
         else {
@@ -335,92 +448,14 @@ function ContenedorMapaAnalisis(props) {
                     });
                     response['layer'] = layer;
                     setCapasVisualizadas([...capasVisualizadas, response])
-                    referenciaMapa.addLayer(response.layer)
+                    referenciaMapa.addLayer(response.layer);
+                    setDatosModalAnalisis({
+                        title: "Capa agregada",
+                        body: "La capa se ha agregado con exito"
+                    });
+                    setShowModalAnalisis(true);
                 }
             });
-        }
-    }
-
-    const construyeEntidadCapa = (entidad, capaFusionEntidad) => {
-        if (entidad != undefined) {
-            setShowModalAgregarCapas(false);
-            let capaEntidad = {};
-            capaEntidad.titulo = "Municipios de " + entidad.entidad;
-            capaEntidad.url = capaFusionEntidad.url;
-            capaEntidad.capa = capaFusionEntidad.nombre_capa;
-            capaEntidad.filtro_entidad = capaFusionEntidad.filtro_entidad;
-            capaEntidad.tipo = "wfs";
-            capaEntidad.valor_filtro = entidad.id;
-            capaEntidad.wfs = capaFusionEntidad.wfs;
-            capaEntidad.wms = capaFusionEntidad.wms;
-            agregaCapaWFS(capaEntidad)
-        }
-    }
-
-    //Para buscar los metadatos de la capa
-    const { register: registraMetadatos, handleSubmit: handleSubmitMetadatos, control } = useForm();
-    const [avisoBusquedaCapasIde, setAvisoBusquedaCapasIde] = useState("")
-    const [capasBusquedaIde, setCapasBusquedaIde] = useState([])
-    const buscaMetadatos = (data) => {
-        setCapasBusquedaIde([])
-        setBotonesAgregaCapaIdeWFSWMS([])
-        setMunicipiosMostrarListado(false)
-        setAvisoBusquedaCapasIde("")
-        let capasId = [];
-        let capasArr = [];
-        if (data.titulo) {
-            let tituloMet;
-            tituloMet = arregloMetadatosCapasBackEnd.filter(metadato => metadato.titulo == data.titulo).map(metadato => metadato["id_capa"]);
-            if (tituloMet.length != 0) {
-                tituloMet.map(value => capasId.push(value))
-            }
-        }
-        if (data.palabrasClave) {
-            arregloMetadatosCapasBackEnd.map(value => {
-                value["palabras_clave"].split(",").map(valueKey => {
-                    if (valueKey.trim() == data.palabrasClave) {
-                        capasId.push(value["id_capa"])
-                    }
-                })
-            })
-        }
-        if (data.tema) {
-            let temaMet;
-            temaMet = arregloMetadatosCapasBackEnd.filter(metadato => metadato.tema == data.tema).map(metadato => metadato["id_capa"]);
-            if (temaMet.length != 0) {
-                temaMet.map(value => capasId.push(value))
-            }
-        }
-        if (data.subtema) {
-            let subtemaMet;
-            subtemaMet = arregloMetadatosCapasBackEnd.filter(metadato => metadato.subtema == data.subtema).map(metadato => metadato["id_capa"]);
-            if (subtemaMet.length != 0) {
-                subtemaMet.map(value => capasId.push(value))
-            }
-        }
-
-        if (capasId.length != 0) {
-            let unique = [...new Set(capasId)]
-            unique.map(value => {
-                let capaBack = arregloCapasBackEnd.filter(capasBack => capasBack["id_capa"] == value)
-                capasArr.push(...capaBack)
-            })
-            setCapasBusquedaIde(capasArr)
-        } else {
-            setAvisoBusquedaCapasIde("Selecciona al menos un criterio")
-        }
-    }
-
-    const [botonesAgregaCapaIdeWFSWMS, setBotonesAgregaCapaIdeWFSWMS] = useState([false, null])
-    const agregaCapaBusquedaIde = (capaIde) => {
-        setBotonesAgregaCapaIdeWFSWMS([])
-        setMunicipiosMostrarListado(false)
-        if (capaIde != undefined) {
-            if (capaIde.id_capa == "3") {
-                setBotonesAgregaCapaIdeWFSWMS([true, capaIde])
-            } else {
-                agregaCapaWMS(capaIde, 0)
-            }
         }
     }
 
@@ -605,14 +640,19 @@ function ContenedorMapaAnalisis(props) {
 
     const [showModalAgregarCapas, setShowModalAgregarCapas] = useState(false)
     function handleShowModalAgregarCapas() {
-        setShowModalAgregarCapas(true);
-        //Capas de la IDE
-        setCapasBusquedaIde([]);
+        /////////////////Capas de la IDE
+        //Busqueda basica
+        //Busqueda avanzada
+        setListaMetadatosTitulosBusquedaAvanzada([])
         setAvisoBusquedaCapasIde("");
+        //Busqueda general
+        setBusquedaAvanzada(false)
         setBotonesAgregaCapaIdeWFSWMS([])
-        //Capas de servicio
+        //////////////////Capas de servicio
         setGuardaServicio([]);
         setAvisoServicio("");
+
+        setShowModalAgregarCapas(true);
     }
 
     function remueveTabindexModalMovible() {
@@ -673,7 +713,6 @@ function ContenedorMapaAnalisis(props) {
         setShowModalAnalisis(true);
     }
 
-
     const [identifyOption, setIdentifyOption] = useState();
     const [pdfContent, setPdfcontent] = useState();
 
@@ -724,12 +763,10 @@ function ContenedorMapaAnalisis(props) {
                 };
                 break;
             default:
-                console.log("entre a default")
                 setDatosModalAnalisis({
                     title: '¡Error!',
                     body: 'Archivo no soportado',
                 });
-                console.log(showModalAnalisis, "valor");
                 setShowModalAnalisis(true)
                 break;
         }
@@ -778,9 +815,9 @@ function ContenedorMapaAnalisis(props) {
                 //         console.log('pdkOk!!!');
                 //     });
                 // });
-            break;
+                break;
             case 2:
-                getTopLayer(function(index) {
+                getTopLayer(function (index) {
                     setSelectedToIdentify([savedToIdentify[index]]);
                     // prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function(data) {
                     //     addToExportWithPivot(data);
@@ -789,9 +826,9 @@ function ContenedorMapaAnalisis(props) {
                     //     });
                     // });
                 });
-            break;
+                break;
             case 3:
-                includeActiveLayer(function(index, isActive) {
+                includeActiveLayer(function (index, isActive) {
                     setSelectedToIdentify(isActive == true ? [savedToIdentify[index]] : []);
                     // prepareDataToExport(isActive == true ? [array[0]] : [], function(data) {
                     //     addToExportWithPivot(data);
@@ -800,10 +837,10 @@ function ContenedorMapaAnalisis(props) {
                     //     });
                     // });
                 });
-            break;
+                break;
             default:
                 console.log('parseInt(identifyOption): ', parseInt(identifyOption))
-            break;
+                break;
         }
     }
 
@@ -812,7 +849,7 @@ function ContenedorMapaAnalisis(props) {
         var index;
         capasVisualizadas.filter(displayed => displayed.isActive == true).map((active) => {
             savedToIdentify.map((saved, index_) => {
-                if(saved.layer == active.nom_capa) {
+                if (saved.layer == active.nom_capa) {
                     index = index_;
                     isActive = true;
                 }
@@ -826,7 +863,7 @@ function ContenedorMapaAnalisis(props) {
         var index;
         var topLayer = capasVisualizadas[0];
         savedToIdentify.map((saved, index_) => {
-            if(saved.layer == topLayer.nom_capa) {
+            if (saved.layer == topLayer.nom_capa) {
                 index = index_;
             }
         });
@@ -924,14 +961,14 @@ function ContenedorMapaAnalisis(props) {
         var nodeMap = document.getElementById('id-export-Map');
         var content;
         htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
-            content = 
+            content =
                 <toPdf.View style={styles.section}>
                     <toPdf.Text>MAPA</toPdf.Text>
-                    <toPdf.Image src={dataUrlMap}/>
+                    <toPdf.Image src={dataUrlMap} />
                 </toPdf.View>;
             console.log('items: ', items)
             items.map((item, index) => {
-                var nodeTable= document.getElementById(`identify-table-${index}`);
+                var nodeTable = document.getElementById(`identify-table-${index}`);
                 htmlToImage.toPng(nodeTable).then(function (dataUrlTables) {
                     var img = new Image();
                     img.src = dataUrlTables;
@@ -951,7 +988,7 @@ function ContenedorMapaAnalisis(props) {
                 });
             });
             setPdfDocument(//TODO revisar los errores del catch
-                <toPdf.Document> 
+                <toPdf.Document>
                     <toPdf.Page size="A4" style={styles.page} wrap>
                         {content}
                     </toPdf.Page>
@@ -983,13 +1020,24 @@ function ContenedorMapaAnalisis(props) {
         setValoresConsultaConsultas(true)
     }
 
-    useEffect(() => 
-    {
+    useEffect(() => {
         addToExportWithPivot(rasgos)
-    },[rasgos]);
+    }, [rasgos]);
 
     return (
         <>
+            <ModalAnalisis
+                show={showModalAnalisis}
+                datos={datosModalAnalisis}
+                onHide={handleCloseModalAnalisis}
+            />
+
+            <ModalAnalisis
+                show={showModalAnalisis}
+                datos={datosModalAnalisis}
+                onHide={handleCloseModalAnalisis}
+            />
+
             <ModalAnalisis
                 show={showModalAnalisis}
                 datos={datosModalAnalisis}
@@ -1004,105 +1052,114 @@ function ContenedorMapaAnalisis(props) {
                 <Modal.Body>
                     <Tabs defaultActiveKey="sedatu">
                         <Tab eventKey="sedatu" title="Capa">
+                            <Button key="6" variant="link" onClick={cambiaBusquedaAvanzada}>{busquedaAvanzada == false ? "Búsqueda avanzada" : "Búsqueda básica"}</Button>
                             {
-                                listaMetadatosCapasBackEnd.length != 0 &&
-                                <Form className="tw-mt-4 tw-mb-4" onSubmit={handleSubmitMetadatos(buscaMetadatos)}>
-                                    <Controller
-                                        as={Typeahead}
-                                        control={control}
-                                        options={listaMetadatosCapasBackEnd[0]}
-                                        id="titulo-capa"
-                                        name="titulo"
-                                        defaultValue=""
-                                        placeholder="Escoge o escribe un título"
-                                        clearButton
-                                        emptyLabel="No se encontraron resultados"
-                                        className="tw-mb-4"
-                                    />
-                                    <Controller
-                                        as={Typeahead}
-                                        control={control}
-                                        options={listaMetadatosCapasBackEnd[1]}
-                                        id="tema-capa"
-                                        name="tema"
-                                        defaultValue=""
-                                        placeholder="Escoge o escribe un tema"
-                                        clearButton
-                                        emptyLabel="No se encontraron resultados"
-                                        className="tw-mb-4"
-                                    />
-                                    <Controller
-                                        as={Typeahead}
-                                        control={control}
-                                        options={listaMetadatosCapasBackEnd[2]}
-                                        id="subtema-capa"
-                                        name="subtema"
-                                        defaultValue=""
-                                        placeholder="Escoge o escribe un subtema"
-                                        clearButton
-                                        emptyLabel="No se encontraron resultados"
-                                        className="tw-mb-4"
-                                    />
-                                    <Controller
-                                        as={Typeahead}
-                                        control={control}
-                                        options={listaMetadatosCapasBackEnd[3]}
-                                        id="palabrasClave-capa"
-                                        name="palabrasClave"
-                                        defaultValue=""
-                                        placeholder="Escoge o escribe una palabra clave"
-                                        clearButton
-                                        emptyLabel="No se encontraron resultados"
-                                        className="tw-mb-4"
-                                    />
-                                    <button className="btn-analisis" type="submit">BUSCAR</button>
-                                </Form>
-                            }
-                            {
-                                [
-                                    avisoBusquedaCapasIde && (
-                                        <p key="1">{avisoBusquedaCapasIde}</p>
-                                    ),
-                                    capasBusquedaIde.length != 0 && (
-                                        <Typeahead
-                                            key="2"
-                                            id="agregaCapaBusquedaIde"
-                                            labelKey={"titulo"}
-                                            options={capasBusquedaIde}
-                                            placeholder="Selecciona una capa"
-                                            onChange={(capaBuscada) => agregaCapaBusquedaIde(capaBuscada[0])}
-                                            defaultValue=""
-                                            clearButton
-                                            paginationText="Desplegar más resultados"
-                                            emptyLabel="No se encontraron resultados"
-                                            className="tw-mb-4"
-                                        />
-                                    ),
-                                    botonesAgregaCapaIdeWFSWMS[0] == true &&
-                                    (
-                                        <div key="3">
-                                            <p>Selecciona como quieres agregar esta capa</p>
-                                            <div className="d-flex tw-justify-around tw-mb-4">
-                                                <Button variant="light" onClick={() => agregaCapaWMS(botonesAgregaCapaIdeWFSWMS[1], 0)}>Mosaico</Button>
-                                                <Button variant="light" onClick={() => setMunicipiosMostrarListado(true)}>Elementos</Button>
-                                            </div>
+                                busquedaAvanzada == false ? (
+                                    <>
+                                        <p className="tw-mt-4"><b>Escoge un tema</b></p>
+                                        <div className="tw-flex tw-flex-wrap tw-justify-around">
                                             {
-                                                municipiosMostrarListado &&
-                                                <Typeahead
-                                                    id="municipiosMostrarListado"
-                                                    labelKey={"entidad"}
-                                                    options={catalogoEntidades}
-                                                    placeholder="Selecciona una entidad"
-                                                    onChange={(entidad) => construyeEntidadCapa(entidad[0], botonesAgregaCapaIdeWFSWMS[1])}
-                                                    defaultValue=""
-                                                    clearButton
-                                                    paginationText="Desplegar más resultados"
-                                                    emptyLabel="No se encontraron resultados"
-                                                />
+                                                listaMetadatosTemasCapasBackEnd.map((value, index) => (
+                                                    <Button className="tw-mb-4" variant="light" key={index} onClick={() => construyeCatalogoSubtemas(value)}>{value}</Button>
+                                                ))
                                             }
                                         </div>
-                                    )
-                                ]
+                                        <p><b>Escoge un subtema</b></p>
+                                        <div className="row">
+                                            <div className="col-6">
+                                                {
+                                                    listaMetadatosSubtemasCapasBackEnd.map((value, index) => (
+                                                        <Button className="tw-block tw-mb-4" variant="light" key={index} onClick={() => contruyeCatalogoTitulo(value)}>{value}</Button>
+                                                    ))
+                                                }
+                                            </div>
+                                            {
+                                                listaMetadatosTitulosCapasBackEnd.length != 0 && (
+                                                    <div className="col-6">
+                                                        <Typeahead
+                                                            id="agregaCapaBusquedaIdeBusquedaAvanzada"
+                                                            labelKey={"titulo"}
+                                                            options={listaMetadatosTitulosCapasBackEnd}
+                                                            placeholder="Selecciona una capa"
+                                                            onChange={(capaBuscada) => agregaCapaBusquedaIde(capaBuscada[0])}
+                                                            defaultValue=""
+                                                            clearButton
+                                                            paginationText="Desplegar más resultados"
+                                                            emptyLabel="No se encontraron resultados"
+                                                        />
+                                                    </div>
+                                                )
+                                            }
+                                        </div>
+
+                                    </>
+                                ) : (
+                                    <>
+                                        <Form className="tw-mt-4 tw-mb-4" onSubmit={handleSubmitMetadatos(busquedaAvanzadaMetadatos)}>
+                                            <Controller
+                                                as={Typeahead}
+                                                control={control}
+                                                options={listaMetadatosCapasBackEnd}
+                                                id="palabrasClave"
+                                                name="palabrasClave"
+                                                defaultValue=""
+                                                placeholder="Escoge o escribe una palabra clave"
+                                                clearButton
+                                                emptyLabel="No se encontraron resultados"
+                                                className="tw-mb-4"
+                                            />
+                                            <button className="btn-analisis" type="submit">BUSCAR</button>
+                                        </Form>
+                                        {
+                                            [
+                                                avisoBusquedaCapasIde && (
+                                                    <p key="1">{avisoBusquedaCapasIde}</p>
+                                                ),
+                                                listaMetadatosTitulosBusquedaAvanzada.length != 0 && (
+                                                    <Typeahead
+                                                        key="2"
+                                                        id="agregaCapaBusquedaIdeBusquedaAvanzada"
+                                                        labelKey={"titulo"}
+                                                        options={listaMetadatosTitulosBusquedaAvanzada}
+                                                        placeholder="Selecciona una capa"
+                                                        onChange={(capaBuscada) => agregaCapaBusquedaIde(capaBuscada[0])}
+                                                        defaultValue=""
+                                                        clearButton
+                                                        paginationText="Desplegar más resultados"
+                                                        emptyLabel="No se encontraron resultados"
+                                                    />
+                                                )
+                                            ]
+                                        }
+                                    </>
+                                )
+                            }
+                            {
+                                botonesAgregaCapaIdeWFSWMS[0] == true &&
+                                (
+                                    <div className="tw-mt-4">
+                                        <p>Selecciona como quieres agregar esta capa</p>
+                                        <div className="d-flex tw-justify-around tw-mb-4">
+                                            <Button variant="light" onClick={() => agregaCapaWMS(botonesAgregaCapaIdeWFSWMS[1], 0)}>Mosaico</Button>
+                                            <Button variant="light" onClick={() => setMunicipiosMostrarListado(true)}>Elementos</Button>
+                                        </div>
+                                        {
+                                            municipiosMostrarListado &&
+                                            < Typeahead
+                                                id="municipiosMostrarListado"
+                                                labelKey={"entidad"}
+                                                options={catalogoEntidades}
+                                                placeholder="Selecciona una entidad"
+                                                onChange={(entidad) => construyeEntidadCapa(entidad[0], botonesAgregaCapaIdeWFSWMS[1])}
+                                                defaultValue=""
+                                                clearButton
+                                                paginationText="Desplegar más resultados"
+                                                emptyLabel="No se encontraron resultados"
+                                            />
+
+                                        }
+                                    </div>
+                                )
                             }
                         </Tab>
                         <Tab eventKey="servicios" title="Servicio">
@@ -1136,7 +1193,7 @@ function ContenedorMapaAnalisis(props) {
                                 )
                             }
                         </Tab>
-                        {/* <Tab eventKey="datos" title="Datos">
+                        <Tab eventKey="datos" title="Datos">
                             <Form className="tw-mt-4">
                                 <Form.Group controlId="temasDatos">
                                     <Form.Label>Temas</Form.Label>
@@ -1208,7 +1265,7 @@ function ContenedorMapaAnalisis(props) {
                                     </Form.Group>
                                 }
                             </Form>
-                        </Tab> */}
+                        </Tab>
                     </Tabs>
                 </Modal.Body>
             </Modal>
@@ -1224,7 +1281,7 @@ function ContenedorMapaAnalisis(props) {
                 </Modal.Header>
                 <Modal.Body>
                     {
-                        capasVisualizadas.map((capa, index) => {
+                        capasVisualizadas.map((capa, index) => (
                             capa.habilitado && (
                                 <div key={index}>
                                     <p><b>{capa.nom_capa}</b></p>
@@ -1233,7 +1290,7 @@ function ContenedorMapaAnalisis(props) {
                                     <br></br>
                                 </div>
                             )
-                        })
+                        ))
                     }
                 </Modal.Body>
             </Modal>
