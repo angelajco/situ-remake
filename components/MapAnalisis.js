@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import React, { useState, useEffect, useContext } from 'react'
 
-import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents, GeoJSON } from 'react-leaflet'
+import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents, GeoJSON, WMSTileLayer } from 'react-leaflet'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
@@ -393,7 +393,7 @@ export default function Map(props) {
                     distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
                 }
                 layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
-            } else if (type !== 'marker' && type !== 'circle')  {
+            } else if (type !== 'marker' && type !== 'circle') {
                 var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
                 layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
             }
@@ -445,23 +445,22 @@ export default function Map(props) {
                 </OverlayTrigger>
             </div>
 
-            <MapContainer id="id-export-Map"  whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={0} zoomControl={false}>
+            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false}>
                 <ScaleControl maxWidth="100" />
                 <ZoomControl position="bottomright" zoomInTitle="Acercar" zoomOutTitle="Alejar" />
 
                 <LayersControl>
-                    <BaseLayer checked name="Open street map">
-                        <TileLayer
-                            className="tilelayer-base"
-                            attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    <BaseLayer checked name="INEGI">
+                        <WMSTileLayer
+                        url="http://gaiamapas.inegi.org.mx/mdmCache/service/wms?" layers="MapaBaseTopograficov61_consombreado"
+                        className="tilelayer-base"
                         />
                     </BaseLayer>
-                    <BaseLayer name="Google">
+                    <BaseLayer name="Open street map">
                         <TileLayer
+                            attribution=''
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             className="tilelayer-base"
-                            attribution="Google"
-                            url="http://www.google.cn/maps/vt?lyrs=s,h@189&gl=cn&x={x}&y={y}&z={z}"
                         />
                     </BaseLayer>
                 </LayersControl>
