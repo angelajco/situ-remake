@@ -105,6 +105,23 @@ export default function Home() {
                     </div>
                   </a>
                 </div>
+                <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-xs-12 custom-mx-b-1">
+                  <a href="https://ide.sedatu.gob.mx/" target="_blank" className={classes}>
+                    <div className="row justify-content-center">
+                      <img src="/images/index/cuad4.jpg" className="interesting-sites-images"/>
+                    </div>
+                    <div className="row justify-content-center">
+                      <h5>
+                        <b>
+                          IDE-SEDATU
+                        </b>
+                      </h5>
+                      <small className="text-center w-100">
+                        IDE-SEDATU
+                      </small>
+                    </div>
+                  </a>
+                </div>
               </div>
             </section>
           </section>

@@ -1036,7 +1036,7 @@ class CapaSimple {
     req.cliente = this;
     req.modelo = modelo;
 
-    req.open("GET", "http://172.16.117.11/wa0/lista_capas02.php?id=" + this.idCapa, true);
+    req.open("GET", `${process.env.ruta}/wa0/lista_capas02.php?id=${this.idCapa}`, true);
     req.setRequestHeader("Content-Type", 'application/x-www-form-urlencoded');
 
     req.onreadystatechange = function () {
