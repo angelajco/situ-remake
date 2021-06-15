@@ -5,6 +5,7 @@ import '../shared/styles/css/admin.css'
 import '../shared/styles/css/analisis.css'
 import '../shared/styles/css/analisis-estadisticas.css'
 import '../shared/styles/css/consulta-documental.css'
+import '../shared/styles/css/pagination.css'
 
 import Header from '../components/Header'
 import Menu from '../components/Menu'
