@@ -280,14 +280,12 @@ export default function Map(props) {
                     <BaseLayer checked name="INEGI">
                         <WMSTileLayer
                         url="http://gaiamapas.inegi.org.mx/mdmCache/service/wms?" layers="MapaBaseTopograficov61_consombreado"
-                        className="tilelayer-base"
                         />
                     </BaseLayer>
                     <BaseLayer name="Open street map">
                         <TileLayer
                             attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            className="tilelayer-base"
                         />
                     </BaseLayer>
                 </LayersControl>
