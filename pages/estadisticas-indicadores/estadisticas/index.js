@@ -1,44 +1,39 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { useForm } from "react-hook-form"
+import React, { useState, useEffect } from 'react'
 import { Accordion, Card, Form, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight, faAngleLeft, faAngleDoubleRight, faAngleDoubleLeft } from '@fortawesome/free-solid-svg-icons';
 
 import Loader from '../../../components/Loader'
 import ModalComponent from '../../../components/ModalComponent'
+import GenericTable from '../../../components/genericos/GenericTable';
 
 export default function estadisticas() {
 
     const aggregationLevels = [
         {
-            id: 'nacional',
+            id: 0,
             value: 'Nacional'
         },
         {
-            id: 'estatal',
-            value: 'Estatal'
-        },
-        {
-            id: 'municipal',
-            value: 'Municipal'
-        },
-        // {
-        //     id: 'localidad',
-        //     value: 'Localidad'
-        // }
+            id: 1,
+            value: 'Otro'
+        }
     ];
     const [statisticalProducts, setStatisticalProducts] = useState([]);
+    const [statisticalProduct, setStatisticalProduct] = useState();
     const [entities, setEntities] = useState([]);
     const [tawns, setTawns] = useState([]);
     const [localities, setLocalities] = useState([]);
+    const [entity, setEntity] = useState();
+    const [tawn, setTawn] = useState();
+    const [locality, setLocality] = useState();
     const [columns, setColumns] = useState([]);
     const [columnsSelected, setColumnsSelected] = useState([]);
-    const [columnsAdded, setColumnsAdded] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [show, setShow] = useState(false);
-    const [isFiltersActive, setIsFiltersActive] = useState(false);
-    const [isSelectedTypeDisabled, setSelectedTypeDisabled] = useState(true)
+    const [isNacional, setNacional] = useState(0);
     const [selectionType, setSelectionType] = useState();
+    const [tableData, setTableData] = useState([]);
     const [datosModal, setDatosModal] = useState(
         {
             title: '',
@@ -49,77 +44,64 @@ export default function estadisticas() {
         isStatisticalProductsError: false,
         isAggregationLevelsError: false,
         isAdvanceFiltersError: false,
-        isColumnsError: false
+        isColumnsError: false,
+        isTableDateError: false
     });
-
-    const { register, watch } = useForm();
-
-    let refStatisticalProducts = '';
-    const refAggragationLevel = useRef();
-    refAggragationLevel.current = watch("aggregationType", "");
-    const refEntity = useRef();
-    refEntity.current = watch("entities", "");
-    const refTawn = useRef();
-    refTawn.current = watch("tawns", "");
-    const refLocalities = useRef();
-    refLocalities.current = watch("localities", "");
 
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
 
     function applyStatisticalProducts(event) {
-        refStatisticalProducts = event.target.value;
-        setIsFiltersActive(true)
-        setIsLoading(true);
-        getColumns(refStatisticalProducts, function(data, error) {
-            restartFilters();
-            if(data) {
-                fetchColumns(data.resultado, function(array) {
-                    setColumns(array);
-                    setIsLoading(false);
-                    setSelectedTypeDisabled(false);
-                });
-            } else {
-                renderModal(error)
-            }
+        setNacional(0);
+        applyAggregation(function() {
+            statisticalProducts.filter(product => product.etiqueta_funcional == event.target.value).map(element => {
+                setStatisticalProduct(element);
+            });
         });
     }
 
-    function applySelectionType(event) {
-        setSelectionType(parseInt(event.target.value))
+    function addStatiticalProduct() {
+        if(tableData.length < 15){
+            setIsLoading(true);
+            var args = `?etiquetaFuncional=${statisticalProduct.etiqueta_funcional}&nivel=${statisticalProduct.nivel_desagregacion}&nivelagregacion=${statisticalProduct.nivel_desagregacion}&valorNivel=${statisticalProduct.col_entidad}`;
+            if(isNacional == 0) {
+                if (statisticalProduct.nivel_desagregacion == 'Estatal') {
+                    entities.map((entity) => {
+                        args = `${args}&clave=${entity.id_entidades}`;
+                    });
+                }
+            } else {
+                if(statisticalProduct.nivel_desagregacion == 'Estatal') {
+                    args = `${args}&clave=${entity}`;
+                }
+            }
+            columnsSelected.map((column) => {
+                args = `${args}&idcolumnas=${column.id}`;
+            });
+            getTableData(args, function(data, error) {
+                if(data && data.mensaje != 'Error') {
+                    setTableData([...tableData, {title: `${statisticalProduct.nombre} (${statisticalProduct.descripcion})`, type: 'table', data: data.resultado}]);
+                    setIsLoading(false);
+                } else {
+                    renderModal('La información no está disponible.')
+                }
+            });
+        } else {
+            renderModal('Solo se pueden agregar 15 elementos.')
+        }
     }
 
-    function applyAggregation() {
-        setIsLoading(true);
+    function applySelectionType(event) {
+        setSelectionType(parseInt(event.target.checked == true ? 1 : 2));
+    }
+
+    function applyAggregation(success) {
         getEntities(function(data, error) {
             if(data) {
                 setEntities(data);
                 setTawns(null);
                 setIsLoading(false);
-            } else {
-                renderModal(error)
-            }
-        });
-    }
-
-    function applyEntities() {
-        setIsLoading(true);
-        getTawns(function(data, error) {
-            if(data) {
-                setTawns(data);
-                setIsLoading(false);
-            } else {
-                renderModal(error)
-            }
-        });
-    }
-
-    function applyTawns() {
-        setIsLoading(true);
-        getLocalities(function(data, error) {
-            if(data) {
-                setLocalities(data);
-                setIsLoading(false);
+                success();
             } else {
                 renderModal(error)
             }
@@ -136,25 +118,49 @@ export default function estadisticas() {
     }
 
     function getTawns(response) {
-        fetch(`${process.env.ruta}/wa/publico/catMunicipios`)
-        .then(res => res.json())
-        .then(
-            (data) => response(data, null),
-            (error) => response(null, error)
-        );
+        if(entity) {
+            fetch(`${process.env.ruta}/wa/publico/getMunicipioPorEntidad/${entity}`)
+            .then(res => res.json())
+            .then(
+                (data) => response(data, null),
+                (error) => response(null, error)
+            );
+        }
     }
 
     function getLocalities(response) {
-        fetch(`${process.env.ruta}/wa/publico/catLocalidades?id_entidad=${refEntity.current}`)
-        .then(res => res.json())
-        .then(
-            (data) => response(data, null),
-            (error) => response(null, error)
-        );
+        if(tawn) {
+            fetch(`${process.env.ruta}/wa/publico/getLocalidad/${tawn}/${entity}`)
+            .then(res => res.json())
+            .then(
+                (data) => response(data, null),
+                (error) => response(null, error)
+            );
+        }
     }
 
-    function getColumns(arg, response) {
-        fetch(`${process.env.ruta}/wa/publico/obtenerColumnas/${arg}`)
+    function getColumns(response) {
+        if(statisticalProduct) {
+            fetch(`${process.env.ruta}/wa/publico/obtenerColumnas/${statisticalProduct.etiqueta_funcional}`)
+            .then(res => res.json())
+            .then(
+                (data) => response(data, null),
+                (error) => {
+                    setErrors({
+                        isStatisticalProductsError: errors.isStatisticalProductsError,
+                        isAggregationLevelsError: errors.isAggregationLevelsError,
+                        isAdvanceFiltersError: errors.isAdvanceFiltersError,
+                        isColumnsError: true,
+                        isTableDateError: errors.isTableDateError
+                    });
+                    response(null, error)
+                }
+            );
+        }
+    }
+
+    function getTableData(arg, response) {
+        fetch(`${process.env.ruta}/wa/publico/obtenerInformacion${arg}`)
         .then(res => res.json())
         .then(
             (data) => response(data, null),
@@ -163,7 +169,8 @@ export default function estadisticas() {
                     isStatisticalProductsError: errors.isStatisticalProductsError,
                     isAggregationLevelsError: errors.isAggregationLevelsError,
                     isAdvanceFiltersError: errors.isAdvanceFiltersError,
-                    isColumnsError: true
+                    isColumnsError: errors.isColumnsError,
+                    isTableDateError: true
                 });
                 response(null, error)
             }
@@ -199,14 +206,14 @@ export default function estadisticas() {
             (data) => {
                 setStatisticalProducts(data.resultado);
                 setIsLoading(false);
-                console.log('aggregation: ', refAggragationLevel)
             }, 
             (error) => {
                 setErrors({
                     isStatisticalProductsError: true,
                     isAggregationLevelsError: errors.isAggregationLevelsError,
                     isAdvanceFiltersError: errors.isAdvanceFiltersError,
-                    isColumnsError: errors.isColumnsError
+                    isColumnsError: errors.isColumnsError,
+                    isTableDateError: errors.isTableDateError
                 });
                 setDatosModal({
                     title: 'Ocurrió un error al obtener la información',
@@ -218,6 +225,21 @@ export default function estadisticas() {
             }
         )
     }, []);
+
+    useEffect(() => {
+        setIsLoading(true);
+        getColumns(function(data, error) {
+            restartFilters();
+            if(data) {
+                fetchColumns(data.resultado, function(array) {
+                    setColumns(array);
+                    setIsLoading(false);
+                });
+            } else {
+                renderModal(error)
+            }
+        });
+    }, [statisticalProduct]);
 
     useEffect(() => {
         switch(selectionType) {
@@ -248,7 +270,7 @@ export default function estadisticas() {
                     setColumnsSelected([]);
                 });
             break;
-            case 3://TODO revisar selección inversa
+            case 3:
                 var array = [];
                 columns.map(item => {
                     item.checked = !item.checked;
@@ -267,6 +289,7 @@ export default function estadisticas() {
                         setColumnsSelected([]);
                     }
                 });
+                setSelectionType(0);
             break;
             default:
             break;
@@ -274,8 +297,28 @@ export default function estadisticas() {
     }, [selectionType]);
 
     useEffect(() => {
-        console.log('columnsSelected: ', columnsSelected);
-    }, [columnsSelected]);
+        setIsLoading(true);
+        getTawns(function(data, error) {
+            if(data) {
+                setTawns(data);
+                setIsLoading(false);
+            } else {
+                renderModal(error)
+            }
+        });
+    }, [entity]);
+
+    useEffect(() => {
+        setIsLoading(true);
+        getLocalities(function(data, error) {
+            if(data) {
+                setLocalities(data);
+                setIsLoading(false);
+            } else {
+                renderModal(error)
+            }
+        });
+    }, [tawn]);
 
     function fetchColumns(data, success) {
         var array = [];
@@ -291,21 +334,15 @@ export default function estadisticas() {
         array[event.target.value].checked = event.target.checked;
         fetchColumns(array, function(columns_) {
             setColumns(columns_)
+            if(array[event.target.value].checked == true) {
+                setColumnsSelected([...columnsSelected, array[event.target.value]]);
+            } else {
+                setColumnsSelected(columns.filter(column => column.checked == true));
+            }
         });
-        if(array[event.target.value].checked == true) {
-            setColumnsSelected([...columnsSelected, array[event.target.value]]);
-        } else {
-            var column = array[event.target.value].columna;
-            array = [];
-            columnsSelected.filter(selected => selected.columna != column).map(checked => {
-                array.push(checked);
-            });
-            setColumnsSelected(array);
-        }
     }
 
     function restartFilters() {
-        setColumnsAdded([]);
         setColumns([]);
         setColumnsSelected([]);
     }
@@ -344,34 +381,40 @@ export default function estadisticas() {
                                                 <div className="row">
                                                     <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">
                                                         <div className="row tw-p-0">
-                                                            <Form.Group className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0">
+                                                            <Form.Group className="col-12 tw-p-0 my-auto tw-mt-2">
                                                                 <Form.Control as="select" onChange={(event) => applyStatisticalProducts(event)}>
                                                                     <option value='' hidden>Productos Estad&iacute;sticos</option>
                                                                     {
                                                                         statisticalProducts.map((item, index) => (
-                                                                            <option key={index} value={item.nombre_tabla}>{item.nombre}</option>
+                                                                            <option key={index} value={item.etiqueta_funcional}>{item.nombre}</option>
                                                                         ))
                                                                     }
                                                                 </Form.Control>
                                                             </Form.Group>
-                                                            <Form.Group className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0">
-                                                                <Form.Control as="select" disabled={isSelectedTypeDisabled} onChange={(event) => applySelectionType(event)}>
-                                                                    <option value='' hidden>Tipo de selecci&oacute;n</option>
-                                                                    <option value='1'>Todo</option>
-                                                                    <option value='2'>Nada</option>
-                                                                    <option value='3'>Invertir selecci&oacute;n</option>
-                                                                </Form.Control>
-                                                            </Form.Group>
                                                         </div>
                                                         {
+                                                            columns.length > 0 &&
+                                                                <div className="row tw-mt-2 mx-auto">
+                                                                    <Form className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0 my-auto">
+                                                                        <Form.Check custom type="checkbox" inline className="mb-3 my-auto"
+                                                                            onChange={(event) => applySelectionType(event)}
+                                                                            label='Seleccionar todo/nada' id={`columns-check`}
+                                                                            checked={columns.length > 0 && columns.length == columnsSelected.length}/>
+                                                                    </Form>
+                                                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0">
+                                                                        <button className="btn-analisis" onClick={() => setSelectionType(3)}>Invertir selecci&oacute;n</button>
+                                                                    </div>
+                                                                </div>
+                                                        }
+                                                        {
                                                             errors.isColumnsError ?
-                                                            <h4 className="text-center">
+                                                            <h4 className="text-center tw-mt-2">
                                                                 La informaci&oacute;n no est&aacute; disponible
                                                             </h4> :
                                                             <div className="row tw-mb-2">
                                                                 {
                                                                     columns.length > 0 &&
-                                                                        <div className="col-12 tw-p-0">
+                                                                        <div className="col-12 tw-mt-2 tw-p-0">
                                                                             <Card className="custom-card-body">
                                                                                 <div className="row">
                                                                                     <h6 className="text-center w-100">Columnas</h6>
@@ -381,7 +424,7 @@ export default function estadisticas() {
                                                                                         {
                                                                                             columns.map((item, index) => (
                                                                                                 <Form.Check key={index} custom type="checkbox" inline className="mb-3" onChange={(event) => columnsSelected_(event)}
-                                                                                                    checked={item.checked} value={index} label={item.columna} id={`column-${index}`}/>
+                                                                                                    checked={item.checked} value={index} label={item.encabezado.length > 0 ? item.encabezado : item.id} id={`column-${index}`}/>
                                                                                             ))
                                                                                         }
                                                                                     </Form>
@@ -392,133 +435,101 @@ export default function estadisticas() {
                                                             </div>
                                                         }
                                                     </div>
-                                                </div>
-                                            }
-                                        </Card.Body>
-                                    </Accordion.Collapse>
-                                </Card>
-                                <Card>
-                                    <Accordion.Toggle as={Card.Header} eventKey="1">
-                                        <h4 className="text-center">
-                                            Opciones
-                                        </h4>
-                                    </Accordion.Toggle>
-                                    <Accordion.Collapse eventKey="1">
-                                        <Card.Body className="custom-card-body">
-                                            {
-                                                errors.isStatisticalProductsError ?
-                                                <h4 className="text-center">
-                                                    La informaci&oacute;n no est&aacute; disponible
-                                                </h4> :
-                                                <div className="row">
-                                                    <div className="col-6">
-                                                    </div>
-                                                </div>
-                                                // <Form.Group className="row" onChange={(event) => applyStatisticalProducts(event)}>
-                                                //     {
-                                                //         columns.map((item, index) => (
-                                                //             <div key={index} className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-xs-12 custom-mx-b-1">
-                                                //                 <Form.Check name={`columns${index}`} id={`radio-columns-${index}`} type="radio" inline value={item.columna} label={item.columna}/>
-                                                //             </div>
-                                                //         ))
-                                                //     }
-                                                // </Form.Group>
-                                            }
-                                        </Card.Body>
-                                    </Accordion.Collapse>
-                                </Card>
-                                <Card>
-                                    <Accordion.Toggle as={Card.Header} eventKey="2">
-                                        <h4 className="text-center">
-                                            Filtros
-                                        </h4>
-                                    </Accordion.Toggle>
-                                    <Accordion.Collapse eventKey="2">
-                                        <Card.Body className="custom-card-body">
-                                            {
-                                                isFiltersActive ?
-                                                errors.isStatisticalProductsError || errors.isAggregationLevelsError ?
-                                                <h4 className="text-center">
-                                                    La informaci&oacute;n no est&aacute; disponible
-                                                </h4> :
-                                                <Form.Group className="row">
-                                                    <Form.Label className="col-12">
-                                                        <h5 className="text-center">
-                                                            Agregaci&oacute;n
-                                                        </h5>
-                                                    </Form.Label>
-                                                    <div className="col-xl-4 col-lg-4 col-md-4 col-sm-4 col-xs-12 custom-mx-b-1">
-                                                        <Form.Control as="select" name="aggregationType" ref={register} onChange={() => applyAggregation()}>
-                                                            {
-                                                                aggregationLevels.map((item, index) => (
-                                                                    <option key={index} value={item.id}>
-                                                                        {
-                                                                            item.value
-                                                                        }
-                                                                    </option>
-                                                                ))
-                                                            }
-                                                        </Form.Control>
-                                                    </div>
-                                                    <div className="col-xl-4 col-lg-4 col-md-4 col-sm-4 col-xs-12 custom-mx-b-1">
-                                                        <Form.Control as="select" name="entities" ref={register} onChange={() => applyEntities()}>
-                                                            <option value="" hidden>Entidad</option>
-                                                            {
-                                                                entities ? 
-                                                                    entities.map((item, index) => (
-                                                                        <option key={index} value={item.id_entidades}>
+                                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                                                        {
+                                                            errors.isStatisticalProductsError || errors.isAggregationLevelsError || errors.isColumnsError ?
+                                                                <h4 className="text-center">
+                                                                    La informaci&oacute;n no est&aacute; disponible
+                                                                </h4> :
+                                                                columns.length > 0 &&
+                                                                <Form.Group className="row tw-mb-0">
+                                                                    <div className="col-12 tw-mt-2">
+                                                                        <Form.Control as="select" name="aggregationType" onChange={(event) => setNacional(parseInt(event.target.value))}>
                                                                             {
-                                                                                item.nombre_entidad
+                                                                                aggregationLevels.map((item, index) => (
+                                                                                    <option key={index} value={item.id}>
+                                                                                        {
+                                                                                            item.value
+                                                                                        }
+                                                                                    </option>
+                                                                                ))
                                                                             }
-                                                                        </option>
-                                                                    )) :
-                                                                    ''
-                                                            }
-                                                        </Form.Control>
-                                                    </div>
-                                                    <div className="col-xl-4 col-lg-4 col-md-4 col-sm-4 col-xs-12 custom-mx-b-1">
-                                                        <Form.Control as="select" name="tawns"  ref={register} onChange={() => applyTawns()}>
-                                                            <option value="" hidden>Municipio</option>
-                                                            {/* <option value="">-</option> */}
-                                                            {
-                                                                tawns ?
-                                                                tawns.filter(tawn => tawn.cve_ent == refEntity.current).map((item, index) => (
-                                                                    <option key={index} value={item.cve_mun}>
-                                                                        {
-                                                                            item.nombre_municipio
-                                                                        }
-                                                                    </option>
-                                                                )) :
-                                                                ''
-                                                            }
-                                                        </Form.Control>
-                                                    </div>
-                                                    {/* <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-xs-12 custom-mx-b-1">
-                                                        <Form.Control as="select" name="localities" ref={register}>
-                                                            <option value="" hidden>Localidad</option>
-                                                            {
-                                                                localities ? 
-                                                                    localities.filter(locality => locality.cve_mun == refTawn.current).map((item, index) => (
-                                                                        <option key={index} value={item.id_localidad}>
+                                                                        </Form.Control>
+                                                                    </div>
+                                                                    <div className="col-12 tw-mt-2">
+                                                                        <Form.Control as="select" name="entities" onChange={(event) => setEntity(event.target.value)} disabled={statisticalProduct.nivel_desagregacion == 'Nacional' || isNacional == 0}>
+                                                                            <option value="" hidden>Entidad</option>
                                                                             {
-                                                                                item.nombre_localidad
+                                                                                entities ?
+                                                                                    entities.map((item, index) => (
+                                                                                        <option key={index} value={item.id_entidades}>
+                                                                                            {
+                                                                                                item.nombre_entidad
+                                                                                            }
+                                                                                        </option>
+                                                                                    )) :
+                                                                                    ''
                                                                             }
-                                                                        </option>
-                                                                    )) :
-                                                                    ''
-                                                            }
-                                                        </Form.Control>
-                                                    </div> */}
-                                                </Form.Group> :
-                                                <h4 className="text-center">
-                                                    Debes seleccionar un producto estad&iacute;stico para poder aplicar filtros
-                                                </h4>
+                                                                        </Form.Control>
+                                                                    </div>
+                                                                    <div className="col-12 tw-mt-2">
+                                                                        <Form.Control as="select" name="tawns" onChange={(event) => setTawn(event.target.value)} disabled={statisticalProduct.nivel_desagregacion == 'Estatal' || isNacional == 0}>
+                                                                            <option value="" hidden>Municipio</option>
+                                                                            {
+                                                                                tawns ?
+                                                                                tawns.map((item, index) => (
+                                                                                    <option key={index} value={item.cve_mun}>
+                                                                                        {
+                                                                                            item.nombre_mun
+                                                                                        }
+                                                                                    </option>
+                                                                                )) :
+                                                                                ''
+                                                                            }
+                                                                        </Form.Control>
+                                                                    </div>
+                                                                    <div className="col-12 tw-mt-2">
+                                                                        <Form.Control as="select" name="localities" disabled={statisticalProduct.nivel_desagregacion != 'Localidad' || isNacional == 0}>
+                                                                            <option value="" hidden>Localidad</option>
+                                                                            {
+                                                                                localities ? 
+                                                                                    localities.map((item, index) => (
+                                                                                        <option key={index} value={item.Codigo}>
+                                                                                            {
+                                                                                                item.Nombre
+                                                                                            }
+                                                                                        </option>
+                                                                                    )) :
+                                                                                    ''
+                                                                            }
+                                                                        </Form.Control>
+                                                                    </div>
+                                                                </Form.Group>
+                                                        }
+                                                        {
+                                                            columns.length > 0 &&
+                                                                <div className="col-12 tw-p-0 tw-my-2">
+                                                                    <button className="btn-analisis" onClick={() => addStatiticalProduct()}>Agregar</button>
+                                                                </div>
+                                                        }
+                                                    </div>
+                                                </div>
                                             }
                                         </Card.Body>
                                     </Accordion.Collapse>
                                 </Card>
                             </Accordion>
                         </div>
+                    </div>
+                </div>
+                <div className="row">
+                    <div className="col-12 custom-mx-t-1 custom-h-450 table-responsive">
+                        {
+                            (tableData && tableData.length > 0) &&
+                                tableData.map((table, index) => (
+                                    <GenericTable key={index} table={table}/>
+                                ))
+                        }
                     </div>
                 </div>
             </section>
