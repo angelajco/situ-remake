@@ -4,7 +4,7 @@ import { faCogs, faAlignJustify, faAlignLeft, faFileCsv, faFilePdf } from '@fort
 import { Card, Form, Modal, OverlayTrigger, Tooltip, Tab, Row, Col, Nav } from 'react-bootstrap'
 import { CSVLink } from "react-csv";
 
-import * as toPdf from '@react-pdf/renderer';
+// import * as toPdf from '@react-pdf/renderer';
 import * as htmlToImage from 'html-to-image';
 
 import Loader from '../Loader'
@@ -18,20 +18,20 @@ export default function GenericTable(props) {
     const [csvData, setCsvData] = useState([]);
     const [csvFileName, setCsvFileName] = useState('');
     const [isHiddenTools, setHiddenTools] = useState(true);
-    const [pdfDocument, setPdfDocument] = useState(<toPdf.Document></toPdf.Document>);
+    // const [pdfDocument, setPdfDocument] = useState(<toPdf.Document></toPdf.Document>);
     const [isLoading, setIsLoading] = useState(false);
 
-    const styles = toPdf.StyleSheet.create({
-        page: {
-            // flexDirection: 'row',
-            backgroundColor: '#FFFFFF'
-        },
-        section: {
-            margin: 10,
-            padding: 10,
-            flexGrow: 1
-        }
-    });
+    // const styles = toPdf.StyleSheet.create({
+    //     page: {
+    //         // flexDirection: 'row',
+    //         backgroundColor: '#FFFFFF'
+    //     },
+    //     section: {
+    //         margin: 10,
+    //         padding: 10,
+    //         flexGrow: 1
+    //     }
+    // });
 
     function onDrag(event) {
         console.log('onDrag: ', event)
@@ -91,28 +91,28 @@ export default function GenericTable(props) {
         success();
     }
 
-    function generatePdf() {
-        var node = document.getElementById(`table-estatitistics-${tabular.index}`);
-        htmlToImage.toPng(node).then(function (dataUrl) {
-            setPdfDocument(
-                <toPdf.Document>
-                    <toPdf.Page size="A4" style={styles.page} wrap>
-                        <toPdf.View style={styles.section}>
-                            <toPdf.Text>{tabular.table.title}</toPdf.Text>
-                            <toPdf.Image src={dataUrl} />
-                        </toPdf.View>
-                    </toPdf.Page>
-                </toPdf.Document>
-            );
-        }).catch(function (error) {
-            console.log('errorPdfImage: ', error);
-            // setDatosModalAnalisis({
-            //     title: '¡Error!',
-            //     body: 'No se pudó generar el contenido del PDF (mapa)',
-            // });
-            // setShowModalAnalisis(true)
-        });
-    }
+    // function generatePdf() {
+    //     var node = document.getElementById(`table-estatitistics-${tabular.index}`);
+    //     htmlToImage.toPng(node).then(function (dataUrl) {
+    //         setPdfDocument(
+    //             <toPdf.Document>
+    //                 <toPdf.Page size="A4" style={styles.page} wrap>
+    //                     <toPdf.View style={styles.section}>
+    //                         <toPdf.Text>{tabular.table.title}</toPdf.Text>
+    //                         <toPdf.Image src={dataUrl} />
+    //                     </toPdf.View>
+    //                 </toPdf.Page>
+    //             </toPdf.Document>
+    //         );
+    //     }).catch(function (error) {
+    //         console.log('errorPdfImage: ', error);
+    //         // setDatosModalAnalisis({
+    //         //     title: '¡Error!',
+    //         //     body: 'No se pudó generar el contenido del PDF (mapa)',
+    //         // });
+    //         // setShowModalAnalisis(true)
+    //     });
+    // }
 
     function renderTools() {
         setIsLoading(true);
@@ -125,7 +125,7 @@ export default function GenericTable(props) {
     function generateFiles(success) {
         setDinamicData(dinamicData);
         addToExportWithPivot(dinamicData);
-        generatePdf();
+        // generatePdf();
         success();
     }
 
@@ -206,7 +206,7 @@ export default function GenericTable(props) {
                                                                 </CSVLink>
                                                             </OverlayTrigger>
                                                         </div>
-                                                        <div className="col-6 text-center">
+                                                        {/* <div className="col-6 text-center">
                                                             <OverlayTrigger overlay={<Tooltip>Exportar PDF</Tooltip>}>
                                                                 <toPdf.PDFDownloadLink id="download-pdf" document={pdfDocument} fileName={`${csvFileName}-${tabular.index}.pdf`}>
                                                                     {
@@ -217,7 +217,7 @@ export default function GenericTable(props) {
                                                                     }
                                                                 </toPdf.PDFDownloadLink>
                                                             </OverlayTrigger>
-                                                        </div>
+                                                        </div> */}
                                                     </div>
                                                 </Tab.Pane>
                                                 <Tab.Pane eventKey="2">

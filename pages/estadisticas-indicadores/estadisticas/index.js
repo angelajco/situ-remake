@@ -617,7 +617,7 @@ export default function estadisticas() {
                         </div>
                     </div>
                 </div>
-                <div className="row">
+                {/* <div className="row">
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-mx-t-1 col-mapa tw-pt-6">
                         <div className="row">
                             <div className="col-12 tw-text-center">
@@ -638,7 +638,7 @@ export default function estadisticas() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> */}
             </section>
         </>
     )
