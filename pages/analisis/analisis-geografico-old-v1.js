@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
 import { Form, Modal, Button, OverlayTrigger, Tooltip, Card, ListGroup, Accordion } from 'react-bootstrap'
 import { DragDropContext, Droppable, Draggable, resetServerContext } from 'react-beautiful-dnd'
-import { ContextMenu, MenuItem, ContextMenuTrigger } from "react-contextmenu";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUpload, faDownload, faSave, faEdit, faCheck, faPlus, faAngleDown } from '@fortawesome/free-solid-svg-icons'
 
@@ -442,23 +441,6 @@ export default function AnalisisGeograficoOld() {
                     <Button variant="primary" onClick={limpiar}>Limpiar campos</Button>
                 </Modal.Footer>
             </Modal>
-
-            {/* <ContextMenuTrigger id="same_unique_identifier">
-                <div className="well">Right click to see the menu</div>
-            </ContextMenuTrigger>
-
-            <ContextMenu id="same_unique_identifier">
-                <MenuItem data={{ foo: 'bar' }} onClick={menuContextual}>
-                    ContextMenu Item 1
-                    </MenuItem>
-                <MenuItem data={{ foo: 'bar' }} onClick={menuContextual}>
-                    ContextMenu Item 2
-                    </MenuItem>
-                <MenuItem divider />
-                <MenuItem data={{ foo: 'bar' }} onClick={menuContextual}>
-                    ContextMenu Item 3
-                    </MenuItem>
-            </ContextMenu> */}
 
             <div className="main">
                 <div className="container">
