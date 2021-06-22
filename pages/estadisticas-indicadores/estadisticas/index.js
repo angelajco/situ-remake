@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { Accordion, Card, Form, OverlayTrigger, Tooltip } from 'react-bootstrap'
+import { Accordion, Card, Form, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAngleRight, faAngleLeft, faAngleDoubleRight, faAngleDoubleLeft } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faEdit } from '@fortawesome/free-solid-svg-icons';
+import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
+
+import $ from 'jquery';
+import Draggable from 'react-draggable';
+import ModalDialog from 'react-bootstrap/ModalDialog';
 
 import Loader from '../../../components/Loader'
 import ModalComponent from '../../../components/ModalComponent'
 import GenericTable from '../../../components/genericos/GenericTable';
+import ContenedorMapaAnalisis from '../../../components/ContenedorMapaAnalisis'
 
 export default function estadisticas() {
 
@@ -31,9 +37,12 @@ export default function estadisticas() {
     const [columnsSelected, setColumnsSelected] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [show, setShow] = useState(false);
+    const [showTablesModal, setShowTablesModal] = useState(false);
     const [isNacional, setNacional] = useState(0);
     const [selectionType, setSelectionType] = useState();
     const [tableData, setTableData] = useState([]);
+    const [mapName, setMapName] = useState("Titulo mapa")
+    const [isEditMapName, setEditMapName] = useState(true)
     const [datosModal, setDatosModal] = useState(
         {
             title: '',
@@ -47,66 +56,142 @@ export default function estadisticas() {
         isColumnsError: false,
         isTableDateError: false
     });
-
+    const handleShowTablesModal = () => {
+        setShowTablesModal(true);
+        setTimeout(() => {
+            remueveTabindexModalMovible();
+        });
+    }
+    function remueveTabindexModalMovible() {
+        $('.modal-analisis').removeAttr("tabindex");
+    }
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
 
-    function applyStatisticalProducts(event) {
-        setNacional(0);
-        applyAggregation(function() {
-            statisticalProducts.filter(product => product.etiqueta_funcional == event.target.value).map(element => {
-                setStatisticalProduct(element);
-            });
-        });
+    if (typeof window !== 'undefined') {
+        $('body').addClass("analisis-geografico-modales");
     }
 
-    function addStatiticalProduct() {
-        if(tableData.length < 15){
-            setIsLoading(true);
-            var args = `?etiquetaFuncional=${statisticalProduct.etiqueta_funcional}&nivel=${statisticalProduct.nivel_desagregacion}&nivelagregacion=${statisticalProduct.nivel_desagregacion}&valorNivel=${statisticalProduct.col_entidad}`;
-            if(isNacional == 0) {
-                if (statisticalProduct.nivel_desagregacion == 'Estatal') {
-                    entities.map((entity) => {
-                        args = `${args}&clave=${entity.id_entidades}`;
-                    });
-                }
-            } else {
-                if(statisticalProduct.nivel_desagregacion == 'Estatal') {
-                    args = `${args}&clave=${entity}`;
-                }
-            }
-            columnsSelected.map((column) => {
-                args = `${args}&idcolumnas=${column.id}`;
-            });
-            getTableData(args, function(data, error) {
-                if(data && data.mensaje != 'Error') {
-                    setTableData([...tableData, {title: `${statisticalProduct.nombre} (${statisticalProduct.descripcion})`, type: 'table', data: data.resultado}]);
-                    setIsLoading(false);
-                } else {
-                    renderModal('La información no está disponible.')
-                }
-            });
-        } else {
-            renderModal('Solo se pueden agregar 15 elementos.')
-        }
-    }
-
-    function applySelectionType(event) {
-        setSelectionType(parseInt(event.target.checked == true ? 1 : 2));
-    }
-
-    function applyAggregation(success) {
-        getEntities(function(data, error) {
-            if(data) {
-                setEntities(data);
-                setTawns(null);
+    useEffect(() => {
+      fetch(`${process.env.ruta}/wa/publico/obtenerTablas`)
+        .then(res => res.json())
+        .then(
+            (data) => {
+                setStatisticalProducts(data.resultado);
                 setIsLoading(false);
-                success();
+            }, 
+            (error) => {
+                setErrors({
+                    isStatisticalProductsError: true,
+                    isAggregationLevelsError: errors.isAggregationLevelsError,
+                    isAdvanceFiltersError: errors.isAdvanceFiltersError,
+                    isColumnsError: errors.isColumnsError,
+                    isTableDateError: errors.isTableDateError
+                });
+                setDatosModal({
+                    title: 'Ocurrió un error al obtener la información',
+                    body: `${error}`,
+                    redireccion: null,
+                    nombreBoton: 'Cerrar'
+                });
+                renderModal(error);
+            }
+        )
+    }, []);
+
+    useEffect(() => {
+        setIsLoading(true);
+        getColumns(function(data, error) {
+            restartFilters();
+            if(data) {
+                fetchColumns(data.resultado, function(array) {
+                    setColumns(array);
+                    setIsLoading(false);
+                });
             } else {
                 renderModal(error)
             }
         });
-    }
+    }, [statisticalProduct]);
+
+    useEffect(() => {
+        setIsLoading(true);
+        getTawns(function(data, error) {
+            if(data) {
+                setTawns(data);
+                setIsLoading(false);
+            } else {
+                renderModal(error)
+            }
+        });
+    }, [entity]);
+
+    useEffect(() => {
+        setIsLoading(true);
+        getLocalities(function(data, error) {
+            if(data) {
+                setLocalities(data);
+                setIsLoading(false);
+            } else {
+                renderModal(error)
+            }
+        });
+    }, [tawn]);
+
+    useEffect(() => {
+        switch(selectionType) {
+            case 1:
+                var array = [];
+                columns.map(item => {
+                    item.checked = true;
+                    array.push(item);
+                });
+                fetchColumns(array, function(columns_) {
+                    var array_ = [];
+                    setColumns(columns_);
+                    columns_.filter(column => column.checked == true).map(filtered => {
+                        array_.push(filtered);
+                    });
+                    setColumnsSelected(array);
+                });
+            break;
+            case 2:
+                var array = [];
+                columns.map(item => {
+                    item.checked = false;
+                    array.push(item);
+                });
+                fetchColumns(array, function(columns_) {
+                    var array_ = [];
+                    setColumns(columns_);
+                    setColumnsSelected([]);
+                });
+            break;
+            case 3:
+                var array = [];
+                columns.map(item => {
+                    item.checked = !item.checked;
+                    array.push(item);
+                });
+                fetchColumns(array, function(columns_) {
+                    var array_ = [];
+                    setColumns(columns_);
+                    var selected = columns_.filter(column => column.checked == true);
+                    if(selected.length > 0) {
+                        selected.map(filtered => {
+                            array_.push(filtered);
+                        });
+                        setColumnsSelected(array_);
+                    } else {
+                        setColumnsSelected([]);
+                    }
+                });
+                setSelectionType(0);
+            break;
+            default:
+            break;
+        }
+    }, [selectionType]);
 
     function getEntities(response) {
         fetch(`${process.env.ruta}/wa/publico/catEntidades`)
@@ -177,6 +262,78 @@ export default function estadisticas() {
         );
     }
 
+    function applyStatisticalProducts(event) {
+        setNacional(0);
+        applyAggregation(function() {
+            statisticalProducts.filter(product => product.etiqueta_funcional == event.target.value).map(element => {
+                setStatisticalProduct(element);
+            });
+        });
+    }
+
+    function getStatiticalProductInformation() {
+        setIsLoading(true);
+        var args = `?etiquetaFuncional=${statisticalProduct.etiqueta_funcional}&nivel=${statisticalProduct.nivel_desagregacion}&nivelagregacion=${statisticalProduct.nivel_desagregacion}`;
+        if(isNacional == 0) {
+            if (statisticalProduct.nivel_desagregacion == 'Estatal') {
+                entities.map((entity) => {
+                    args = `${args}&clave=${entity.id_entidades}`;
+                });
+                args = `${args}&valorNivel=${statisticalProduct.col_entidad}`;
+                
+            } else if (statisticalProduct.nivel_desagregacion == 'Municipal') {
+                tawns.map((tawn) => {
+                    args = `${args}&clave=${tawn.cve_mun}`;
+                });
+                args = `${args}&valorNivel=${statisticalProduct.col_municipal}`;
+            } else if (statisticalProduct.nivel_desagregacion == 'Localidad') {
+                localities.map((locality) => {
+                    args = `${args}&clave=${locality.Codigo}`;
+                });
+                args = `${args}&valorNivel=${statisticalProduct.col_localidad}`;
+            }
+        } else {
+            if(statisticalProduct.nivel_desagregacion == 'Estatal') {
+                args = `${args}&clave=${entity}`;
+                args = `${args}&valorNivel=${statisticalProduct.col_entidad}`;
+            } else if(statisticalProduct.nivel_desagregacion == 'Municipal') {
+                args = `${args}&clave=${tawn}`;
+                args = `${args}&valorNivel=${statisticalProduct.col_municipal}`;
+            } else if(statisticalProduct.nivel_desagregacion == 'Localidad') {
+                args = `${args}&clave=${locality}`;
+                args = `${args}&valorNivel=${statisticalProduct.col_localidad}`;
+            }
+        }
+        columnsSelected.map((column) => {
+            args = `${args}&idcolumnas=${column.id}`;
+        });
+        getTableData(args, function(data, error) {
+            if(data && data.mensaje != 'Error') {
+                setTableData([...tableData, {title: `${statisticalProduct.nombre} (${statisticalProduct.descripcion})`, type: 'table', data: data.resultado}]);
+                setIsLoading(false);
+            } else {
+                renderModal('La información no está disponible.')
+            }
+        });
+    }
+
+    function applySelectionType(event) {
+        setSelectionType(parseInt(event.target.checked == true ? 1 : 2));
+    }
+
+    function applyAggregation(success) {
+        getEntities(function(data, error) {
+            if(data) {
+                setEntities(data);
+                setTawns(null);
+                setIsLoading(false);
+                success();
+            } else {
+                renderModal(error)
+            }
+        });
+    }
+
     function renderModal(error) {
         if(error) {
             setIsLoading(false);
@@ -199,127 +356,6 @@ export default function estadisticas() {
         handleShow();
     }
 
-    useEffect(() => {
-      fetch(`${process.env.ruta}/wa/publico/obtenerTablas`)
-        .then(res => res.json())
-        .then(
-            (data) => {
-                setStatisticalProducts(data.resultado);
-                setIsLoading(false);
-            }, 
-            (error) => {
-                setErrors({
-                    isStatisticalProductsError: true,
-                    isAggregationLevelsError: errors.isAggregationLevelsError,
-                    isAdvanceFiltersError: errors.isAdvanceFiltersError,
-                    isColumnsError: errors.isColumnsError,
-                    isTableDateError: errors.isTableDateError
-                });
-                setDatosModal({
-                    title: 'Ocurrió un error al obtener la información',
-                    body: `${error}`,
-                    redireccion: null,
-                    nombreBoton: 'Cerrar'
-                });
-                renderModal(error);
-            }
-        )
-    }, []);
-
-    useEffect(() => {
-        setIsLoading(true);
-        getColumns(function(data, error) {
-            restartFilters();
-            if(data) {
-                fetchColumns(data.resultado, function(array) {
-                    setColumns(array);
-                    setIsLoading(false);
-                });
-            } else {
-                renderModal(error)
-            }
-        });
-    }, [statisticalProduct]);
-
-    useEffect(() => {
-        switch(selectionType) {
-            case 1:
-                var array = [];
-                columns.map(item => {
-                    item.checked = true;
-                    array.push(item);
-                });
-                fetchColumns(array, function(columns_) {
-                    var array_ = [];
-                    setColumns(columns_);
-                    columns_.filter(column => column.checked == true).map(filtered => {
-                        array_.push(filtered);
-                    });
-                    setColumnsSelected(array);
-                });
-            break;
-            case 2:
-                var array = [];
-                columns.map(item => {
-                    item.checked = false;
-                    array.push(item);
-                });
-                fetchColumns(array, function(columns_) {
-                    var array_ = [];
-                    setColumns(columns_);
-                    setColumnsSelected([]);
-                });
-            break;
-            case 3:
-                var array = [];
-                columns.map(item => {
-                    item.checked = !item.checked;
-                    array.push(item);
-                });
-                fetchColumns(array, function(columns_) {
-                    var array_ = [];
-                    setColumns(columns_);
-                    var selected = columns_.filter(column => column.checked == true);
-                    if(selected.length > 0) {
-                        selected.map(filtered => {
-                            array_.push(filtered);
-                        });
-                        setColumnsSelected(array_);
-                    } else {
-                        setColumnsSelected([]);
-                    }
-                });
-                setSelectionType(0);
-            break;
-            default:
-            break;
-        }
-    }, [selectionType]);
-
-    useEffect(() => {
-        setIsLoading(true);
-        getTawns(function(data, error) {
-            if(data) {
-                setTawns(data);
-                setIsLoading(false);
-            } else {
-                renderModal(error)
-            }
-        });
-    }, [entity]);
-
-    useEffect(() => {
-        setIsLoading(true);
-        getLocalities(function(data, error) {
-            if(data) {
-                setLocalities(data);
-                setIsLoading(false);
-            } else {
-                renderModal(error)
-            }
-        });
-    }, [tawn]);
-
     function fetchColumns(data, success) {
         var array = [];
         data.map((element, index) => {
@@ -341,10 +377,32 @@ export default function estadisticas() {
             }
         });
     }
+    
+    function minimizaModal(e) {
+        let modalCompleto = $(e.target).closest(".modal")
+        $(modalCompleto).toggleClass("modal-min");
+        if ($(modalCompleto).hasClass("modal-min")) {
+            $(modalCompleto).find(".modal-content").removeClass("modal-redimensionable");
+            $(modalCompleto).find(".modal-header").css("pointer-events", "none")
+        } else {
+            $(modalCompleto).find(".modal-content").addClass("modal-redimensionable");
+            $(modalCompleto).find(".modal-header").css("pointer-events", "initial")
+        }
+    }
+    
+    function DraggableModalDialog(props) {
+        return (
+            <Draggable handle=".modal-header"><ModalDialog  {...props} /></Draggable>
+        )
+    }
 
     function restartFilters() {
         setColumns([]);
         setColumnsSelected([]);
+    }
+
+    function changeMapName(e) {
+        setMapName(e.target.value)
     }
 
     return (
@@ -361,8 +419,29 @@ export default function estadisticas() {
                     onHide={handleClose}
                     onClick={handleClose}
                 />
+                <Modal dialogAs={DraggableModalDialog} show={showTablesModal} backdrop={false} keyboard={false} contentClassName="modal-redimensionable modal-identify"
+                    onHide={() => setShowTablesModal(false)} className="tw-pointer-events-none modal-analisis">
+                    <Modal.Header className="tw-cursor-pointer" closeButton>
+                        <Modal.Title><b>Tabulares</b></Modal.Title>
+                        <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
+                            <FontAwesomeIcon icon={faWindowRestore} />
+                        </button>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div className="row">
+                            <div className="col-12 custom-mx-t-1 custom-h-450 table-responsive">
+                                {
+                                    (tableData && tableData.length > 0) &&
+                                        tableData.map((table, index) => (
+                                            <GenericTable key={index} table={table} index={index}/>
+                                        ))
+                                }
+                            </div>
+                        </div>
+                    </Modal.Body>
+                </Modal>
                 <div className="row">
-                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-mx-t-1">
+                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-mx-t-1 tw-px-0">
                         <div className="row justify-content-center tw-mx-1">
                             <Accordion defaultActiveKey="0" className="w-100">
                                 <Card>
@@ -489,7 +568,7 @@ export default function estadisticas() {
                                                                         </Form.Control>
                                                                     </div>
                                                                     <div className="col-12 tw-mt-2">
-                                                                        <Form.Control as="select" name="localities" disabled={statisticalProduct.nivel_desagregacion != 'Localidad' || isNacional == 0}>
+                                                                        <Form.Control as="select" name="localities" onChange={(event) => setLocality(event.target.value)} disabled={statisticalProduct.nivel_desagregacion != 'Localidad' || isNacional == 0}>
                                                                             <option value="" hidden>Localidad</option>
                                                                             {
                                                                                 localities ? 
@@ -508,9 +587,25 @@ export default function estadisticas() {
                                                         }
                                                         {
                                                             columns.length > 0 &&
-                                                                <div className="col-12 tw-p-0 tw-my-2">
-                                                                    <button className="btn-analisis" onClick={() => addStatiticalProduct()}>Agregar</button>
+                                                            <div className="row">
+                                                                <div className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12 tw-p-0 tw-my-2 text-center">
+                                                                    <OverlayTrigger overlay={<Tooltip>Agregar tabular</Tooltip>}>
+                                                                        <button className="btn-analisis" onClick={() => getStatiticalProductInformation()}>Agregar</button>
+                                                                    </OverlayTrigger>
                                                                 </div>
+                                                                <div className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12 tw-p-0 tw-my-2 text-center">
+                                                                    <OverlayTrigger overlay={<Tooltip>Mostrar tabulares</Tooltip>}>
+                                                                        <button className="btn-analisis" disabled={tableData.length == 0} onClick={() => handleShowTablesModal()}>Tabulares</button>
+                                                                    </OverlayTrigger>
+                                                                </div>
+                                                                <div className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12 tw-p-0 tw-my-2 text-center">
+                                                                    <OverlayTrigger overlay={<Tooltip>Mostrar gr&aacute;ficas</Tooltip>}>
+                                                                        <button className="btn-analisis" disabled={tableData.length == 0}
+                                                                            // onClick={() => getStatiticalProductInformation()}
+                                                                            >Gr&aacute;ficas</button>
+                                                                    </OverlayTrigger>
+                                                                </div>
+                                                            </div>
                                                         }
                                                     </div>
                                                 </div>
@@ -523,13 +618,25 @@ export default function estadisticas() {
                     </div>
                 </div>
                 <div className="row">
-                    <div className="col-12 custom-mx-t-1 custom-h-450 table-responsive">
-                        {
-                            (tableData && tableData.length > 0) &&
-                                tableData.map((table, index) => (
-                                    <GenericTable key={index} table={table}/>
-                                ))
-                        }
+                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-mx-t-1 col-mapa tw-pt-6">
+                        <div className="row">
+                            <div className="col-12 tw-text-center">
+                                <p>
+                                    {mapName}
+                                    <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
+                                        <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setEditMapName(false)} icon={faEdit} />
+                                    </OverlayTrigger>
+                                </p>
+                                <input type="text" hidden={isEditMapName} onChange={(event) => changeMapName(event)} value={mapName}></input>
+                                <OverlayTrigger overlay={<Tooltip>Finalizar edición</Tooltip>}>
+                                    <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" hidden={isEditMapName} onClick={() => setEditMapName(true)} icon={faCheck}></FontAwesomeIcon>
+                                </OverlayTrigger>
+                            </div>
+
+                            <div className="col-12 tw-mt-8">
+                                <ContenedorMapaAnalisis botones={true} />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
