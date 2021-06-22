@@ -1,32 +1,26 @@
-import Head from 'next/head'
 import React, { useState, useEffect, useContext } from 'react'
 
-import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents, GeoJSON, WMSTileLayer } from 'react-leaflet'
+import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents, WMSTileLayer } from 'react-leaflet'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
-import ReactLeafletKml from 'react-leaflet-kml';
 
 const { BaseLayer } = LayersControl;
 import { EditControl } from 'react-leaflet-draw'
 
 import referenciaMapaContext from '../contexts/ContenedorMapaContext'
-import 'leaflet-easyprint'
 
-
-//Si no es necesario cargar los marcadores
-// import "leaflet/dist/leaflet.css"
-//FullScreen
+import 'leaflet'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
-//Leaflet draw
 import 'leaflet-draw/dist/leaflet.draw.css'
-//Leaflet zoomboz
 import 'leaflet-zoombox'
 import 'leaflet-zoombox/L.Control.ZoomBox.css'
-//Leaflet easybutton
 import 'leaflet-easybutton/src/easy-button.css'
 import 'leaflet-easybutton/src/easy-button.js'
+import 'leaflet-kml'
+import 'leaflet-easyprint'
+
 //Funcion del timeline undo redo
 var registraMovimiento = true;
 var _timeline = {
@@ -155,12 +149,6 @@ export default function Map(props) {
 
     //Para guardar el grupo de capas de dibujo
     var capasDib = null;
-
-    const [loadedFiles, setLoadedFiles] = useState([]);
-    useEffect(() => {
-        if (props.fileUpload)
-            setLoadedFiles([...loadedFiles, props.fileUpload]);
-    }, [props.fileUpload]);
 
     //Para guardar las referencias del mapa    
     useEffect(() => {
@@ -422,11 +410,6 @@ export default function Map(props) {
 
     return (
         <>
-            <Head>
-                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-                    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
-            </Head>
-
             <div className="div-herramientas-mapa">
                 <select onChange={(e) => cambiaTipoCoordenada(e)} className="tw-mr-5 select-cambia-coordenadas">
                     <option value='1'>Grados decimales</option>
@@ -452,12 +435,12 @@ export default function Map(props) {
                 <LayersControl>
                     <BaseLayer checked name="INEGI">
                         <WMSTileLayer
-                        url="http://gaiamapas.inegi.org.mx/mdmCache/service/wms?" layers="MapaBaseTopograficov61_consombreado"
+                            url="http://gaiamapas.inegi.org.mx/mdmCache/service/wms?" layers="MapaBaseTopograficov61_consombreado"
                         />
                     </BaseLayer>
                     <BaseLayer name="Open street map">
                         <TileLayer
-                            attribution=''
+                            attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
                     </BaseLayer>
@@ -474,24 +457,7 @@ export default function Map(props) {
                 </FeatureGroup>
                 <Dibujos />
                 <ControlMovimiento />
-                {
-                    loadedFiles.length > 0 && (
-                        loadedFiles.map((file, index) =>
-                            file.type == 'json' ? (
-                                <GeoJSON key={index}
-                                    data={file.data}
-                                />
-                            ) :
-                                file.type == 'kml' ? (
-                                    <ReactLeafletKml key={index}
-                                        kml={new DOMParser().parseFromString(file.data, 'text/xml')} />
-                                ) :
-                                    ''
-                        )
-                    )
-                }
             </MapContainer>
-
         </>
     )
 }
