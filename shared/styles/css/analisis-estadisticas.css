@@ -35,3 +35,25 @@
     height: 150px;
     overflow-y: auto;
 }
+
+.custom-title-table {
+    position: fixed;
+}
+
+#modal-to-add-class .modal-content {
+    width: 650px;
+    height: 550px;
+}
+
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+    background-color: unset;
+    color: black;
+    border-right: unset;
+}
+
+.nav-pills .nav-link {
+    background-color: unset;
+    color: black;
+    border: 1px solid black;
+    border-radius: unset;
+}

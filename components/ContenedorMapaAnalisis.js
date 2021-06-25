@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, Fragment } from 'react';
 import { Controller, useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -7,18 +7,20 @@ import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
 import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 import { CSVLink } from "react-csv";
 import { Typeahead } from 'react-bootstrap-typeahead';
-import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
+
 import * as toPdf from '@react-pdf/renderer';
 import * as htmlToImage from 'html-to-image';
+import * as turf from '@turf/turf';
 
 import $ from 'jquery';
-import * as turf from '@turf/turf';
 import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
 import dynamic from 'next/dynamic';
 import shpjs from 'shpjs';
 import xml2js from 'xml2js'
 import xpath from 'xml2js-xpath'
+// import omnivore from '@mapbox/leaflet-omnivore'
+
 
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
@@ -46,10 +48,11 @@ var referenciaMapa = null;
 function ContenedorMapaAnalisis(props) {
 
     const [polygonDrawer, setPolygonDrawer] = useState();
-
+    const [zIndexCapas, setZIndex] = useState(0)
+    const [numeroIndex, setNumeroIndex] = useState(300);
     //Obten referencia del mapa
     const [capturoReferenciaMapa, setCapturoReferenciaMapa] = useState(false)
-    function capturaReferenciaMapa(mapa) {
+    function capturaReferenciaMapa(mapa, objeto) {
         referenciaMapa = mapa;
         if (referenciaMapa != null) {
             setTimeout(() => {
@@ -58,31 +61,36 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
+    // const [listaMunicipios, setListaMunicipios] = useState([])
+    //Para saber si hubo una conexión con la base de datos
+    const [conexionEndPointGetCapas, setConexionEndPointGetCapas] = useState(false);
     useEffect(() => {
         //Datos para construir el catalogo
-        fetch(`${process.env.ruta}/wa/publico/getMetadatosCapas/`)
-            .then(res => res.json())
-            .then(
-                (data) => {
-                    construyeCatalogoTemas(data);
-                    setArregloMetadatosCapasBackEnd(data)
-                },
-                (error) => console.log(error)
-            )
-
         fetch(`${process.env.ruta}/wa/publico/getCapas/`)
             .then(res => res.json())
             .then(
                 (data) => {
-                    setArregloCapasBackEnd(data)
+                    construyeCatalogoTemas(data);
+                    setConexionEndPointGetCapas(true);
                 },
                 (error) => console.log(error)
             )
+
+        // fetch(`${process.env.ruta}/wa/publico/catMunicipios`)
+        //     .then(res => res.json())
+        //     .then(
+        //         (data) => {
+        //             setListaMunicipios(data);
+        //         },
+        //         (error) => console.log(error)
+        //     )
     }, [])
 
     useEffect(() => {
         if (capturoReferenciaMapa == true) {
             setPolygonDrawer(new L.Draw.Circle(referenciaMapa));
+            //Donde se van a agregar las capas
+            //Cuando se dibuja algo en el mapa
             referenciaMapa.on('draw:created', function (e) {
                 let layerDibujada = e.layer;
                 let puntos = null;
@@ -143,81 +151,140 @@ function ContenedorMapaAnalisis(props) {
 
     //Variables para guardar los datos de las capas, metadatos de la api
     const [arregloCapasBackEnd, setArregloCapasBackEnd] = useState([])
-    //Guarda los metadatos de las capas
-    const [arregloMetadatosCapasBackEnd, setArregloMetadatosCapasBackEnd] = useState([])
     //Para guardar los TEMAS de metadatos
     const [listaMetadatosTemasCapasBackEnd, setListaMetadatosTemasCapasBackEnd] = useState([])
     //Para guardar los SUBTEMAS de metadatos
     const [listaMetadatosSubtemasCapasBackEnd, setListaMetadatosSubtemasCapasBackEnd] = useState([])
     //Para guardar los titulos de los metadatos en busqueda basica
     const [listaMetadatosTitulosCapasBackEnd, setListaMetadatosTitulosCapasBackEnd] = useState([])
-    //Para el resto de los metadatos
-    const [listaMetadatosCapasBackEnd, setListaMetadatosCapasBackEnd] = useState([])
-
-    //Para guardar temporalmente el subtema1
-    const [subtemaUnoTemporal, setSubtemaUnoTemporal] = useState([])
 
     //Para traer los temas de los metadatos de primera instancia, asi como las palabras clave
     function construyeCatalogoTemas(metadatosCapasApi) {
+        setArregloCapasBackEnd(metadatosCapasApi)
         let listaTemas = [];
         let listaPalabras = [];
         metadatosCapasApi.map(value => {
             if (value.tema) {
                 listaTemas.push(value.tema)
             }
-            if (value.palabras_clave) {
-                value.palabras_clave.split(",").map(valuePalabra => {
-                    listaPalabras.push(valuePalabra.trim())
-                })
-            }
         })
         //Guarda los temas que se van a presentar al usuario
         let uniqueTemas = [...new Set(listaTemas)];
-        setListaMetadatosTemasCapasBackEnd(uniqueTemas)
-        //Asigna el primer valor por default de los temas para mostrar los subtemas
-        let listaSubtemas = metadatosCapasApi.filter(metadato => metadato.tema == uniqueTemas[0]).map(metadato => metadato["subtema"]);
-        let uniqueSubtemas = [...new Set(listaSubtemas)]
-        setListaMetadatosSubtemasCapasBackEnd(uniqueSubtemas)
-        //Asigna el primer valor para los titulos
-        setSubtemaUnoTemporal([uniqueSubtemas[0]])
-        //Guarda los metadatos restantes que se mostraran al usuario
-        let uniquePalabras = [...new Set(listaPalabras)];
-        setListaMetadatosCapasBackEnd(uniquePalabras)
-    }
+        let temasConSeleccion = [];
+        uniqueTemas.map((value, index) => {
+            if (index == 0) {
+                temasConSeleccion.push({ titulo: value, seleccionado: true })
+            }
+            else {
+                temasConSeleccion.push({ titulo: value, seleccionado: false })
+            }
+        })
+        setListaMetadatosTemasCapasBackEnd(temasConSeleccion)
 
-    useEffect(() => {
-        if (subtemaUnoTemporal.length != 0 && arregloCapasBackEnd.length != 0) {
-            let listaTitulos = arregloCapasBackEnd.filter(metadato => metadato.subtema == subtemaUnoTemporal[0]);
-            setListaMetadatosTitulosCapasBackEnd(listaTitulos)
-        }
-    }, [subtemaUnoTemporal, arregloCapasBackEnd])
+        //Asigna el primer valor por default de los temas para mostrar los subtemas
+        let listaSubtemas = metadatosCapasApi.filter(metadato => metadato.tema == temasConSeleccion[0].titulo).map(metadato => metadato["subtema"]);
+        let uniqueSubtemas = [...new Set(listaSubtemas)]
+        let subtemasConSeleccion = [];
+        uniqueSubtemas.map((value, index) => {
+            if (index == 0) {
+                subtemasConSeleccion.push({ titulo: value, seleccionado: true })
+            }
+            else {
+                subtemasConSeleccion.push({ titulo: value, seleccionado: false })
+            }
+        })
+        setListaMetadatosSubtemasCapasBackEnd(subtemasConSeleccion)
+        //Asigna el primer valor para los titulos
+        let listaTitulos = metadatosCapasApi.filter(metadato => metadato.subtema == subtemasConSeleccion[0].titulo);
+        setListaMetadatosTitulosCapasBackEnd(listaTitulos)
+    }
 
     //Funcion que construye los subtemas al escoger un tema
     function construyeCatalogoSubtemas(tema) {
+        //Para ocultar los titulos al escoger un tema
         setListaMetadatosTitulosCapasBackEnd([])
-        let listaSubtemas = arregloMetadatosCapasBackEnd.filter(metadato => metadato.tema == tema).map(metadato => metadato["subtema"]);
+        //Para ocultar los botones de como montar la capa
+        setBotonesAgregaCapaIdeWFSWMS([])
+        //Para volver a seleccionar el tema que se ha escogido
+        listaMetadatosTemasCapasBackEnd.map(valor => {
+            if (valor.titulo == tema) {
+                valor.seleccionado = true
+            } else {
+                valor.seleccionado = false
+            }
+        })
+        setListaMetadatosTemasCapasBackEnd(listaMetadatosTemasCapasBackEnd)
+        //Para mostrar los subtemas
+        let listaSubtemas = arregloCapasBackEnd.filter(metadato => metadato.tema == tema).map(metadato => metadato["subtema"]);
         let uniqueSubtemas = [...new Set(listaSubtemas)]
-        setListaMetadatosSubtemasCapasBackEnd(uniqueSubtemas)
+        let subtemasConSeleccion = [];
+        uniqueSubtemas.map((value, index) => {
+            subtemasConSeleccion.push({ titulo: value, seleccionado: false })
+        })
+        setListaMetadatosSubtemasCapasBackEnd(subtemasConSeleccion)
     }
 
     //Función que construye los titulos al escoger un subtema
     function contruyeCatalogoTitulo(subtema) {
+        //Para ocultar los titulos al escoger un subtema
+        setListaMetadatosTitulosCapasBackEnd([])
+        //Para ocultar los botones de como montar la capa
+        setBotonesAgregaCapaIdeWFSWMS([])
+        //Para mostrar los subtemas
+        listaMetadatosSubtemasCapasBackEnd.map(valor => {
+            if (valor.titulo == subtema) {
+                valor.seleccionado = true
+            } else {
+                valor.seleccionado = false
+            }
+        })
+        setListaMetadatosSubtemasCapasBackEnd(listaMetadatosSubtemasCapasBackEnd)
+        //Para mostrar los titulos
         let listaTitulos = arregloCapasBackEnd.filter(metadato => metadato.subtema == subtema);
-        setListaMetadatosTitulosCapasBackEnd(listaTitulos)
+        setTimeout(() => {
+            setListaMetadatosTitulosCapasBackEnd(listaTitulos)
+        }, 500)
+    }
+
+    //Para cuando se requiere que sea nacional
+    const construyeNacionalCapa = (capaFusion) => {
+        let capaNacional = {};
+        capaNacional.titulo = capaFusion.titulo + " - Nacional";
+        capaNacional.url = capaFusion.url;
+        capaNacional.capa = capaFusion.nombre_capa;
+        capaNacional.filtro_entidad = capaFusion.filtro_entidad;
+        capaNacional.tipo = "wfs";
+        capaNacional.wfs = capaFusion.wfs;
+        capaNacional.wms = capaFusion.wms;
+        capaNacional.opcion = 0;
+        capaNacional.estilos = {
+            color: "#0000FF",
+            fillColor: "#7777FF",
+            opacity: "1",
+            fillOpacity: "1"
+        }
+        agregaCapaWFS(capaNacional)
     }
 
     //Para cuando se agrega una entidad
-    const construyeEntidadCapa = (entidad, capaFusionEntidad) => {
+    const construyeEntidadCapa = (capaFusion, entidad) => {
         if (entidad != undefined) {
             let capaEntidad = {};
-            capaEntidad.titulo = "Municipios de " + entidad.entidad;
-            capaEntidad.url = capaFusionEntidad.url;
-            capaEntidad.capa = capaFusionEntidad.nombre_capa;
-            capaEntidad.filtro_entidad = capaFusionEntidad.filtro_entidad;
+            capaEntidad.titulo = capaFusion.titulo + " - " + entidad.entidad;
+            capaEntidad.url = capaFusion.url;
+            capaEntidad.capa = capaFusion.nombre_capa;
+            capaEntidad.filtro_entidad = capaFusion.filtro_entidad;
             capaEntidad.tipo = "wfs";
             capaEntidad.valor_filtro = entidad.id;
-            capaEntidad.wfs = capaFusionEntidad.wfs;
-            capaEntidad.wms = capaFusionEntidad.wms;
+            capaEntidad.wfs = capaFusion.wfs;
+            capaEntidad.wms = capaFusion.wms;
+            capaEntidad.opcion = 5;
+            capaEntidad.estilos = {
+                color: "#FF0000",
+                fillColor: "#FF7777",
+                opacity: "1",
+                fillOpacity: "1"
+            }
             agregaCapaWFS(capaEntidad)
         }
     }
@@ -236,20 +303,24 @@ function ContenedorMapaAnalisis(props) {
     //Para guardar los titulos de los metadatos en busqueda avanzada
     const [listaMetadatosTitulosBusquedaAvanzada, setListaMetadatosTitulosBusquedaAvanzada] = useState([])
     //Para buscar los metadatos de la capa
-    const { register: registraMetadatos, handleSubmit: handleSubmitMetadatos, control } = useForm();
+    const { register: registraMetadatos, handleSubmit: handleSubmitMetadatos } = useForm();
     const busquedaAvanzadaMetadatos = (data) => {
+        setAvisoBusquedaCapasIde("")
         setListaMetadatosTitulosBusquedaAvanzada([])
         let capasId = [];
         let capasArr = [];
-        if (data.palabrasClave) {
-            arregloMetadatosCapasBackEnd.map(value => {
-                value["palabras_clave"].split(",").map(valueKey => {
-                    if (valueKey.trim() == data.palabrasClave) {
-                        capasId.push(value["id_capa"])
-                    }
-                })
-            })
-        }
+        arregloCapasBackEnd.map(value => {
+            if (value["descripcion"].includes(data.palabra)) {
+                capasId.push(value["id_capa"])
+            }
+            if (value["titulo"].includes(data.palabra)) {
+                capasId.push(value["id_capa"])
+            }
+            if (value["palabras_clave"].includes(data.palabra)) {
+                capasId.push(value["id_capa"])
+            }
+        });
+
         if (capasId.length != 0) {
             let unique = [...new Set(capasId)]
             unique.map(value => {
@@ -258,28 +329,41 @@ function ContenedorMapaAnalisis(props) {
             })
             setListaMetadatosTitulosBusquedaAvanzada(capasArr)
         } else {
-            setAvisoBusquedaCapasIde("Selecciona al menos un criterio")
+            setAvisoBusquedaCapasIde("No se encontró una coincidencia con esta palabra")
+        }
+    }
+
+    //Para buscar los metadatos de la capa
+    const { register: registraAgregaCapa, handleSubmit: handleAgregaCapa, control: controlAgregaCapa } = useForm();
+    const submitAgregaCapa = (data) => {
+        let capa = JSON.parse(data.capa);
+        if (capa.filtro_minimo == "0") {
+            if (data.entidadAgregar.length != 0) {
+                construyeEntidadCapa(capa, data.entidadAgregar[0])
+            } else {
+                construyeNacionalCapa(capa)
+            }
+        } else if (capa.filtro_minimo == "5") {
+            if (data.entidadAgregar.length != 0) {
+                construyeEntidadCapa(capa, data.entidadAgregar[0])
+            } else {
+                console.log("se debe agregar una capa");
+            }
         }
     }
 
     //Muestra los botones de mosaico o elementos
     const [botonesAgregaCapaIdeWFSWMS, setBotonesAgregaCapaIdeWFSWMS] = useState([false, null])
-    //Checa si se tienen que mostrar los botnes de mosaico o elementos o no
-    const agregaCapaBusquedaIde = (capaIde) => {
+    //Checa si se tienen que mostrar los botones de mosaico o elementos o no
+    const agregaCapaBusquedaIde = (e) => {
+        let capaIde = JSON.parse(e.target.value)
         setBotonesAgregaCapaIdeWFSWMS([])
-        setMunicipiosMostrarListado(false)
-        if (capaIde != undefined) {
-            if (capaIde.id_capa == "3") {
-                setBotonesAgregaCapaIdeWFSWMS([true, capaIde])
-            } else {
-                agregaCapaWMS(capaIde, 0)
-            }
-        }
+        setBotonesAgregaCapaIdeWFSWMS([true, capaIde])
     }
 
     //Para crear la simbologia de las capas WMS
-    const creaSVG = (nombreCapa) => {
-        var creaSVG = `<svg height='20' xmlns='http://www.w3.org/2000/svg'><rect x='0' y='0' width='15' height='15' fill='#FF7777' stroke='#FF0000' strokeWidth='2'></rect><text x='20' y='15' width='200' height='200' fontSize='12.5' fontWeight='500' font-family='Montserrat, sans-serif'>${nombreCapa}</text></svg>`
+    const creaSVG = (nombreCapa, estilos) => {
+        var creaSVG = `<svg height='20' xmlns='http://www.w3.org/2000/svg'><rect x='0' y='0' width='15' height='15' fill='${estilos.fillColor}' stroke='${estilos.color}' strokeWidth='2'></rect><text x='20' y='15' width='200' height='200' fontSize='12.5' fontWeight='500' font-family='Montserrat, sans-serif'>${nombreCapa}</text></svg>`
         var DOMURL = self.URL || self.webkitURL || self;
         var svg = new Blob([creaSVG], { type: "image/svg+xml;charset=utf-8" });
         var url = DOMURL.createObjectURL(svg);
@@ -288,13 +372,6 @@ function ContenedorMapaAnalisis(props) {
 
     //Para guardar las capas que se van a mostrar
     const [capasVisualizadas, setCapasVisualizadas] = useState([]);
-    //Estilos de los geojson (wfs)
-    const estilos = {
-        color: "#FF0000",
-        fillColor: "#FF7777",
-        opacity: "1",
-        fillOpacity: "1"
-    }
     //Para guardar los rasgos
     const [rasgos, setRasgos] = useState([])
 
@@ -352,7 +429,6 @@ function ContenedorMapaAnalisis(props) {
             capaWMS["transparencia"] = 1;
             capaWMS["zoomMinimo"] = 5;
             capaWMS["zoomMaximo"] = 18;
-            capaWMS.isActive = false;
             //fuente = 0, proviene de la IDE
             //fuente = 1, proviene de un servicio
             if (fuente == 0) {
@@ -375,6 +451,9 @@ function ContenedorMapaAnalisis(props) {
                 capaWMS["nom_capa"] = capa[0].Title[0];
                 capaWMS['simbologia'] = capa[0].Style[0]["LegendURL"][0]["OnlineResource"][0]["$"]["xlink:href"];
             }
+            setZIndex(zIndexCapas + 1)
+            referenciaMapa.createPane(`${zIndexCapas}`)
+            referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
             let layer = L.tileLayer.wms(capaWMS.url, {
                 layers: capaWMS.layers,
                 format: capaWMS.format,
@@ -383,11 +462,12 @@ function ContenedorMapaAnalisis(props) {
                 opacity: capaWMS.transparencia,
                 minZoom: capaWMS.zoomMinimo,
                 maxZoom: capaWMS.zoomMaximo,
-
+                pane: `${zIndexCapas}`
             })
             capaWMS["layer"] = layer;
             referenciaMapa.addLayer(capaWMS.layer)
-            setCapasVisualizadas([...capasVisualizadas, capaWMS]);
+            // setCapasVisualizadas([...capasVisualizadas, capaWMS]);
+            setCapasVisualizadas([capaWMS, ...capasVisualizadas]);
             setDatosModalAnalisis({
                 title: "Capa agregada",
                 body: "La capa se ha agregado con exito"
@@ -396,12 +476,10 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
-    //Para mostrar el catalogo entidades
-    const [municipiosMostrarListado, setMunicipiosMostrarListado] = useState(false)
 
-    const agregaCapaWFS = (capaEntidad) => {
+    const agregaCapaWFS = (capaFiltrada) => {
         setShowModalAgregarCapas(false);
-        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === capaEntidad.titulo)) {
+        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === capaFiltrada.titulo)) {
             setDatosModalAnalisis({
                 title: "Capa existente",
                 body: "La capa ya se ha agregado anteriormente"
@@ -410,34 +488,42 @@ function ContenedorMapaAnalisis(props) {
             return;
         }
         else {
-            const owsrootUrl = capaEntidad.url;
-            const defaultParameters = {
+            let defaultParameters = {
                 service: 'WFS',
                 version: '2.0',
                 request: 'GetFeature',
-                typeName: capaEntidad.capa,
+                typeName: capaFiltrada.capa,
                 outputFormat: 'text/javascript',
                 format_options: 'callback:getJson',
-                cql_filter: capaEntidad.filtro_entidad + "=" + "'" + capaEntidad.valor_filtro + "'"
-            };
+            }
+            if (capaFiltrada.opcion == "0") {
+                //La agregará como nacional
+            } else if (capaFiltrada.opcion == "5") {
+                //La agregara como municipio
+                defaultParameters.cql_filter = capaFiltrada.filtro_entidad + "=" + "'" + capaFiltrada.valor_filtro + "'";
+            }
             var parameters = L.Util.extend(defaultParameters);
-            var url = owsrootUrl + L.Util.getParamString(parameters);
+            var url = capaFiltrada.url + L.Util.getParamString(parameters);
             //Hace la petición para traer los datos de la entidad
             $.ajax({
                 jsonpCallback: 'getJson',
                 url: url,
                 dataType: 'jsonp',
                 success: function (response) {
-                    response["nom_capa"] = capaEntidad.titulo;
+                    response["nom_capa"] = capaFiltrada.titulo;
                     response["habilitado"] = true;
-                    response['tipo'] = capaEntidad.tipo;
+                    response['tipo'] = capaFiltrada.tipo;
                     response['transparencia'] = 1;
-                    response['simbologia'] = creaSVG(capaEntidad.titulo)
+                    response['simbologia'] = creaSVG(capaFiltrada.titulo, capaFiltrada.estilos)
                     response.download = [{ nom_capa: response.nom_capa, link: JSON.stringify(response), tipo: 'GeoJSON' }];
-                    response.cveEnt = capaEntidad.valor_filtro;
+                    // response.cveEnt = capaFiltrada.valor_filtro;
                     response.isActive = false;
+                    setZIndex(zIndexCapas + 1)
+                    referenciaMapa.createPane(`${zIndexCapas}`)
+                    referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
                     let layer = L.geoJSON(response, {
-                        style: estilos,
+                        pane: `${zIndexCapas}`,
+                        style: capaFiltrada.estilos,
                         nombre: response["nom_capa"],
                         onEachFeature: function (feature = {}, layerPadre) {
                             layerPadre.on('click', function () {
@@ -446,8 +532,10 @@ function ContenedorMapaAnalisis(props) {
                             })
                         }
                     });
+                    console.log(layer, "layer wfs")
                     response['layer'] = layer;
-                    setCapasVisualizadas([...capasVisualizadas, response])
+                    // setCapasVisualizadas([...capasVisualizadas, response])
+                    setCapasVisualizadas([response, ...capasVisualizadas])
                     referenciaMapa.addLayer(response.layer);
                     setDatosModalAnalisis({
                         title: "Capa agregada",
@@ -473,7 +561,14 @@ function ContenedorMapaAnalisis(props) {
     const eliminaCapa = (capa) => {
         referenciaMapa.removeLayer(capa.layer)
         let arrTemp = capasVisualizadas.filter(capaArr => capaArr.nom_capa != capa.nom_capa)
+        //Para reordenar el z index de las capas
+        arrTemp.map((valor, index) => {
+            referenciaMapa.getPane(valor.layer.options.pane).style.zIndex = numeroIndex + arrTemp.length - index - 1;;
+        })
         setCapasVisualizadas(arrTemp);
+
+        let paneRemove = referenciaMapa.getPane(capa.layer.options.pane)
+        paneRemove.remove();
     }
 
     //Funcion para cambiar el estado del checkbox
@@ -508,7 +603,7 @@ function ContenedorMapaAnalisis(props) {
             //Si es igual a la entidad que se envia, se cambia la transparencia
             if (valor.nom_capa == target.name) {
                 valor.transparencia = target.value;
-                if (valor.tipo == "wfs") {
+                if (valor.tipo == "wfs" || valor.tipo == "kml" || valor.tipo == 'json') {
                     valor.layer.setStyle({ opacity: valor.transparencia, fillOpacity: valor.transparencia })
                 }
                 else if (valor.tipo == "wms") {
@@ -562,6 +657,12 @@ function ContenedorMapaAnalisis(props) {
         let [reorderedItem] = items.splice(result.source.index, 1)
         // Se usa destination.index para agregar ese valor a su nuevo destino
         items.splice(result.destination.index, 0, reorderedItem)
+
+        //Para reordenar el z index de las capas
+        items.map((valor, index) => {
+            referenciaMapa.getPane(valor.layer.options.pane).style.zIndex = numeroIndex + items.length - index - 1;
+        })
+
         // Actualizamos datos entidades
         setCapasVisualizadas(items)
     }
@@ -716,8 +817,107 @@ function ContenedorMapaAnalisis(props) {
     const [identifyOption, setIdentifyOption] = useState();
     const [pdfContent, setPdfcontent] = useState();
 
+    //Para agregar capas json al mapa cuando se sube un archivo
+    const agregaFileJsonCapa = (capaFile, nombreFile) => {
+        let nombreTemp = nombreFile.split(".")[0] + ` - ${(nombreFile.split(".")[1]).toUpperCase()} Cargada`;
+        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === nombreTemp)) {
+            setDatosModalAnalisis({
+                title: "Capa existente",
+                body: "La capa ya se ha agregado anteriormente"
+            });
+            setShowModalAnalisis(true);
+            return;
+        } else {
+            let capaJson = {}
+            capaJson["nom_capa"] = nombreTemp;
+            capaJson["habilitado"] = true;
+            capaJson['tipo'] = "json";
+            capaJson['transparencia'] = 1;
+            capaJson.estilos = {
+                color: "#FFFFFF",
+                fillColor: "#000000",
+                opacity: "1",
+                fillOpacity: "1"
+            }
+            capaJson['simbologia'] = creaSVG(nombreFile.split(".")[0], capaJson.estilos)
+            // capaJson.isActive = false;
+            capaJson["features"] = capaFile.features;
+            setZIndex(zIndexCapas + 1)
+            referenciaMapa.createPane(`${zIndexCapas}`)
+            referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
+            let layer = L.geoJSON(capaFile, {
+                pane: `${zIndexCapas}`,
+                style: capaJson.estilos,
+                nombre: capaJson["nom_capa"],
+                interactive: false,
+                // onEachFeature: function (feature = {}, layerPadre) {
+                //     layerPadre.on('click', function () {
+                //         feature.properties["nombre_capa"] = layerPadre.options["nombre"];
+                //         setRasgos([feature.properties]);
+                //     })
+                // }
+            });
+            capaJson['layer'] = layer;
+            setCapasVisualizadas([capaJson, ...capasVisualizadas])
+            referenciaMapa.addLayer(layer);
+            setDatosModalAnalisis({
+                title: "Capa agregada",
+                body: "La capa se ha agregado con exito"
+            });
+            setShowModalAnalisis(true);
+        }
+    }
+
+    //Cuando se agrega una capa kml o kmz cuando se sube un archivo
+    const agregaFileKML = (capa, nombreFile) => {
+        let nombreTemp = nombreFile.split(".")[0] + ` - ${(nombreFile.split(".")[1]).toUpperCase()} Cargada`;
+        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === nombreTemp)) {
+            setDatosModalAnalisis({
+                title: "Capa existente",
+                body: "La capa ya se ha agregado anteriormente"
+            });
+            setShowModalAnalisis(true);
+            return;
+        } else {
+            let capaKml = {};
+            capaKml["nom_capa"] = nombreTemp;
+            capaKml["habilitado"] = true;
+            capaKml['transparencia'] = 1;
+            capaKml['tipo'] = "kml";
+            capaKml.estilos = {
+                color: "#00FFFF",
+                fillColor: "#007777",
+                opacity: "1",
+                fillOpacity: "1",
+            }
+            capaKml['simbologia'] = creaSVG(nombreFile.split(".")[0], capaKml.estilos)
+            setZIndex(zIndexCapas + 1)
+            referenciaMapa.createPane(`${zIndexCapas}`)
+            referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
+            /* Si se usa KML */
+            let parser = new DOMParser();
+            let kml = parser.parseFromString(capa, 'text/xml');
+            let layer = new L.KML(kml);
+            layer.setStyle({ pane: `${zIndexCapas}`, ...capaKml.estilos, interactive: false })
+            //Para poder borrar el pane
+            layer.options = { pane: `${zIndexCapas}` }
+            /* Si se usa omnivore */
+            // let customLayer = L.geoJson(null, { pane: `${zIndexCapas}` });
+            // let conpane = omnivore.kml.parse(capa, null, customLayer)
+            /***************************/
+            capaKml['layer'] = layer;
+
+            setCapasVisualizadas([capaKml, ...capasVisualizadas])
+            referenciaMapa.addLayer(layer)
+            setDatosModalAnalisis({
+                title: "Capa agregada",
+                body: "La capa se ha agregado con exito"
+            });
+            setShowModalAnalisis(true);
+        }
+    }
+
     //Para subir archivos
-    const [fileUpload, setFileUpload] = useState();
     function processInputFile(event) {
         var fileType = event.target.files[0].name;
         fileType = fileType.substring(fileType.indexOf('.') + 1);
@@ -726,14 +926,16 @@ function ContenedorMapaAnalisis(props) {
                 var fileReader = new FileReader();
                 fileReader.readAsText(event.target.files[0], "UTF-8");
                 fileReader.onload = loaded => {
-                    setFileUpload({ data: JSON.parse(loaded.target.result), type: fileType });
+                    // setFileUpload({ data: JSON.parse(loaded.target.result), type: fileType });
+                    agregaFileJsonCapa(JSON.parse(loaded.target.result), event.target.files[0].name)
                 };
                 break;
             case 'kml':
                 var fileReader = new FileReader();
                 fileReader.readAsText(event.target.files[0], "UTF-8");
                 fileReader.onload = loaded => {
-                    setFileUpload({ data: loaded.target.result, type: fileType });
+                    // setFileUpload({ data: loaded.target.result, type: fileType });
+                    agregaFileKML(loaded.target.result, event.target.files[0].name)
                 };
                 break;
             case 'kmz':
@@ -746,7 +948,8 @@ function ContenedorMapaAnalisis(props) {
                         Object.keys(unzippedFiles.files).map(key => {
                             if (key.includes('kml')) {
                                 unzippedFiles.files[key].async("string").then(content => {
-                                    setFileUpload({ data: content, type: 'kml' });
+                                    // setFileUpload({ data: content, type: 'kml' });
+                                    agregaFileKML(content, event.target.files[0].name)
                                 })
                             }
                         })
@@ -758,7 +961,8 @@ function ContenedorMapaAnalisis(props) {
                 fileReader.readAsArrayBuffer(event.target.files[0]);
                 fileReader.onload = loaded => {
                     shpjs(loaded.currentTarget.result).then(function (result) {
-                        setFileUpload({ data: result, type: 'json' });
+                        // setFileUpload({ data: result, type: 'json' });
+                        agregaFileJsonCapa(result, event.target.files[0].name);
                     });
                 };
                 break;
@@ -770,7 +974,6 @@ function ContenedorMapaAnalisis(props) {
                 setShowModalAnalisis(true)
                 break;
         }
-        // event.target.value = "";
     }
 
     useEffect(() => {
@@ -809,18 +1012,18 @@ function ContenedorMapaAnalisis(props) {
         switch (parseInt(identifyOption)) {
             case 1:
                 setSelectedToIdentify(savedToIdentify);
-                prepareDataToExport(savedToIdentify, function(data) {
+                prepareDataToExport(savedToIdentify, function (data) {
                     addToExportWithPivot(data);
                     // generatePdf(savedToIdentify.length, function() {
                     //     console.log('pdfOk!!!');
                     //     console.log('pdfDocument!!!', pdfDocument);
                     // });
                 });
-            break;
+                break;
             case 2:
                 getTopLayer(function (index) {
                     setSelectedToIdentify([savedToIdentify[index]]);
-                    prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function(data) {
+                    prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function (data) {
                         addToExportWithPivot(data);
                         // generatePdf(1, function() {
                         //     console.log('pdfOk!!!');
@@ -832,7 +1035,7 @@ function ContenedorMapaAnalisis(props) {
             case 3:
                 includeActiveLayer(function (index, isActive) {
                     setSelectedToIdentify(isActive == true ? [savedToIdentify[index]] : []);
-                    prepareDataToExport(isActive == true ? [savedToIdentify[index]] : [], function(data) {
+                    prepareDataToExport(isActive == true ? [savedToIdentify[index]] : [], function (data) {
                         addToExportWithPivot(data);
                         // generatePdf(1, function() {
                         //     console.log('pdfOk!!!');
@@ -910,19 +1113,19 @@ function ContenedorMapaAnalisis(props) {
         var nodeMap = document.getElementById('id-export-Map');
         htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
             setTimeout(() => {
-                generateTables(length, function(tables) {
+                generateTables(length, function (tables) {
                     setPdfDocument(//TODO revisar los errores del catch
-                        <toPdf.Document> 
+                        <toPdf.Document>
                             <toPdf.Page size="A4" style={styles.page} wrap>
                                 <toPdf.View style={styles.section}>
                                     <toPdf.Text>MAPA</toPdf.Text>
-                                    <toPdf.Image src={dataUrlMap}/>
+                                    <toPdf.Image src={dataUrlMap} />
                                 </toPdf.View>
                                 <toPdf.View style={styles.section}>
                                     <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
                                     {
                                         tables.map((table) => {
-                                            <toPdf.Image src={table}/>
+                                            <toPdf.Image src={table} />
                                         })
                                     }
                                 </toPdf.View>
@@ -944,7 +1147,7 @@ function ContenedorMapaAnalisis(props) {
 
     function generateTables(length, success) {
         var tables = [];
-        for(var index = 0; index < length; index ++) {
+        for (var index = 0; index < length; index++) {
             var nodeTables = document.getElementById(`identify-table-${index}`);
             htmlToImage.toPng(nodeTables).then(function (dataUrlTables) {
                 var img = new Image();
@@ -1096,114 +1299,119 @@ function ContenedorMapaAnalisis(props) {
                 <Modal.Body>
                     <Tabs defaultActiveKey="sedatu">
                         <Tab eventKey="sedatu" title="Capa">
-                            <Button key="6" variant="link" onClick={cambiaBusquedaAvanzada}>{busquedaAvanzada == false ? "Búsqueda avanzada" : "Búsqueda básica"}</Button>
                             {
-                                busquedaAvanzada == false ? (
-                                    <>
-                                        <p className="tw-mt-4"><b>Escoge un tema</b></p>
-                                        <div className="tw-flex tw-flex-wrap tw-justify-around">
+                                [
+                                    conexionEndPointGetCapas == true ? (
+                                        <Fragment key="1">
+                                            <Button variant="link" onClick={cambiaBusquedaAvanzada}>{busquedaAvanzada == false ? "Búsqueda avanzada" : "Búsqueda básica"}</Button>
                                             {
-                                                listaMetadatosTemasCapasBackEnd.map((value, index) => (
-                                                    <Button className="tw-mb-4" variant="light" key={index} onClick={() => construyeCatalogoSubtemas(value)}>{value}</Button>
-                                                ))
-                                            }
-                                        </div>
-                                        <p><b>Escoge un subtema</b></p>
-                                        <div className="row">
-                                            <div className="col-6">
-                                                {
-                                                    listaMetadatosSubtemasCapasBackEnd.map((value, index) => (
-                                                        <Button className="tw-block tw-mb-4" variant="light" key={index} onClick={() => contruyeCatalogoTitulo(value)}>{value}</Button>
-                                                    ))
-                                                }
-                                            </div>
-                                            {
-                                                listaMetadatosTitulosCapasBackEnd.length != 0 && (
-                                                    <div className="col-6">
-                                                        <Typeahead
-                                                            id="agregaCapaBusquedaIdeBusquedaAvanzada"
-                                                            labelKey={"titulo"}
-                                                            options={listaMetadatosTitulosCapasBackEnd}
-                                                            placeholder="Selecciona una capa"
-                                                            onChange={(capaBuscada) => agregaCapaBusquedaIde(capaBuscada[0])}
-                                                            defaultValue=""
-                                                            clearButton
-                                                            paginationText="Desplegar más resultados"
-                                                            emptyLabel="No se encontraron resultados"
-                                                        />
-                                                    </div>
+                                                busquedaAvanzada == false ? (
+                                                    <>
+                                                        <p className="tw-mt-4"><b>Escoge un tema</b></p>
+                                                        <div className="tw-flex tw-flex-wrap tw-justify-around">
+                                                            {
+                                                                listaMetadatosTemasCapasBackEnd.map((value, index) => (
+                                                                    value.seleccionado ?
+                                                                        <Button className="tw-mb-4 tw-border tw-border-black" variant="light" key={index} onClick={() => construyeCatalogoSubtemas(value.titulo)}>{value.titulo}</Button>
+                                                                        :
+                                                                        <Button className="tw-mb-4" variant="light" key={index} onClick={() => construyeCatalogoSubtemas(value.titulo)}>{value.titulo}</Button>
+                                                                ))
+                                                            }
+                                                        </div>
+                                                        <p><b>Escoge un subtema</b></p>
+                                                        <div className="row">
+                                                            <div className="col-6">
+                                                                {
+                                                                    listaMetadatosSubtemasCapasBackEnd.map((value, index) => (
+                                                                        value.seleccionado ?
+                                                                            <Button className="tw-block tw-mb-4 tw-border tw-border-black" variant="light" key={index} onClick={() => contruyeCatalogoTitulo(value.titulo)}>{value.titulo}</Button>
+                                                                            :
+                                                                            <Button className="tw-block tw-mb-4" variant="light" key={index} onClick={() => contruyeCatalogoTitulo(value.titulo)}>{value.titulo}</Button>
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                            {
+                                                                listaMetadatosTitulosCapasBackEnd.length != 0 && (
+                                                                    <div className="col-6">
+                                                                        <Form>
+                                                                            <Form.Group controlId="lista-capas">
+                                                                                <Form.Label>Selecciona una capa</Form.Label>
+                                                                                <Form.Control custom as="select" htmlSize={listaMetadatosTitulosCapasBackEnd.length + 1} onChange={(e) => agregaCapaBusquedaIde(e)}>
+                                                                                    {
+                                                                                        listaMetadatosTitulosCapasBackEnd.map((valor, index) => (
+                                                                                            <option key={index} value={JSON.stringify(valor)}>{valor.titulo}</option>
+                                                                                        ))
+                                                                                    }
+                                                                                </Form.Control>
+                                                                            </Form.Group>
+                                                                        </Form>
+                                                                    </div>
+                                                                )
+                                                            }
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Form className="tw-mt-4 tw-mb-4" onSubmit={handleSubmitMetadatos(busquedaAvanzadaMetadatos)}>
+                                                            <Form.Group controlId="palabra">
+                                                                <Form.Label>Escribe la palabra a buscar</Form.Label>
+                                                                <Form.Control type="text" name="palabra" required ref={registraMetadatos} />
+                                                            </Form.Group>
+                                                            <button className="btn-analisis" type="submit">BUSCAR</button>
+                                                        </Form>
+                                                        {
+                                                            [
+                                                                avisoBusquedaCapasIde && (
+                                                                    <p key="1">{avisoBusquedaCapasIde}</p>
+                                                                ),
+                                                                listaMetadatosTitulosBusquedaAvanzada.length != 0 && (
+                                                                    <Form key="2">
+                                                                        <Form.Group controlId="lista-capas-metadatos">
+                                                                            <Form.Label>Selecciona una capa</Form.Label>
+                                                                            <Form.Control as="select" htmlSize={listaMetadatosTitulosBusquedaAvanzada.length + 1} custom onChange={(e) => agregaCapaBusquedaIde(e)}>
+                                                                                {
+                                                                                    listaMetadatosTitulosBusquedaAvanzada.map((valor, index) => (
+                                                                                        <option key={index} value={JSON.stringify(valor)}>{valor.titulo}</option>
+                                                                                    ))
+                                                                                }
+                                                                            </Form.Control>
+                                                                        </Form.Group>
+                                                                    </Form>
+                                                                )
+                                                            ]
+                                                        }
+                                                    </>
                                                 )
                                             }
-                                        </div>
-
-                                    </>
-                                ) : (
-                                    <>
-                                        <Form className="tw-mt-4 tw-mb-4" onSubmit={handleSubmitMetadatos(busquedaAvanzadaMetadatos)}>
+                                        </Fragment>
+                                    ) : (
+                                        <p key="2" className="tw-mt-4">Ha ocurrido un error, intente más tarde.</p>
+                                    ),
+                                    botonesAgregaCapaIdeWFSWMS[0] == true &&
+                                    (
+                                        <Form key="3" className="tw-mt-4" onSubmit={handleAgregaCapa(submitAgregaCapa)}>
+                                            <p>Selecciona como quieres agregar esta capa</p>
+                                            <input type="hidden" value={JSON.stringify(botonesAgregaCapaIdeWFSWMS[1])} name="capa" ref={registraAgregaCapa}></input>
                                             <Controller
                                                 as={Typeahead}
-                                                control={control}
-                                                options={listaMetadatosCapasBackEnd}
-                                                id="palabrasClave"
-                                                name="palabrasClave"
+                                                control={controlAgregaCapa}
+                                                options={catalogoEntidades}
+                                                labelKey="entidad"
+                                                id="entidadesListado"
+                                                name="entidadAgregar"
                                                 defaultValue=""
-                                                placeholder="Escoge o escribe una palabra clave"
+                                                placeholder="Selecciona una entidad"
                                                 clearButton
                                                 emptyLabel="No se encontraron resultados"
                                                 className="tw-mb-4"
                                             />
-                                            <button className="btn-analisis" type="submit">BUSCAR</button>
+                                            <div className="tw-flex tw-flex-wrap tw-justify-around tw-mb-4">
+                                                <Button variant="light" type="button" onClick={() => agregaCapaWMS(botonesAgregaCapaIdeWFSWMS[1], 0)}>Mosaico</Button>
+                                                <Button variant="light" type="submit">Elementos</Button>
+                                            </div>
                                         </Form>
-                                        {
-                                            [
-                                                avisoBusquedaCapasIde && (
-                                                    <p key="1">{avisoBusquedaCapasIde}</p>
-                                                ),
-                                                listaMetadatosTitulosBusquedaAvanzada.length != 0 && (
-                                                    <Typeahead
-                                                        key="2"
-                                                        id="agregaCapaBusquedaIdeBusquedaAvanzada"
-                                                        labelKey={"titulo"}
-                                                        options={listaMetadatosTitulosBusquedaAvanzada}
-                                                        placeholder="Selecciona una capa"
-                                                        onChange={(capaBuscada) => agregaCapaBusquedaIde(capaBuscada[0])}
-                                                        defaultValue=""
-                                                        clearButton
-                                                        paginationText="Desplegar más resultados"
-                                                        emptyLabel="No se encontraron resultados"
-                                                    />
-                                                )
-                                            ]
-                                        }
-                                    </>
-                                )
-                            }
-                            {
-                                botonesAgregaCapaIdeWFSWMS[0] == true &&
-                                (
-                                    <div className="tw-mt-4">
-                                        <p>Selecciona como quieres agregar esta capa</p>
-                                        <div className="d-flex tw-justify-around tw-mb-4">
-                                            <Button variant="light" onClick={() => agregaCapaWMS(botonesAgregaCapaIdeWFSWMS[1], 0)}>Mosaico</Button>
-                                            <Button variant="light" onClick={() => setMunicipiosMostrarListado(true)}>Elementos</Button>
-                                        </div>
-                                        {
-                                            municipiosMostrarListado &&
-                                            < Typeahead
-                                                id="municipiosMostrarListado"
-                                                labelKey={"entidad"}
-                                                options={catalogoEntidades}
-                                                placeholder="Selecciona una entidad"
-                                                onChange={(entidad) => construyeEntidadCapa(entidad[0], botonesAgregaCapaIdeWFSWMS[1])}
-                                                defaultValue=""
-                                                clearButton
-                                                paginationText="Desplegar más resultados"
-                                                emptyLabel="No se encontraron resultados"
-                                            />
-
-                                        }
-                                    </div>
-                                )
+                                    )
+                                ]
                             }
                         </Tab>
                         <Tab eventKey="servicios" title="Servicio">
@@ -1312,7 +1520,7 @@ function ContenedorMapaAnalisis(props) {
                         </Tab>
                     </Tabs>
                 </Modal.Body>
-            </Modal>
+            </Modal >
 
             <Modal dialogAs={DraggableModalDialog} show={showModalSimbologia} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
                 onHide={() => setShowModalSimbologia(!showModalSimbologia)} className="tw-pointer-events-none modal-analisis">
@@ -1329,7 +1537,13 @@ function ContenedorMapaAnalisis(props) {
                             capa.habilitado && (
                                 <div key={index}>
                                     <p><b>{capa.nom_capa}</b></p>
-                                    <img src={capa.simbologia}></img>
+                                    {
+                                        capa.tipo == "wms" ? (
+                                            <img src={capa.simbologia}></img>
+                                        ) : (
+                                            <img className="w-100" src={capa.simbologia}></img>
+                                        )
+                                    }
                                     <br></br>
                                     <br></br>
                                 </div>
@@ -1348,34 +1562,39 @@ function ContenedorMapaAnalisis(props) {
                     </button>
                 </Modal.Header>
                 <Modal.Body className="tw-overflow-y-auto">
-                    <Table striped bordered hover responsive>
-                        <thead>
-                            <tr className="tw-text-center">
-                                <th colSpan="5">{atributos.length != 0 && atributos[1]}</th>
-                            </tr>
-                            <tr>
-                                <th>fid</th>
-                                <th>CVEGEO</th>
-                                <th>CVE_ENT</th>
-                                <th>CVE_MUN</th>
-                                <th>NOMGEO</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {
-                                atributos.length != 0 &&
-                                atributos[0].map((value, index) => (
-                                    <tr key={index}>
-                                        <td>{value.properties.fid}</td>
-                                        <td>{value.properties.CVEGEO}</td>
-                                        <td>{value.properties.CVE_ENT}</td>
-                                        <td>{value.properties.CVE_MUN}</td>
-                                        <td>{value.properties.NOMGEO}</td>
+                    {
+                        atributos.length != 0 && (
+                            <Table striped bordered hover responsive>
+                                <thead>
+                                    <tr className="tw-text-center">
+                                        <th colSpan={Object.keys(atributos[0][0].properties).length}>{atributos[1]}</th>
                                     </tr>
-                                ))
-                            }
-                        </tbody>
-                    </Table>
+                                    <tr>
+                                        {
+                                            Object.keys(atributos[0][0].properties).map((valueKey, indexKey) => (
+                                                <th key={indexKey}>{valueKey}</th>
+                                            ))
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {
+                                        atributos[0].map((value, index) => (
+                                            <tr key={index}>
+                                                {
+                                                    Object.keys(value.properties).map((valueKey, indexKey) => {
+                                                        return (
+                                                            <td key={indexKey}>{value.properties[valueKey]}</td>
+                                                        )
+                                                    })
+                                                }
+                                            </tr>
+                                        ))
+                                    }
+                                </tbody>
+                            </Table>
+                        )
+                    }
                 </Modal.Body>
             </Modal>
 
@@ -1420,8 +1639,7 @@ function ContenedorMapaAnalisis(props) {
                                                         {
                                                             Object.keys(selected.features[0]).map((header, index_) => (
                                                                 <th key={index_}>{header}</th>
-                                                            )
-                                                            )
+                                                            ))
                                                         }
                                                     </tr>
                                                 </thead>
@@ -1432,8 +1650,7 @@ function ContenedorMapaAnalisis(props) {
                                                                 {
                                                                     Object.keys(selected.features[0]).map((header_, index___) => (
                                                                         <td key={index___}>{content[header_]}</td>
-                                                                    )
-                                                                    )
+                                                                    ))
                                                                 }
                                                             </tr>
                                                         )
@@ -1562,16 +1779,21 @@ function ContenedorMapaAnalisis(props) {
                                                                 <Form.Group>
                                                                     <Form.Check type="checkbox" inline defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event)} value={capa.nom_capa} />
                                                                 </Form.Group>
-                                                                <OverlayTrigger overlay={<Tooltip>Establecer como activa</Tooltip>}>
-                                                                    <Button onClick={() => enableLayer(index)} variant="link">
-                                                                        <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
-                                                                    </Button>
-                                                                </OverlayTrigger>
                                                                 {
-                                                                    capa.tipo === "wfs" &&
-                                                                    <Button onClick={() => muestraAtributos(capa)} variant="link">
-                                                                        <FontAwesomeIcon icon={faTable} />
-                                                                    </Button>
+                                                                    [
+                                                                        capa.isActive != undefined && (
+                                                                            <OverlayTrigger key="1" overlay={<Tooltip>Establecer como activa</Tooltip>}>
+                                                                                <Button onClick={() => enableLayer(index)} variant="link">
+                                                                                    <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
+                                                                                </Button>
+                                                                            </OverlayTrigger>
+                                                                        ),
+                                                                        capa.tipo === "wfs" && (
+                                                                            <Button key="2" onClick={() => muestraAtributos(capa)} variant="link">
+                                                                                <FontAwesomeIcon icon={faTable} />
+                                                                            </Button>
+                                                                        )
+                                                                    ]
                                                                 }
                                                                 <Button onClick={() => eliminaCapa(capa)} variant="link">
                                                                     <FontAwesomeIcon icon={faTrash} />
@@ -1632,7 +1854,7 @@ function ContenedorMapaAnalisis(props) {
                                                                             </div>
                                                                         )}
                                                                     {
-                                                                        capa.download != undefined && (
+                                                                        capa.download && (
                                                                             <>
                                                                                 <hr />
                                                                                 <div className="d-flex justify-content-center">
@@ -1669,17 +1891,17 @@ function ContenedorMapaAnalisis(props) {
             </div>
 
             <div className="div-herramientas-contenedor">
-                <OverlayTrigger overlay={<Tooltip>Simbología</Tooltip>}>
+                <OverlayTrigger rootClose overlay={<Tooltip>Simbología</Tooltip>}>
                     <button className="botones-barra-mapa" onClick={handleShowModalSimbologia}>
                         <FontAwesomeIcon icon={faImages}></FontAwesomeIcon>
                     </button>
                 </OverlayTrigger>
-                <OverlayTrigger overlay={<Tooltip>Agregar capas</Tooltip>}>
+                <OverlayTrigger rootClose overlay={<Tooltip>Agregar capas</Tooltip>}>
                     <button className="botones-barra-mapa" onClick={handleShowModalAgregarCapas}>
                         <img src="/images/analisis/agregar-capas.png" alt="Agregar capas" className="tw-w-5" />
                     </button>
                 </OverlayTrigger>
-                <OverlayTrigger overlay={<Tooltip>Agregar archivo</Tooltip>}>
+                <OverlayTrigger rootClose overlay={<Tooltip>Agregar archivo</Tooltip>}>
                     <label htmlFor={`uploadFIleButton${props.botones == false && `Espejo`}`} className="tw-mb-0 tw-cursor-pointer">
                         <button className="botones-barra-mapa tw-pointer-events-none">
                             <input type="file" name="file" onChange={(e) => processInputFile(e)} onClick={(e) => e.target.value = null} id={`uploadFIleButton${props.botones == false && `Espejo`}`} hidden />
@@ -1687,12 +1909,12 @@ function ContenedorMapaAnalisis(props) {
                         </button>
                     </label>
                 </OverlayTrigger>
-                <OverlayTrigger overlay={<Tooltip>Identificar</Tooltip>}>
+                <OverlayTrigger rootClose overlay={<Tooltip>Identificar</Tooltip>}>
                     <button className="botones-barra-mapa" onClick={() => setIdentify(true)}>
                         <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
                     </button>
                 </OverlayTrigger>
-                <OverlayTrigger overlay={<Tooltip>Paneo</Tooltip>}>
+                <OverlayTrigger rootClose overlay={<Tooltip>Paneo</Tooltip>}>
                     <button className="botones-barra-mapa" onClick={() => setIdentify(false)}>
                         <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
                     </button>
@@ -1701,13 +1923,11 @@ function ContenedorMapaAnalisis(props) {
             {
                 props.botones == true
                     ?
-                    <Map fileUpload={fileUpload} referencia={capturaReferenciaMapa} datos={capasVisualizadas} />
+                    <Map referencia={capturaReferenciaMapa} datos={capasVisualizadas} />
                     :
-                    <MapEspejo fileUpload={fileUpload} referencia={capturaReferenciaMapa} datos={capasVisualizadas}
+                    <MapEspejo referencia={capturaReferenciaMapa} datos={capasVisualizadas}
                         referenciaAnalisis={props.referenciaAnalisis} />
-
             }
-
         </>
     )
 }

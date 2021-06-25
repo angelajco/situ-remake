@@ -119,8 +119,8 @@ export default function Menu() {
                         <Link href="/analisis/analisis-geografico">
                             <a className={deshabilitarAnalisis ? active : noActive}>AN&Aacute;LISIS<br></br>GEOGR&Aacute;FICO</a>
                         </Link>
-                        {/* <Link href="/estadisticas-indicadores"> */}
-                        <Link href="/construccion">
+                        <Link href="/estadisticas-indicadores/estadisticas">
+                        {/* <Link href="/construccion"> */}
                             <a className={deshabilitarEstadisticas ? active : noActive}>ESTAD&Iacute;STICAS E<br></br>INDICADORES</a>
                         </Link>
                         <Link href="/construccion">
