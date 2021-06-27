@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, Fragment } from 'react';
 import { Controller, useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle } from '@fortawesome/free-solid-svg-icons';
+import { faPaintBrush, faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle } from '@fortawesome/free-solid-svg-icons';
 import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
 import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 import { CSVLink } from "react-csv";
@@ -11,6 +11,7 @@ import { Typeahead } from 'react-bootstrap-typeahead';
 import * as toPdf from '@react-pdf/renderer';
 import * as htmlToImage from 'html-to-image';
 import * as turf from '@turf/turf';
+
 
 import $ from 'jquery';
 import Draggable from 'react-draggable';
@@ -26,6 +27,16 @@ import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 import ModalAnalisis from './ModalAnalisis'
 import catalogoEntidades from "../shared/jsons/entidades.json";
+
+//Son algunos elementos para la funcionalidad de simbologia
+import randomColor from 'randomcolor';
+import Sim from './SimbologiaCapa';
+import coloresPaletta from "../shared/jsons/colores.json";
+import coloresJ from "../shared/jsons/ColoresSelect.json";
+import TablaSimbologia from './TablaSimbologia';
+import TablaLib from './TablaLibre';
+
+
 
 const Map = dynamic(
     () => import('./MapAnalisis'),
@@ -44,8 +55,49 @@ const MapEspejo = dynamic(
 )
 
 var referenciaMapa = null;
+//son algunas variables para Simbologia
+var jsonSimbologia = [];
+var simbologiaF = {};
+var colorB = [];
+var omisionColor;
 
 function ContenedorMapaAnalisis(props) {
+
+    //------------------Betty-------------------------------
+    //variables utilizadas para simbologia 
+    //Funciones y variables para cambios de estilos
+    var [valorEstilos, setValorEstilos] = useState()
+    var [colorFill, setColorFill] = useState('#FF7777')
+    var [color, setColorFill] = useState('#FF7777')
+    var [colorborder, setColorBorder] = useState('#FF0000')
+    var [showModalEstilos, setShowModalEstilos] = useState(false)
+    var [capaSeleccionada, setCapaSeleccionada] = useState(null)
+    var [rango, setRango] = useState(null)
+    var [valoresCampo, setValoresCampo] = useState([])
+    var [tipoTrata, setTipoTrata] = useState()
+    var [tipoDiv, setTipoDiv] = useState(null)
+    var [nomAtributos, setNomAtributos] = useState([])
+    var [varSeleccionada, setVarSeleccionada] = useState(-1)
+    var [auxSelect, setAuxSelect] = useState([])
+    var [cuantil, setCuantil] = useState()
+    var [tipoColor, setTipoColor] = useState()
+    const [rangoAux, setRangoAux] = useState(null);
+    const [intervalo, setIntervalo] = useState(null);
+
+    const trata = [
+        { value: '1', label: 'Libre' },
+        { value: '2', label: 'Valores unicos' },
+        { value: '4', label: 'Cuantiles' },
+        { value: '3', label: 'Rangos Equidistantes' }
+    ];
+
+    const cuantil1 = [
+        { value: '1', label: 'Cuartiles' },
+        { value: '2', label: 'Quintiles' },
+        { value: '3', label: 'Deciles' }
+    ];
+
+
 
     const [polygonDrawer, setPolygonDrawer] = useState();
     const [zIndexCapas, setZIndex] = useState(0)
@@ -569,7 +621,845 @@ function ContenedorMapaAnalisis(props) {
 
         let paneRemove = referenciaMapa.getPane(capa.layer.options.pane)
         paneRemove.remove();
+
+        //esto es para eliminar los datos de memoria
+        let index;
+        for (let i = 0; i < jsonSimbologia.length; i++) {
+            if (jsonSimbologia[i].name == capa.nom_capa) {
+                // console.log(capa.nom_capa);
+                index = i;
+            }
+        }
+        jsonSimbologia.splice(index, 1);
+
+
+
     }
+
+
+
+    //////////////////////////////////////Aqui empieza el codigo para cambiar la simbologia del
+
+    ///---------------------Betty1--------------------------------------
+    //aqui empiezan los codigos para simbologia
+    const [simboAux, setSimboAux] = useState({});
+    const cambioEstilos = (capa) => {
+        //console.log(capa.layer._map._layers);
+        let band = false;
+        //con este metodo verificamos la capa seleccionada 
+        //y si es wfs se puede editar
+        if (capa.tipo == 'wfs') {
+            setAtributos([capa.features, capa.nom_capa])
+            setCapaSeleccionada(capa);
+            setShowModalEstilos(true)
+            if (atributos != null) {
+                setNomAtributos(Object.keys(capa.features[0].properties))
+                setAuxSelect(Object.keys(capa.features[0].properties))
+            }
+            //buscamos la capa en el Json de configuracion 
+            for (let i = 0; i < jsonSimbologia.length; i++) {
+                if (jsonSimbologia[i].name == capa.nom_capa) {
+                    setTipoTrata(jsonSimbologia[i].tipoTrata);
+                    setCuantil(jsonSimbologia[i].cuantil);
+                    setValorEstilos(jsonSimbologia[i].valorEstilos);
+                    setVarSeleccionada(jsonSimbologia[i].varSeleccionada);
+                    setTipoDiv(jsonSimbologia[i].tipoDiv);
+                    setRango(jsonSimbologia[i].rango);
+                    if (valorEstilos == 1) {
+                        setRango(null);
+                        setSimboAux(jsonSimbologia[i]);
+                        setIntervalo(null);
+                    } else {
+                        setIntervalo(jsonSimbologia[i].intervalo);
+                    }
+                    simbologiaF = jsonSimbologia[i].simbologia;
+                    setNomAtributos(jsonSimbologia[i].nomAtributos);
+                } else {
+                    band = true;
+                }
+            }
+
+            if (band == true) {
+                setTipoTrata(null);
+                setCuantil(null);
+                setRango(null);
+                setValorEstilos(null);
+                setVarSeleccionada(-1);
+                setTipoDiv(null);
+                simbologiaF = {};
+                setTipoTrata(null);
+                setNomAtributos([]);
+            }
+
+        } else {
+            setShowModalEstilos(true)
+
+        }
+    }
+
+    const [colorOmision, setColorOmision] = useState('#000000');
+    function cambioColorO(e) {
+        //console.log(e.target.value);
+        setColorOmision(e.target.value)
+        omisionColor = e.target.value;
+        console.log(omisionColor);
+        //aplicarEstilo();
+    }
+
+    function generarT() {
+        let tab = document.getElementById("tablaR");
+        if (tab != null) {
+            tab.innerHTML = '';
+            tab.innerHTML += simbologiaF.tablahtml(1);
+        }
+
+    }
+
+
+    const handleChangeCuantil = selectedOption => {
+        let opt;
+        if (selectedOption[0] != null) {
+            opt = selectedOption[0]['value'];
+            setCuantil(selectedOption);
+            // console.log(opt);
+        } else {
+            setCuantil(selectedOption);
+            opt = -1;
+        }
+        //funcion para cambiar el tipo de division cantil, quintil, decil 
+
+        if (opt == 1) {
+            setTipoDiv("Cuartiles")
+            tipoDiv = "Cuartiles";
+            //console.log("Selecciono Cuartiles")
+        } else {
+            if (opt == 3) {
+                setTipoDiv("Deciles")
+                tipoDiv = "Deciles";
+                //console.log("Selecciono Deciles")
+            } else {
+                if (opt == 2) {
+                    setTipoDiv("Quintiles")
+                    tipoDiv = "Quintiles";
+                    //console.log("Quintiles")
+                }
+            }
+        }
+    }
+
+    const handleChangeColores = selectedOption => {
+
+        let op;
+        console.log(selectedOption)
+        if (selectedOption[0] != null) {
+            op = selectedOption[0]['value'];
+            //setTipoColor(selectedOption);
+            colorB = coloresPaletta[op].colores;
+            aplicarEstilo();
+        } else {
+            setTipoColor(selectedOption)
+            op = -1;
+        }
+
+
+    }
+
+
+    const handleChangeEstilo = selectedOption => {
+        var option;
+        if (selectedOption[0] != null) {
+            option = selectedOption[0]['value'];
+            setTipoTrata(selectedOption);
+            //console.log(option);
+        } else {
+            setTipoTrata(selectedOption);
+            option = -1;
+        }
+
+        nomAtributos = auxSelect;
+        let nomAux = [];
+        var aux = capaSeleccionada.features[0].properties
+        setValorEstilos(option)
+        if (option == '1') {
+            let nomAux = [];
+            tipoTrata = 'Libre'
+            //se obtienen los nombres de variables a utilizar en este tipo de filtro number
+            if (nomAux.length > 0) {
+                nomAux.splice(0, nomAux.length);
+            }
+            for (let i = 0; i < nomAtributos.length; i++) {
+                var aux1 = typeof (aux[nomAtributos[i]]);
+                if (aux1 == 'number') {
+                    nomAux.push(nomAtributos[i])
+                }
+            }
+            setNomAtributos(nomAux);
+            nomAtributos = nomAux;
+            //console.log(nomAtributos);
+
+        }
+        if (option == '2') {
+            let nomAux = [];
+            //setTipoTrata("Valores Unicos")
+            tipoTrata = 'Valores Unicos';
+            if (nomAux.length > 0) {
+                nomAux.splice(0, nomAux.length);
+            }
+            for (let i = 0; i < nomAtributos.length; i++) {
+                var aux1 = typeof (aux[nomAtributos[i]]);
+                if (aux1 == 'string') {
+                    nomAux.push(nomAtributos[i])
+                }
+            }
+            //setNomAtributos(nomAux);
+
+            setNomAtributos(nomAux);
+            nomAtributos = nomAux;
+            //console.log(nomAtributos);
+
+        }
+        if (option == '3') {
+            //setTipoTrata("Rangos Equidistantes")
+            tipoTrata = 'Rangos Equidistantes';
+            //se obtienen los nombres de variables a utilizar en este tipo de filtro number
+            if (nomAux.length > 0) {
+                nomAux.splice(0, nomAux.length);
+            }
+            for (let i = 0; i < nomAtributos.length; i++) {
+                var aux1 = typeof (aux[nomAtributos[i]]);
+                if (aux1 == 'number') {
+                    nomAux.push(nomAtributos[i])
+                }
+            }
+            setNomAtributos(nomAux);
+
+        }
+        if (option == '4') {
+            //setTipoTrata("Cuantiles")
+            tipoTrata = 'Cuantiles';
+            if (nomAux.length > 0) {
+                nomAux.splice(0, nomAux.length);
+            }
+            for (let i = 0; i < nomAtributos.length; i++) {
+                var aux1 = typeof (aux[nomAtributos[i]]);
+                if (aux1 == 'number') {
+                    nomAux.push(nomAtributos[i])
+                }
+            }
+            setNomAtributos(nomAux);
+        }
+        if (option == '5') {
+            //setTipoTrata("Rompimientos Naturales de Jenks")
+            tipoTrata = 'Rompimientos Naturales de Jenks';
+            if (nomAux.length > 0) {
+                nomAux.splice(0, nomAux.length);
+            }
+            for (let i = 0; i < nomAtributos.length; i++) {
+                var aux1 = typeof (aux[nomAtributos[i]]);
+                if (aux1 == 'number') {
+                    nomAux.push(nomAtributos[i])
+                }
+            }
+            setNomAtributos(nomAux);
+
+        }
+
+    };
+
+    //funcion que captura el valor de numero de intervalos
+    function cambioRango(rang) {
+        rango = rang.target.value;
+        setRango(rang.target.value);
+    }
+
+    //funcion que captura el valor de numero de intervalos
+    //cuando es estilo libre
+
+
+    function cambioRango1(rang) {
+        setRangoAux(rang.target.value);
+        setIntervalo(rang.target.value)
+        simbologiaF = {};
+        generarTabla(rang.target.value);
+
+    }
+
+    //funcion para guardar el atributo sobre el que se va a trabajar 
+    function campoUtilizado(campo) {
+        console.log(campo);
+        varSeleccionada = campo;
+        setVarSeleccionada(campo);
+        //setAuxSelect(nomAtributos[campo])
+
+        let valores = [];
+        for (var i = 0; i < capaSeleccionada.features.length; i++) {
+            var aux = capaSeleccionada.features[i].properties
+            valores.push(aux[nomAtributos[campo]]);
+        }
+        valoresCampo = valores;
+        setValoresCampo(valores);
+        //console.log(nomAtributos[campo]);
+        if (valorEstilos == 2) {
+            aplicarEstilo();
+        }
+    }
+
+    function generarTabla(num) {
+        // Obtener la referencia del elemento body
+        var body = document.getElementById("tablaI");
+        body.innerHTML = '';
+
+        // Crea un elemento <table> y un elemento <tbody>
+        var tabla = document.createElement("table");
+        var tblBody = document.createElement("tbody");
+
+        var tblhead = document.createElement("thead");
+        var h1 = document.createElement("tr");
+
+        var textoCelda = document.createTextNode("Valor Inicial");
+        var celda = document.createElement("th");
+        celda.appendChild(textoCelda);
+        h1.appendChild(celda);
+        tblhead.appendChild(h1);
+
+        var celda1 = document.createElement("th");
+        var textoCelda1 = document.createTextNode("Valor Final");
+        celda1.appendChild(textoCelda1);
+        h1.appendChild(celda1);
+        tblhead.appendChild(h1);
+
+        var celda1 = document.createElement("th");
+        var textoCelda1 = document.createTextNode("Leyenda");
+        celda1.appendChild(textoCelda1);
+        h1.appendChild(celda1);
+        tblhead.appendChild(h1);
+
+        var celda1 = document.createElement("th");
+        var textoCelda1 = document.createTextNode("Color");
+        celda1.appendChild(textoCelda1);
+        h1.appendChild(celda1);
+        tblhead.appendChild(h1);
+
+        var celda1 = document.createElement("th");
+        var textoCelda1 = document.createTextNode("Borde");
+        celda1.appendChild(textoCelda1);
+        h1.appendChild(celda1);
+        tblhead.appendChild(h1);
+
+
+        tabla.appendChild(tblhead);
+        let num1 = 0;
+        // Crea las celdas
+        for (var i = 0; i < num; i++) {
+            // Crea las hileras de la tabla
+            var hilera = document.createElement("tr");
+
+            for (var j = 0; j < 5; j++) {
+                // Crea un elemento <td> y un nodo de texto, haz que el nodo de
+                // texto sea el contenido de <td>, ubica el elemento <td> al final
+                // de la hilera de la tabla
+                let celda = document.createElement("td");
+                let input = document.createElement("input");
+                if (j == 3 || j == 4) {
+                    //var input = document.createElement("input");
+                    input.setAttribute("type", "color");
+                    input.setAttribute("id", "" + num1);
+                } else {
+                    input.setAttribute("type", "text");
+                    input.setAttribute("id", "" + num1);
+                    input.setAttribute('size', '7');
+                }
+                if (j == 5) {
+                    input.setAttribute('size', '7');
+                    input.setAttribute("type", "number");
+                }
+                num1++;
+
+                celda.appendChild(input);
+                hilera.appendChild(celda);
+            }
+
+            // agrega la hilera al final de la tabla (al final del elemento tblbody)
+            tblBody.appendChild(hilera);
+        }
+        // posiciona el <tbody> debajo del elemento <table>
+        tabla.appendChild(tblBody);
+        // appends <table> into <body>
+        body.appendChild(tabla);
+        // modifica el atributo "border" de la tabla y lo fija a "2";
+        tabla.setAttribute("class", "table-wrapper-scroll-y my-custom-scrollbar");
+        tabla.setAttribute("id", "tab");
+
+    }
+
+    function shuffle(arr) {
+        var i,
+            j,
+            temp;
+        for (i = arr.length - 1; i > 0; i--) {
+            j = Math.floor(Math.random() * (i + 1));
+            temp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
+        }
+        return arr;
+    };
+
+
+
+    //funcion para aplicar el estilo
+    function aplicarEstilo() {
+        if (capaSeleccionada.tipo == 'wfs') {
+            //verificamos que la capa se a wfs para poder editarla
+            if (valorEstilos == 4) {
+                if (tipoDiv == "Cuartiles") {
+                    let colores = [];
+                    let sim1 = new Sim();
+                    //generamos los colores apartir del seleccionado por el usuari0
+                    if (colores.length > 0) {
+                        colores.splice(0, colores.length);
+                    }
+
+                    colores = shuffle(colorB);//randomColor({ count: 4, hue: colorFill });
+                    let au1 = sim1.generaCuantiles(4, valoresCampo, colores, "Cuartil ", "#000000", 1);
+
+                    simbologiaF = au1;
+                    setRangoAux(4);
+                    sim1 = null;
+                    //se deben guardar todas las configuraciones de la capa
+                }//termina el estilo del cuartil
+
+                if (tipoDiv == "Deciles") {
+                    let colores = [];
+                    let sim1 = new Sim();
+                    //generamos los colores apartir del seleccionado por el usuari0
+                    if (colores.length > 0) {
+                        colores.splice(0, colores.length);
+                    }
+                    colores = shuffle(colorB);//colores = randomColor({ count: 10, hue: colorFill });
+                    let au1 = sim1.generaCuantiles(10, valoresCampo, colores, "Decil ", "#000000", 1);
+
+                    setRangoAux(10);
+                    simbologiaF = au1;
+                    sim1 = null;
+                    //se deben guardar todas las configuraciones de la capa
+                }//se termina el estilo del decil
+                if (tipoDiv == "Quintiles") {
+                    let colores = [];
+                    let sim1 = new Sim();
+                    //generamos los colores apartir del seleccionado por el usuari0
+                    if (colores.length > 0) {
+                        colores.splice(0, colores.length);
+                    }
+                    colores = shuffle(colorB);//colores = randomColor({ count: 5, hue: colorFill });
+                    let au1 = sim1.generaCuantiles(5, valoresCampo, colores, "Quintil ", "#000000", 1);
+                    // console.log(au1);
+                    setRangoAux(5);
+                    simbologiaF = au1;
+                    //se aplica el estilo a la capa 
+                    sim1 = null;
+                    //se deben guardar todas las configuraciones de la capa
+                }//termina opcion de Quintiles
+
+            }
+            if (valorEstilos == 1) {
+                //codigo para implementar simbologia libre
+                var layer = capaSeleccionada.layer;
+                let lib = [];
+                let json1;
+                let rango1 = rangoAux;
+                let auxI = 0;
+                for (let i = 0; i < rango1; i++) { //ciclo para recorrer las filas del
+                    for (let j = 0; j < 6; j++) {//ciclo que controla las columnas de la tabla 
+                        let aux = document.getElementById(auxI);
+                        console.log(aux);
+                        if (aux == null) {
+
+                        } else {
+                            if (aux.tagName == 'INPUT') {
+                                lib.push(aux.value);
+                            } else {
+                                lib.push(aux.textContent);
+                            }
+                        }
+                        auxI++;
+                    }//termina for columnas
+                }//termina for filas 
+
+                let sim1 = new Sim();
+                for (let i = 0; i < lib.length; i += 6) {
+                    sim1.agregaRango(0, lib[i], lib[i + 1], lib[i + 3], lib[i + 2], lib[i + 4], lib[i + 5]);
+                }
+
+                simbologiaF = sim1;
+
+                //codigo para mandar el color dependiendo del rango
+                var layer = capaSeleccionada.layer;
+                function restyleLayerL(propertyName) {
+                    layer.eachLayer(function (featureInstanceLayer) {
+                        var propertyValue = featureInstanceLayer.feature.properties[propertyName];
+                        var myFillColor = sim1.getSimbologia(propertyValue);
+                        //console.log(myFillColor);
+                        if (myFillColor.tipo === 'default') {
+                            featureInstanceLayer.setStyle({
+                                fillColor: colorOmision,
+                                color: colorOmision,
+                                fillOpacity: myFillColor.fillOpacity,
+                                weight: 1
+                            });
+                        } else {
+                            featureInstanceLayer.setStyle({
+                                fillColor: myFillColor.colorFill,
+                                color: myFillColor.colorBorde,
+                                fillOpacity: myFillColor.fillOpacity,
+                                weight: myFillColor.anchoBorde
+                            });
+                        }
+
+                    });
+                }
+
+                //se guarda la configuracion de la capa
+                json1 = {};
+                let bnd = false;
+                if (jsonSimbologia.length != 0) {
+                    for (let i = 0; i < jsonSimbologia.length; i++) {
+                        if (jsonSimbologia[i].name == capaSeleccionada.nom_capa) {
+                            console.log("se actualiza informacion");
+                            jsonSimbologia[i].nomVariable = nomAtributos[varSeleccionada];
+                            jsonSimbologia[i].varSeleccionada = varSeleccionada;
+                            jsonSimbologia[i].simbologia = simbologiaF;
+                            jsonSimbologia[i].valorEstilos = valorEstilos;
+                            jsonSimbologia[i].tipoDiv = tipoDiv;
+                            jsonSimbologia[i].tipoTrata = tipoTrata;
+                            jsonSimbologia[i].rango = rango;
+                            jsonSimbologia[i].intervalo = intervalo;
+                            jsonSimbologia[i].cuantil = cuantil;
+                            jsonSimbologia[i].nomAtributos = nomAtributos;
+                        } else {
+                            bnd = true;
+                            //quiere decir que es una capa nueva
+                        }
+                    }
+                } else {
+                    json1.name = capaSeleccionada.nom_capa
+                    json1.capa = capaSeleccionada;
+                    json1.nomVariable = nomAtributos[varSeleccionada];
+                    json1.varSeleccionada = varSeleccionada;
+                    json1.simbologia = simbologiaF;
+                    json1.valorEstilos = valorEstilos;
+                    json1.tipoDiv = tipoDiv;
+                    json1.tipoTrata = tipoTrata;
+                    json1.rango = rango;
+                    json1.intervalo = intervalo;
+                    json1.cuantil = cuantil;
+                    json1.nomAtributos = nomAtributos;
+                    jsonSimbologia.push(json1);
+                }
+
+                if (bnd == true) {
+                    json1.name = capaSeleccionada.nom_capa
+                    json1.capa = capaSeleccionada;
+                    json1.nomVariable = nomAtributos[varSeleccionada];
+                    json1.varSeleccionada = varSeleccionada;
+                    json1.simbologia = simbologiaF;
+                    json1.valorEstilos = valorEstilos;
+                    json1.tipoDiv = tipoDiv;
+                    json1.tipoTrata = tipoTrata;
+                    json1.rango = rango;
+                    json1.intervalo = intervalo;
+                    json1.cuantil = cuantil;
+                    json1.nomAtributos = nomAtributos;
+                    jsonSimbologia.push(json1);
+                }
+
+                restyleLayerL(nomAtributos[varSeleccionada]);
+
+                sim1 = null;
+                setRango(null);
+                setIntervalo(null);
+                //se deben guardar todas las configuraciones de la capa
+            }//termina estilo Libre
+
+            //opcion para rangos equidistantes
+            if (valorEstilos == 3) {
+                // console.log("Rangos Equidistantes");
+                var numRangos = rango;
+                let limitesmay = [];
+                let limitesmen = [];
+                let colores = [];
+
+
+                //se generan los colores para mostrar
+                if (colores.length > 0) {
+                    colores.splice(0, colores.length);
+                }
+                colores = shuffle(colorB);
+                //colores = randomColor({ count: 10, hue: colorFill });
+                //se ordena el array de valores
+                valoresCampo.sort(function (a, b) { return a - b });
+
+                var min = valoresCampo[0];
+                var max = valoresCampo[valoresCampo.length - 1];
+                var r = max - min;
+                var d = (r + 1) / numRangos;
+                limitesmen[0] = min;
+                limitesmay[0] = min + d;
+                for (let i = 1; i < numRangos; i++) {
+                    limitesmay[i] = limitesmay[i - 1] + (d);
+                    limitesmen[i] = limitesmay[i - 1];
+                }
+
+                let sim1 = new Sim();
+                for (let i = 0; i < limitesmen.length; i++) {
+                    sim1.agregaRango(0, Math.round(limitesmen[i]), Math.round(limitesmay[i]), colores[i], "Rango " + (i + 1), "#000000", 1);
+                }
+
+                simbologiaF = sim1;
+                setRangoAux(numRangos);
+
+                sim1 = null;
+                //se deben guardar todas las configuraciones de la capa
+            }
+
+            if (valorEstilos == 2) {
+                //se selecciono valores unicos 
+                let unicos = [];
+                let colores = [];
+                let sim1 = new Sim();
+                if (unicos.length > 0) {
+                    unicos.splice(0, unicos.length);
+                }
+                //este codigo elimina los valores repetidos de una array dejando solo uno de cada uno 
+                unicos = valoresCampo.reduce((acc, item) => {
+                    if (!acc.includes(item)) {
+                        acc.push(item);
+                    }
+                    return acc;
+                }, [])
+
+                if (colores.length > 0) {
+                    colores.splice(0, colores.length);
+                }
+                for (let i = 0; i < unicos.length; i++) {
+                    colores.push("#" + ((1 << 24) * Math.random() | 0).toString(16));
+                }
+                //colores = randomColor({ count: unicos.length, hue: colorFill });
+
+                for (let i = 0; i < unicos.length; i++) {
+                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1);
+                }
+
+                simbologiaF = sim1;
+                setRangoAux(unicos.length);
+
+                sim1 = null;
+
+            }//termina opcion valores unicos
+        }
+
+    }
+    function leerTabla(aux) {
+        if (aux == 0) {
+            //cuando es estilo libre
+            //funcion que actualiza la tabla de simbologia
+            if ($('#tablaR').is(':empty') == false) {
+                let actuali = [];
+                //indica previsualizacion y requiere actualizar simbologia
+                var table = document.getElementById('tablaR');
+                let cells = table.getElementsByTagName('tr');
+                for (let i = 0, len = cells.length; i < len; i++) {
+                    let fila = cells[i].getElementsByTagName('td');
+                    for (let j = 0; j < fila.length; j++) {
+                        //console.log(fila[j].innerText);
+                        actuali.push(fila[j].children[0].value);
+                        /*
+                        if (j == 2 || j == 3 || j == 4 || j == 5) {
+                            actuali.push(fila[j].children[0].value);
+                        } else {
+                            actuali.push(fila[j].innerText);
+                        }
+                        */
+                        /*
+                                                if (j == 2) {
+                                                    actuali.push(fila[j].children[0].value);
+                                                } else {
+                                                    if (j == 3) {
+                                                        actuali.push(fila[j].children[0].value);
+                                                    } else {
+                                                        actuali.push(fila[j].innerText);
+                                                    }
+                                                }
+                        */
+                    }
+                }
+                console.log(actuali);
+                return actuali;
+            }
+        } else {
+            //funcion que actualiza la tabla de simbologia
+            if ($('#tablaR').is(':empty') == false) {
+                //Betty7
+                let actuali = [];
+                let rango1 = rangoAux;
+                let auxI = 0;
+                for (let i = 0; i < rango1; i++) { //ciclo para recorrer las filas del
+                    for (let j = 0; j < 6; j++) {//ciclo que controla las columnas de la tabla 
+                        let aux = document.getElementById(auxI);
+                        //console.log(aux);
+                        if (aux == null) {
+
+                        } else {
+                            if (aux.tagName == 'INPUT') {
+                                actuali.push(aux.value);
+                            } else {
+                                actuali.push(aux.textContent);
+                            }
+                        }
+                        auxI++;
+                    }//termina for columnas
+                }//termina for filas 
+
+                /*
+                 //indica previsualizacion y requiere actualizar simbologia
+                 var table = document.getElementById('tablaE');
+                 let cells = table.getElementsByTagName('tr');
+                 for (let i = 0, len = cells.length; i < len; i++) {
+                     let fila = cells[i].getElementsByTagName('td');
+                     for (let j = 0; j < fila.length; j++) {
+                         //console.log(fila[j].innerText);
+ 
+                         if (j == 2 || j == 3 || j == 4 || j == 5) {
+                             actuali.push(fila[j].children[0].value);
+                         } else {
+                             actuali.push(fila[j].innerText);
+                         }
+                         /*
+                                                 if (j == 2) {
+                                                     actuali.push(fila[j].children[0].value);
+                                                 } else {
+                                                     if (j == 3) {
+                                                         actuali.push(fila[j].children[0].value);
+                                                     } else {
+                                                         actuali.push(fila[j].innerText);
+                                                     }
+                                                 }
+                         
+ 
+                     }
+                 }
+                */
+
+                console.log(actuali);
+                //se actualizaron los datos de los intervalos
+
+                let sim1 = new Sim();
+                for (let i = 0; i < actuali.length; i += 6) {
+                    // sim1.agregaRango(0, lib[i], lib[i + 1], lib[i + 3], lib[i + 2], lib[i + 4], lib[i + 5]);
+                    sim1.agregaRango(0, actuali[i], actuali[i + 1], actuali[i + 3], actuali[i + 2], actuali[i + 4], actuali[i + 5]);
+                }
+
+                simbologiaF = sim1;
+
+            }
+        }
+
+
+    }
+
+    function aplicaEstiloF() {
+
+        leerTabla();
+
+        //codigo para mandar el color dependiendo del rango
+        var layer = capaSeleccionada.layer;
+        function restyleLayerL(propertyName) {
+            layer.eachLayer(function (featureInstanceLayer) {
+                var propertyValue = featureInstanceLayer.feature.properties[propertyName];
+                var myFillColor = sim1.getSimbologia(propertyValue);
+                //console.log(myFillColor);
+                if (myFillColor.tipo === 'default') {
+                    featureInstanceLayer.setStyle({
+                        fillColor: colorOmision,
+                        color: colorOmision,
+                        fillOpacity: myFillColor.fillOpacity,
+                        weight: 1
+                    });
+                } else {
+                    featureInstanceLayer.setStyle({
+                        fillColor: myFillColor.colorFill,
+                        color: myFillColor.colorBorde,
+                        fillOpacity: myFillColor.fillOpacity,
+                        weight: myFillColor.anchoBorde
+                    });
+                }
+
+            });
+        }
+
+        //se guarda la configuracion de la capa
+        let json1 = {};
+        let bnd = false;
+        if (jsonSimbologia.length != 0) {
+            for (let i = 0; i < jsonSimbologia.length; i++) {
+                if (jsonSimbologia[i].name == capaSeleccionada.nom_capa) {
+                    jsonSimbologia[i].nomVariable = nomAtributos[varSeleccionada];
+                    jsonSimbologia[i].varSeleccionada = varSeleccionada;
+                    jsonSimbologia[i].simbologia = simbologiaF;
+                    jsonSimbologia[i].valorEstilos = valorEstilos;
+                    jsonSimbologia[i].tipoDiv = tipoDiv;
+                    jsonSimbologia[i].tipoTrata = tipoTrata;
+                    jsonSimbologia[i].rango = rango;
+                    jsonSimbologia[i].intervalo = intervalo;
+                    jsonSimbologia[i].cuantil = cuantil;
+                    jsonSimbologia[i].nomAtributos = nomAtributos;
+
+                } else {
+                    bnd = true;
+                    //quiere decir que es una capa nueva
+                }
+            }
+        } else {
+            json1.name = capaSeleccionada.nom_capa
+            json1.capa = capaSeleccionada;
+            json1.nomVariable = nomAtributos[varSeleccionada];
+            json1.varSeleccionada = varSeleccionada;
+            json1.simbologia = simbologiaF;
+            json1.valorEstilos = valorEstilos;
+            json1.tipoDiv = tipoDiv;
+            json1.tipoTrata = tipoTrata;
+            json1.rango = rango;
+            json1.intervalo = intervalo;
+            json1.cuantil = cuantil;
+            json1.nomAtributos = nomAtributos;
+            jsonSimbologia.push(json1);
+        }
+
+        if (bnd == true) {
+            json1.name = capaSeleccionada.nom_capa
+            json1.capa = capaSeleccionada;
+            json1.nomVariable = nomAtributos[varSeleccionada];
+            json1.varSeleccionada = varSeleccionada;
+            json1.simbologia = simbologiaF;
+            json1.valorEstilos = valorEstilos;
+            json1.tipoDiv = tipoDiv;
+            json1.tipoTrata = tipoTrata;
+            json1.rango = rango;
+            json1.intervalo = intervalo;
+            json1.cuantil = cuantil;
+            json1.nomAtributos = nomAtributos;
+            jsonSimbologia.push(json1);
+        }
+
+        //se aplica el estilo a la capa 
+        restyleLayer(nomAtributos[varSeleccionada]);
+        //simbologiaF = {};
+        console.log(jsonSimbologia);
+
+    }
+
+    ///////////////////////////////////Termina el codigo para cambiar la simbologia
+
 
     //Funcion para cambiar el estado del checkbox
     const cambiaCheckbox = ({ target }) => {
@@ -1533,6 +2423,30 @@ function ContenedorMapaAnalisis(props) {
                 </Modal.Header>
                 <Modal.Body>
                     {
+                        jsonSimbologia.length > 0 ? (
+                            jsonSimbologia.map((capa) => (
+                                <div>
+                                    <h5>{capa.name}</h5>
+                                    <div dangerouslySetInnerHTML={{ __html: capa.simbologia.tablaSimbologia() }} ></div>
+                                </div>
+                            ))
+                        ) : (
+                            capasVisualizadas.map((capa, index) => (
+                                capa.habilitado && (
+                                    <div>
+                                        <div key={index}>
+                                            <p><b>{capa.nom_capa}</b></p>
+                                            <img src={capa.simbologia}></img>
+                                            <br></br>
+                                            <br></br>
+                                        </div>
+                                    </div>
+                                )
+                            ))
+                        )
+
+
+                        /*
                         capasVisualizadas.map((capa, index) => (
                             capa.habilitado && (
                                 <div key={index}>
@@ -1549,6 +2463,262 @@ function ContenedorMapaAnalisis(props) {
                                 </div>
                             )
                         ))
+                        */
+                    }
+                </Modal.Body>
+            </Modal>
+
+            <Modal dialogAs={DraggableModalDialog} show={showModalEstilos} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
+                onHide={() => setShowModalEstilos(!showModalEstilos)} className="tw-pointer-events-none modal-analisis">
+                <Modal.Header className="tw-cursor-pointer" closeButton >
+                    <Modal.Title><b>Simbología</b></Modal.Title>
+                    <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
+                        <FontAwesomeIcon icon={faWindowRestore} />
+                    </button>
+                </Modal.Header>
+                <Modal.Body className="tw-overflow-y-auto">
+                    {/* inicia el cuerpo del modal de estilo />  BettyE*/}
+                    {
+                        capaSeleccionada == null ? (
+                            //no se ha seleccionaado capa para edicion
+                            <div className="row text-center">
+                                <h1>Esta capa no puede editarse</h1>
+                            </div>
+                        ) : (
+                            capaSeleccionada.tipo == "wfs" ? (
+                                //la capa puede editarse por el formato de origen
+                                <Form id="cuerpo">
+                                    <Form.Group controlId="tratamiento" className="col-10">
+                                        <Form.Label>Tipo de tratamiento</Form.Label>
+                                        <Typeahead
+                                            id="tratamiento"
+                                            labelKey={"label"}
+                                            options={trata}
+                                            onChange={handleChangeEstilo}
+                                            selected={tipoTrata}
+                                            placeholder="Selecciona una opcion"
+                                        />
+                                    </Form.Group>
+                                    {
+                                        valorEstilos != null ? (
+                                            valorEstilos == 1 ? (
+                                                //estilo libre 
+                                                <div className="col-12">
+                                                    <div className="row">
+                                                        <Form.Group controlId="variable1" className="col-10">
+                                                            <Form.Label>Variable a Utilizar</Form.Label>
+                                                            <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
+                                                                <option value="">Selecciona una opción</option>
+                                                                {
+                                                                    nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                }
+                                                            </Form.Control>
+                                                        </Form.Group>
+                                                        <br></br>
+                                                        <Form.Group controlId="intervalos1" className="col-10">
+                                                            <Form.Label>Número de Intervalos</Form.Label>
+                                                            <Form.Control type="number" value={intervalo} onChange={(e) => cambioRango1(e)} min="0" />
+                                                        </Form.Group>
+                                                        <br></br>
+                                                        <div className="row">
+                                                            <div className="col-9">
+                                                                <p><b>Simbologia por Omisión</b></p>
+                                                            </div>
+                                                            <div className="col-3">
+                                                                <Form.Control type="color" value={colorOmision} onChange={(e) => cambioColorO(e)} />
+                                                            </div>
+                                                        </div>
+                                                        <div id="tablaI">
+                                                            <TablaLib rango={intervalo}></TablaLib>
+                                                        </div>
+                                                        <br></br>
+                                                    </div>
+                                                    <div className="row" id="contenedorT">
+                                                        <TablaSimbologia info={simbologiaF} />
+
+                                                    </div>
+                                                    <div className="row align-items-center">
+                                                        <Button className="btn btn-primary" onClick={aplicarEstilo}>Aplicar Estilo </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                valorEstilos == 4 ? (
+                                                    //cuantiles
+                                                    <div className="col-12">
+                                                        <div className="row">
+                                                            <Form.Group controlId="tratamiento" className="col-10">
+                                                                <Form.Label>División</Form.Label>
+                                                                <Typeahead
+                                                                    id="basic-typeahead-multiple"
+                                                                    labelKey={"label"}
+                                                                    options={cuantil1}
+                                                                    onChange={handleChangeCuantil}
+                                                                    selected={cuantil}
+                                                                    placeholder="Selecciona una opcion"
+                                                                />
+                                                            </Form.Group>
+                                                            <br></br>
+                                                            <Form.Group controlId="variable2" className="col-10">
+                                                                <Form.Label>Variable a Utilizar</Form.Label>
+                                                                <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
+                                                                    <option value="">Selecciona una opción</option>
+                                                                    {
+                                                                        nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                    }
+                                                                </Form.Control>
+                                                            </Form.Group>
+                                                            <br></br>
+                                                            <Form.Group controlId="coloresB" className="col-10">
+                                                                <Form.Label>Color Base</Form.Label>
+                                                                <Typeahead
+                                                                    id="basic-typeahead-multiple"
+                                                                    labelKey={"label"}
+                                                                    options={coloresJ}
+                                                                    onChange={handleChangeColores}
+                                                                    selected={tipoColor}
+                                                                    placeholder="Selecciona una opcion"
+                                                                />
+                                                            </Form.Group>
+                                                            <br></br>
+                                                            <br></br>
+                                                        </div>
+                                                        <div className="row">
+                                                            <div className="col-8">
+                                                                <p><b>Simbologia por Omisión</b></p>
+                                                            </div>
+                                                            <div className="col-3">
+                                                                <Form.Control type="color" value={colorOmision} onChange={(e) => cambioColorO(e)} />
+                                                            </div>
+                                                        </div>
+                                                        <div className="row" id="contenedorT">
+                                                            <TablaSimbologia info={simbologiaF} />
+                                                        </div>
+                                                        <div className="row text-center">
+                                                            <div className="col-6">
+                                                                <Button className="btn btn-primary" onClick={generarT}>Previsualizar </Button>
+                                                            </div>
+                                                            <div className="col-6">
+                                                                <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    valorEstilos == 3 ? (
+                                                        //Rangos Equidistantes
+                                                        <div className="col-12">
+                                                            <div className="row">
+                                                                <Form.Group controlId="intervalos2" className="col-10">
+                                                                    <Form.Label>Número de Intervalos</Form.Label>
+                                                                    <Form.Control type="text" value={rango} onChange={(e) => cambioRango(e)} />
+                                                                </Form.Group>
+                                                                <br></br>
+                                                                <Form.Group controlId="variable2" className="col-10">
+                                                                    <Form.Label>Variable a Utilizar</Form.Label>
+                                                                    <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
+                                                                        <option value="">Selecciona una opción</option>
+                                                                        {
+                                                                            nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                        }
+                                                                    </Form.Control>
+                                                                </Form.Group>
+                                                                <br></br>
+                                                                <Form.Group controlId="coloresB" className="col-10">
+                                                                    <Form.Label>Color Base</Form.Label>
+                                                                    <Typeahead
+                                                                        id="basic-typeahead-multiple"
+                                                                        labelKey={"label"}
+                                                                        options={coloresJ}
+                                                                        onChange={handleChangeColores}
+                                                                        selected={tipoColor}
+                                                                        placeholder="Selecciona una opcion"
+                                                                    />
+                                                                </Form.Group>
+                                                                <br></br>
+                                                                <br></br>
+                                                            </div>
+                                                            <div className="row">
+                                                                <div className="col-8">
+                                                                    <p><b>Simbologia por Omisión</b></p>
+                                                                </div>
+                                                                <div className="col-3">
+                                                                    <Form.Control type="color" value={colorOmision} onChange={(e) => cambioColorO(e)} />
+                                                                </div>
+                                                            </div>
+                                                            <div className="row" id="contenedorT">
+                                                                <TablaSimbologia info={simbologiaF} />
+                                                            </div>
+                                                            <div className="row text-center">
+                                                                <div className="col-6">
+                                                                    <Button className="btn btn-primary" onClick={generarT}>Previsualizar </Button>
+                                                                </div>
+                                                                <div className="col-6">
+                                                                    <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        valorEstilos == 2 ? (
+                                                            //valores unicos
+                                                            <div className="col-12">
+                                                                <div className="row">
+                                                                    <Form.Group controlId="variable3" className="col-10">
+                                                                        <Form.Label>Variable a Utilizar</Form.Label>
+                                                                        <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
+                                                                            <option value="">Selecciona una opción</option>
+                                                                            {
+                                                                                nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                            }
+                                                                        </Form.Control>
+                                                                    </Form.Group>
+                                                                    <br></br>
+                                                                    <br></br>
+                                                                </div>
+                                                                <div className="row">
+                                                                    <div className="col-8">
+                                                                        <p><b>Simbologia por Omisión</b></p>
+                                                                    </div>
+                                                                    <div className="col-3">
+                                                                        <Form.Control type="color" value={colorOmision} onChange={(e) => cambioColorO(e)} />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="row" id="contenedorT">
+                                                                    <TablaSimbologia info={simbologiaF} />
+                                                                    <div id="tablaR"></div>
+                                                                </div>
+                                                                <div className="row text-center">
+                                                                    <div className="col-6">
+                                                                        <Button className="btn btn-primary" onClick={generarT}>Previsualizar </Button>
+                                                                    </div>
+                                                                    <div className="col-6">
+                                                                        <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <p></p>
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        ) : (
+                                            //console.log("la capa no es null, no se ha seleccionado estilo")
+                                            <p></p>
+                                        )
+                                    }
+
+                                </Form>
+
+
+
+
+                            ) : (
+                                //la capa no puede editarse por el formato de origen 
+                                <h1>No puede editarse</h1>
+                            )
+                        )
+                    }
+                    {
+                        //termina el cuerpo del modal de estilos
                     }
                 </Modal.Body>
             </Modal>
@@ -1797,6 +2967,9 @@ function ContenedorMapaAnalisis(props) {
                                                                 }
                                                                 <Button onClick={() => eliminaCapa(capa)} variant="link">
                                                                     <FontAwesomeIcon icon={faTrash} />
+                                                                </Button>
+                                                                <Button onClick={() => cambioEstilos(capa)} variant="link">
+                                                                    <FontAwesomeIcon icon={faPaintBrush} />
                                                                 </Button>
                                                                 <CustomToggle eventKey={capa.nom_capa} />
                                                             </Card.Header>
