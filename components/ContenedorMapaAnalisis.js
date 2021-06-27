@@ -702,7 +702,7 @@ function ContenedorMapaAnalisis(props) {
         //console.log(e.target.value);
         setColorOmision(e.target.value)
         omisionColor = e.target.value;
-        console.log(omisionColor);
+        //console.log(omisionColor);
         //aplicarEstilo();
     }
 
@@ -750,7 +750,7 @@ function ContenedorMapaAnalisis(props) {
     const handleChangeColores = selectedOption => {
 
         let op;
-        console.log(selectedOption)
+        //console.log(selectedOption)
         if (selectedOption[0] != null) {
             op = selectedOption[0]['value'];
             //setTipoColor(selectedOption);
@@ -886,7 +886,7 @@ function ContenedorMapaAnalisis(props) {
 
     //funcion para guardar el atributo sobre el que se va a trabajar 
     function campoUtilizado(campo) {
-        console.log(campo);
+        //console.log(campo);
         varSeleccionada = campo;
         setVarSeleccionada(campo);
         //setAuxSelect(nomAtributos[campo])
@@ -1072,7 +1072,7 @@ function ContenedorMapaAnalisis(props) {
                 for (let i = 0; i < rango1; i++) { //ciclo para recorrer las filas del
                     for (let j = 0; j < 6; j++) {//ciclo que controla las columnas de la tabla 
                         let aux = document.getElementById(auxI);
-                        console.log(aux);
+                        //console.log(aux);
                         if (aux == null) {
 
                         } else {
@@ -1102,7 +1102,7 @@ function ContenedorMapaAnalisis(props) {
                         //console.log(myFillColor);
                         if (myFillColor.tipo === 'default') {
                             featureInstanceLayer.setStyle({
-                                fillColor: colorOmision,
+                                fillColor: omisionColor,
                                 color: colorOmision,
                                 fillOpacity: myFillColor.fillOpacity,
                                 weight: 1
@@ -1293,7 +1293,7 @@ function ContenedorMapaAnalisis(props) {
                         */
                     }
                 }
-                console.log(actuali);
+                //console.log(actuali);
                 return actuali;
             }
         } else {
@@ -1350,7 +1350,7 @@ function ContenedorMapaAnalisis(props) {
                  }
                 */
 
-                console.log(actuali);
+                //console.log(actuali);
                 //se actualizaron los datos de los intervalos
 
                 let sim1 = new Sim();
@@ -1376,11 +1376,11 @@ function ContenedorMapaAnalisis(props) {
         function restyleLayerL(propertyName) {
             layer.eachLayer(function (featureInstanceLayer) {
                 var propertyValue = featureInstanceLayer.feature.properties[propertyName];
-                var myFillColor = sim1.getSimbologia(propertyValue);
+                var myFillColor = simbologiaF.getSimbologia(propertyValue);
                 //console.log(myFillColor);
                 if (myFillColor.tipo === 'default') {
                     featureInstanceLayer.setStyle({
-                        fillColor: colorOmision,
+                        fillColor: omisionColor,
                         color: colorOmision,
                         fillOpacity: myFillColor.fillOpacity,
                         weight: 1
@@ -1452,9 +1452,9 @@ function ContenedorMapaAnalisis(props) {
         }
 
         //se aplica el estilo a la capa 
-        restyleLayer(nomAtributos[varSeleccionada]);
+        restyleLayerL(nomAtributos[varSeleccionada]);
         //simbologiaF = {};
-        console.log(jsonSimbologia);
+        //console.log(jsonSimbologia);
 
     }
 
@@ -2520,13 +2520,11 @@ function ContenedorMapaAnalisis(props) {
                                                             <Form.Control type="number" value={intervalo} onChange={(e) => cambioRango1(e)} min="0" />
                                                         </Form.Group>
                                                         <br></br>
-                                                        <div className="row">
-                                                            <div className="col-9">
-                                                                <p><b>Simbologia por Omisión</b></p>
-                                                            </div>
-                                                            <div className="col-3">
-                                                                <Form.Control type="color" value={colorOmision} onChange={(e) => cambioColorO(e)} />
-                                                            </div>
+                                                        <div className="col-9">
+                                                            <p><b>Simbologia por Omisión</b></p>
+                                                        </div>
+                                                        <div className="col-3">
+                                                            <Form.Control type="color" value={colorOmision} onChange={(e) => cambioColorO(e)} />
                                                         </div>
                                                         <div id="tablaI">
                                                             <TablaLib rango={intervalo}></TablaLib>
