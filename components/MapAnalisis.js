@@ -17,7 +17,7 @@ import 'leaflet-easyprint'
 //Si no es necesario cargar los marcadores
 // import "leaflet/dist/leaflet.css"
 //FullScreen
-import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
+import 'leaflet-fullscreen/dist/leaflet.fullscreen.css'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
 //Leaflet draw
 import 'leaflet-draw/dist/leaflet.draw.css'
