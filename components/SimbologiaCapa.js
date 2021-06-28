@@ -27,7 +27,7 @@ class RangoSimb {
 
 	filaHtml1(i) {
 
-		return `<tr><td id='${i}'>${this.valorMin}</td><td id='${i + 1}'>${this.valorMax}</td><td id='${i + 2}'>${this.leyenda}</td><td id='${i + 3}' style="background-color: ${this.colorFill}; width: 25px;"></td></tr>`;
+		return `<tr><td id='${i}'>${Math.round(this.valorMin)}</td><td id='${i + 1}'>${Math.round(this.valorMax)}</td><td id='${i + 2}'>${this.leyenda}</td><td id='${i + 3}' style="background-color: ${this.colorFill}; width: 25px;"></td></tr>`;
 	}
 
 	filaHtmlSim(aux) {
@@ -36,7 +36,7 @@ class RangoSimb {
 			return `<tr><td style="background-color: ${this.colorFill};width: 25px;"></td><td style="width: 150px;">${this.leyenda}</td></tr>`;
 		} else {
 			//usamos ambos valores
-			return `<tr><td style="background-color: ${this.colorFill}; width: 25px;"></td><td style="width: 150px;">${this.leyenda}</td><td>${this.valorMin}</td><td>${this.valorMax}</td></tr>`;
+			return `<tr><td style="background-color: ${this.colorFill}; width: 25px;"></td><td style="width: 150px;">${this.leyenda}</td><td>${Math.round(this.valorMin)}</td><td>${Math.round(this.valorMax)}</td></tr>`;
 		}
 
 	}
@@ -173,7 +173,6 @@ class simbologiaCapa {
 		let longRango = Math.ceil(arreglo.length / numDivisiones);
 		let cont1 = 0, cont2 = 1, div = 1;
 		let simbologia = new simbologiaCapa();
-		//console.log(longRango);
 
 		arreglo.sort(function (a, b) {
 			return a - b;
@@ -186,7 +185,7 @@ class simbologiaCapa {
 					valorMaximo = arreglo[i];
 					cont2++;
 				} else {
-					simbologia.agregaRango(0, Math.round(valorMin), Math.round(valorMaximo), colores[cont1], (leyenda + div), borde, grosor);
+					simbologia.agregaRango(0, valorMin, valorMaximo, colores[cont1], (leyenda + div), borde, grosor);
 					cont2 = 1;
 					valorMin = arreglo[i];
 					valorMaximo = valorMin;
@@ -199,7 +198,7 @@ class simbologiaCapa {
 
 		}
 
-		simbologia.agregaRango(0, Math.round(valorMin), Math.round(valorMaximo), colores[cont1], (leyenda + div), borde, grosor);
+		simbologia.agregaRango(0, valorMin, valorMaximo, colores[cont1], (leyenda + div), borde, grosor);
 
 		return simbologia;
 

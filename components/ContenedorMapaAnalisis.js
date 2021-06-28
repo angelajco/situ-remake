@@ -644,11 +644,11 @@ function ContenedorMapaAnalisis(props) {
     //aqui empiezan los codigos para simbologia
     const [simboAux, setSimboAux] = useState({});
     const cambioEstilos = (capa) => {
-        //console.log(capa.layer._map._layers);
+        console.log(capa);
         let band = false;
         //con este metodo verificamos la capa seleccionada 
         //y si es wfs se puede editar
-        if (capa.tipo == 'wfs') {
+        if (capa.tipo == 'wfs' ) {
             setAtributos([capa.features, capa.nom_capa])
             setCapaSeleccionada(capa);
             setShowModalEstilos(true)
