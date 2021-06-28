@@ -648,7 +648,7 @@ function ContenedorMapaAnalisis(props) {
         let band = false;
         //con este metodo verificamos la capa seleccionada 
         //y si es wfs se puede editar
-        if (capa.tipo == 'wfs' ) {
+        if (capa.tipo == 'wfs' || capa.tipo == 'json' ) {
             setAtributos([capa.features, capa.nom_capa])
             setCapaSeleccionada(capa);
             setShowModalEstilos(true)
@@ -1009,7 +1009,7 @@ function ContenedorMapaAnalisis(props) {
 
     //funcion para aplicar el estilo
     function aplicarEstilo() {
-        if (capaSeleccionada.tipo == 'wfs') {
+        if (capaSeleccionada.tipo == 'wfs' || capaSeleccionada.tipo == 'json') {
             //verificamos que la capa se a wfs para poder editarla
             if (valorEstilos == 4) {
                 if (tipoDiv == "Cuartiles") {
@@ -2485,7 +2485,7 @@ function ContenedorMapaAnalisis(props) {
                                 <h1>Esta capa no puede editarse</h1>
                             </div>
                         ) : (
-                            capaSeleccionada.tipo == "wfs" ? (
+                            capaSeleccionada.tipo == "wfs" || capaSeleccionada.tipo == "json" ? (
                                 //la capa puede editarse por el formato de origen
                                 <Form id="cuerpo">
                                     <Form.Group controlId="tratamiento" className="col-10">
