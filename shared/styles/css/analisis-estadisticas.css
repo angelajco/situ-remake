@@ -57,3 +57,11 @@
     border: 1px solid black;
     border-radius: unset;
 }
+
+.columns-container {
+    color: black;
+    border: 1px solid black;
+    width: 70%;
+    max-height: 250px;
+    overflow-y: auto;
+}

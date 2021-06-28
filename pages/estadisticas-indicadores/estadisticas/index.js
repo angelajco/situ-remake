@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Accordion, Card, Form, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap'
+import React, { useState, useEffect } from 'react';
+import { Accordion, Card, Form, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faEdit } from '@fortawesome/free-solid-svg-icons';
 import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
@@ -309,7 +309,7 @@ export default function estadisticas() {
         });
         getTableData(args, function(data, error) {
             if(data && data.mensaje != 'Error') {
-                setTableData([...tableData, {title: `${statisticalProduct.nombre} (${statisticalProduct.descripcion})`, type: 'table', data: data.resultado}]);
+                setTableData([...tableData, {title: `${statisticalProduct.nombre} (${statisticalProduct.descripcion})`, type: 'table', data: data}]);
                 setIsLoading(false);
             } else {
                 renderModal('La información no está disponible.')
@@ -431,7 +431,7 @@ export default function estadisticas() {
                         <div className="row">
                             <div className="col-12 custom-mx-t-1 custom-h-450 table-responsive">
                                 {
-                                    (tableData && tableData.length > 0) &&
+                                    tableData &&
                                         tableData.map((table, index) => (
                                             <GenericTable key={index} table={table} index={index}/>
                                         ))
