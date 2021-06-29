@@ -10,6 +10,11 @@ function capturaReferenciaMapaEspejo(mapa) {
     referenciaMapaEspejoAnalisis = mapa;
 }
 
+var referenciaMapa = null;
+function capturaReferenciaMapa(mapa) {
+    referenciaMapa = mapa;
+}
+
 export default function AnalisisGeografico() {
     //Para guardar la columna de la capa espejo
     const [dobleMapa, setDobleMapa] = useState("col-12")
@@ -19,10 +24,12 @@ export default function AnalisisGeografico() {
         if (pantallaDividida == true) {
             setPantallaDividida(false);
             setDobleMapa("col-12");
+            referenciaMapa._onResize();
         } else {
             setPantallaDividida(true)
-            referenciaMapaEspejoAnalisis._onResize();
             setDobleMapa("col-6");
+            referenciaMapa._onResize();
+            referenciaMapaEspejoAnalisis._onResize();
         }
     }
 
@@ -48,15 +55,20 @@ export default function AnalisisGeografico() {
             <div className="main tw-mb-12">
                 <div className="container">
                     <div className="row">
-                        <div className="col-12 tw-mb-6">
+                        {/* <div className="col-12 tw-mb-6">
                             <button className="btn-dividir-pantalla" onClick={dividirPantalla}>
                                 <img src="/images/analisis/pantalla-dividida.png" title="Pantalla dividida"></img>
                             </button>
-                        </div>
+                        </div> */}
 
                         <div className={`${dobleMapa} col-mapa tw-pt-6`}>
                             <div className="row">
-                                <div className="col-12 tw-text-center">
+                                <div className="col-2">
+                                    <button className="btn-dividir-pantalla" onClick={dividirPantalla}>
+                                        <img src="/images/analisis/pantalla-dividida.png" title="Pantalla dividida"></img>
+                                    </button>
+                                </div>
+                                <div className="col-8 tw-text-center">
                                     <p>
                                         {nombreMapa}
                                         <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
@@ -69,8 +81,8 @@ export default function AnalisisGeografico() {
                                     </OverlayTrigger>
                                 </div>
 
-                                <div className="col-12 tw-mt-8">
-                                    <ContenedorMapaAnalisis botones={true} />
+                                <div className="col-12">
+                                    <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} />
                                 </div>
                             </div>
                         </div>
@@ -90,8 +102,8 @@ export default function AnalisisGeografico() {
                                     </OverlayTrigger>
                                 </div>
 
-                                <div className="col-12 tw-mt-8">
-                                    <ContenedorMapaAnalisis botones={false} referenciaAnalisis={capturaReferenciaMapaEspejo}/>
+                                <div className="col-12">
+                                    <ContenedorMapaAnalisis botones={false} referenciaAnalisis={capturaReferenciaMapaEspejo} />
                                 </div>
                             </div>
                         </div>

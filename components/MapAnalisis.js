@@ -8,8 +8,6 @@ import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons
 const { BaseLayer } = LayersControl;
 import { EditControl } from 'react-leaflet-draw'
 
-import referenciaMapaContext from '../contexts/ContenedorMapaContext'
-
 import 'leaflet'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
@@ -143,9 +141,8 @@ L.Map.addInitHook('addHandler', 'personal', L.Personal);
 export default function Map(props) {
     //Para guardar la referencia al mapa cuando se crea
     const [mapaReferencia, setmapaReferencia] = useState(null);
-    //Contexto para pasar al contenedor del mapa
-    const refMapContext = useContext(referenciaMapaContext)
     props.referencia(mapaReferencia);
+    props.referenciaAnalisis(mapaReferencia);
 
     //Para guardar el grupo de capas de dibujo
     var capasDib = null;
@@ -153,10 +150,6 @@ export default function Map(props) {
     //Para guardar las referencias del mapa    
     useEffect(() => {
         if (mapaReferencia != undefined) {
-            // refMapContext.refMap = mapaReferencia;
-            // refMapContext.objL = L;
-            // refMapContext.referenciaMapa();
-
             mapaReferencia.addControl(new L.Control.Fullscreen(
                 {
                     title: {
@@ -166,6 +159,14 @@ export default function Map(props) {
                     position: "bottomright"
                 }
             ));
+
+            var north = L.control({ position: "topleft" });
+            north.onAdd = () => {
+                const div = L.DomUtil.create("div", "leaflet-rose leaflet-control");
+                div.innerHTML = '<img src="/images/analisis/arrows/default.svg">'
+                return div;
+            };
+            north.addTo(mapaReferencia);
 
             var options = {
                 modal: true,
@@ -180,11 +181,11 @@ export default function Map(props) {
             //     sizeModes: ['A4Portrait', 'A4Landscape']
             // }).addTo(mapaReferencia);
 
-            L.easyButton('<img src="/images/analisis/lupa_negativa.png" width=25px height=25px>', function (btn, map) {
-                map.dragging.disable();
-                map.personal.addHooks();
-                // map.boxZoom.addHooks();
-            }).addTo(mapaReferencia);
+            // L.easyButton('<img src="/images/analisis/lupa_negativa.png" width=25px height=25px>', function (btn, map) {
+            //     map.dragging.disable();
+            //     map.personal.addHooks();
+            //     // map.boxZoom.addHooks();
+            // }).addTo(mapaReferencia);
         }
     }, [mapaReferencia])
 
@@ -288,6 +289,7 @@ export default function Map(props) {
     function ControlMovimiento() {
         const [coordenadas, setCoordenadas] = useState("")
         const mapa = useMap();
+
         const mapaEventos = useMapEvents({
             moveend() {
                 let centroUndoRedo = mapaEventos.getCenter();
@@ -297,6 +299,11 @@ export default function Map(props) {
                     update(nextTodos);
                 }
                 registraMovimiento = true;
+
+                if (lanzaSincronizacion) {
+                    props.sincronizaMapa("A", zoomUndoRedo, centroUndoRedo)
+                }
+                setLanzaSincronizacion(true);
             },
             mousemove(e) {
                 if (tipoCoordenada == 1) {
@@ -408,6 +415,14 @@ export default function Map(props) {
         return null;
     }
 
+    const [lanzaSincronizacion, setLanzaSincronizacion] = useState(true)
+    function sincroniza(zoom, centro) {
+        setLanzaSincronizacion(false)
+        mapaReferencia.setView(centro, zoom);
+    }
+    props.funcionEnlace("A", sincroniza)
+
+
     return (
         <>
             <div className="div-herramientas-mapa">
@@ -427,6 +442,8 @@ export default function Map(props) {
                     </button>
                 </OverlayTrigger>
             </div>
+
+            <div id="rose"></div>
 
             <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false}>
                 <ScaleControl maxWidth="100" />

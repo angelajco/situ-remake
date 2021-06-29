@@ -9,6 +9,10 @@
     background-size: 50%;
 }
 
+.leaflet-rose img{
+    width: 40px;
+}
+
 .btn-analisis {
     font-weight: 600;
     background-color: #fff;

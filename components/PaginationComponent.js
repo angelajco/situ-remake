@@ -31,7 +31,7 @@ function PaginationComponent(props) {
                   <div className='overflow'>
                     <Link href={`${todo.url_origen}`}>
                       <a target='_blank'>
-                        <img src='images/consulta/imagen_min.jpg' alt='' className='card-img-top' />
+                        <img src='/images/consulta/imagen_min.jpg' alt='' className='card-img-top' />
                       </a>
                     </Link>
                     <p className='doc-title'>{todo.nombre}</p>
@@ -67,7 +67,7 @@ function PaginationComponent(props) {
   const metadatosModal = async (cod) => {
     //console.log(cod);
 
-    const res = await fetch(`http://172.16.117.11/wa/publico/consultaDocumento?search=id:${cod}`);
+    const res = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=id:${cod}`);
     const datos = await res.json();
 
     //console.log(datos);
@@ -76,7 +76,7 @@ function PaginationComponent(props) {
       <div>
         <div className="row">
           <div className="col-4">
-            <img src='images/consulta/imagen_min.jpg' alt='imagen Miniatura' className="img-responsive" />
+            <img src='/images/consulta/imagen_min.jpg' alt='imagen Miniatura' className="img-responsive" />
           </div>
           <div className="col-8">
             <p><b>{datos[0].nombre}</b><br></br>{datos[0].autor}</p>

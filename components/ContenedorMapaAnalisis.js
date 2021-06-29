@@ -27,6 +27,8 @@ import 'react-bootstrap-typeahead/css/Typeahead.css';
 import ModalAnalisis from './ModalAnalisis'
 import catalogoEntidades from "../shared/jsons/entidades.json";
 
+var referenciaMapa = null;
+
 const Map = dynamic(
     () => import('./MapAnalisis'),
     {
@@ -43,11 +45,11 @@ const MapEspejo = dynamic(
     }
 )
 
-var referenciaMapa = null;
+var sincronizaA;
+var sincronizaB;
 
 function ContenedorMapaAnalisis(props) {
 
-    const [polygonDrawer, setPolygonDrawer] = useState();
     const [zIndexCapas, setZIndex] = useState(0)
     const [numeroIndex, setNumeroIndex] = useState(300);
     //Obten referencia del mapa
@@ -75,75 +77,70 @@ function ContenedorMapaAnalisis(props) {
                 },
                 (error) => console.log(error)
             )
-
-        // fetch(`${process.env.ruta}/wa/publico/catMunicipios`)
-        //     .then(res => res.json())
-        //     .then(
-        //         (data) => {
-        //             setListaMunicipios(data);
-        //         },
-        //         (error) => console.log(error)
-        //     )
     }, [])
 
     useEffect(() => {
         if (capturoReferenciaMapa == true) {
             setPolygonDrawer(new L.Draw.Circle(referenciaMapa));
-            //Donde se van a agregar las capas
             //Cuando se dibuja algo en el mapa
             referenciaMapa.on('draw:created', function (e) {
                 let layerDibujada = e.layer;
-                let puntos = null;
-                var circlepoly;
-                if (e.layerType !== 'polyline') {
-                    if (e.layerType === "marker") {
-                        puntos = layerDibujada.getLatLng();
-                    } else {
-                        if (e.layerType !== "circle") {
-                            puntos = layerDibujada.getLatLngs()
-                        } else {
-                            var d2r = Math.PI / 180;
-                            var r2d = 180 / Math.PI;
-                            // rectangulo
-                            // var earthsradius = 4507000;
-                            // var points = 4;
-                            //circulo
-                            var earthsradius = 6379000;
-                            var points = 999;
-                            var rlat = (layerDibujada.options.radius / earthsradius) * r2d;
-                            var rlng = rlat / Math.cos(layerDibujada._latlng.lat * d2r);
-                            var extp = new Array();
-                            for (var i = 0; i < points + 1; i++) {
-                                var theta = Math.PI * (i / (points / 2));
-                                var ex = layerDibujada._latlng.lng + (rlng * Math.cos(theta));
-                                var ey = layerDibujada._latlng.lat + (rlat * Math.sin(theta));
-                                extp.push(new L.LatLng(ey, ex));
-                            }
-                            circlepoly = new L.Polygon(extp);
-                            referenciaMapa.removeLayer(layerDibujada);
+                let circlepoly;
+                if (e.layerType !== 'polyline' && e.layerType !== "marker") {
+                    if (e.layerType === "circle") {
+                        var d2r = Math.PI / 180;
+                        var r2d = 180 / Math.PI;
+                        //circulo
+                        var earthsradius = 6379000;
+                        var points = 999;
+                        var rlat = (layerDibujada.options.radius / earthsradius) * r2d;
+                        var rlng = rlat / Math.cos(layerDibujada._latlng.lat * d2r);
+                        var extp = new Array();
+                        for (var i = 0; i < points + 1; i++) {
+                            var theta = Math.PI * (i / (points / 2));
+                            var ex = layerDibujada._latlng.lng + (rlng * Math.cos(theta));
+                            var ey = layerDibujada._latlng.lat + (rlat * Math.sin(theta));
+                            extp.push(new L.LatLng(ey, ex));
                         }
+                        circlepoly = new L.Polygon(extp);
+                        referenciaMapa.removeLayer(layerDibujada);
                     }
-                }
-                let capasIntersectadas = [];
-                if (circlepoly) {
-                    identifyLayers(circlepoly);
-                } else {
+
+                    let capasIntersectadas = [];
+                    let capasIntersectadasParaIdentificarSeparadas = [];
                     referenciaMapa.eachLayer(function (layer) {
-                        if (e.layerType !== 'polyline') {
-                            if (layer instanceof L.GeoJSON) {
-                                layer.eachLayer(function (layerConFeatures) {
-                                    let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), layerDibujada.toGeoJSON())
-                                    if (seIntersectan != null) {
-                                        layerConFeatures.feature.properties["nombre_capa"] = layer.options["nombre"];
-                                        capasIntersectadas.push(layerConFeatures.feature.properties)
+                        if (layer instanceof L.GeoJSON) {
+                            let tempCapasIdentificadasMismaCapa = []
+                            layer.eachLayer(function (layerConFeatures) {
+                                let seIntersectan;
+                                seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), circlepoly ? circlepoly.toGeoJSON() : layerDibujada.toGeoJSON())
+                                if (seIntersectan != null) {
+                                    if (circlepoly) {
+                                        //Arreglo temporal que se limpia cada vez que entra en una nueva capa Padre
+                                        //La cual guardara las capas identificadas de manera independiente
+                                        tempCapasIdentificadasMismaCapa.push(layerConFeatures.feature)
+                                    } else {
+                                        //Se guardan todos los features en el mismo arreglo
+                                        capasIntersectadas.push(layerConFeatures.feature)
                                     }
-                                })
+                                }
+                            })
+                            //Si es identificar, vamos agregando las capas separadas
+                            if (tempCapasIdentificadasMismaCapa.length != 0) {
+                                capasIntersectadasParaIdentificarSeparadas.push(tempCapasIdentificadasMismaCapa)
                             }
                         }
                     });
-                }
-                if (capasIntersectadas.length != 0) {
-                    setRasgos(capasIntersectadas);
+                    //Si para rasgos hubo interseccion o para capas identificar
+                    if (capasIntersectadas.length != 0 || capasIntersectadasParaIdentificarSeparadas.length != 0) {
+                        if (circlepoly) {
+                            // setCapasIdentificadas(capasIntersectadasParaIdentificarSeparadas)
+                            //Se guardan para despues indentificarse
+                            setSavedToIdentify(capasIntersectadasParaIdentificarSeparadas)
+                        } else {
+                            setRasgos(capasIntersectadas);
+                        }
+                    }
                 }
             });
         }
@@ -263,6 +260,8 @@ function ContenedorMapaAnalisis(props) {
             opacity: "1",
             fillOpacity: "1"
         }
+        //Para los alias de los atributos
+        capaNacional["id_capa"] = capaFusion.id_capa
         agregaCapaWFS(capaNacional)
     }
 
@@ -285,12 +284,12 @@ function ContenedorMapaAnalisis(props) {
                 opacity: "1",
                 fillOpacity: "1"
             }
+            //Para los alias de los atributos
+            capaEntidad["id_capa"] = capaFusion.id_capa
             agregaCapaWFS(capaEntidad)
         }
     }
 
-    //Para dar aviso que no se ha agregado una opcion valida
-    const [avisoBusquedaCapasIde, setAvisoBusquedaCapasIde] = useState("")
     //Para la busqueda avanzada, mostrar o no
     const [busquedaAvanzada, setBusquedaAvanzada] = useState(false)
     function cambiaBusquedaAvanzada() {
@@ -303,9 +302,8 @@ function ContenedorMapaAnalisis(props) {
     //Para guardar los titulos de los metadatos en busqueda avanzada
     const [listaMetadatosTitulosBusquedaAvanzada, setListaMetadatosTitulosBusquedaAvanzada] = useState([])
     //Para buscar los metadatos de la capa
-    const { register: registraMetadatos, handleSubmit: handleSubmitMetadatos } = useForm();
+    const { register: registraMetadatos, handleSubmit: handleSubmitMetadatos, errors: errorsMetadatos, setError: setErrorMetadatos } = useForm();
     const busquedaAvanzadaMetadatos = (data) => {
-        setAvisoBusquedaCapasIde("")
         setListaMetadatosTitulosBusquedaAvanzada([])
         let capasId = [];
         let capasArr = [];
@@ -329,16 +327,16 @@ function ContenedorMapaAnalisis(props) {
             })
             setListaMetadatosTitulosBusquedaAvanzada(capasArr)
         } else {
-            setAvisoBusquedaCapasIde("No se encontró una coincidencia con esta palabra")
+            setErrorMetadatos("palabra", { message: "No se encontró una coincidencia con esta palabra" })
         }
     }
 
     //Para buscar los metadatos de la capa
-    const { register: registraAgregaCapa, handleSubmit: handleAgregaCapa, control: controlAgregaCapa } = useForm();
+    const { register: registraAgregaCapa, handleSubmit: handleAgregaCapa, control: controlAgregaCapa, errors: erroresAgregaCapa, setError: setErrorAgregaCapa } = useForm();
     const submitAgregaCapa = (data) => {
         let capa = JSON.parse(data.capa);
         if (capa.filtro_minimo == "0") {
-            if (data.entidadAgregar.length != 0) {
+            if (data.entidadAgregar != undefined && data.entidadAgregar.length != 0) {
                 construyeEntidadCapa(capa, data.entidadAgregar[0])
             } else {
                 construyeNacionalCapa(capa)
@@ -347,7 +345,9 @@ function ContenedorMapaAnalisis(props) {
             if (data.entidadAgregar.length != 0) {
                 construyeEntidadCapa(capa, data.entidadAgregar[0])
             } else {
-                console.log("se debe agregar una capa");
+                setErrorAgregaCapa("entidadAgregar", {
+                    message: "Debes seleccionar una entidad"
+                })
             }
         }
     }
@@ -377,11 +377,9 @@ function ContenedorMapaAnalisis(props) {
 
     //Para agregar un servicio de otra identidad
     const [guardaServicio, setGuardaServicio] = useState([])
-    const [avisoServicio, setAvisoServicio] = useState("")
-    const { register: registraServicio, handleSubmit: handleAgregaServicio } = useForm();
+    const { register: registraServicio, handleSubmit: handleAgregaServicio, errors: errorsServicio, setError: setErrorServicio } = useForm();
     const agregaServicio = (data) => {
         setGuardaServicio([])
-        setAvisoServicio("")
         // https://ide.sedatu.gob.mx:8080/ows?service=wms&version=1.1.1&request=GetCapabilities
         let req = new XMLHttpRequest();
         req.open("GET", `${data.urlServicio}?service=WMS&request=GetCapabilities`);
@@ -391,20 +389,20 @@ function ContenedorMapaAnalisis(props) {
                 if (req.status == 200) {
                     xml2js.parseString(req.response, (err, result) => {
                         if (err) {
-                            setAvisoServicio("El servicio no está disponible o agrego una URL erronea, favor de verificar.")
+                            setErrorServicio("urlServicio", { message: "El servicio no está disponible o agrego una URL erronea, favor de verificar" })
                         } else {
                             let matches = xpath.find(result, "//Layer/Layer/@opaque");
                             if (matches.length != 0) {
                                 setGuardaServicio([matches, data.urlServicio]);
                             }
                             else {
-                                setAvisoServicio("El servicio no está disponible o agrego una URL erronea, favor de verificar.")
+                                setErrorServicio("urlServicio", { message: "El servicio no está disponible o agrego una URL erronea, favor de verificar" })
                             }
                         }
                     })
                 }
                 else {
-                    setAvisoServicio("El servicio no está disponible o agrego una URL erronea, favor de verificar.")
+                    setErrorServicio("urlServicio", { message: "El servicio no está disponible o agrego una URL erronea, favor de verificar" })
                 }
             }
         }
@@ -516,7 +514,6 @@ function ContenedorMapaAnalisis(props) {
                     response['transparencia'] = 1;
                     response['simbologia'] = creaSVG(capaFiltrada.titulo, capaFiltrada.estilos)
                     response.download = [{ nom_capa: response.nom_capa, link: JSON.stringify(response), tipo: 'GeoJSON' }];
-                    // response.cveEnt = capaFiltrada.valor_filtro;
                     response.isActive = false;
                     setZIndex(zIndexCapas + 1)
                     referenciaMapa.createPane(`${zIndexCapas}`)
@@ -526,15 +523,32 @@ function ContenedorMapaAnalisis(props) {
                         style: capaFiltrada.estilos,
                         nombre: response["nom_capa"],
                         onEachFeature: function (feature = {}, layerPadre) {
-                            layerPadre.on('click', function () {
-                                feature.properties["nombre_capa"] = layerPadre.options["nombre"];
-                                setRasgos([feature.properties]);
-                            })
+                            feature["nombre_capa"] = layerPadre.options["nombre"];
+                            fetch(`${process.env.ruta}/wa0/atributos_capa01?id=${capaFiltrada["id_capa"]}`)
+                                .then(res => res.json())
+                                .then(
+                                    (data) => {
+                                        Object.keys(feature.properties).map(key => {
+                                            let nuevoAlias = data.columnas.find(columna => columna.columna == key).alias
+                                            if (nuevoAlias !== "") {
+                                                let keyTemp = feature.properties[key]
+                                                delete feature.properties[key]
+                                                feature.properties[nuevoAlias] = keyTemp
+                                            }
+                                        })
+                                        layerPadre.on('click', function () {
+                                            setRasgos([feature]);
+                                        })
+                                    },
+                                    () => {
+                                        layerPadre.on('click', function () {
+                                            setRasgos([feature]);
+                                        })
+                                    }
+                                )
                         }
                     });
-                    console.log(layer, "layer wfs")
                     response['layer'] = layer;
-                    // setCapasVisualizadas([...capasVisualizadas, response])
                     setCapasVisualizadas([response, ...capasVisualizadas])
                     referenciaMapa.addLayer(response.layer);
                     setDatosModalAnalisis({
@@ -552,8 +566,8 @@ function ContenedorMapaAnalisis(props) {
     //Para mostrar el modal de atributos
     const [showModalAtributos, setShowModalAtributos] = useState(false)
     //Para asignar atributos
-    const muestraAtributos = (capa) => {
-        setAtributos([capa.features, capa.nom_capa])
+    function muestraAtributos(capa) {
+        setAtributos(capa.features)
         setShowModalAtributos(true)
     }
 
@@ -675,22 +689,40 @@ function ContenedorMapaAnalisis(props) {
 
     //Para exportar en CSV la información de rasgos
     var [csvData, setCsvData] = useState([]);
+    //Para exportar en CSV la información de los rasgos identificados
+    var [csvDataIdentificados, setCsvDataIdentificados] = useState([]);
     const [csvFileName, setCsvFileName] = useState('');
     //Añade los valores al archivo
-    function addToExportWithPivot(rasgosObtenidos) {
+    function addToExportWithPivot(rasgosObtenidos, fuenteProveniente) {
         generateFileName(function () {
             let csvData_ = [];
             let csvContent = [];
-            if (rasgosObtenidos[0]) {
-                csvData_.push(Object.keys(rasgosObtenidos[0]))
-                rasgosObtenidos.map(rasgo => {
+            let id = "";
+            if (rasgosObtenidos.length != 0) {
+                rasgosObtenidos.map((rasgo, index) => {
+                    if (rasgo.nombre_capa != id) {
+                        if (index != 0) {
+                            csvData_.push([])
+                        }
+                        id = rasgo.nombre_capa
+                        var encabezados = Object.keys(rasgo.properties)
+                        encabezados.push("nombre_capa")
+                        csvData_.push(encabezados)
+                    }
                     csvContent = [];
-                    Object.keys(rasgo).map(item => {
-                        csvContent.push(rasgo[item]);
+                    Object.keys(rasgo.properties).map(item => {
+                        csvContent.push(rasgo.properties[item]);
                     })
+                    csvContent.push(rasgo.nombre_capa)
                     csvData_.push(csvContent);
                 });
-                setCsvData(csvData_);
+                if(fuenteProveniente == 0){
+                    //proviene de rasgos
+                    setCsvData(csvData_);
+                } else if(fuenteProveniente == 1){
+                    //proviene de capas identificadas
+                    setCsvDataIdentificados(csvData_)
+                }
             }
         });
     }
@@ -745,13 +777,11 @@ function ContenedorMapaAnalisis(props) {
         //Busqueda basica
         //Busqueda avanzada
         setListaMetadatosTitulosBusquedaAvanzada([])
-        setAvisoBusquedaCapasIde("");
         //Busqueda general
         setBusquedaAvanzada(false)
         setBotonesAgregaCapaIdeWFSWMS([])
         //////////////////Capas de servicio
         setGuardaServicio([]);
-        setAvisoServicio("");
 
         setShowModalAgregarCapas(true);
     }
@@ -774,10 +804,6 @@ function ContenedorMapaAnalisis(props) {
             remueveTabindexModalMovible();
         });
     }
-
-    const [isIdentifyActive, setIdentify] = useState(false);
-    const [selectedToIdentify, setSelectedToIdentify] = useState([]);
-    const [savedToIdentify, setSavedToIdentify] = useState([]);
 
     //Modal general que no se minimiza ni se expande
     const [showModalAnalisis, setShowModalAnalisis] = useState(false);
@@ -976,51 +1002,19 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
-    useEffect(() => {
-        if (polygonDrawer) {
-            if (isIdentifyActive == true) {
-                handleShowModalIdentify();
-                polygonDrawer.enable();
-            } else {
-                polygonDrawer.disable();
-            }
-        }
-    }, [isIdentifyActive]);
-
-    function identifyLayers(poly) {
-        if (poly) {
-            let capasIntersectadas = [];
-            referenciaMapa.eachLayer(function (layer) {
-                if (layer instanceof L.GeoJSON) {
-                    let features = [];
-                    layer.eachLayer(function (layerConFeatures) {
-                        let seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), poly.toGeoJSON())
-                        if (seIntersectan != null) {
-                            features.push(layerConFeatures.feature.properties);
-                        }
-                    })
-                    if (features.length > 0)
-                        capasIntersectadas.push({ layer: layer.options.nombre, features: features });
-                }
-            });
-            setSavedToIdentify(capasIntersectadas);
-            setIdentify(false);
-        }
-    }
-
-    function changeIdentifyType() {
-        switch (parseInt(identifyOption)) {
-            case 1:
-                setSelectedToIdentify(savedToIdentify);
+    const { register: registraIdentify, handleSubmit: handleSubmitIdentify, errors: errorsIdentify, setError: setErrorIdenfity } = useForm();
+    const identificaCapa = (data) => {
+        if (savedToIdentify.length != 0) {
+            if (data.seleccion == "1") {
+                setMuestraTablasCapasIdentificadas(savedToIdentify)
                 prepareDataToExport(savedToIdentify, function (data) {
-                    addToExportWithPivot(data);
+                    addToExportWithPivot(data, 1);
                     // generatePdf(savedToIdentify.length, function() {
                     //     console.log('pdfOk!!!');
                     //     console.log('pdfDocument!!!', pdfDocument);
                     // });
                 });
-                break;
-            case 2:
+            } else if (data.seleccion == "2") {
                 getTopLayer(function (index) {
                     setSelectedToIdentify([savedToIdentify[index]]);
                     prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function (data) {
@@ -1031,8 +1025,7 @@ function ContenedorMapaAnalisis(props) {
                         // });
                     });
                 });
-                break;
-            case 3:
+            } else if (data.seleccion == "3") {
                 includeActiveLayer(function (index, isActive) {
                     setSelectedToIdentify(isActive == true ? [savedToIdentify[index]] : []);
                     prepareDataToExport(isActive == true ? [savedToIdentify[index]] : [], function (data) {
@@ -1043,12 +1036,82 @@ function ContenedorMapaAnalisis(props) {
                         // });
                     });
                 });
-                break;
-            default:
-                console.log('parseInt(identifyOption): ', parseInt(identifyOption))
-                break;
+            }
+        } else {
+            console.log("No se ha seleccionado nada")
         }
     }
+
+
+    //Para activar o desactivar cursor para identificar las capas
+    const [isIdentifyActive, setIdentify] = useState(false);
+    //Para mostrar las capas identificadas
+    const [muestraTablasCapasIdentificadas, setMuestraTablasCapasIdentificadas] = useState([])
+    //Para guardar los datos de las capas a indentificar despues de seleccionar el tipo de seleccion
+    const [savedToIdentify, setSavedToIdentify] = useState([]);
+
+
+    //Valor del select para el identify
+    const [selectedToIdentify, setSelectedToIdentify] = useState([]);
+
+    //Para activar o desactivar el poligono (circulo) para dibujar
+    const [polygonDrawer, setPolygonDrawer] = useState();
+    useEffect(() => {
+        if (polygonDrawer) {
+            if (isIdentifyActive == true) {
+                //Abre el modal de identificar
+                handleShowModalIdentify();
+                //activa la opcion de dibujar
+                polygonDrawer.enable();
+            } else {
+                //Desactiva la opción de dibujar
+                polygonDrawer.disable();
+            }
+        }
+    }, [isIdentifyActive]);
+
+    /************************************A BORRAR************************************/
+    // function changeIdentifyType() {
+    //     switch (parseInt(identifyOption)) {
+    //         case 1:
+    //             setSelectedToIdentify(savedToIdentify);
+    //             prepareDataToExport(savedToIdentify, function (data) {
+    //                 addToExportWithPivot(data);
+    //                 // generatePdf(savedToIdentify.length, function() {
+    //                 //     console.log('pdfOk!!!');
+    //                 //     console.log('pdfDocument!!!', pdfDocument);
+    //                 // });
+    //             });
+    //             break;
+    //         case 2:
+    //             getTopLayer(function (index) {
+    //                 setSelectedToIdentify([savedToIdentify[index]]);
+    //                 prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function (data) {
+    //                     addToExportWithPivot(data);
+    //                     // generatePdf(1, function() {
+    //                     //     console.log('pdfOk!!!');
+    //                     //     console.log('pdfDocument!!!', pdfDocument);
+    //                     // });
+    //                 });
+    //             });
+    //             break;
+    //         case 3:
+    //             includeActiveLayer(function (index, isActive) {
+    //                 setSelectedToIdentify(isActive == true ? [savedToIdentify[index]] : []);
+    //                 prepareDataToExport(isActive == true ? [savedToIdentify[index]] : [], function (data) {
+    //                     addToExportWithPivot(data);
+    //                     // generatePdf(1, function() {
+    //                     //     console.log('pdfOk!!!');
+    //                     //     console.log('pdfDocument!!!', pdfDocument);
+    //                     // });
+    //                 });
+    //             });
+    //             break;
+    //         default:
+    //             console.log('parseInt(identifyOption): ', parseInt(identifyOption))
+    //             break;
+    //     }
+    // }
 
     function includeActiveLayer(success) {
         var isActive = false;
@@ -1068,12 +1131,33 @@ function ContenedorMapaAnalisis(props) {
     function getTopLayer(success) {
         var index;
         var topLayer = capasVisualizadas[0];
-        savedToIdentify.map((saved, index_) => {
+        savedToIdentify[0].map((saved, index_) => {
             if (saved.layer == topLayer.nom_capa) {
                 index = index_;
             }
         });
         success(index);
+    }
+
+    //Funcion que prepara los datos de las capas identificadas para exportar en csv
+    function prepareDataToExport(data, success) {
+        var tempArray = [];
+        data.map(capasSeparadas => {
+            capasSeparadas.map(feature => {
+                tempArray.push(feature)
+            })
+        })
+        success(tempArray);
+    }
+
+    //Funcion para activar la capa como activa
+    function enableLayer(index) {
+        var tempArray = [];
+        capasVisualizadas.map((capa, index_) => {
+            capa.isActive = (index == index_);
+            tempArray.push(capa);
+        });
+        setCapasVisualizadas(tempArray);
     }
 
     const [pdfDocument, setPdfDocument] = useState(<toPdf.Document></toPdf.Document>);
@@ -1088,26 +1172,6 @@ function ContenedorMapaAnalisis(props) {
             flexGrow: 1
         }
     });
-
-    function prepareDataToExport(data, success) {
-        var tempArray = [];
-        data.map((layer) => {
-            layer.features.map((feature) => {
-                tempArray.push(feature)
-            });
-        });
-        success(tempArray);
-    }
-
-    function enableLayer(index) {
-        var tempArray = [];
-        capasVisualizadas.map((capa, index_) => {
-            capa.isActive = (index == index_);
-            tempArray.push(capa);
-        });
-        // setActiveLayer(capasVisualizadas[index]);
-        setCapasVisualizadas(tempArray);
-    }
 
     function generatePdf(length, success) {
         var nodeMap = document.getElementById('id-export-Map');
@@ -1268,8 +1332,26 @@ function ContenedorMapaAnalisis(props) {
     }
 
     useEffect(() => {
-        addToExportWithPivot(rasgos)
+        if (rasgos.length != 0) {
+            addToExportWithPivot(rasgos, 0)
+        }
     }, [rasgos]);
+
+    //Para el movimiento de los dos mapas
+    function enlaceMapa(tag, funcion) {
+        if (tag == 'A') {
+            sincronizaA = funcion
+        } else {
+            sincronizaB = funcion
+        }
+    }
+    const sincronizaMapa = (tag, zoom, centro) => {
+        if (tag == 'A') {
+            sincronizaB(zoom, centro)
+        } else {
+            sincronizaA(zoom, centro)
+        }
+    }
 
     return (
         <>
@@ -1356,29 +1438,25 @@ function ContenedorMapaAnalisis(props) {
                                                             <Form.Group controlId="palabra">
                                                                 <Form.Label>Escribe la palabra a buscar</Form.Label>
                                                                 <Form.Control type="text" name="palabra" required ref={registraMetadatos} />
+                                                                {errorsMetadatos.palabra && <p className="tw-mt-4 tw-text-red-600">{errorsMetadatos.palabra.message}</p>}
                                                             </Form.Group>
                                                             <button className="btn-analisis" type="submit">BUSCAR</button>
                                                         </Form>
                                                         {
-                                                            [
-                                                                avisoBusquedaCapasIde && (
-                                                                    <p key="1">{avisoBusquedaCapasIde}</p>
-                                                                ),
-                                                                listaMetadatosTitulosBusquedaAvanzada.length != 0 && (
-                                                                    <Form key="2">
-                                                                        <Form.Group controlId="lista-capas-metadatos">
-                                                                            <Form.Label>Selecciona una capa</Form.Label>
-                                                                            <Form.Control as="select" htmlSize={listaMetadatosTitulosBusquedaAvanzada.length + 1} custom onChange={(e) => agregaCapaBusquedaIde(e)}>
-                                                                                {
-                                                                                    listaMetadatosTitulosBusquedaAvanzada.map((valor, index) => (
-                                                                                        <option key={index} value={JSON.stringify(valor)}>{valor.titulo}</option>
-                                                                                    ))
-                                                                                }
-                                                                            </Form.Control>
-                                                                        </Form.Group>
-                                                                    </Form>
-                                                                )
-                                                            ]
+                                                            listaMetadatosTitulosBusquedaAvanzada.length != 0 && (
+                                                                <Form key="2">
+                                                                    <Form.Group controlId="lista-capas-metadatos">
+                                                                        <Form.Label>Selecciona una capa</Form.Label>
+                                                                        <Form.Control as="select" htmlSize={listaMetadatosTitulosBusquedaAvanzada.length + 1} custom onChange={(e) => agregaCapaBusquedaIde(e)}>
+                                                                            {
+                                                                                listaMetadatosTitulosBusquedaAvanzada.map((valor, index) => (
+                                                                                    <option key={index} value={JSON.stringify(valor)}>{valor.titulo}</option>
+                                                                                ))
+                                                                            }
+                                                                        </Form.Control>
+                                                                    </Form.Group>
+                                                                </Form>
+                                                            )
                                                         }
                                                     </>
                                                 )
@@ -1392,22 +1470,34 @@ function ContenedorMapaAnalisis(props) {
                                         <Form key="3" className="tw-mt-4" onSubmit={handleAgregaCapa(submitAgregaCapa)}>
                                             <p>Selecciona como quieres agregar esta capa</p>
                                             <input type="hidden" value={JSON.stringify(botonesAgregaCapaIdeWFSWMS[1])} name="capa" ref={registraAgregaCapa}></input>
-                                            <Controller
-                                                as={Typeahead}
-                                                control={controlAgregaCapa}
-                                                options={catalogoEntidades}
-                                                labelKey="entidad"
-                                                id="entidadesListado"
-                                                name="entidadAgregar"
-                                                defaultValue=""
-                                                placeholder="Selecciona una entidad"
-                                                clearButton
-                                                emptyLabel="No se encontraron resultados"
-                                                className="tw-mb-4"
-                                            />
-                                            <div className="tw-flex tw-flex-wrap tw-justify-around tw-mb-4">
+                                            {
+                                                botonesAgregaCapaIdeWFSWMS[1]["filtro_entidad"] != "" && (
+                                                    <Form.Group>
+                                                        <Controller
+                                                            as={Typeahead}
+                                                            control={controlAgregaCapa}
+                                                            options={catalogoEntidades}
+                                                            labelKey="entidad"
+                                                            id="entidadesListado"
+                                                            name="entidadAgregar"
+                                                            defaultValue=""
+                                                            placeholder="Selecciona una entidad"
+                                                            clearButton
+                                                            emptyLabel="No se encontraron resultados"
+                                                        />
+                                                        {
+                                                            erroresAgregaCapa.entidadAgregar && <p className="tw-mt-4 tw-text-red-600">{erroresAgregaCapa.entidadAgregar.message}</p>
+                                                        }
+                                                    </Form.Group>
+                                                )
+                                            }
+                                            <div className="tw-flex tw-flex-wrap tw-justify-around tw-mt-4">
                                                 <Button variant="light" type="button" onClick={() => agregaCapaWMS(botonesAgregaCapaIdeWFSWMS[1], 0)}>Mosaico</Button>
-                                                <Button variant="light" type="submit">Elementos</Button>
+                                                {
+                                                    botonesAgregaCapaIdeWFSWMS[1].wfs != "" && (
+                                                        <Button variant="light" type="submit">Elementos</Button>
+                                                    )
+                                                }
                                             </div>
                                         </Form>
                                     )
@@ -1420,29 +1510,27 @@ function ContenedorMapaAnalisis(props) {
                                     <Form.Label>URL</Form.Label>
                                     <Form.Control type="url" name="urlServicio" ref={registraServicio} />
                                     <Form.Text muted>Agregue una URL de la siguiente manera "https://www.dominio.com/ows"</Form.Text>
+                                    {errorsServicio.urlServicio && <p className="tw-mt-4 tw-text-red-600">{errorsServicio.urlServicio.message}</p>}
                                 </Form.Group>
                                 <button className="btn-analisis" type="submit">CONSULTAR</button>
                             </Form>
                             {
                                 guardaServicio.length != 0 &&
-                                <>
-                                    <Typeahead
-                                        id="agregaServicioCapa"
-                                        labelKey={(valores) => `${valores["Title"]}`}
-                                        options={guardaServicio[0]}
-                                        placeholder="Selecciona una capa"
-                                        onChange={(servicio) => agregaCapaWMS(servicio, 1)}
-                                        defaultValue=""
-                                        clearButton
-                                        paginationText="Desplegar más resultados"
-                                        emptyLabel="No se encontraron resultados"
-                                    />
-                                </>
-                            }
-                            {
-                                avisoServicio != "" && (
-                                    <p className="tw-mt-4">{avisoServicio}</p>
-                                )
+                                <Form>
+                                    <Form.Group>
+                                        <Typeahead
+                                            id="agregaServicioCapa"
+                                            labelKey={(valores) => `${valores["Title"]}`}
+                                            options={guardaServicio[0]}
+                                            placeholder="Selecciona una capa"
+                                            onChange={(servicio) => agregaCapaWMS(servicio, 1)}
+                                            defaultValue=""
+                                            clearButton
+                                            paginationText="Desplegar más resultados"
+                                            emptyLabel="No se encontraron resultados"
+                                        />
+                                    </Form.Group>
+                                </Form>
                             }
                         </Tab>
                         <Tab eventKey="datos" title="Datos">
@@ -1561,25 +1649,27 @@ function ContenedorMapaAnalisis(props) {
                         <FontAwesomeIcon icon={faWindowRestore} />
                     </button>
                 </Modal.Header>
-                <Modal.Body className="tw-overflow-y-auto">
+                <Modal.Body>
                     {
                         atributos.length != 0 && (
                             <Table striped bordered hover responsive>
                                 <thead>
                                     <tr className="tw-text-center">
-                                        <th colSpan={Object.keys(atributos[0][0].properties).length}>{atributos[1]}</th>
+                                        <th colSpan={Object.keys(atributos[0].properties).length}>{atributos[0].nombre_capa}</th>
                                     </tr>
                                     <tr>
                                         {
-                                            Object.keys(atributos[0][0].properties).map((valueKey, indexKey) => (
-                                                <th key={indexKey}>{valueKey}</th>
-                                            ))
+                                            Object.keys(atributos[0].properties).map((valueKey, indexKey) => {
+                                                return (
+                                                    <th key={indexKey}>{valueKey}</th>
+                                                )
+                                            })
                                         }
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {
-                                        atributos[0].map((value, index) => (
+                                        atributos.map((value, index) => (
                                             <tr key={index}>
                                                 {
                                                     Object.keys(value.properties).map((valueKey, indexKey) => {
@@ -1598,7 +1688,7 @@ function ContenedorMapaAnalisis(props) {
                 </Modal.Body>
             </Modal>
 
-            <Modal dialogAs={DraggableModalDialog} show={showModalIdentify} backdrop={false} keyboard={false} contentClassName="modal-redimensionable modal-identify"
+            <Modal dialogAs={DraggableModalDialog} show={showModalIdentify} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
                 onHide={() => setShowModalIdentify(false)} className="tw-pointer-events-none modal-analisis">
                 <Modal.Header className="tw-cursor-pointer" closeButton>
                     <Modal.Title><b>Identificar</b></Modal.Title>
@@ -1607,74 +1697,68 @@ function ContenedorMapaAnalisis(props) {
                     </button>
                 </Modal.Header>
                 <Modal.Body>
-                    <div className="row">
-                        <div className="col-8">
-                            <Form.Group>
-                                <Form.Control as="select" onChange={(e) => setIdentifyOption(e.target.value)}>
-                                    <option value='' hidden>Aplicar a:</option>
-                                    <option value='1'>Todas</option>
-                                    <option value='2'>Superior</option>
-                                    <option value='3'>Activa</option>
-                                </Form.Control>
-                            </Form.Group>
+                    <Form onSubmit={handleSubmitIdentify(identificaCapa)} className="row">
+                        <Form.Group className="col-6">
+                            <Form.Control as="select" name="seleccion" required ref={registraIdentify}>
+                                <option value='' hidden>Aplicar a:</option>
+                                <option value='1'>Todas</option>
+                                <option value='2'>Superior</option>
+                                <option value='3'>Activa</option>
+                            </Form.Control>
+                        </Form.Group>
+                        <div className="col-6 tw-text-center">
+                            <button className="btn-analisis" type="submit">APLICAR</button>
                         </div>
-                        <div className="col-4">
-                            <button className="btn-analisis" onClick={() => changeIdentifyType()}>APLICAR</button>
-                        </div>
-                    </div>
-                    <div className="custom-modal-body custom-mx-t-1">
-                        <div className="row">
-                            <div id="identify-tables" className="col-12">
-                                {
-                                    selectedToIdentify.length > 0 &&
-                                    selectedToIdentify.map((selected, index) => (
-                                        selected &&
-                                        <div id={`identify-table-${index}`} key={index}>
-                                            <Table striped bordered hover>
-                                                <thead>
-                                                    <tr className="tw-text-center">
-                                                        <th colSpan={selected.features.length ? Object.keys(selected.features[0]).length : 5}>{selected.layer}</th>
-                                                    </tr>
-                                                    <tr>
-                                                        {
-                                                            Object.keys(selected.features[0]).map((header, index_) => (
-                                                                <th key={index_}>{header}</th>
-                                                            ))
-                                                        }
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {
-                                                        selected.features.map((content, index__) => (
-                                                            <tr key={index__}>
+                    </Form>
+                    {
+                        muestraTablasCapasIdentificadas.length != 0 && (
+                            <>
+                                <div className="custom-modal-body">
+                                    <div id="identify-tables">
+                                        {
+                                            muestraTablasCapasIdentificadas.map((selected, index) => (
+                                                <div id={`identify-table-${index}`} key={index}>
+                                                    <Table striped bordered hover>
+                                                        <thead>
+                                                            <tr className="tw-text-center">
+                                                                <th colSpan={Object.keys(selected[0].properties).length}>{selected[0].nombre_capa}</th>
+                                                            </tr>
+                                                            <tr>
                                                                 {
-                                                                    Object.keys(selected.features[0]).map((header_, index___) => (
-                                                                        <td key={index___}>{content[header_]}</td>
+                                                                    Object.keys(selected[0].properties).map((header, index1) => (
+                                                                        <th key={index1}>{header}</th>
                                                                     ))
                                                                 }
                                                             </tr>
-                                                        )
-                                                        )
-                                                    }
-                                                </tbody>
-                                            </Table>
-                                        </div>
-                                    )
-                                    )
-                                }
-                            </div>
-                        </div>
-                    </div>
-                    {
-                        selectedToIdentify.length > 0 &&
-                        <div className="row custom-mx-t-1">
-                            <div className="col-12 d-flex justify-content-around">
-                                <OverlayTrigger overlay={<Tooltip>{`Exportar CSV`}</Tooltip>}>
-                                    <CSVLink data={csvData} filename={`${csvFileName}.csv`}>
-                                        <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFileCsv} />
-                                    </CSVLink>
-                                </OverlayTrigger>
-                                {/* <OverlayTrigger overlay={<Tooltip>{`Exportar PDF`}</Tooltip>}>
+                                                        </thead>
+                                                        <tbody>
+                                                            {
+                                                                selected.map((valorFeature, index2) => (
+                                                                    <tr key={index2}>
+                                                                        {
+                                                                            Object.keys(valorFeature.properties).map((header_, index3) => (
+                                                                                <td key={index3}>{valorFeature.properties[header_]}</td>
+                                                                            ))
+                                                                        }
+                                                                    </tr>
+                                                                ))
+                                                            }
+                                                        </tbody>
+                                                    </Table>
+                                                </div>
+                                            )
+                                            )
+                                        }
+                                    </div>
+                                </div>
+                                <div className="custom-mx-t-1">
+                                    <div className="d-flex justify-content-around">
+                                        <OverlayTrigger overlay={<Tooltip>{`Exportar CSV`}</Tooltip>}>
+                                            <CSVLink data={csvDataIdentificados} filename={`${csvFileName}.csv`}>
+                                                <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFileCsv} />
+                                            </CSVLink>
+                                        </OverlayTrigger>
+                                        {/* <OverlayTrigger overlay={<Tooltip>{`Exportar PDF`}</Tooltip>}>
                                     <toPdf.PDFDownloadLink id="download-pdf" document={pdfDocument} fileName={`${csvFileName}.pdf`}>
                                         {
                                             ({ blob, url, loading, error }) =>
@@ -1684,8 +1768,10 @@ function ContenedorMapaAnalisis(props) {
                                         }
                                     </toPdf.PDFDownloadLink>
                                 </OverlayTrigger> */}
-                            </div>
-                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )
                     }
                 </Modal.Body>
             </Modal>
@@ -1702,7 +1788,7 @@ function ContenedorMapaAnalisis(props) {
                                     </Button>
                                 </div>
                                 {
-                                    rasgos[0] &&
+                                    rasgos.length != 0 &&
                                     <div className="col-3">
                                         <CSVLink data={csvData} filename={`${csvFileName}.csv`}>
                                             <FontAwesomeIcon size="2x" icon={faFileCsv} />
@@ -1719,14 +1805,14 @@ function ContenedorMapaAnalisis(props) {
                                     <Accordion key={index}>
                                         <Card>
                                             <Card.Header className="tw-flex tw-justify-between tw-items-baseline">
-                                                {valor["NOMGEO"]}
+                                                {valor["nombre_capa"]}
                                                 <CustomToggle eventKey={index.toString()} />
                                             </Card.Header>
                                             <Accordion.Collapse eventKey={index.toString()}>
                                                 <Table striped bordered hover>
                                                     <thead>
                                                         <tr>
-                                                            <th key={index} colSpan="2" className="tw-text-center">{valor["nombre_capa"]}</th>
+                                                            <th key={index} colSpan="2" className="tw-text-center">{valor["id"]}</th>
                                                         </tr>
                                                         <tr>
                                                             <th>Valor</th>
@@ -1735,16 +1821,12 @@ function ContenedorMapaAnalisis(props) {
                                                     </thead>
                                                     <tbody>
                                                         {
-                                                            Object.keys(valor).map((key, indexKey) => {
-                                                                if (key !== "nombre_capa") {
-                                                                    return (
-                                                                        <tr key={indexKey}>
-                                                                            <td>{key}</td>
-                                                                            <td>{valor[key]}</td>
-                                                                        </tr>
-                                                                    )
-                                                                }
-                                                            })
+                                                            Object.keys(valor.properties).map((key, indexKey) => (
+                                                                <tr key={indexKey}>
+                                                                    <td>{key}</td>
+                                                                    <td>{valor.properties[key]}</td>
+                                                                </tr>
+                                                            ))
                                                         }
                                                     </tbody>
                                                 </Table>
@@ -1923,9 +2005,11 @@ function ContenedorMapaAnalisis(props) {
             {
                 props.botones == true
                     ?
-                    <Map referencia={capturaReferenciaMapa} datos={capasVisualizadas} />
+                    <Map referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
+                        referenciaAnalisis={props.referenciaAnalisis}
+                    />
                     :
-                    <MapEspejo referencia={capturaReferenciaMapa} datos={capasVisualizadas}
+                    <MapEspejo referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
                         referenciaAnalisis={props.referenciaAnalisis} />
             }
         </>

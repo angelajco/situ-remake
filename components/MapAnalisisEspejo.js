@@ -2,14 +2,9 @@ import Head from 'next/head'
 import React, { useState, useEffect, useContext } from 'react'
 
 import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents, WMSTileLayer } from 'react-leaflet'
-import { OverlayTrigger, Tooltip } from 'react-bootstrap'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 
 const { BaseLayer } = LayersControl;
 import { EditControl } from 'react-leaflet-draw'
-
-import referenciaMapaContext from '../contexts/ContenedorMapaContext'
 
 import 'leaflet'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
@@ -27,13 +22,8 @@ import 'leaflet-easyprint'
 export default function Map(props) {
     //Para guardar la referencia al mapa cuando se crea
     const [mapaReferencia, setmapaReferencia] = useState(null);
-    //Contexto para pasar al contenedor del mapa
-    const refMapContext = useContext(referenciaMapaContext)
     props.referencia(mapaReferencia);
-    /*********************Esta linea se descomenta en el analisis 2**********************/
-    if (props.referenciaAnalisis != undefined) {
-        props.referenciaAnalisis(mapaReferencia);
-    }
+    props.referenciaAnalisis(mapaReferencia);
 
     //Para guardar el grupo de capas de dibujo
     var capasDib = null;
@@ -41,9 +31,13 @@ export default function Map(props) {
     //Para guardar las referencias del mapa    
     useEffect(() => {
         if (mapaReferencia != undefined) {
-            // refMapContext.refMap = mapaReferencia;
-            // refMapContext.objL = L;
-            // refMapContext.referenciaMapa();
+            var north = L.control({ position: "topleft" });
+            north.onAdd = () => {
+                const div = L.DomUtil.create("div", "leaflet-rose leaflet-control");
+                div.innerHTML = '<img src="/images/analisis/arrows/default.svg">'
+                return div;
+            };
+            north.addTo(mapaReferencia);
 
             mapaReferencia.addControl(new L.Control.Fullscreen(
                 {
@@ -141,6 +135,14 @@ export default function Map(props) {
         const [coordenadas, setCoordenadas] = useState("")
         const mapa = useMap();
         const mapaEventos = useMapEvents({
+            moveend(e) {
+                let centroUndoRedo = mapaEventos.getCenter();
+                let zoomUndoRedo = mapaEventos.getZoom();
+                if (lanzaSincronizacion) {
+                    props.sincronizaMapa("B", zoomUndoRedo, centroUndoRedo)
+                }
+                setLanzaSincronizacion(true);
+            },
             mousemove(e) {
                 if (tipoCoordenada == 1) {
                     let latlng = {};
@@ -250,6 +252,14 @@ export default function Map(props) {
 
         return null;
     }
+
+    const [lanzaSincronizacion, setLanzaSincronizacion] = useState(true)
+
+    function sincroniza(zoom, centro) {
+        setLanzaSincronizacion(false)
+        mapaReferencia.setView(centro, zoom);
+    }
+    props.funcionEnlace("B", sincroniza)
 
     return (
         <>
