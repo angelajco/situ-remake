@@ -644,11 +644,10 @@ function ContenedorMapaAnalisis(props) {
     //aqui empiezan los codigos para simbologia
     const [simboAux, setSimboAux] = useState({});
     const cambioEstilos = (capa) => {
-        console.log(capa);
         let band = false;
         //con este metodo verificamos la capa seleccionada 
         //y si es wfs se puede editar
-        if (capa.tipo == 'wfs' || capa.tipo == 'json' ) {
+        if (capa.tipo == 'wfs' || capa.tipo == 'json') {
             setAtributos([capa.features, capa.nom_capa])
             setCapaSeleccionada(capa);
             setShowModalEstilos(true)
@@ -678,6 +677,9 @@ function ContenedorMapaAnalisis(props) {
                     band = true;
                 }
             }
+            if (jsonSimbologia.length == 0) {
+                band = true;
+            }
 
             if (band == true) {
                 setTipoTrata(null);
@@ -690,20 +692,17 @@ function ContenedorMapaAnalisis(props) {
                 setTipoTrata(null);
                 setNomAtributos([]);
             }
-
-        } else {
             setShowModalEstilos(true)
-
+        } else {
+            setShowModalEstilos(false)
         }
     }
 
     const [colorOmision, setColorOmision] = useState('#000000');
     function cambioColorO(e) {
-        //console.log(e.target.value);
+
         setColorOmision(e.target.value)
         omisionColor = e.target.value;
-        //console.log(omisionColor);
-        //aplicarEstilo();
     }
 
     function generarT() {
@@ -880,7 +879,7 @@ function ContenedorMapaAnalisis(props) {
         setRangoAux(rang.target.value);
         setIntervalo(rang.target.value)
         simbologiaF = {};
-        generarTabla(rang.target.value);
+        //generarTabla(rang.target.value);
 
     }
 
@@ -1021,7 +1020,7 @@ function ContenedorMapaAnalisis(props) {
                     }
 
                     colores = shuffle(colorB);//randomColor({ count: 4, hue: colorFill });
-                    let au1 = sim1.generaCuantiles(4, valoresCampo, colores, "Cuartil ", "#000000", 1);
+                    let au1 = sim1.generaCuantiles(4, valoresCampo, colores, "Cuartil ", "#000000", 1,5);
 
                     simbologiaF = au1;
                     setRangoAux(4);
@@ -1037,7 +1036,7 @@ function ContenedorMapaAnalisis(props) {
                         colores.splice(0, colores.length);
                     }
                     colores = shuffle(colorB);//colores = randomColor({ count: 10, hue: colorFill });
-                    let au1 = sim1.generaCuantiles(10, valoresCampo, colores, "Decil ", "#000000", 1);
+                    let au1 = sim1.generaCuantiles(10, valoresCampo, colores, "Decil ", "#000000", 1,5);
 
                     setRangoAux(10);
                     simbologiaF = au1;
@@ -1052,7 +1051,7 @@ function ContenedorMapaAnalisis(props) {
                         colores.splice(0, colores.length);
                     }
                     colores = shuffle(colorB);//colores = randomColor({ count: 5, hue: colorFill });
-                    let au1 = sim1.generaCuantiles(5, valoresCampo, colores, "Quintil ", "#000000", 1);
+                    let au1 = sim1.generaCuantiles(5, valoresCampo, colores, "Quintil ", "#000000", 1, 5);
                     // console.log(au1);
                     setRangoAux(5);
                     simbologiaF = au1;
@@ -1087,8 +1086,8 @@ function ContenedorMapaAnalisis(props) {
                 }//termina for filas 
 
                 let sim1 = new Sim();
-                for (let i = 0; i < lib.length; i += 6) {
-                    sim1.agregaRango(0, lib[i], lib[i + 1], lib[i + 3], lib[i + 2], lib[i + 4], lib[i + 5]);
+                for (let i = 0; i < lib.length; i += 7) {
+                    sim1.agregaRango(0, lib[i], lib[i + 1], lib[i + 3], lib[i + 2], lib[i + 4], lib[i + 5], lib[i + 6]);
                 }
 
                 simbologiaF = sim1;
@@ -1097,6 +1096,7 @@ function ContenedorMapaAnalisis(props) {
                 var layer = capaSeleccionada.layer;
                 function restyleLayerL(propertyName) {
                     layer.eachLayer(function (featureInstanceLayer) {
+
                         var propertyValue = featureInstanceLayer.feature.properties[propertyName];
                         var myFillColor = sim1.getSimbologia(propertyValue);
                         //console.log(myFillColor);
@@ -1105,7 +1105,7 @@ function ContenedorMapaAnalisis(props) {
                                 fillColor: omisionColor,
                                 color: colorOmision,
                                 fillOpacity: myFillColor.fillOpacity,
-                                weight: 1
+                                weight: myFillColor.anchoBorde
                             });
                         } else {
                             featureInstanceLayer.setStyle({
@@ -1212,7 +1212,7 @@ function ContenedorMapaAnalisis(props) {
 
                 let sim1 = new Sim();
                 for (let i = 0; i < limitesmen.length; i++) {
-                    sim1.agregaRango(0, Math.round(limitesmen[i]), Math.round(limitesmay[i]), colores[i], "Rango " + (i + 1), "#000000", 1);
+                    sim1.agregaRango(0, Math.round(limitesmen[i]), Math.round(limitesmay[i]), colores[i], "Rango " + (i + 1), "#000000", 1, 5);
                 }
 
                 simbologiaF = sim1;
@@ -1247,7 +1247,7 @@ function ContenedorMapaAnalisis(props) {
                 //colores = randomColor({ count: unicos.length, hue: colorFill });
 
                 for (let i = 0; i < unicos.length; i++) {
-                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1);
+                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1, 5);
                 }
 
                 simbologiaF = sim1;
@@ -1273,24 +1273,6 @@ function ContenedorMapaAnalisis(props) {
                     for (let j = 0; j < fila.length; j++) {
                         //console.log(fila[j].innerText);
                         actuali.push(fila[j].children[0].value);
-                        /*
-                        if (j == 2 || j == 3 || j == 4 || j == 5) {
-                            actuali.push(fila[j].children[0].value);
-                        } else {
-                            actuali.push(fila[j].innerText);
-                        }
-                        */
-                        /*
-                                                if (j == 2) {
-                                                    actuali.push(fila[j].children[0].value);
-                                                } else {
-                                                    if (j == 3) {
-                                                        actuali.push(fila[j].children[0].value);
-                                                    } else {
-                                                        actuali.push(fila[j].innerText);
-                                                    }
-                                                }
-                        */
                     }
                 }
                 //console.log(actuali);
@@ -1304,7 +1286,7 @@ function ContenedorMapaAnalisis(props) {
                 let rango1 = rangoAux;
                 let auxI = 0;
                 for (let i = 0; i < rango1; i++) { //ciclo para recorrer las filas del
-                    for (let j = 0; j < 6; j++) {//ciclo que controla las columnas de la tabla 
+                    for (let j = 0; j < 7; j++) {//ciclo que controla las columnas de la tabla 
                         let aux = document.getElementById(auxI);
                         //console.log(aux);
                         if (aux == null) {
@@ -1320,43 +1302,10 @@ function ContenedorMapaAnalisis(props) {
                     }//termina for columnas
                 }//termina for filas 
 
-                /*
-                 //indica previsualizacion y requiere actualizar simbologia
-                 var table = document.getElementById('tablaE');
-                 let cells = table.getElementsByTagName('tr');
-                 for (let i = 0, len = cells.length; i < len; i++) {
-                     let fila = cells[i].getElementsByTagName('td');
-                     for (let j = 0; j < fila.length; j++) {
-                         //console.log(fila[j].innerText);
- 
-                         if (j == 2 || j == 3 || j == 4 || j == 5) {
-                             actuali.push(fila[j].children[0].value);
-                         } else {
-                             actuali.push(fila[j].innerText);
-                         }
-                         /*
-                                                 if (j == 2) {
-                                                     actuali.push(fila[j].children[0].value);
-                                                 } else {
-                                                     if (j == 3) {
-                                                         actuali.push(fila[j].children[0].value);
-                                                     } else {
-                                                         actuali.push(fila[j].innerText);
-                                                     }
-                                                 }
-                         
- 
-                     }
-                 }
-                */
-
-                //console.log(actuali);
                 //se actualizaron los datos de los intervalos
-
                 let sim1 = new Sim();
-                for (let i = 0; i < actuali.length; i += 6) {
-                    // sim1.agregaRango(0, lib[i], lib[i + 1], lib[i + 3], lib[i + 2], lib[i + 4], lib[i + 5]);
-                    sim1.agregaRango(0, actuali[i], actuali[i + 1], actuali[i + 3], actuali[i + 2], actuali[i + 4], actuali[i + 5]);
+                for (let i = 0; i < actuali.length; i += 7) {
+                    sim1.agregaRango(0, actuali[i], actuali[i + 1], actuali[i + 3], actuali[i + 2], actuali[i + 4], actuali[i + 5], actuali[i + 6]);
                 }
 
                 simbologiaF = sim1;
@@ -1370,32 +1319,88 @@ function ContenedorMapaAnalisis(props) {
     function aplicaEstiloF() {
 
         leerTabla();
-
         //codigo para mandar el color dependiendo del rango
         var layer = capaSeleccionada.layer;
-        function restyleLayerL(propertyName) {
-            layer.eachLayer(function (featureInstanceLayer) {
-                var propertyValue = featureInstanceLayer.feature.properties[propertyName];
-                var myFillColor = simbologiaF.getSimbologia(propertyValue);
-                //console.log(myFillColor);
-                if (myFillColor.tipo === 'default') {
-                    featureInstanceLayer.setStyle({
-                        fillColor: omisionColor,
-                        color: colorOmision,
-                        fillOpacity: myFillColor.fillOpacity,
-                        weight: 1
+        if (capaSeleccionada.features[0].geometry.type == 'Point') {
+            //estilo para capas tipo punto
+            let capa1 = capaSeleccionada;
+            //console.log(capa1);
+            var layeraux = L.geoJSON(capa1, {
+                pointToLayer: function (feature, latlng) {
+                    //console.log(feature.properties[nomAtributos[varSeleccionada]]);
+                    var propertyValue = feature.properties[nomAtributos[varSeleccionada]];
+                    var aux1 = simbologiaF.getSimbologia(propertyValue);
+                    //console.log(aux1);
+                    return L.circleMarker(latlng, {
+                        radius: aux1.radius,
+                        fillColor: aux1.colorFill,
+                        color: aux1.colorBorde,
+                        weight: aux1.anchoBorde,
+                        opacity: 1,
+                        fillOpacity: 0.8
                     });
-                } else {
-                    featureInstanceLayer.setStyle({
-                        fillColor: myFillColor.colorFill,
-                        color: myFillColor.colorBorde,
-                        fillOpacity: myFillColor.fillOpacity,
-                        weight: myFillColor.anchoBorde
-                    });
-                }
 
+                }
+            }).addTo(referenciaMapa);
+
+            referenciaMapa.removeLayer(capaSeleccionada.layer);
+            capaSeleccionada.layer = null;
+            capaSeleccionada.layer = layeraux;
+
+        }
+
+        if (capaSeleccionada.features[0].geometry.type == 'MultiLineString') {
+            //estilo para lineas
+            let capa1 = capaSeleccionada;
+
+            function estilosL(feature) {
+                var propertyValue = feature.properties[nomAtributos[varSeleccionada]];
+                var myFillColor = simbologiaF.getSimbologia(propertyValue);
+                // console.log(myFillColor);
+                return {
+                    color: myFillColor.colorFill,
+                    weight: myFillColor.anchoBorde,
+                    opacity: myFillColor.opacity
+                };
+            }
+
+            var layeraux = L.geoJSON(capa1, { style: estilosL }).addTo(referenciaMapa);
+
+            referenciaMapa.removeLayer(capaSeleccionada.layer);
+            capaSeleccionada.layer = null;
+            capaSeleccionada.layer = layeraux;
+
+        }
+
+        function restyleLayerL(propertyName) {
+            //layer.eachLayer(pointToLayer);
+            layer.eachLayer(function (featureInstanceLayer) {
+                //console.log(featureInstanceLayer.feature.geometry.type);
+                if (featureInstanceLayer.feature.geometry.type == 'MultiPolygon') {
+                    //se aplica estilo para poligonos
+                    var propertyValue = featureInstanceLayer.feature.properties[propertyName];
+                    var myFillColor = simbologiaF.getSimbologia(propertyValue);
+                    if (myFillColor.tipo === 'default') {
+                        featureInstanceLayer.setStyle({
+                            fillColor: omisionColor,
+                            color: colorOmision,
+                            fillOpacity: myFillColor.fillOpacity,
+                            weight: myFillColor.anchoBorde
+                        });
+                    } else {
+                        featureInstanceLayer.setStyle({
+                            fillColor: myFillColor.colorFill,
+                            color: myFillColor.colorBorde,
+                            fillOpacity: myFillColor.fillOpacity,
+                            weight: myFillColor.anchoBorde
+                        });
+                    }
+                }
             });
         }
+
+
+
 
         //se guarda la configuracion de la capa
         let json1 = {};
@@ -1709,6 +1714,15 @@ function ContenedorMapaAnalisis(props) {
 
     //Para agregar capas json al mapa cuando se sube un archivo
     const agregaFileJsonCapa = (capaFile, nombreFile) => {
+        var MarkerOptions = {
+            radius: 5,
+            fillColor: colorFill,
+            color: color,
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+        };
+
         let nombreTemp = nombreFile.split(".")[0] + ` - ${(nombreFile.split(".")[1]).toUpperCase()} Cargada`;
         if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === nombreTemp)) {
             setDatosModalAnalisis({
@@ -1724,10 +1738,12 @@ function ContenedorMapaAnalisis(props) {
             capaJson['tipo'] = "json";
             capaJson['transparencia'] = 1;
             capaJson.estilos = {
-                color: "#FFFFFF",
-                fillColor: "#000000",
-                opacity: "1",
-                fillOpacity: "1"
+                color: colorborder,
+                fillColor: colorFill,
+                opacity: 1,
+                fillOpacity: 1,
+                radius: 8,
+                weight: 1
             }
             capaJson['simbologia'] = creaSVG(nombreFile.split(".")[0], capaJson.estilos)
             // capaJson.isActive = false;
@@ -1736,6 +1752,9 @@ function ContenedorMapaAnalisis(props) {
             referenciaMapa.createPane(`${zIndexCapas}`)
             referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
             let layer = L.geoJSON(capaFile, {
+                pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, MarkerOptions)
+                },
                 pane: `${zIndexCapas}`,
                 style: capaJson.estilos,
                 nombre: capaJson["nom_capa"],

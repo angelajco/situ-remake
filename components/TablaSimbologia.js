@@ -14,11 +14,7 @@ function TablaSimbologia(props) {
         ) : (
             <div id="tablaR" dangerouslySetInnerHTML={{ __html: sim.tablahtml(1) }} ></div>
         )
-
     )
-
-
-
 
 }
 
