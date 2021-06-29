@@ -2,11 +2,10 @@
 
 class RangoSimb {
 
-	constructor(tipo, Min, Max, color, leyenda, borde, grosor) {
+	constructor(tipo, Min, Max, color, leyenda, borde, grosor, radio) {
 		if (borde === undefined) {
 			this.colorBorde = "#000000";
 			this.anchoBorde = 1;
-			
 		} else {
 			this.colorBorde = borde;
 			this.anchoBorde = grosor;
@@ -18,11 +17,12 @@ class RangoSimb {
 		this.leyenda = leyenda;
 		this.colorFill = color;
 		this.fillOpacity = 0.7;
+		this.radius = radio;
 	}
 
 	filaHtml(i) {
-		
-		return `<tr><td id='${i}'>${this.valorMin}</td><td id='${i + 1}'>${this.valorMax}</td><td ><input id='${i + 2}' value='${this.leyenda}'/></td><td style="background-color: ${this.colorFill};width: 25px;"><input id='${i + 3}' value='${this.colorFill}' type='color'></input></td><td><input type="hidden" id='${i + 4}' value='${this.colorBorde}'/></td><td ><input type="hidden" id='${i + 5}' value='${this.anchoBorde}'/></td></tr>`;
+
+		return `<tr><td id='${i}'>${this.valorMin}</td><td id='${i + 1}'>${this.valorMax}</td><td ><input id='${i + 2}' value='${this.leyenda}'/></td><td style="width: 25px;"><input id='${i + 3}' value='${this.colorFill}' type='color'></input></td><td><input type="color" id='${i + 4}' value='${this.colorBorde}'/></td><td><input style='width:100px;' type="number" id='${i + 5}' value='${this.anchoBorde}' /></td><td><input style='width:100px;' type="number" id='${i + 6}' value='${this.radius}' /></td></tr>`;
 	}
 
 	filaHtml1(i) {
@@ -45,16 +45,18 @@ class RangoSimb {
 		salida.colorFill = this.colorFill;
 		salida.colorBorde = this.colorBorde;
 		salida.anchoBorde = this.anchoBorde;
+		salida.radius = this.radius;;
 		return salida;
 	}
 
 	salidaDefault() {
 		let salida = {}
-		salida.colorFill = ' #000000';
+		salida.colorFill = '#000000';
 		salida.colorBorde = '#000000';
 		salida.tipo = 'default';
 		salida.anchoBorde = 1;
 		salida.fillOpacity = 1;
+		salida.radio = 5;
 		return salida;
 	}
 
@@ -74,8 +76,8 @@ class simbologiaCapa {
 		let nuevo = new RangoSimb(tipo, valorMin, valorMax, color, leyenda);
 		this.rangos.push(nuevo);
 	}
-	agregaRango(tipo, valorMin, valorMax, color, leyenda, borde, grosor) {
-		let nuevo = new RangoSimb(tipo, valorMin, valorMax, color, leyenda, borde, grosor);
+	agregaRango(tipo, valorMin, valorMax, color, leyenda, borde, grosor,radio) {
+		let nuevo = new RangoSimb(tipo, valorMin, valorMax, color, leyenda, borde, grosor, radio);
 		this.rangos.push(nuevo);
 	}
 
@@ -92,10 +94,10 @@ class simbologiaCapa {
 		} else {
 			//mando esto para edicion
 			let aux1 = 0;
-			let salida = `<table id='tablaE' class="table-wrapper-scroll-y my-custom-scrollbar"><tr><th>Minimo</th><th>Maximo</th><th>Leyenda</th><th>Color</th><th></th><th></th><tr>`;
+			let salida = `<table id='tablaE' class="table-wrapper-scroll-y my-custom-scrollbar"><tr><th>Minimo</th><th>Maximo</th><th>Leyenda</th><th>Color</th><th>Borde</th><th>Grosor</th><th>Radio</th><tr>`;
 			for (let i = 0; i < this.rangos.length; i++) {
 				salida += this.rangos[i].filaHtml(aux1);
-				aux1 = aux1 + 6;
+				aux1 = aux1 + 7;
 			}
 			salida += `</table>`;
 			return salida;
@@ -169,7 +171,7 @@ class simbologiaCapa {
 
 
 
-	generaCuantiles(numDivisiones, arreglo, colores, leyenda, borde, grosor) {
+	generaCuantiles(numDivisiones, arreglo, colores, leyenda, borde, grosor, radio) {
 		let longRango = Math.ceil(arreglo.length / numDivisiones);
 		let cont1 = 0, cont2 = 1, div = 1;
 		let simbologia = new simbologiaCapa();
@@ -185,7 +187,7 @@ class simbologiaCapa {
 					valorMaximo = arreglo[i];
 					cont2++;
 				} else {
-					simbologia.agregaRango(0, valorMin, valorMaximo, colores[cont1], (leyenda + div), borde, grosor);
+					simbologia.agregaRango(0, valorMin, valorMaximo, colores[cont1], (leyenda + div), borde, grosor, radio);
 					cont2 = 1;
 					valorMin = arreglo[i];
 					valorMaximo = valorMin;
@@ -198,7 +200,7 @@ class simbologiaCapa {
 
 		}
 
-		simbologia.agregaRango(0, valorMin, valorMaximo, colores[cont1], (leyenda + div), borde, grosor);
+		simbologia.agregaRango(0, valorMin, valorMaximo, colores[cont1], (leyenda + div), borde, grosor,radio);
 
 		return simbologia;
 
