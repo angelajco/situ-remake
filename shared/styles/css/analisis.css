@@ -180,3 +180,22 @@ body.analisis-geografico-modales {
     height: 370px;
     overflow-y: auto;
 }
+
+/* Estilo para algunos elementos de Simbologia */
+
+#cuerpo{
+    height: 600px;
+}
+
+.tablaR{
+    height: 200px;
+    width: 150px;
+}
+.my-custom-scrollbar {
+    position: relative;
+    height: 200px;
+    overflow: auto;
+}
+.table-wrapper-scroll-y {
+    display: block;
+}

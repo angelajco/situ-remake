@@ -37,6 +37,7 @@
     "moment": "^2.29.1",
     "next": "^10.2.3",
     "postcss": "^8.3.5",
+    "randomcolor": "^0.6.2",
     "react": "^17.0.2",
     "react-beautiful-dnd": "^13.1.0",
     "react-bootstrap": "^1.6.1",
@@ -60,7 +61,7 @@
     "react-popout": "^1.0.3",
     "recharts": "^2.0.8",
     "shpjs": "^3.6.3",
-    "tailwindcss": "^2.2.2",
+    "tailwindcss": "^2.2.4",
     "universal-cookie": "^4.0.4",
     "xml2js": "^0.4.23",
     "xml2js-xpath": "^0.12.0"
