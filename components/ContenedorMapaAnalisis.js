@@ -102,7 +102,7 @@ function ContenedorMapaAnalisis(props) {
 
 
 
-    const [polygonDrawer, setPolygonDrawer] = useState();
+    //const [polygonDrawer, setPolygonDrawer] = useState();
     const [zIndexCapas, setZIndex] = useState(0)
     const [numeroIndex, setNumeroIndex] = useState(300);
     //Obten referencia del mapa
@@ -663,7 +663,7 @@ function ContenedorMapaAnalisis(props) {
         //con este metodo verificamos la capa seleccionada 
         //y si es wfs se puede editar
         if (capa.tipo == 'wfs' || capa.tipo == 'json') {
-            setAtributos([capa.features, capa.nom_capa])
+            //setAtributos([capa.features, capa.nom_capa])
             setCapaSeleccionada(capa);
             setShowModalEstilos(true)
             if (atributos != null) {
@@ -2532,8 +2532,8 @@ function ContenedorMapaAnalisis(props) {
                 <Modal.Body>
                     {
                         jsonSimbologia.length > 0 ? (
-                            jsonSimbologia.map((capa) => (
-                                <div>
+                            jsonSimbologia.map((capa,index) => (
+                                <div key={index}>
                                     <h5>{capa.name}</h5>
                                     <div dangerouslySetInnerHTML={{ __html: capa.simbologia.tablaSimbologia() }} ></div>
                                 </div>
@@ -2541,14 +2541,14 @@ function ContenedorMapaAnalisis(props) {
                         ) : (
                             capasVisualizadas.map((capa, index) => (
                                 capa.habilitado && (
-                                    <div>
+                                   
                                         <div key={index}>
                                             <p><b>{capa.nom_capa}</b></p>
                                             <img src={capa.simbologia}></img>
                                             <br></br>
                                             <br></br>
                                         </div>
-                                    </div>
+                                    
                                 )
                             ))
                         )
@@ -2599,7 +2599,7 @@ function ContenedorMapaAnalisis(props) {
                                     <Form.Group controlId="tratamiento" className="col-10">
                                         <Form.Label>Tipo de tratamiento</Form.Label>
                                         <Typeahead
-                                            id="tratamiento"
+                                            id="tratamiento1"
                                             labelKey={"label"}
                                             options={trata}
                                             onChange={handleChangeEstilo}
@@ -2618,7 +2618,7 @@ function ContenedorMapaAnalisis(props) {
                                                             <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
                                                                 <option value="">Selecciona una opción</option>
                                                                 {
-                                                                    nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                    nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
                                                                 }
                                                             </Form.Control>
                                                         </Form.Group>
@@ -2655,7 +2655,7 @@ function ContenedorMapaAnalisis(props) {
                                                             <Form.Group controlId="tratamiento" className="col-10">
                                                                 <Form.Label>División</Form.Label>
                                                                 <Typeahead
-                                                                    id="basic-typeahead-multiple"
+                                                                    id="cuantiles"
                                                                     labelKey={"label"}
                                                                     options={cuantil1}
                                                                     onChange={handleChangeCuantil}
@@ -2669,7 +2669,7 @@ function ContenedorMapaAnalisis(props) {
                                                                 <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
                                                                     <option value="">Selecciona una opción</option>
                                                                     {
-                                                                        nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                        nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
                                                                     }
                                                                 </Form.Control>
                                                             </Form.Group>
@@ -2677,7 +2677,7 @@ function ContenedorMapaAnalisis(props) {
                                                             <Form.Group controlId="coloresB" className="col-10">
                                                                 <Form.Label>Color Base</Form.Label>
                                                                 <Typeahead
-                                                                    id="basic-typeahead-multiple"
+                                                                    id="colores"
                                                                     labelKey={"label"}
                                                                     options={coloresJ}
                                                                     onChange={handleChangeColores}
@@ -2723,7 +2723,7 @@ function ContenedorMapaAnalisis(props) {
                                                                     <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
                                                                         <option value="">Selecciona una opción</option>
                                                                         {
-                                                                            nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                            nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
                                                                         }
                                                                     </Form.Control>
                                                                 </Form.Group>
@@ -2731,8 +2731,8 @@ function ContenedorMapaAnalisis(props) {
                                                                 <Form.Group controlId="coloresB" className="col-10">
                                                                     <Form.Label>Color Base</Form.Label>
                                                                     <Typeahead
-                                                                        id="basic-typeahead-multiple"
-                                                                        labelKey={"label"}
+                                                                        id="colore1"
+                                                                        labelKey={"value"}
                                                                         options={coloresJ}
                                                                         onChange={handleChangeColores}
                                                                         selected={tipoColor}
@@ -2772,7 +2772,7 @@ function ContenedorMapaAnalisis(props) {
                                                                         <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
                                                                             <option value="">Selecciona una opción</option>
                                                                             {
-                                                                                nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                                nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
                                                                             }
                                                                         </Form.Control>
                                                                     </Form.Group>
@@ -2840,6 +2840,7 @@ function ContenedorMapaAnalisis(props) {
                 <Modal.Body>
                     {
                         atributos.length != 0 && (
+                            
                             <Table striped bordered hover responsive>
                                 <thead>
                                     <tr className="tw-text-center">
