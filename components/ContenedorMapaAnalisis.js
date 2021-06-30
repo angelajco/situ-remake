@@ -75,7 +75,7 @@ function ContenedorMapaAnalisis(props) {
     var [colorborder, setColorBorder] = useState('#FF0000')
     var [showModalEstilos, setShowModalEstilos] = useState(false)
     var [capaSeleccionada, setCapaSeleccionada] = useState(null)
-    var [rango, setRango] = useState(null)
+    var [rango, setRango] = useState("")
     var [valoresCampo, setValoresCampo] = useState([])
     var [tipoTrata, setTipoTrata] = useState()
     var [tipoDiv, setTipoDiv] = useState(null)
@@ -680,7 +680,7 @@ function ContenedorMapaAnalisis(props) {
                     setTipoDiv(jsonSimbologia[i].tipoDiv);
                     setRango(jsonSimbologia[i].rango);
                     if (valorEstilos == 1) {
-                        setRango(null);
+                        setRango("");
                         setSimboAux(jsonSimbologia[i]);
                         setIntervalo(null);
                     } else {
@@ -699,7 +699,7 @@ function ContenedorMapaAnalisis(props) {
             if (band == true) {
                 setTipoTrata(null);
                 setCuantil(null);
-                setRango(null);
+                setRango("");
                 setValorEstilos(null);
                 setVarSeleccionada(-1);
                 setTipoDiv(null);
@@ -2732,7 +2732,7 @@ function ContenedorMapaAnalisis(props) {
                                                                     <Form.Label>Color Base</Form.Label>
                                                                     <Typeahead
                                                                         id="colore1"
-                                                                        labelKey={"value"}
+                                                                        labelKey={"label"}
                                                                         options={coloresJ}
                                                                         onChange={handleChangeColores}
                                                                         selected={tipoColor}
