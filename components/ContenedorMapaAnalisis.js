@@ -12,7 +12,6 @@ import * as toPdf from '@react-pdf/renderer';
 import * as htmlToImage from 'html-to-image';
 import * as turf from '@turf/turf';
 
-
 import $ from 'jquery';
 import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
@@ -35,8 +34,6 @@ import coloresPaletta from "../shared/jsons/colores.json";
 import coloresJ from "../shared/jsons/ColoresSelect.json";
 import TablaSimbologia from './TablaSimbologia';
 import TablaLib from './TablaLibre';
-
-
 
 const Map = dynamic(
     () => import('./MapAnalisis'),
@@ -101,8 +98,6 @@ function ContenedorMapaAnalisis(props) {
     ];
 
 
-
-    const [polygonDrawer, setPolygonDrawer] = useState();
     const [zIndexCapas, setZIndex] = useState(0)
     const [numeroIndex, setNumeroIndex] = useState(300);
     //Obten referencia del mapa
@@ -212,7 +207,6 @@ function ContenedorMapaAnalisis(props) {
     function construyeCatalogoTemas(metadatosCapasApi) {
         setArregloCapasBackEnd(metadatosCapasApi)
         let listaTemas = [];
-        let listaPalabras = [];
         metadatosCapasApi.map(value => {
             if (value.tema) {
                 listaTemas.push(value.tema)
@@ -303,7 +297,6 @@ function ContenedorMapaAnalisis(props) {
         capaNacional.url = capaFusion.url;
         capaNacional.capa = capaFusion.nombre_capa;
         capaNacional.filtro_entidad = capaFusion.filtro_entidad;
-        capaNacional.tipo = "wfs";
         capaNacional.wfs = capaFusion.wfs;
         capaNacional.wms = capaFusion.wms;
         capaNacional.opcion = 0;
@@ -326,7 +319,6 @@ function ContenedorMapaAnalisis(props) {
             capaEntidad.url = capaFusion.url;
             capaEntidad.capa = capaFusion.nombre_capa;
             capaEntidad.filtro_entidad = capaFusion.filtro_entidad;
-            capaEntidad.tipo = "wfs";
             capaEntidad.valor_filtro = entidad.id;
             capaEntidad.wfs = capaFusion.wfs;
             capaEntidad.wms = capaFusion.wms;
@@ -563,7 +555,7 @@ function ContenedorMapaAnalisis(props) {
                 success: function (response) {
                     response["nom_capa"] = capaFiltrada.titulo;
                     response["habilitado"] = true;
-                    response['tipo'] = capaFiltrada.tipo;
+                    response['tipo'] = "wfs";
                     response['transparencia'] = 1;
                     response['simbologia'] = creaSVG(capaFiltrada.titulo, capaFiltrada.estilos)
                     response.download = [{ nom_capa: response.nom_capa, link: JSON.stringify(response), tipo: 'GeoJSON' }];
@@ -571,47 +563,53 @@ function ContenedorMapaAnalisis(props) {
                     setZIndex(zIndexCapas + 1)
                     referenciaMapa.createPane(`${zIndexCapas}`)
                     referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
-                    let layer = L.geoJSON(response, {
-                        pane: `${zIndexCapas}`,
-                        style: capaFiltrada.estilos,
-                        nombre: response["nom_capa"],
-                        onEachFeature: function (feature = {}, layerPadre) {
-                            feature["nombre_capa"] = layerPadre.options["nombre"];
-                            fetch(`${process.env.ruta}/wa0/atributos_capa01?id=${capaFiltrada["id_capa"]}`)
-                                .then(res => res.json())
-                                .then(
-                                    (data) => {
-                                        Object.keys(feature.properties).map(key => {
-                                            let nuevoAlias = data.columnas.find(columna => columna.columna == key).alias
-                                            if (nuevoAlias !== "") {
-                                                let keyTemp = feature.properties[key]
-                                                delete feature.properties[key]
-                                                feature.properties[nuevoAlias] = keyTemp
-                                            }
-                                        })
-                                        layerPadre.on('click', function () {
-                                            setRasgos([feature]);
-                                        })
-                                    },
-                                    () => {
-                                        layerPadre.on('click', function () {
-                                            setRasgos([feature]);
-                                        })
-                                    }
-                                )
-                        }
-                    });
-                    response['layer'] = layer;
-                    setCapasVisualizadas([response, ...capasVisualizadas])
-                    referenciaMapa.addLayer(response.layer);
-                    setDatosModalAnalisis({
-                        title: "Capa agregada",
-                        body: "La capa se ha agregado con exito"
-                    });
-                    setShowModalAnalisis(true);
+                    obtenAliasFuncion(capaFiltrada["id_capa"], function (resultado) {
+                        let layer = L.geoJSON(response, {
+                            pane: `${zIndexCapas}`,
+                            style: capaFiltrada.estilos,
+                            nombre: response["nom_capa"],
+                            onEachFeature: function (feature = {}, layerPadre) {
+                                feature["nombre_capa"] = layerPadre.options["nombre"];
+                                if (resultado !== null) {
+                                    Object.keys(feature.properties).map(key => {
+                                        let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
+                                        if (nuevoAlias !== "") {
+                                            let keyTemp = feature.properties[key]
+                                            delete feature.properties[key]
+                                            feature.properties[nuevoAlias] = keyTemp
+                                        }
+                                    })
+                                }
+                                layerPadre.on('click', function () {
+                                    setRasgos([feature]);
+                                })
+                            }
+                        });
+                        response['layer'] = layer;
+                        setCapasVisualizadas([response, ...capasVisualizadas])
+                        referenciaMapa.addLayer(response.layer);
+                        setDatosModalAnalisis({
+                            title: "Capa agregada",
+                            body: "La capa se ha agregado con exito"
+                        });
+                        setShowModalAnalisis(true);
+                    })
                 }
             });
         }
+    }
+
+    function obtenAliasFuncion(idCapa, resultado) {
+        fetch(`${process.env.ruta}/wa0/atributos_capa01?id=${idCapa}`)
+            .then(res => res.json())
+            .then(
+                (data) => {
+                    resultado(data)
+                },
+                (error) => {
+                    resultado(null)
+                }
+            );
     }
 
     //Para guardar los atributos
@@ -1035,7 +1033,7 @@ function ContenedorMapaAnalisis(props) {
                     }
 
                     colores = shuffle(colorB);//randomColor({ count: 4, hue: colorFill });
-                    let au1 = sim1.generaCuantiles(4, valoresCampo, colores, "Cuartil ", "#000000", 1,5);
+                    let au1 = sim1.generaCuantiles(4, valoresCampo, colores, "Cuartil ", "#000000", 1, 5);
 
                     simbologiaF = au1;
                     setRangoAux(4);
@@ -1051,7 +1049,7 @@ function ContenedorMapaAnalisis(props) {
                         colores.splice(0, colores.length);
                     }
                     colores = shuffle(colorB);//colores = randomColor({ count: 10, hue: colorFill });
-                    let au1 = sim1.generaCuantiles(10, valoresCampo, colores, "Decil ", "#000000", 1,5);
+                    let au1 = sim1.generaCuantiles(10, valoresCampo, colores, "Decil ", "#000000", 1, 5);
 
                     setRangoAux(10);
                     simbologiaF = au1;
@@ -1612,10 +1610,10 @@ function ContenedorMapaAnalisis(props) {
                     csvContent.push(rasgo.nombre_capa)
                     csvData_.push(csvContent);
                 });
-                if(fuenteProveniente == 0){
+                if (fuenteProveniente == 0) {
                     //proviene de rasgos
                     setCsvData(csvData_);
-                } else if(fuenteProveniente == 1){
+                } else if (fuenteProveniente == 1) {
                     //proviene de capas identificadas
                     setCsvDataIdentificados(csvData_)
                 }
@@ -1912,8 +1910,12 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
+    const [avisoNoSeleccion, setAvisoNoSeleccion] = useState("")
+
     const { register: registraIdentify, handleSubmit: handleSubmitIdentify, errors: errorsIdentify, setError: setErrorIdenfity } = useForm();
     const identificaCapa = (data) => {
+        setMuestraTablasCapasIdentificadas([]);
+        setAvisoNoSeleccion("")
         if (savedToIdentify.length != 0) {
             if (data.seleccion == "1") {
                 setMuestraTablasCapasIdentificadas(savedToIdentify)
@@ -1925,30 +1927,34 @@ function ContenedorMapaAnalisis(props) {
                     // });
                 });
             } else if (data.seleccion == "2") {
-                getTopLayer(function (index) {
-                    setSelectedToIdentify([savedToIdentify[index]]);
-                    prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function (data) {
-                        addToExportWithPivot(data);
-                        // generatePdf(1, function() {
-                        //     console.log('pdfOk!!!');
-                        //     console.log('pdfDocument!!!', pdfDocument);
-                        // });
-                    });
+                getTopLayer(function (arrayFeatures) {
+                    if (arrayFeatures.length != 0) {
+                        setMuestraTablasCapasIdentificadas([arrayFeatures])
+                        prepareDataToExport([arrayFeatures], function (data) {
+                            addToExportWithPivot(data, 1);
+                            // generatePdf(1, function() {
+                            //     console.log('pdfOk!!!');
+                            //     console.log('pdfDocument!!!', pdfDocument);
+                            // });
+                        });
+                    }
                 });
             } else if (data.seleccion == "3") {
-                includeActiveLayer(function (index, isActive) {
-                    setSelectedToIdentify(isActive == true ? [savedToIdentify[index]] : []);
-                    prepareDataToExport(isActive == true ? [savedToIdentify[index]] : [], function (data) {
-                        addToExportWithPivot(data);
-                        // generatePdf(1, function() {
-                        //     console.log('pdfOk!!!');
-                        //     console.log('pdfDocument!!!', pdfDocument);
-                        // });
-                    });
+                includeActiveLayer(function (arrayFeatures) {
+                    if (arrayFeatures.length != 0) {
+                        setMuestraTablasCapasIdentificadas([arrayFeatures])
+                        prepareDataToExport([arrayFeatures], function (data) {
+                            addToExportWithPivot(data, 1);
+                            // generatePdf(1, function() {
+                            //     console.log('pdfOk!!!');
+                            //     console.log('pdfDocument!!!', pdfDocument);
+                            // });
+                        });
+                    }
                 });
             }
         } else {
-            console.log("No se ha seleccionado nada")
+            setAvisoNoSeleccion("No se ha hecho ninguna selección")
         }
     }
 
@@ -2024,29 +2030,58 @@ function ContenedorMapaAnalisis(props) {
     // }
 
     function includeActiveLayer(success) {
-        var isActive = false;
-        var index;
-        capasVisualizadas.filter(displayed => displayed.isActive == true).map((active) => {
-            savedToIdentify.map((saved, index_) => {
-                if (saved.layer == active.nom_capa) {
-                    index = index_;
-                    isActive = true;
+        let capaActiva = capasVisualizadas.find(displayed => displayed.isActive == true);
+        var tempArray = []
+        let tempFeaturesArray = []
+
+        if (capaActiva != undefined && capaActiva.length != 0) {
+            savedToIdentify.map(capasSeparadas => {
+                capasSeparadas.map(feature => {
+                    tempArray.push(feature)
+                })
+            })
+            //Para guardar los features en un solo array
+            tempArray.map(saved => {
+                if (saved.nombre_capa == capaActiva.nom_capa) {
+                    tempFeaturesArray.push(saved)
                 }
             });
-        });
-        success(index, isActive);
+        }
+
+        success(tempFeaturesArray);
+
+        // capasVisualizadas.filter(displayed => displayed.isActive == true).map((active) => {
+        //     savedToIdentify.map((saved, index_) => {
+        //         if (saved.layer == active.nom_capa) {
+        //             index = index_;
+        //             isActive = true;
+        //         }
+        //     });
+        // });
     }
 
-
+    //Obtiene la capa superior para la comparación de la identificación
     function getTopLayer(success) {
-        var index;
-        var topLayer = capasVisualizadas[0];
-        savedToIdentify[0].map((saved, index_) => {
-            if (saved.layer == topLayer.nom_capa) {
-                index = index_;
+        var tempArray = []
+
+        savedToIdentify.map(capasSeparadas => {
+            capasSeparadas.map(feature => {
+                tempArray.push(feature)
+            })
+        })
+        console.log(tempArray, "tempArray")
+
+        //Para guardar los features en un solo array
+        let tempFeaturesArray = []
+        var capasWFS = capasVisualizadas.filter(capa => capa.tipo == "wfs");
+        tempArray.map((valorSaved, indexTemp) => {
+            if (valorSaved.nombre_capa == capasWFS[0].nom_capa) {
+                tempFeaturesArray.push(valorSaved)
             }
-        });
-        success(index);
+        })
+
+        // console.log(index, "index")
+        success(tempFeaturesArray);
     }
 
     //Funcion que prepara los datos de las capas identificadas para exportar en csv
@@ -2894,9 +2929,15 @@ function ContenedorMapaAnalisis(props) {
                                 <option value='3'>Activa</option>
                             </Form.Control>
                         </Form.Group>
+                        {errorsIdentify.seleccion && <p>{errorsIdentify.seleccion.message}</p>}
                         <div className="col-6 tw-text-center">
                             <button className="btn-analisis" type="submit">APLICAR</button>
                         </div>
+                        {
+                            avisoNoSeleccion != "" && (
+                                <div className="col-12">{avisoNoSeleccion}</div>
+                            )
+                        }
                     </Form>
                     {
                         muestraTablasCapasIdentificadas.length != 0 && (
