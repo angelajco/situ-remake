@@ -453,6 +453,8 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
+    console.log(capasVisualizadas, "capasVisualizadas")
+
     //Para agregar capas WMS, ya sea de la ide o de un servicio
     const agregaCapaWMS = (capa, fuente) => {
         setShowModalAgregarCapas(false);
@@ -509,7 +511,6 @@ function ContenedorMapaAnalisis(props) {
             })
             capaWMS["layer"] = layer;
             referenciaMapa.addLayer(capaWMS.layer)
-            // setCapasVisualizadas([...capasVisualizadas, capaWMS]);
             setCapasVisualizadas([capaWMS, ...capasVisualizadas]);
             setDatosModalAnalisis({
                 title: "Capa agregada",
@@ -571,6 +572,7 @@ function ContenedorMapaAnalisis(props) {
                             onEachFeature: function (feature = {}, layerPadre) {
                                 feature["nombre_capa"] = layerPadre.options["nombre"];
                                 if (resultado !== null) {
+                                    console.log(resultado, "resultado")
                                     Object.keys(feature.properties).map(key => {
                                         let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
                                         if (nuevoAlias !== "") {
@@ -586,6 +588,7 @@ function ContenedorMapaAnalisis(props) {
                             }
                         });
                         response['layer'] = layer;
+
                         setCapasVisualizadas([response, ...capasVisualizadas])
                         referenciaMapa.addLayer(response.layer);
                         setDatosModalAnalisis({
@@ -604,6 +607,7 @@ function ContenedorMapaAnalisis(props) {
             .then(res => res.json())
             .then(
                 (data) => {
+                    console.log(data, "data")
                     resultado(data)
                 },
                 (error) => {
@@ -2567,7 +2571,7 @@ function ContenedorMapaAnalisis(props) {
                 <Modal.Body>
                     {
                         jsonSimbologia.length > 0 ? (
-                            jsonSimbologia.map((capa,index) => (
+                            jsonSimbologia.map((capa, index) => (
                                 <div key={index}>
                                     <h5>{capa.name}</h5>
                                     <div dangerouslySetInnerHTML={{ __html: capa.simbologia.tablaSimbologia() }} ></div>
@@ -2576,14 +2580,14 @@ function ContenedorMapaAnalisis(props) {
                         ) : (
                             capasVisualizadas.map((capa, index) => (
                                 capa.habilitado && (
-                                   
-                                        <div key={index}>
-                                            <p><b>{capa.nom_capa}</b></p>
-                                            <img src={capa.simbologia}></img>
-                                            <br></br>
-                                            <br></br>
-                                        </div>
-                                    
+
+                                    <div key={index}>
+                                        <p><b>{capa.nom_capa}</b></p>
+                                        <img src={capa.simbologia}></img>
+                                        <br></br>
+                                        <br></br>
+                                    </div>
+
                                 )
                             ))
                         )
@@ -2875,7 +2879,7 @@ function ContenedorMapaAnalisis(props) {
                 <Modal.Body>
                     {
                         atributos.length != 0 && (
-                            
+
                             <Table striped bordered hover responsive>
                                 <thead>
                                     <tr className="tw-text-center">
