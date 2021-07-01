@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
-import { Accordion, Card, Form, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap'
+import React, { useState, useEffect } from 'react';
+import { Accordion, Card, Form, FormControl, Modal, OverlayTrigger, Tooltip, Table, InputGroup } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faEdit } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
 
 import $ from 'jquery';
@@ -25,6 +25,17 @@ export default function estadisticas() {
             value: 'Otro'
         }
     ];
+    const [operators, setOperators] = useState([
+        {title: 'Igual a', value: '='},
+        {title: 'Distinto a', value: '!='},
+        {title: 'Mayor a', value: '>'},
+        {title: 'Mayor igual a', value: '>='},
+        {title: 'Menor a', value: '<'},
+        {title: 'Menor igual a', value: '<='},
+        {title: 'Entre', value: 'BETWEEN'},
+        {title: 'Ninguno', value: 'NOT IN'},
+        {title: 'Todos', value: 'IN'}
+    ])
     const [statisticalProducts, setStatisticalProducts] = useState([]);
     const [statisticalProduct, setStatisticalProduct] = useState();
     const [entities, setEntities] = useState([]);
@@ -41,8 +52,10 @@ export default function estadisticas() {
     const [isNacional, setNacional] = useState(0);
     const [selectionType, setSelectionType] = useState();
     const [tableData, setTableData] = useState([]);
-    const [mapName, setMapName] = useState("Titulo mapa")
-    const [isEditMapName, setEditMapName] = useState(true)
+    const [mapName, setMapName] = useState("Titulo mapa");
+    const [isEditMapName, setEditMapName] = useState(true);
+    const [isShowAdvancedFilters, setShowAdvancedFilters] = useState(false);
+    const [filtersAdded, setFiltersAdded] = useState([]);
     const [datosModal, setDatosModal] = useState(
         {
             title: '',
@@ -193,6 +206,10 @@ export default function estadisticas() {
         }
     }, [selectionType]);
 
+    // useEffect(() => {
+    //     console.log('filtersAdded: ', filtersAdded);
+    // }, [filtersAdded]);
+
     function getEntities(response) {
         fetch(`${process.env.ruta}/wa/publico/catEntidades`)
         .then(res => res.json())
@@ -273,43 +290,55 @@ export default function estadisticas() {
 
     function getStatiticalProductInformation() {
         setIsLoading(true);
+        var levelValue;
         var args = `?etiquetaFuncional=${statisticalProduct.etiqueta_funcional}&nivel=${statisticalProduct.nivel_desagregacion}&nivelagregacion=${statisticalProduct.nivel_desagregacion}`;
         if(isNacional == 0) {
             if (statisticalProduct.nivel_desagregacion == 'Estatal') {
+                levelValue = statisticalProduct.col_entidad;
                 entities.map((entity) => {
                     args = `${args}&clave=${entity.id_entidades}`;
                 });
-                args = `${args}&valorNivel=${statisticalProduct.col_entidad}`;
-                
+                args = `${args}&valorNivel=${levelValue}`;
             } else if (statisticalProduct.nivel_desagregacion == 'Municipal') {
+                levelValue = statisticalProduct.col_municipal;
                 tawns.map((tawn) => {
                     args = `${args}&clave=${tawn.cve_mun}`;
                 });
-                args = `${args}&valorNivel=${statisticalProduct.col_municipal}`;
+                args = `${args}&valorNivel=${levelValue}`;
             } else if (statisticalProduct.nivel_desagregacion == 'Localidad') {
+                levelValue = statisticalProduct.col_localidad;
                 localities.map((locality) => {
                     args = `${args}&clave=${locality.Codigo}`;
                 });
-                args = `${args}&valorNivel=${statisticalProduct.col_localidad}`;
+                args = `${args}&valorNivel=${levelValue}`;
             }
         } else {
             if(statisticalProduct.nivel_desagregacion == 'Estatal') {
+                levelValue = statisticalProduct.col_entidad;
                 args = `${args}&clave=${entity}`;
-                args = `${args}&valorNivel=${statisticalProduct.col_entidad}`;
+                args = `${args}&valorNivel=${levelValue}`;
             } else if(statisticalProduct.nivel_desagregacion == 'Municipal') {
+                levelValue = statisticalProduct.col_municipal;
                 args = `${args}&clave=${tawn}`;
-                args = `${args}&valorNivel=${statisticalProduct.col_municipal}`;
+                args = `${args}&valorNivel=${levelValue}`;
             } else if(statisticalProduct.nivel_desagregacion == 'Localidad') {
-                args = `${args}&clave=${locality}`;
-                args = `${args}&valorNivel=${statisticalProduct.col_localidad}`;
+                levelValue = statisticalProduct.col_localidad;
+                args = `${args}&clave=${entity}${tawn}${locality}`;
+                args = `${args}&valorNivel=${levelValue}`;
             }
         }
         columnsSelected.map((column) => {
-            args = `${args}&idcolumnas=${column.id}`;
+            if(column.id != levelValue)
+                args = `${args}&idcolumnas=${column.id}`;
         });
+        var filters = '';
+        filtersAdded.map((filter, index) => {
+            filters = `${filters}${index != 0 ? ` AND ` : ``}@${filter.columna} ${filter.operacion} ${filter.valor}${filter.operacion == `BETWEEN` ? ` ${filter.valor2}` : ``}`;
+        });
+        console.log('filters: ', filters);
         getTableData(args, function(data, error) {
             if(data && data.mensaje != 'Error') {
-                setTableData([...tableData, {title: `${statisticalProduct.nombre} (${statisticalProduct.descripcion})`, type: 'table', data: data.resultado}]);
+                setTableData([...tableData, {title: `${statisticalProduct.nombre} (${statisticalProduct.descripcion})`, type: 'table', data: data}]);
                 setIsLoading(false);
             } else {
                 renderModal('La información no está disponible.')
@@ -396,9 +425,57 @@ export default function estadisticas() {
         )
     }
 
+    function addFilterField(event) {
+        var newFilter = {};
+        newFilter.columna = event.target.value;
+        columns.filter(column => column.id == newFilter.columna).map(filtered => newFilter.encabezado = filtered.encabezado);
+        newFilter.operacion = '';
+        newFilter.valor = '';
+        newFilter.valor2 = '';
+        newFilter.accion = '';
+        setFiltersAdded([...filtersAdded, newFilter]);
+    }
+
+    function addfilterOperator(event, index) {
+        var tmpArray = [];
+        filtersAdded.map((filter, index_) => {
+            if(index == index_)
+                filter.operacion = event.target.value;
+            tmpArray.push(filter)
+        });
+        setFiltersAdded(tmpArray);
+    }
+
+    function addfilterValue(event, index, second) {
+        console.log('event.target.value: ', event.target.value);
+        var tmpArray = [];
+        var tmpValue = '';
+        filtersAdded.map((filter, index_) => {
+            if(index == index_) {
+                if(second == true) {
+                    tmpValue = `AND ${event.target.value}`;
+                    filter.valor2 = tmpValue;
+                } else {
+                    tmpValue = `${event.target.value}`;
+                    filter.valor = tmpValue;
+                }
+            }
+            tmpArray.push(filter)
+        });
+        setFiltersAdded(tmpArray);
+    }
+
+    function removeFilter(index) {
+        var tmpArray = [];
+        filtersAdded.map(added => tmpArray.push(added));
+        tmpArray.splice(index, 1);
+        setFiltersAdded(tmpArray);
+    }
+
     function restartFilters() {
         setColumns([]);
         setColumnsSelected([]);
+        setFiltersAdded([]);
     }
 
     function changeMapName(e) {
@@ -431,7 +508,7 @@ export default function estadisticas() {
                         <div className="row">
                             <div className="col-12 custom-mx-t-1 custom-h-450 table-responsive">
                                 {
-                                    (tableData && tableData.length > 0) &&
+                                    tableData &&
                                         tableData.map((table, index) => (
                                             <GenericTable key={index} table={table} index={index}/>
                                         ))
@@ -447,7 +524,7 @@ export default function estadisticas() {
                                 <Card>
                                     <Accordion.Toggle as={Card.Header} eventKey="0">
                                         <h4 className="text-center">
-                                            Filtros
+                                            Opciones
                                         </h4>
                                     </Accordion.Toggle>
                                     <Accordion.Collapse eventKey="0">
@@ -458,7 +535,7 @@ export default function estadisticas() {
                                                     La informaci&oacute;n no est&aacute; disponible
                                                 </h4> :
                                                 <div className="row">
-                                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                                                    <div className="col-12">
                                                         <div className="row tw-p-0">
                                                             <Form.Group className="col-12 tw-p-0 my-auto tw-mt-2">
                                                                 <Form.Control as="select" onChange={(event) => applyStatisticalProducts(event)}>
@@ -474,13 +551,13 @@ export default function estadisticas() {
                                                         {
                                                             columns.length > 0 &&
                                                                 <div className="row tw-mt-2 mx-auto">
-                                                                    <Form className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0 my-auto">
+                                                                    <Form className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0 my-auto text-center">
                                                                         <Form.Check custom type="checkbox" inline className="mb-3 my-auto"
                                                                             onChange={(event) => applySelectionType(event)}
                                                                             label='Seleccionar todo/nada' id={`columns-check`}
                                                                             checked={columns.length > 0 && columns.length == columnsSelected.length}/>
                                                                     </Form>
-                                                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0">
+                                                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0 text-center">
                                                                         <button className="btn-analisis" onClick={() => setSelectionType(3)}>Invertir selecci&oacute;n</button>
                                                                     </div>
                                                                 </div>
@@ -514,7 +591,7 @@ export default function estadisticas() {
                                                             </div>
                                                         }
                                                     </div>
-                                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                                                    <div className="col-12">
                                                         {
                                                             errors.isStatisticalProductsError || errors.isAggregationLevelsError || errors.isColumnsError ?
                                                                 <h4 className="text-center">
@@ -522,7 +599,7 @@ export default function estadisticas() {
                                                                 </h4> :
                                                                 columns.length > 0 &&
                                                                 <Form.Group className="row tw-mb-0">
-                                                                    <div className="col-12 tw-mt-2">
+                                                                    <div className="col-xl-3 col-lg-3 col-md-4 col-sm-12 col-xs-12 tw-mb-2">
                                                                         <Form.Control as="select" name="aggregationType" onChange={(event) => setNacional(parseInt(event.target.value))}>
                                                                             {
                                                                                 aggregationLevels.map((item, index) => (
@@ -535,7 +612,7 @@ export default function estadisticas() {
                                                                             }
                                                                         </Form.Control>
                                                                     </div>
-                                                                    <div className="col-12 tw-mt-2">
+                                                                    <div className="col-xl-3 col-lg-3 col-md-4 col-sm-12 col-xs-12 tw-mb-2">
                                                                         <Form.Control as="select" name="entities" onChange={(event) => setEntity(event.target.value)} disabled={statisticalProduct.nivel_desagregacion == 'Nacional' || isNacional == 0}>
                                                                             <option value="" hidden>Entidad</option>
                                                                             {
@@ -551,7 +628,7 @@ export default function estadisticas() {
                                                                             }
                                                                         </Form.Control>
                                                                     </div>
-                                                                    <div className="col-12 tw-mt-2">
+                                                                    <div className="col-xl-3 col-lg-3 col-md-4 col-sm-12 col-xs-12 tw-mb-2">
                                                                         <Form.Control as="select" name="tawns" onChange={(event) => setTawn(event.target.value)} disabled={statisticalProduct.nivel_desagregacion == 'Estatal' || isNacional == 0}>
                                                                             <option value="" hidden>Municipio</option>
                                                                             {
@@ -567,7 +644,7 @@ export default function estadisticas() {
                                                                             }
                                                                         </Form.Control>
                                                                     </div>
-                                                                    <div className="col-12 tw-mt-2">
+                                                                    <div className="col-xl-3 col-lg-3 col-md-4 col-sm-12 col-xs-12 tw-mb-2">
                                                                         <Form.Control as="select" name="localities" onChange={(event) => setLocality(event.target.value)} disabled={statisticalProduct.nivel_desagregacion != 'Localidad' || isNacional == 0}>
                                                                             <option value="" hidden>Localidad</option>
                                                                             {
@@ -586,8 +663,109 @@ export default function estadisticas() {
                                                                 </Form.Group>
                                                         }
                                                         {
+                                                            isShowAdvancedFilters == true &&
+                                                                <div className="row">
+                                                                    <Card className="custom-card-body col-12">
+                                                                        <div className="row tw-p-0 mb-2">
+                                                                            <Form.Group className="col-12 tw-p-0 my-auto tw-mt-2">
+                                                                                <Form.Control as="select" onChange={(event) => addFilterField(event)}>
+                                                                                    <option value='' hidden>Agregar filtro</option>
+                                                                                    {
+                                                                                        columnsSelected.map((item, index) => (
+                                                                                            <option key={index} value={item.id}>{item.encabezado}</option>
+                                                                                        ))
+                                                                                    }
+                                                                                </Form.Control>
+                                                                            </Form.Group>
+                                                                        </div>
+                                                                    </Card>
+                                                                        {
+                                                                            filtersAdded.length > 0 &&
+                                                                                <div className="col-12 tw-p-0 mt-1">
+                                                                                    <Table striped hover>
+                                                                                        {/* <thead>
+                                                                                            <tr className="tw-text-center">
+                                                                                                <th colSpan={Object.keys(filtersAdded[0]).length}>Filtros</th>
+                                                                                            </tr>
+                                                                                            <tr>
+                                                                                                {
+                                                                                                    Object.keys(filtersAdded[0]).map((header, index) => (
+                                                                                                        <th key={index} hidden={header == 'columna'}>{header}</th>
+                                                                                                    ))
+                                                                                                }
+                                                                                            </tr>
+                                                                                        </thead> */}
+                                                                                        <tbody>
+                                                                                            {
+                                                                                                filtersAdded.map((content, index) => (
+                                                                                                    <tr key={index}>
+                                                                                                        <td>{content.encabezado}</td>
+                                                                                                        <td>
+                                                                                                            <Form.Group className="tw-p-0 my-auto tw-mt-2">
+                                                                                                                <Form.Control as="select"
+                                                                                                                    onChange={(event) => addfilterOperator(event, index)}
+                                                                                                                    >
+                                                                                                                    <option value='' hidden>Operación</option>
+                                                                                                                    {
+                                                                                                                        operators.map((item, index) => (
+                                                                                                                            <option key={index} value={item.value}>{item.title}</option>
+                                                                                                                        ))
+                                                                                                                    }
+                                                                                                                </Form.Control>
+                                                                                                            </Form.Group>
+                                                                                                        </td>
+                                                                                                        <td>
+                                                                                                            {
+                                                                                                                content.operacion.length > 0 &&
+                                                                                                                    <InputGroup className="tw-p-0 my-auto tw-mt-2">
+                                                                                                                        <FormControl
+                                                                                                                            onKeyUp={(event) => addfilterValue(event, index, false)}
+                                                                                                                            placeholder="Valor"
+                                                                                                                            aria-label="Valor"
+                                                                                                                            aria-describedby="basic-addon2"
+                                                                                                                        />
+                                                                                                                    </InputGroup>
+                                                                                                            }
+                                                                                                        </td>
+                                                                                                        <td>
+                                                                                                            {
+                                                                                                                content.operacion == 'BETWEEN' &&
+                                                                                                                    <InputGroup className="tw-p-0 my-auto tw-mt-2">
+                                                                                                                        <FormControl
+                                                                                                                            onKeyUp={(event) => addfilterValue(event, index, true)}
+                                                                                                                            placeholder="Valor 2"
+                                                                                                                            aria-label="Valor 2"
+                                                                                                                            aria-describedby="basic-addon2"
+                                                                                                                        />
+                                                                                                                    </InputGroup>
+                                                                                                            }
+                                                                                                        </td>
+                                                                                                        <td>
+                                                                                                            <OverlayTrigger overlay={<Tooltip>Eliminar filtro</Tooltip>}>
+                                                                                                                <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer"
+                                                                                                                    onClick={() => removeFilter(index)}
+                                                                                                                    icon={faTrash} />
+                                                                                                            </OverlayTrigger>
+                                                                                                        </td>
+                                                                                                    </tr>
+                                                                                                ))
+                                                                                            }
+                                                                                        </tbody>
+                                                                                    </Table>
+                                                                                </div>
+                                                                        }
+                                                                </div>
+                                                        }
+                                                        {
                                                             columns.length > 0 &&
                                                             <div className="row">
+                                                                <div className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12 tw-p-0 tw-my-2 text-center">
+                                                                    <OverlayTrigger overlay={<Tooltip>Agregar filtros avanzados</Tooltip>}>
+                                                                        <button className="btn-analisis"
+                                                                            onClick={() => setShowAdvancedFilters(!isShowAdvancedFilters)}
+                                                                            >Filtros</button>
+                                                                    </OverlayTrigger>
+                                                                </div>
                                                                 <div className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12 tw-p-0 tw-my-2 text-center">
                                                                     <OverlayTrigger overlay={<Tooltip>Agregar tabular</Tooltip>}>
                                                                         <button className="btn-analisis" onClick={() => getStatiticalProductInformation()}>Agregar</button>
@@ -596,13 +774,6 @@ export default function estadisticas() {
                                                                 <div className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12 tw-p-0 tw-my-2 text-center">
                                                                     <OverlayTrigger overlay={<Tooltip>Mostrar tabulares</Tooltip>}>
                                                                         <button className="btn-analisis" disabled={tableData.length == 0} onClick={() => handleShowTablesModal()}>Tabulares</button>
-                                                                    </OverlayTrigger>
-                                                                </div>
-                                                                <div className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12 tw-p-0 tw-my-2 text-center">
-                                                                    <OverlayTrigger overlay={<Tooltip>Mostrar gr&aacute;ficas</Tooltip>}>
-                                                                        <button className="btn-analisis" disabled={tableData.length == 0}
-                                                                            // onClick={() => getStatiticalProductInformation()}
-                                                                            >Gr&aacute;ficas</button>
                                                                     </OverlayTrigger>
                                                                 </div>
                                                             </div>
