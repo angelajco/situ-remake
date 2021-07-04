@@ -123,7 +123,7 @@ export default function Menu() {
                         {/* <Link href="/construccion"> */}
                             <a className={deshabilitarEstadisticas ? active : noActive}>ESTAD&Iacute;STICAS E<br></br>INDICADORES</a>
                         </Link>
-                        <Link href="/construccion">
+                        <Link href="/consulta-documental">
                             <a className={noActive}>CONSULTA<br></br>DOCUMENTAL</a>
                         </Link>
                         {
