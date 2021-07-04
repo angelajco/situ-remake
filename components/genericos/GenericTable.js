@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCogs, faAlignJustify, faAlignLeft, faFileCsv, faFilePdf } from '@fortawesome/free-solid-svg-icons';
-import { Card, Form, Modal, OverlayTrigger, Tooltip, Tab, Row, Col, Nav } from 'react-bootstrap'
+import { faCogs, faAlignJustify, faAlignLeft, faFileCsv, faFilePdf, faSquare, faCheckSquare } from '@fortawesome/free-solid-svg-icons';
+import { Button, Form, OverlayTrigger, Tooltip, Tab, Row, Col, Nav } from 'react-bootstrap'
 import { CSVLink } from "react-csv";
+import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 
 // import * as toPdf from '@react-pdf/renderer';
 import * as htmlToImage from 'html-to-image';
@@ -11,9 +12,8 @@ import Loader from '../Loader'
 
 export default function GenericTable(props) {
 
-    const tabular = props
-    const [dinamicData, setDinamicData] = useState(tabular.table.data);
-    const [placeholder, setPlaceholder] = useState();
+    const [tabular, setTabular] = useState(props);
+    const [dinamicData, setDinamicData] = useState();
     const [dragged, setDragged] = useState();
     const [csvData, setCsvData] = useState([]);
     const [csvFileName, setCsvFileName] = useState('');
@@ -33,38 +33,25 @@ export default function GenericTable(props) {
     //     }
     // });
 
-    function onDrag(event) {
-        console.log('onDrag: ', event)
-        setPlaceholder(document.createElement('li'))
-        setDragged(event.currentTarget);
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('text/html', dragged);
+    resetServerContext();
+    
+    function handleOnDragEnd(result) {
+        if (!result.destination) {
+            return
+        }
+        let tmpObject = {
+            nombreTabla: dinamicData.nombreTabla,
+            columnas: dinamicData.columnas,
+            datos: dinamicData.datos
+        };
+        let items = Array.from(tmpObject.columnas);
+        let [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+        tmpObject.columnas = items;
+        setDinamicData(tmpObject);
     }
 
-    function onDrop(event) {
-        console.log('onDrop.event: ', event)
-        dragged.style.display = 'block';
-        dragged.parentNode.removeChild(placeholder); //TODO aquí
-        
-        // update state
-        var data = dinamicData;
-        var from = Number(dragged.dataset.id);
-        var to = Number(event.over.dataset.id);
-        if(from < to) to--;
-        data.splice(to, 0, data.splice(from, 1)[0]);
-        setDinamicData(data);
-    }
-
-    function onDragOver(event) {
-        console.log('onDragOver: ', event)
-        event.preventDefault();
-        dragged.style.display = "none";
-        if(event.target.className === 'placeholder') return;
-        event.over = event.target;
-        event.target.parentNode.insertBefore(placeholder, event.target);
-    }
-
-    function addToExportWithPivot(rasgosObtenidos) {
+    function addToExportWithPivot_(rasgosObtenidos) {
         generateFileName(function () {
             let csvData_ = [];
             let csvContent = [];
@@ -79,6 +66,26 @@ export default function GenericTable(props) {
                 });
                 setCsvData(csvData_);
             }
+        });
+    }
+
+    function addToExportWithPivot(rasgosObtenidos) {
+        generateFileName(function () {
+            let csvData_ = [];
+            let csvContent = [];
+            let csvHeaders = [];
+            rasgosObtenidos.columnas.filter(columna => columna[2] == true).map(header => {
+                csvHeaders.push(header[1]);
+            });
+            csvData_.push(csvHeaders);
+            rasgosObtenidos.datos.map((data) => {
+                csvContent = [];
+                rasgosObtenidos.columnas.filter(columna => columna[2] == true).map((column) => {
+                    csvContent.push(data[column[3]]);
+                });
+                csvData_.push(csvContent);
+            });
+            setCsvData(csvData_);
         });
     }
 
@@ -129,6 +136,75 @@ export default function GenericTable(props) {
         success();
     }
 
+    function columnsSelected(index) {
+        let tmpObject = {
+            nombreTabla: dinamicData.nombreTabla,
+            columnas: dinamicData.columnas,
+            datos: dinamicData.datos
+        };
+        let tmparray = [];
+        tmpObject.columnas.map(column => {
+            if(column[3] == index)
+                column[2] = !column[2];
+            tmparray.push(column);
+        });
+        tmpObject.columnas = tmparray;
+        setDinamicData(tmpObject);
+    }
+
+    function showColumns(show) {
+        let tmpObject = {
+            nombreTabla: dinamicData.nombreTabla,
+            columnas: dinamicData.columnas,
+            datos: dinamicData.datos
+        };
+        let tmparray = [];
+        tmpObject.columnas.map(column => {
+            column[2] = show;
+            tmparray.push(column);
+        });
+        tmpObject.columnas = tmparray;
+        setDinamicData(tmpObject);
+    }
+
+    function reloadTable() {
+        let tmpObject = {
+            nombreTabla: dinamicData.nombreTabla,
+            columnas: tabular.table.data.columnas,
+            datos: dinamicData.datos
+        };
+        let tmparray = [];
+        tmpObject.columnas.map(column => {
+            column[2] = true;
+            tmparray.push(column);
+        });
+        tmpObject.columnas = tmparray;
+        setDinamicData(tmpObject);
+    }
+    
+    useEffect(() => {
+        var tmpObject = {
+            nombreTabla: '',
+            columnas: [],
+            datos: []
+        };
+        tabular.table.data.columnas.map((column, index) => {
+            column.push(true);
+            column.push(index);
+            tmpObject.columnas.push(column);
+        });
+        tmpObject.datos = tabular.table.data.datos;
+        tmpObject.nombreTabla = tabular.table.data.nombreTabla;
+        setDinamicData(tmpObject);
+    }, [tabular]);
+
+    useEffect(() => {
+        if(dinamicData)
+            generateFiles(function() {
+                console.log('files generated!!!');
+            });
+    }, [dinamicData]);
+
     return (
         <>
             {
@@ -137,23 +213,8 @@ export default function GenericTable(props) {
                     ''
             }
             {
-                (dinamicData && dinamicData.length > 0)
-                ?
+                dinamicData && dinamicData.datos.length > 0 &&
                     <div className="row mx-0 mb-2">
-                        {/* <div className="row">
-                            <ul id='list-columns' onDragOver={(event) => onDragOver(event)}>
-                                {
-                                    Object.keys(dinamicData[0]).map((element, index) => (
-                                        <li key={index}
-                                            draggable='true'
-                                            onDragEnd={(event) => onDrop(event)}
-                                            onDragStart={(event) => onDrag(event)}>
-                                            {element}
-                                        </li>
-                                    ))
-                                }
-                            </ul>
-                        </div> */}
                         <div className="row mx-0 mb-2">
                             <div className="col-12">
                                 <b className="w-100">
@@ -221,7 +282,49 @@ export default function GenericTable(props) {
                                                     </div>
                                                 </Tab.Pane>
                                                 <Tab.Pane eventKey="2">
-                                                    pane 2
+                                                    <div className="row">
+                                                        <div className="row mx-auto my-2">
+                                                            <div className="col-12 tw-p-0 text-center">
+                                                                <button className="btn-analisis"
+                                                                    onClick={() => reloadTable()}
+                                                                    >Reestablecer tabla</button>
+                                                            </div>
+                                                            <div className="col-12 tw-p-0">
+                                                                <p className="text-center m-0">Mostrar:</p>
+                                                            </div>
+                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0 text-center">
+                                                                <button className="btn-analisis"
+                                                                    onClick={() => showColumns(true)}
+                                                                    >Todos</button>
+                                                            </div>
+                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0 text-center">
+                                                                <button className="btn-analisis"
+                                                                    onClick={() => showColumns(false)}
+                                                                    >Ninguna</button>
+                                                            </div>
+                                                        </div>
+                                                        <DragDropContext onDragEnd={handleOnDragEnd}>
+                                                            <Droppable droppableId="columns">
+                                                                {(provided) => (
+                                                                    <div className="row mx-auto columns-container" {...provided.droppableProps} ref={provided.innerRef}>
+                                                                        {
+                                                                            dinamicData.columnas.map((column, index) => (
+                                                                                <DraggableDnd key={index} draggableId={column[0]} index={index}>
+                                                                                    {(provided) => (
+                                                                                        <div className="row mx-3" {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                                                                            <Form.Check key={index} custom type="checkbox" className="mb-12" onChange={(event) => columnsSelected(event.target.value)}
+                                                                                                checked={column[2]} value={column[3]} label={column[1]} id={`dinamic-column-${column[3]}`}/>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </DraggableDnd>
+                                                                            ))
+                                                                        }
+                                                                        {provided.placeholder}
+                                                                    </div>
+                                                                )}
+                                                            </Droppable>
+                                                        </DragDropContext>
+                                                    </div>
                                                 </Tab.Pane>
                                             </Tab.Content>
                                         </Col>
@@ -232,44 +335,41 @@ export default function GenericTable(props) {
                         <div className="row table-responsive mx-0 mb-5" style={{maxHeight: 250}}>
                             <table id={`table-estatitistics-${tabular.index}`} className="tw-w-full table-hover">
                                 <thead className="tw-bg-titulo" >
-                                    {/* <tr>
-                                        <th className="tw-px-2 tw-text-white" colSpan={Object.keys(dinamicData[0]).length}>{tabular.table.title}</th>
-                                    </tr> */}
                                     <tr>
                                     {
-                                        Object.keys(dinamicData[0]).map((header, index) => (
-                                            <th className="tw-px-2 tw-text-white text-center" key={index}>{header}</th>
+                                        dinamicData.columnas.filter(columna => columna[2] == true).map((header, index) => (
+                                            <th className="tw-px-2 tw-text-white text-center" key={index}>
+                                                {
+                                                    header[1]
+                                                }
+                                            </th>
                                         ))
                                     }
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {
-                                    dinamicData.map((item, index) => (
-                                        <tr key={index}>
-                                        {
-                                            Object.keys(dinamicData[0]).map((item2, index2) => (
-                                                <td className={
-                                                    item[item2].constructor.name === "String" ?
-                                                    "border-bottom border-green-600" :
-                                                    "border-bottom border-green-600 text-right"
-                                                } key={index2}>{item[item2].constructor.name === "String" ?
-                                                    item[item2] :
-                                                    new Intl.NumberFormat('en-US').format(item[item2])}
-                                                </td>
-                                            ))
-                                        }
-                                        </tr>
+                                        dinamicData.datos.map((data, index) => (
+                                            <tr key={index}>
+                                                {
+                                                    dinamicData.columnas.filter(columna => columna[2] == true).map((column, index_) => (
+                                                        <td className={
+                                                            data[column[3]].constructor.name === "String" ?
+                                                            "border-bottom border-green-600" :
+                                                            "border-bottom border-green-600 text-right"
+                                                        } key={index_}>{data[column[3]].constructor.name === "String" ?
+                                                            data[column[3]] :
+                                                            new Intl.NumberFormat('en-US').format(data[column[3]])}
+                                                        </td>
+                                                    ))
+                                                }
+                                            </tr>
                                         ))
                                     }
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                :
-                    <h4>
-                        No se encontr&oacute; informaci&oacute;n
-                    </h4>
             }
         </>
     )

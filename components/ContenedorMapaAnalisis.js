@@ -453,6 +453,8 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
+    console.log(capasVisualizadas, "capasVisualizadas")
+
     //Para agregar capas WMS, ya sea de la ide o de un servicio
     const agregaCapaWMS = (capa, fuente) => {
         setShowModalAgregarCapas(false);
@@ -509,7 +511,6 @@ function ContenedorMapaAnalisis(props) {
             })
             capaWMS["layer"] = layer;
             referenciaMapa.addLayer(capaWMS.layer)
-            // setCapasVisualizadas([...capasVisualizadas, capaWMS]);
             setCapasVisualizadas([capaWMS, ...capasVisualizadas]);
             setDatosModalAnalisis({
                 title: "Capa agregada",
@@ -571,6 +572,7 @@ function ContenedorMapaAnalisis(props) {
                             onEachFeature: function (feature = {}, layerPadre) {
                                 feature["nombre_capa"] = layerPadre.options["nombre"];
                                 if (resultado !== null) {
+                                    console.log(resultado, "resultado")
                                     Object.keys(feature.properties).map(key => {
                                         let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
                                         if (nuevoAlias !== "") {
@@ -586,6 +588,7 @@ function ContenedorMapaAnalisis(props) {
                             }
                         });
                         response['layer'] = layer;
+
                         setCapasVisualizadas([response, ...capasVisualizadas])
                         referenciaMapa.addLayer(response.layer);
                         setDatosModalAnalisis({
@@ -604,6 +607,7 @@ function ContenedorMapaAnalisis(props) {
             .then(res => res.json())
             .then(
                 (data) => {
+                    console.log(data, "data")
                     resultado(data)
                 },
                 (error) => {
