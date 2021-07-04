@@ -2567,7 +2567,7 @@ function ContenedorMapaAnalisis(props) {
                 <Modal.Body>
                     {
                         jsonSimbologia.length > 0 ? (
-                            jsonSimbologia.map((capa,index) => (
+                            jsonSimbologia.map((capa, index) => (
                                 <div key={index}>
                                     <h5>{capa.name}</h5>
                                     <div dangerouslySetInnerHTML={{ __html: capa.simbologia.tablaSimbologia() }} ></div>
@@ -2576,14 +2576,14 @@ function ContenedorMapaAnalisis(props) {
                         ) : (
                             capasVisualizadas.map((capa, index) => (
                                 capa.habilitado && (
-                                   
-                                        <div key={index}>
-                                            <p><b>{capa.nom_capa}</b></p>
-                                            <img src={capa.simbologia}></img>
-                                            <br></br>
-                                            <br></br>
-                                        </div>
-                                    
+
+                                    <div key={index}>
+                                        <p><b>{capa.nom_capa}</b></p>
+                                        <img src={capa.simbologia}></img>
+                                        <br></br>
+                                        <br></br>
+                                    </div>
+
                                 )
                             ))
                         )
@@ -2875,7 +2875,7 @@ function ContenedorMapaAnalisis(props) {
                 <Modal.Body>
                     {
                         atributos.length != 0 && (
-                            
+
                             <Table striped bordered hover responsive>
                                 <thead>
                                     <tr className="tw-text-center">
@@ -3110,9 +3110,13 @@ function ContenedorMapaAnalisis(props) {
                                                                 <Button onClick={() => eliminaCapa(capa)} variant="link">
                                                                     <FontAwesomeIcon icon={faTrash} />
                                                                 </Button>
-                                                                <Button onClick={() => cambioEstilos(capa)} variant="link">
-                                                                    <FontAwesomeIcon icon={faPaintBrush} />
-                                                                </Button>
+                                                                {
+                                                                    capa.tipo === "wfs" || capa.tipo==='json' ? (
+                                                                        <Button onClick={() => cambioEstilos(capa)} variant="link">
+                                                                            <FontAwesomeIcon icon={faPaintBrush} />
+                                                                        </Button>):(<div></div>)
+                                                                }
+
                                                                 <CustomToggle eventKey={capa.nom_capa} />
                                                             </Card.Header>
                                                             <Accordion.Collapse eventKey={capa.nom_capa}>

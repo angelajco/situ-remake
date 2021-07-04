@@ -1,5 +1,128 @@
-.tabs-consulta a{
+.tabs-consulta{
     display: flex;
     flex: 1;
     justify-content: center;
+}
+
+.modal-consulta{
+    width: 100%;
+    
+}
+
+.doc-title{
+    font-size: 2em;
+}
+
+.tit-cd{
+    background-color: #444444;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 6em;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.basic-single{
+    color: #444444;
+    margin-right: 0;
+}
+
+.busq{
+    background-color: red;
+    color: #fff;
+    font-weight: 400;
+    font-size: 16pt;
+    width: 50px;
+    margin: 0;
+}
+
+.busq1{
+    height: 100%;
+    color: #fff;
+    font-weight: 400;
+    font-size: 12pt;
+    width: 100%;
+    margin: 0;
+}
+
+.bot-cd{
+    width: 100%;
+    height: 3em;
+    background-color: #fff;
+    border-color: #444444;
+    color:black;
+    text-align: center;
+}
+
+.bot-cd:hover{
+    background-color: #fff;
+    color:red;
+    font-weight: bold;
+}
+
+.bot-cd:focus{
+    background-color: #fff;
+    color:red;
+    font-weight: bold;
+}
+
+.bot-cd:active{
+    background-color: #fff;
+    color:red;
+    font-weight: bold;
+}
+
+.number-cd{
+    color:red;
+}
+
+.filtros-cd{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 3em;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    border: 1px solid #000;
+}
+
+.sinpadding [class*="col-"] {
+    padding: 0;
+}
+
+.columna1{
+    width: 22em;
+}
+.columna2{
+    width: 15em;
+}
+.columna3{
+    width: 15em;
+}
+.columna4{
+    width: 9em;
+}
+
+a.columna5{
+    color: #276C6F;
+}
+
+.columna5{
+    width: 2em;
+    font-weight: 500;
+    font-size: 16pt;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5em 1em 1.5em 1em;
+}
+
+.b{
+    width: 15em;
+    height: 3em;
+    font-size: 16pt;
+    border: 1px solid #000;
+}
+.datos-cd{
+    height: 820px;
 }

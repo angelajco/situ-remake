@@ -1,6 +1,6 @@
 import React from 'react'
 import { Container } from 'react-bootstrap'
-import ContenedorCD from '../../components/ContenedorCD';
+import ContenedorCD from '../components/ContenedorCD';
 
 export default function construccion() {
   return (
