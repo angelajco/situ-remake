@@ -123,6 +123,7 @@ export default function GenericTable(props) {
 
     function renderTools() {
         setIsLoading(true);
+        // props.showMap(false);
         generateFiles(function() {
             setHiddenTools(!isHiddenTools);
             setIsLoading(false);
@@ -254,6 +255,9 @@ export default function GenericTable(props) {
                                                 <Nav.Item>
                                                     <Nav.Link eventKey="2">Presentaci&oacute;n tabular</Nav.Link>
                                                 </Nav.Item>
+                                                {/* <Nav.Item>
+                                                    <Nav.Link eventKey="3">Presentaci&oacute;n espacial</Nav.Link>
+                                                </Nav.Item> */}
                                             </Nav>
                                         </Col>
                                         <Col sm={9} className="custom-content-tabs">
@@ -288,6 +292,51 @@ export default function GenericTable(props) {
                                                                 <button className="btn-analisis"
                                                                     onClick={() => reloadTable()}
                                                                     >Reestablecer tabla</button>
+                                                            </div>
+                                                            <div className="col-12 tw-p-0">
+                                                                <p className="text-center m-0">Mostrar:</p>
+                                                            </div>
+                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0 text-center">
+                                                                <button className="btn-analisis"
+                                                                    onClick={() => showColumns(true)}
+                                                                    >Todos</button>
+                                                            </div>
+                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0 text-center">
+                                                                <button className="btn-analisis"
+                                                                    onClick={() => showColumns(false)}
+                                                                    >Ninguna</button>
+                                                            </div>
+                                                        </div>
+                                                        <DragDropContext onDragEnd={handleOnDragEnd}>
+                                                            <Droppable droppableId="columns">
+                                                                {(provided) => (
+                                                                    <div className="row mx-auto columns-container" {...provided.droppableProps} ref={provided.innerRef}>
+                                                                        {
+                                                                            dinamicData.columnas.map((column, index) => (
+                                                                                <DraggableDnd key={index} draggableId={column[0]} index={index}>
+                                                                                    {(provided) => (
+                                                                                        <div className="row mx-3" {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                                                                            <Form.Check key={index} custom type="checkbox" className="mb-12" onChange={(event) => columnsSelected(event.target.value)}
+                                                                                                checked={column[2]} value={column[3]} label={column[1]} id={`dinamic-column-${column[3]}`}/>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </DraggableDnd>
+                                                                            ))
+                                                                        }
+                                                                        {provided.placeholder}
+                                                                    </div>
+                                                                )}
+                                                            </Droppable>
+                                                        </DragDropContext>
+                                                    </div>
+                                                </Tab.Pane>
+                                                <Tab.Pane eventKey="3">
+                                                    <div className="row">
+                                                        <div className="row mx-auto my-2">
+                                                            <div className="col-12 tw-p-0 text-center">
+                                                                <button className="btn-analisis"
+                                                                    onClick={() => props.showMap(true)}
+                                                                    >Aplicar</button>
                                                             </div>
                                                             <div className="col-12 tw-p-0">
                                                                 <p className="text-center m-0">Mostrar:</p>
