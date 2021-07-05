@@ -311,6 +311,10 @@ function ContenedorMapaAnalisis(props) {
         agregaCapaWFS(capaNacional)
     }
 
+    function testRef() {
+        console.log('testRef');
+    }
+
     //Para cuando se agrega una entidad
     const construyeEntidadCapa = (capaFusion, entidad) => {
         if (entidad != undefined) {
@@ -379,7 +383,9 @@ function ContenedorMapaAnalisis(props) {
     //Para buscar los metadatos de la capa
     const { register: registraAgregaCapa, handleSubmit: handleAgregaCapa, control: controlAgregaCapa, errors: erroresAgregaCapa, setError: setErrorAgregaCapa } = useForm();
     const submitAgregaCapa = (data) => {
+        console.log('data: ', data);
         let capa = JSON.parse(data.capa);
+        console.log('capa: ', capa);
         if (capa.filtro_minimo == "0") {
             if (data.entidadAgregar != undefined && data.entidadAgregar.length != 0) {
                 construyeEntidadCapa(capa, data.entidadAgregar[0])
@@ -452,8 +458,6 @@ function ContenedorMapaAnalisis(props) {
             }
         }
     }
-
-    console.log(capasVisualizadas, "capasVisualizadas")
 
     //Para agregar capas WMS, ya sea de la ide o de un servicio
     const agregaCapaWMS = (capa, fuente) => {
@@ -2300,6 +2304,20 @@ function ContenedorMapaAnalisis(props) {
         } else {
             sincronizaA(zoom, centro)
         }
+    }
+
+    useEffect(() => {
+        if(props.referenciaEntidad != undefined) {
+            refFunction(props.referenciaEntidad);
+        }
+    }, [props.referenciaEntidad])
+    
+    function refFunction(referenciaEntidad) {
+        console.log('referenciaEntidad: ', referenciaEntidad);
+        var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
+        var entidad = {id: referenciaEntidad.id_entidades, entidad: referenciaEntidad.nombre_entidad};
+        console.log('capa: ', capa);
+        construyeEntidadCapa(capa, entidad);
     }
 
     return (
