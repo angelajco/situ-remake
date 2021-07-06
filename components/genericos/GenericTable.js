@@ -14,7 +14,7 @@ export default function GenericTable(props) {
 
     const [tabular, setTabular] = useState(props);
     const [dinamicData, setDinamicData] = useState();
-    const [dragged, setDragged] = useState();
+    const [spaceData, setSpaceData] = useState();
     const [csvData, setCsvData] = useState([]);
     const [csvFileName, setCsvFileName] = useState('');
     const [isHiddenTools, setHiddenTools] = useState(true);
@@ -49,6 +49,22 @@ export default function GenericTable(props) {
         items.splice(result.destination.index, 0, reorderedItem);
         tmpObject.columnas = items;
         setDinamicData(tmpObject);
+    }
+    
+    function handleOnDragEndSpaceData(result) {
+        if (!result.destination) {
+            return
+        }
+        let tmpObject = {
+            nombreTabla: spaceData.nombreTabla,
+            columnas: spaceData.columnas,
+            datos: spaceData.datos
+        };
+        let items = Array.from(tmpObject.columnas);
+        let [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+        tmpObject.columnas = items;
+        setSpaceData(tmpObject);
     }
 
     function addToExportWithPivot_(rasgosObtenidos) {
@@ -153,6 +169,22 @@ export default function GenericTable(props) {
         setDinamicData(tmpObject);
     }
 
+    function columnsSelectedTospacePresentation(index) {
+        let tmpObject = {
+            nombreTabla: spaceData.nombreTabla,
+            columnas: spaceData.columnas,
+            datos: spaceData.datos
+        };
+        let tmparray = [];
+        tmpObject.columnas.map(column => {
+            if(column[3] == index)
+                column[2] = !column[2];
+            tmparray.push(column);
+        });
+        tmpObject.columnas = tmparray;
+        setSpaceData(tmpObject);
+    }
+
     function showColumns(show) {
         let tmpObject = {
             nombreTabla: dinamicData.nombreTabla,
@@ -166,6 +198,21 @@ export default function GenericTable(props) {
         });
         tmpObject.columnas = tmparray;
         setDinamicData(tmpObject);
+    }
+
+    function showColumnsTospacePresentation(show) {
+        let tmpObject = {
+            nombreTabla: spaceData.nombreTabla,
+            columnas: spaceData.columnas,
+            datos: spaceData.datos
+        };
+        let tmparray = [];
+        tmpObject.columnas.map(column => {
+            column[2] = show;
+            tmparray.push(column);
+        });
+        tmpObject.columnas = tmparray;
+        setSpaceData(tmpObject);
     }
 
     function reloadTable() {
@@ -182,6 +229,7 @@ export default function GenericTable(props) {
         tmpObject.columnas = tmparray;
         setDinamicData(tmpObject);
     }
+    
     
     useEffect(() => {
         var tmpObject = {
@@ -200,10 +248,27 @@ export default function GenericTable(props) {
     }, [tabular]);
 
     useEffect(() => {
-        if(dinamicData)
+        if(dinamicData) {
+            console.log('dinamicData:', dinamicData);
             generateFiles(function() {
-                console.log('files generated!!!');
+                var headers = [];
+                var row = [];
+                var data_ = [];
+                dinamicData.columnas.filter(columna => columna[2] == true).map((header) => {
+                    header[2] = true;
+                    headers.push(header);
+                });
+                dinamicData.datos.map(data => {
+                    row = [];
+                    dinamicData.columnas.filter(columna => columna[2] == true).map(header => {
+                        row.push(data[header[3]]);
+                    });
+                    data_.push(row);
+                });
+                console.log('spaceData: ', {nombreTabla: dinamicData.nombreTabla, columnas: headers, datos: data_});
+                setSpaceData({nombreTabla: dinamicData.nombreTabla, columnas: headers, datos: data_})
             });
+        }
     }, [dinamicData]);
 
     return (
@@ -255,9 +320,9 @@ export default function GenericTable(props) {
                                                 <Nav.Item>
                                                     <Nav.Link eventKey="2">Presentaci&oacute;n tabular</Nav.Link>
                                                 </Nav.Item>
-                                                {/* <Nav.Item>
+                                                <Nav.Item>
                                                     <Nav.Link eventKey="3">Presentaci&oacute;n espacial</Nav.Link>
-                                                </Nav.Item> */}
+                                                </Nav.Item>
                                             </Nav>
                                         </Col>
                                         <Col sm={9} className="custom-content-tabs">
@@ -343,26 +408,27 @@ export default function GenericTable(props) {
                                                             </div>
                                                             <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0 text-center">
                                                                 <button className="btn-analisis"
-                                                                    onClick={() => showColumns(true)}
+                                                                    onClick={() => showColumnsTospacePresentation(true)}
                                                                     >Todos</button>
                                                             </div>
                                                             <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-p-0 text-center">
                                                                 <button className="btn-analisis"
-                                                                    onClick={() => showColumns(false)}
+                                                                    onClick={() => showColumnsTospacePresentation(false)}
                                                                     >Ninguna</button>
                                                             </div>
                                                         </div>
-                                                        <DragDropContext onDragEnd={handleOnDragEnd}>
-                                                            <Droppable droppableId="columns">
+                                                        <DragDropContext onDragEnd={handleOnDragEndSpaceData}>
+                                                            <Droppable droppableId="space-columns">
                                                                 {(provided) => (
                                                                     <div className="row mx-auto columns-container" {...provided.droppableProps} ref={provided.innerRef}>
                                                                         {
-                                                                            dinamicData.columnas.map((column, index) => (
+                                                                            spaceData &&
+                                                                            spaceData.columnas.map((column, index) => (
                                                                                 <DraggableDnd key={index} draggableId={column[0]} index={index}>
                                                                                     {(provided) => (
                                                                                         <div className="row mx-3" {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                                                            <Form.Check key={index} custom type="checkbox" className="mb-12" onChange={(event) => columnsSelected(event.target.value)}
-                                                                                                checked={column[2]} value={column[3]} label={column[1]} id={`dinamic-column-${column[3]}`}/>
+                                                                                            <Form.Check key={index} custom type="checkbox" className="mb-12" onChange={(event) => columnsSelectedTospacePresentation(event.target.value)}
+                                                                                                checked={column[2]} value={column[3]} label={column[1]} id={`space-column-${column[3]}`}/>
                                                                                         </div>
                                                                                     )}
                                                                                 </DraggableDnd>

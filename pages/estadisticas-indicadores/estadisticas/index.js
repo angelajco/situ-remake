@@ -59,6 +59,7 @@ export default function estadisticas() {
     const [isShowAdvancedFilters, setShowAdvancedFilters] = useState(false);
     const [filtersAdded, setFiltersAdded] = useState([]);
     const [isMapVisible, setMapVisible] = useState(false);
+    const [layesAdded, setLayesAdded] = useState(0);
     const [datosModal, setDatosModal] = useState(
         {
             title: '',
@@ -220,9 +221,14 @@ export default function estadisticas() {
     }, [selectionType]);
 
     useEffect(() => {
-        var entity_ = entities.find(ent => ent.id_entidades == entity);
-        setEntityObject(entity_);
-    }, [isMapVisible]);
+        if(isMapVisible == true) {
+            var entity_ = entities.find(ent => ent.id_entidades == entity);
+            if(entity_ == undefined)
+                entity_ = 'nacional';
+            console.log('entity_: ', entity_)
+            setEntityObject(entity_);
+        }
+    }, [layesAdded]);
 
     // useEffect(() => {
     //     console.log('filtersAdded: ', filtersAdded);
@@ -354,6 +360,7 @@ export default function estadisticas() {
             filters = `${filters}${index != 0 ? ` AND ` : ``}@${filter.columna} ${filter.operacion} ${filter.valor}${filter.operacion == `BETWEEN` ? ` ${filter.valor2}` : ``}`;
         });
         console.log('filters: ', filters);
+        args = `${args}${filters.length > 0 ? ` AND ${filters}`: ``}`;
         getTableData(args, function(data, error) {
             if(data && data.mensaje != 'Error') {
                 setTableData([...tableData, {title: `${statisticalProduct.nombre} (${statisticalProduct.descripcion})`, type: 'table', data: data}]);
@@ -502,12 +509,9 @@ export default function estadisticas() {
 
     var refFunction;
 
-    function catchFunction(fn) {
-        refFunction = fn;
-    }
-
     function changeMapState(visible) {
         setMapVisible(visible);
+        setLayesAdded(layesAdded + 1);
         referenciaMapa._onResize();
     }
 
@@ -817,7 +821,7 @@ export default function estadisticas() {
                         </div>
                     </div>
                 </div>
-                {/* <div className={`row ${isMapVisible == false && "esconde-mapa"}`}>
+                <div className={`row ${isMapVisible == false && "esconde-mapa"}`}>
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-mx-t-1 col-mapa tw-pt-6">
                         <div className="row">
                             <div className="col-12 tw-text-center">
@@ -840,7 +844,7 @@ export default function estadisticas() {
                             </div>
                         </div>
                     </div>
-                </div> */}
+                </div>
             </section>
         </>
     )

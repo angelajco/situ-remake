@@ -292,6 +292,7 @@ function ContenedorMapaAnalisis(props) {
 
     //Para cuando se requiere que sea nacional
     const construyeNacionalCapa = (capaFusion) => {
+        console.log('capaFusion: ', capaFusion);
         let capaNacional = {};
         capaNacional.titulo = capaFusion.titulo + " - Nacional";
         capaNacional.url = capaFusion.url;
@@ -2313,11 +2314,13 @@ function ContenedorMapaAnalisis(props) {
     }, [props.referenciaEntidad])
     
     function refFunction(referenciaEntidad) {
-        console.log('referenciaEntidad: ', referenciaEntidad);
         var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
         var entidad = {id: referenciaEntidad.id_entidades, entidad: referenciaEntidad.nombre_entidad};
-        console.log('capa: ', capa);
-        construyeEntidadCapa(capa, entidad);
+        if(referenciaEntidad !== 'nacional') {
+            construyeEntidadCapa(capa, entidad);
+        } else {
+            construyeNacionalCapa(capa);
+        }
     }
 
     return (
