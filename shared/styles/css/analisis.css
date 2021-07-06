@@ -128,6 +128,7 @@ body.analisis-geografico-modales {
 }
 
 .modal-redimensionable {
+    max-height: 600px;
     resize: both !important;
     overflow: auto !important;
 }

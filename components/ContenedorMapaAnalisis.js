@@ -67,9 +67,12 @@ function ContenedorMapaAnalisis(props) {
     //variables utilizadas para simbologia 
     //Funciones y variables para cambios de estilos
     var [valorEstilos, setValorEstilos] = useState()
-    var [colorFill, setColorFill] = useState('#FF7777')
     var [color, setColorFill] = useState('#FF7777')
-    var [colorborder, setColorBorder] = useState('#FF0000')
+    // var [colorFill, setColorFill] = useState('#FF7777')
+    // var [colorborder, setColorBorder] = useState('#FF0000')
+    var [colorFill, setColorFill] = useState('#000000')
+    var [colorborder, setColorBorder] = useState('#FFFFFF')
+    /**PRUEBAS**/
     var [showModalEstilos, setShowModalEstilos] = useState(false)
     var [capaSeleccionada, setCapaSeleccionada] = useState(null)
     var [rango, setRango] = useState(null)
@@ -453,8 +456,6 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
-    console.log(capasVisualizadas, "capasVisualizadas")
-
     //Para agregar capas WMS, ya sea de la ide o de un servicio
     const agregaCapaWMS = (capa, fuente) => {
         setShowModalAgregarCapas(false);
@@ -474,25 +475,28 @@ function ContenedorMapaAnalisis(props) {
             capaWMS["transparencia"] = 1;
             capaWMS["zoomMinimo"] = 5;
             capaWMS["zoomMaximo"] = 18;
+            capaWMS["format"] = "image/png"
             //fuente = 0, proviene de la IDE
             //fuente = 1, proviene de un servicio
             if (fuente == 0) {
                 capaWMS["url"] = capa.url
                 capaWMS["layers"] = capa["nombre_capa"]
-                capaWMS["format"] = capa.wms
                 capaWMS["nom_capa"] = capa.titulo;
                 capaWMS['simbologia'] = capa["leyenda_simb"];
-                let url = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaWMS.layers}&outputFormat=`
-                let download = [
-                    { nom_capa: capaWMS.nom_capa, link: `${url}KML`, tipo: 'KML' },
-                    { nom_capa: capaWMS.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaWMS.layers}&bbox=-180,-90,180,90`, tipo: 'KMZ' },
-                    { nom_capa: capaWMS.nom_capa, link: `${url}SHAPE-ZIP`, tipo: 'SHAPE' }
-                ];
-                capaWMS.download = download;
+                capaWMS["idCapaBack"] = capa["id_capa"]
+                capaWMS['filtroMinimo'] = capa.filtro_minimo
+                if (capa.wfs !== "") {
+                    let url = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaWMS.layers}&outputFormat=`
+                    let download = [
+                        { nom_capa: capaWMS.nom_capa, link: `${url}KML`, tipo: 'KML' },
+                        { nom_capa: capaWMS.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaWMS.layers}&bbox=-180,-90,180,90`, tipo: 'KMZ' },
+                        { nom_capa: capaWMS.nom_capa, link: `${url}SHAPE-ZIP`, tipo: 'SHAPE' }
+                    ];
+                    capaWMS.download = download;
+                }
             } else if (fuente == 1) {
                 capaWMS["url"] = guardaServicio[1]
                 capaWMS["layers"] = capa[0].Name[0]
-                capaWMS["format"] = "image/png"
                 capaWMS["nom_capa"] = capa[0].Title[0];
                 capaWMS['simbologia'] = capa[0].Style[0]["LegendURL"][0]["OnlineResource"][0]["$"]["xlink:href"];
             }
@@ -532,6 +536,7 @@ function ContenedorMapaAnalisis(props) {
             return;
         }
         else {
+            let filtroDescarga = "";
             let defaultParameters = {
                 service: 'WFS',
                 version: '2.0',
@@ -545,9 +550,11 @@ function ContenedorMapaAnalisis(props) {
             } else if (capaFiltrada.opcion == "5") {
                 //La agregara como municipio
                 defaultParameters.cql_filter = capaFiltrada.filtro_entidad + "=" + "'" + capaFiltrada.valor_filtro + "'";
+                filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
             }
             var parameters = L.Util.extend(defaultParameters);
             var url = capaFiltrada.url + L.Util.getParamString(parameters);
+            console.log(url, "url")
             //Hace la petición para traer los datos de la entidad
             $.ajax({
                 jsonpCallback: 'getJson',
@@ -559,7 +566,17 @@ function ContenedorMapaAnalisis(props) {
                     response['tipo'] = "wfs";
                     response['transparencia'] = 1;
                     response['simbologia'] = creaSVG(capaFiltrada.titulo, capaFiltrada.estilos)
-                    response.download = [{ nom_capa: response.nom_capa, link: JSON.stringify(response), tipo: 'GeoJSON' }];
+                    response["idCapaBack"] = capaFiltrada["id_capa"]
+
+                    let urlDescarga = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaFiltrada.capa}${filtroDescarga}&outputFormat=`
+
+                    response.download = [
+                        { nom_capa: response.nom_capa, link: JSON.stringify(response), tipo: 'GeoJSON' },
+                        { nom_capa: response.nom_capa, link: `${urlDescarga}KML`, tipo: 'KML' },
+                        { nom_capa: response.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaFiltrada.capa}${filtroDescarga}&bbox=-180,-90,180,90`, tipo: 'KMZ' },
+                        { nom_capa: response.nom_capa, link: `${urlDescarga}SHAPE-ZIP`, tipo: 'SHAPE' }
+                    ];
+
                     response.isActive = false;
                     setZIndex(zIndexCapas + 1)
                     referenciaMapa.createPane(`${zIndexCapas}`)
@@ -572,7 +589,6 @@ function ContenedorMapaAnalisis(props) {
                             onEachFeature: function (feature = {}, layerPadre) {
                                 feature["nombre_capa"] = layerPadre.options["nombre"];
                                 if (resultado !== null) {
-                                    console.log(resultado, "resultado")
                                     Object.keys(feature.properties).map(key => {
                                         let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
                                         if (nuevoAlias !== "") {
@@ -606,13 +622,8 @@ function ContenedorMapaAnalisis(props) {
         fetch(`${process.env.ruta}/wa0/atributos_capa01?id=${idCapa}`)
             .then(res => res.json())
             .then(
-                (data) => {
-                    console.log(data, "data")
-                    resultado(data)
-                },
-                (error) => {
-                    resultado(null)
-                }
+                (data) => resultado(data),
+                (error) => resultado(null)
             );
     }
 
@@ -1713,27 +1724,100 @@ function ContenedorMapaAnalisis(props) {
         }
     );
 
+
+    function ajaxJson(nomLayers, nombre, entidad) {
+        let filtroPeticion = ""
+        let url = `https://ide.sedatu.gob.mx:8080/ows?service=WFS&version=2.0&request=GetFeature&typeName=${nomLayers}&outputFormat=text/javascript&format_options=callback:getJson`
+        if (entidad != undefined) {
+            filtroPeticion = '&cql_filter=CVE_ENT=' + "'" + entidad[0].id + "'";
+            url = url + filtroPeticion;
+            nombre = nombre + " - " + entidad[0].entidad + " (GeoJson)"
+        } else {
+            nombre = nombre + " (GeoJson)"
+        }
+        $.ajax({
+            jsonpCallback: 'getJson',
+            url: url,
+            dataType: 'jsonp',
+            success: function (response) {
+                setShowModalJson(false)
+                setDatosModalAnalisis({
+                    title: `Descarga lista`,
+                    body:
+                        <ul>
+                            <li>
+                                <a className="tw-font-bold tw-text-black"
+                                    href={`data:text/json;charset=utf-8, ${encodeURIComponent(JSON.stringify(response))}`}
+                                    download={`${nombre}.json`}>GeoJson generado</a>
+                            </li>
+                        </ul >
+                    ,
+                });
+                setShowModalAnalisis(true);
+            }
+        })
+    }
+    const { register: agregaJson, handleSubmit: handleAgregaJson, control: controlJson, errors: errorsJson, setError: setErrorJson } = useForm();
+
+    function submitAgregaJson(data) {
+        if (data.filtro == "0") {
+            if (data.entidadJson != undefined && data.entidadJson.length != 0) {
+                ajaxJson(data.layers, data.nombre, data.entidadJson)
+            } else {
+                ajaxJson(data.layers, data.nombre)
+            }
+        } else if (data.filtro == "5") {
+            if (data.entidadJson != undefined && data.entidadJson.length != 0) {
+                ajaxJson(data.layers, data.nombre, data.entidadJson)
+            } else {
+                setErrorJson("entidadJson", {
+                    message: "Debes seleccionar una entidad"
+                })
+            }
+        }
+    }
+
+    //Para las descargas como Json
+    const [capaJson, setCapaJson] = useState([])
+    const [showModalJson, setShowModalJson] = useState(false)
+
+    function descargaWmsComoWms(capa) {
+        setShowModalAnalisis(false)
+        setCapaJson(capa)
+        setShowModalJson(true)
+    }
+
     //Para pintar modal de descargas
-    function renderModalDownload(items) {
+    function renderModalDownload(capa) {
+        let items = capa.download;
         setDatosModalAnalisis({
             title: `Descarga de ${items[0].nom_capa}`,
             body: <ul>
                 {
-                    items.map((item, index) => (
-                        <li key={index} className="tw-text-titulo tw-font-bold" type="disc">
-                            <a className="tw-text-black" href={
-                                item.tipo == 'GeoJSON' ?
-                                    `data:text/json;charset=utf-8,${encodeURIComponent(item.link)}` :
-                                    item.link
-                            } download={
-                                item.tipo == 'GeoJSON' ?
-                                    `${item.nom_capa}.json` :
-                                    `${item.nom_capa}`
-                            }>{item.tipo}</a>
-                        </li>
-                    ))
+                    [
+                        capa.tipo == "wms" && (
+                            <li key="1">
+                                <a className="tw-font-bold tw-text-black tw-cursor-pointer" onClick={() => descargaWmsComoWms(capa)}>
+                                    Procesar descarga como GeoJson
+                                </a>
+                            </li>
+                        ),
+                        items.map((item, index) => (
+                            <li key={index}>
+                                <a className="tw-font-bold tw-text-black" href={
+                                    item.tipo == 'GeoJSON' ?
+                                        `data:text/json;charset=utf-8,${encodeURIComponent(item.link)}` :
+                                        item.link
+                                } download={
+                                    item.tipo == 'GeoJSON' ?
+                                        `${item.nom_capa}.json` :
+                                        `${item.nom_capa}`
+                                }>{item.tipo}</a>
+                            </li>
+                        ))
+                    ]
                 }
-            </ul>,
+            </ul >,
         });
         setShowModalAnalisis(true);
     }
@@ -2321,6 +2405,55 @@ function ContenedorMapaAnalisis(props) {
                 datos={datosModalAnalisis}
                 onHide={handleCloseModalAnalisis}
             />
+
+            <Modal show={showModalJson} onHide={() => setShowModalJson(!showModalJson)} keyboard={false} backdrop="static" className="modal-analisis">
+                {
+                    capaJson.length != 0 && (
+                        <>
+                            <Modal.Header closeButton>
+                                <Modal.Title>
+                                    {`Descarga de ${capaJson.nom_capa}`}
+                                </Modal.Title>
+                            </Modal.Header>
+                            <Modal.Body>
+                                <Form onSubmit={handleAgregaJson(submitAgregaJson)}>
+                                    {
+                                        capaJson.filtroMinimo == 0 ? (
+                                            <p>Selecciona una entidad si quieres filtrar la capa</p>
+                                        ) : (
+                                            <p>Selecciona una entidad para filtrar la capa</p>
+                                        )
+                                    }
+                                    <input type="hidden" value={capaJson.filtroMinimo} name="filtro" ref={agregaJson}></input>
+                                    <input type="hidden" value={capaJson.layers} name="layers" ref={agregaJson}></input>
+                                    <input type="hidden" value={capaJson.nom_capa} name="nombre" ref={agregaJson}></input>
+                                    <Form.Group>
+                                        <Controller
+                                            as={Typeahead}
+                                            control={controlJson}
+                                            options={catalogoEntidades}
+                                            labelKey="entidad"
+                                            id="entidadJson"
+                                            name="entidadJson"
+                                            defaultValue=""
+                                            placeholder="Selecciona una entidad"
+                                            clearButton
+                                            emptyLabel="No se encontraron resultados"
+                                            className="tw-mb-4"
+                                        />
+                                        <div className="tw-text-center">
+                                            {
+                                                errorsJson.entidadJson && <p className="tw-text-red-600">{errorsJson.entidadJson.message}</p>
+                                            }
+                                            <Button variant="light" type="submit">Agregar</Button>
+                                        </div>
+                                    </Form.Group>
+                                </Form>
+                            </Modal.Body>
+                        </>
+                    )
+                }
+            </Modal>
 
             <Modal show={showModalAgregarCapas} onHide={() => setShowModalAgregarCapas(!showModalAgregarCapas)}
                 keyboard={false} className="modal-analisis" contentClassName="modal-redimensionable">
@@ -2934,7 +3067,6 @@ function ContenedorMapaAnalisis(props) {
                                 <option value='3'>Activa</option>
                             </Form.Control>
                         </Form.Group>
-                        {errorsIdentify.seleccion && <p>{errorsIdentify.seleccion.message}</p>}
                         <div className="col-6 tw-text-center">
                             <button className="btn-analisis" type="submit">APLICAR</button>
                         </div>
@@ -3178,8 +3310,8 @@ function ContenedorMapaAnalisis(props) {
                                                                                 <hr />
                                                                                 <div className="d-flex justify-content-center">
                                                                                     {
-                                                                                        <a className="tw-text-titulo tw-font-bold tw-cursor-pointer" onClick={() => renderModalDownload(capa.download)}>
-                                                                                            <OverlayTrigger overlay={<Tooltip>{`Descargar (${capa.download.length} disponible(s))`}</Tooltip>}>
+                                                                                        <a className="tw-text-titulo tw-font-bold tw-cursor-pointer" onClick={() => renderModalDownload(capa)}>
+                                                                                            <OverlayTrigger overlay={<Tooltip>{`Descargar capas`}</Tooltip>}>
                                                                                                 <FontAwesomeIcon className="tw-px-1" size="2x" icon={faDownload} />
                                                                                             </OverlayTrigger>
                                                                                         </a>
