@@ -1,0 +1,182 @@
+[
+    {
+        "value": 1,
+        "nombre": "Amityville 1992: It's About Time",
+        "date": "30.07.2020",
+        "status": "Pendiente"
+    },
+    {
+        "value": 2,
+        "nombre": "Destroy All Monsters (Kaijû sôshingeki)",
+        "date": "16.10.2020",
+        "status": "Aceptado"
+    },
+    {
+        "value": 3,
+        "nombre": "Sokkotanssi",
+        "date": "14.05.2021",
+        "status": "Pendiente"
+    },
+    {
+        "value": 4,
+        "nombre": "One Day",
+        "date": "13.07.2021",
+        "status": "Aceptado"
+    },
+    {
+        "value": 5,
+        "nombre": "Journey to the Center of the Earth",
+        "date": "27.07.2021",
+        "status": "Aceptado"
+    },
+    {
+        "value": 6,
+        "nombre": "Suburban Commando",
+        "date": "14.02.2021",
+        "status": "Pendiente"
+    },
+    {
+        "value": 7,
+        "nombre": "Felon",
+        "date": "30.03.2021",
+        "status": "Pendiente"
+    },
+    {
+        "value": 8,
+        "nombre": "Seven Samurai (Shichinin no samurai)",
+        "date": "11.05.2021",
+        "status": "Aceptado"
+    },
+    {
+        "value": 9,
+        "nombre": "Kitchen in Paris",
+        "date": "14.08.2020",
+        "status": "Pendiente"
+    },
+    {
+        "value": 10,
+        "nombre": "Last Stand, The",
+        "date": "11.05.2021",
+        "status": "Aceptado"
+    },
+    {
+        "value": 11,
+        "nombre": "Transporter 2",
+        "date": "27.10.2020",
+        "status": "Pendiente"
+    },
+    {
+        "value": 12,
+        "nombre": "À nos amours",
+        "date": "10.06.2021",
+        "status": "Pendiente"
+    },
+    {
+        "value": 13,
+        "nombre": "Border, The",
+        "date": "13.10.2020",
+        "status": "Rechazado"
+    },
+    {
+        "value": 14,
+        "nombre": "Captain Kidd",
+        "date": "05.02.2021",
+        "status": "Aceptado"
+    },
+    {
+        "value": 15,
+        "nombre": "Little Romance, A",
+        "date": "10.12.2020",
+        "status": "Pendiente"
+    },
+    {
+        "value": 16,
+        "nombre": "Just Cause",
+        "date": "03.10.2020",
+        "status": "Rechazado"
+    },
+    {
+        "value": 17,
+        "nombre": "IMAX: Hubble 3D",
+        "date": "06.02.2021",
+        "status": "Rechazado"
+    },
+    {
+        "value": 18,
+        "nombre": "Septien",
+        "date": "25.05.2021",
+        "status": "Rechazado"
+    },
+    {
+        "value": 19,
+        "nombre": "Symmetry (Symetria)",
+        "date": "10.06.2020",
+        "status": "Pendiente"
+    },
+    {
+        "value": 20,
+        "nombre": "Dolphin Tale",
+        "date": "01.05.2021",
+        "status": "Pendiente"
+    },
+    {
+        "value": 21,
+        "nombre": "Date with an Angel",
+        "date": "09.11.2020",
+        "status": "Pendiente"
+    },
+    {
+        "value": 22,
+        "nombre": "Son of No One, The",
+        "date": "29.01.2021",
+        "status": "Pendiente"
+    },
+    {
+        "value": 23,
+        "nombre": "If You Love (Jos rakastat)",
+        "date": "27.02.2021",
+        "status": "Aceptado"
+    },
+    {
+        "value": 24,
+        "nombre": "Killer McCoy",
+        "date": "23.12.2020",
+        "status": "Aceptado"
+    },
+    {
+        "value": 25,
+        "nombre": "Nobody Will Speak of Us When We're Dead (Nadie hablará de nosotras cuando hayamos muerto)",
+        "date": "14.09.2020",
+        "status": "Pendiente"
+    },
+    {
+        "value": 26,
+        "nombre": "Green Mile, The",
+        "date": "02.03.2021",
+        "status": "Pendiente"
+    },
+    {
+        "value": 27,
+        "nombre": "Dr. Goldfoot and the Girl Bombs (Le spie vengono dal semifreddo)",
+        "date": "24.06.2021",
+        "status": "Rechazado"
+    },
+    {
+        "value": 28,
+        "nombre": "Somm",
+        "date": "01.05.2021",
+        "status": "Pendiente"
+    },
+    {
+        "value": 29,
+        "nombre": "Wimbledon",
+        "date": "19.04.2021",
+        "status": "Rechazado"
+    },
+    {
+        "value": 30,
+        "nombre": "Torrente 4: Lethal Crisis",
+        "date": "07.06.2020",
+        "status": "Aceptado"
+    }
+]
