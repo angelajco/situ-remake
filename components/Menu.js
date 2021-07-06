@@ -61,6 +61,8 @@ export default function Menu() {
         deshabilitarSesion = true
     } else if (ruta.includes('/estadisticas-indicadores')) {
         deshabilitarEstadisticas = true
+    }else if (ruta.includes('/consulta-documental')) {
+        deshabilitarConsulta = true
     }
 
 

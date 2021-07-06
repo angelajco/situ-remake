@@ -130,6 +130,7 @@ body.analisis-geografico-modales {
 .modal-redimensionable {
     resize: both !important;
     overflow: auto !important;
+    
 }
 
 .boton-minimizar-modal {
@@ -150,6 +151,7 @@ body.analisis-geografico-modales {
     align-items: center;
     padding: 0.5rem;
     @apply tw-bg-titulo;
+    
 }
 
 .modal-analisis .modal-header .close {
@@ -160,6 +162,7 @@ body.analisis-geografico-modales {
     color: #fff;
     opacity: 1;
     pointer-events: auto;
+    
 }
 
 .modal-analisis .modal-title{
@@ -170,6 +173,7 @@ body.analisis-geografico-modales {
     border: 10px solid;
     @apply tw-border-titulo;
     overflow-y: auto;
+    
 }
 
 
