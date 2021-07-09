@@ -7,6 +7,7 @@ import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
 import $ from 'jquery';
 import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
+import 'leaflet/dist/leaflet.css';
 
 import Loader from '../../../components/Loader'
 import ModalComponent from '../../../components/ModalComponent'
@@ -42,6 +43,7 @@ export default function estadisticas() {
     const [tawns, setTawns] = useState([]);
     const [localities, setLocalities] = useState([]);
     const [entity, setEntity] = useState();
+    const [entityObject, setEntityObject] = useState();
     const [tawn, setTawn] = useState();
     const [locality, setLocality] = useState();
     const [columns, setColumns] = useState([]);
@@ -56,6 +58,8 @@ export default function estadisticas() {
     const [isEditMapName, setEditMapName] = useState(true);
     const [isShowAdvancedFilters, setShowAdvancedFilters] = useState(false);
     const [filtersAdded, setFiltersAdded] = useState([]);
+    const [isMapVisible, setMapVisible] = useState(false);
+    const [layesAdded, setLayesAdded] = useState(0);
     const [datosModal, setDatosModal] = useState(
         {
             title: '',
@@ -80,6 +84,16 @@ export default function estadisticas() {
     }
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
+
+    var referenciaMapa = null;
+    function capturaReferenciaMapa(mapa) {
+        referenciaMapa = mapa;
+    }
+
+    var referenciaMapaEspejoAnalisis = null;
+    function capturaReferenciaMapaEspejo(mapa) {
+        referenciaMapaEspejoAnalisis = mapa;
+    }
 
     if (typeof window !== 'undefined') {
         $('body').addClass("analisis-geografico-modales");
@@ -205,6 +219,16 @@ export default function estadisticas() {
             break;
         }
     }, [selectionType]);
+
+    useEffect(() => {
+        if(isMapVisible == true) {
+            var entity_ = entities.find(ent => ent.id_entidades == entity);
+            if(entity_ == undefined)
+                entity_ = 'nacional';
+            console.log('entity_: ', entity_)
+            setEntityObject(entity_);
+        }
+    }, [layesAdded]);
 
     // useEffect(() => {
     //     console.log('filtersAdded: ', filtersAdded);
@@ -336,6 +360,7 @@ export default function estadisticas() {
             filters = `${filters}${index != 0 ? ` AND ` : ``}@${filter.columna} ${filter.operacion} ${filter.valor}${filter.operacion == `BETWEEN` ? ` ${filter.valor2}` : ``}`;
         });
         console.log('filters: ', filters);
+        args = `${args}${filters.length > 0 ? ` AND ${filters}`: ``}`;
         getTableData(args, function(data, error) {
             if(data && data.mensaje != 'Error') {
                 setTableData([...tableData, {title: `${statisticalProduct.nombre} (${statisticalProduct.descripcion})`, type: 'table', data: data}]);
@@ -482,6 +507,14 @@ export default function estadisticas() {
         setMapName(e.target.value)
     }
 
+    var refFunction;
+
+    function changeMapState(visible) {
+        setMapVisible(visible);
+        setLayesAdded(layesAdded + 1);
+        referenciaMapa._onResize();
+    }
+
     return (
         <>
             {
@@ -510,7 +543,7 @@ export default function estadisticas() {
                                 {
                                     tableData &&
                                         tableData.map((table, index) => (
-                                            <GenericTable key={index} table={table} index={index}/>
+                                            <GenericTable key={index} table={table} index={index} showMap={changeMapState}/>
                                         ))
                                 }
                             </div>
@@ -788,7 +821,7 @@ export default function estadisticas() {
                         </div>
                     </div>
                 </div>
-                {/* <div className="row">
+                <div className={`row ${isMapVisible == false && "esconde-mapa"}`}>
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-mx-t-1 col-mapa tw-pt-6">
                         <div className="row">
                             <div className="col-12 tw-text-center">
@@ -803,13 +836,15 @@ export default function estadisticas() {
                                     <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" hidden={isEditMapName} onClick={() => setEditMapName(true)} icon={faCheck}></FontAwesomeIcon>
                                 </OverlayTrigger>
                             </div>
-
                             <div className="col-12 tw-mt-8">
-                                <ContenedorMapaAnalisis botones={true} />
+                                <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} referenciaEntidad={entityObject}/>
+                            </div>
+                            <div className="col-12 tw-mt-8" hidden>
+                                <ContenedorMapaAnalisis botones={false} referenciaAnalisis={capturaReferenciaMapaEspejo} />
                             </div>
                         </div>
                     </div>
-                </div> */}
+                </div>
             </section>
         </>
     )
