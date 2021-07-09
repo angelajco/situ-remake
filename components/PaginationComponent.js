@@ -11,7 +11,7 @@ import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
 import Select from 'react-select';
 import dataPub from '../shared/jsons/publicaciones.json';
-import datosP from '../shared/jsons/Datos.json';
+//import datosP from '../shared/jsons/Datos.json';
 import jsPDF from 'jspdf';
 import jpt from 'jspdf-autotable';
 

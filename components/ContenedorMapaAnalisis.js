@@ -2394,26 +2394,27 @@ function ContenedorMapaAnalisis(props) {
     }
 
     useEffect(() => {
-        if(props.referenciaEntidad != undefined) {
+        if (props.referenciaEntidad != undefined) {
             refFunction(props.referenciaEntidad);
         }
     }, [props.referenciaEntidad])
-    
+
     function refFunction(referenciaEntidad) {
         var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
-        var entidad = {id: referenciaEntidad.id_entidades, entidad: referenciaEntidad.nombre_entidad};
-        if(referenciaEntidad !== 'nacional') {
+        var entidad = { id: referenciaEntidad.id_entidades, entidad: referenciaEntidad.nombre_entidad };
+        if (referenciaEntidad !== 'nacional') {
             construyeEntidadCapa(capa, entidad);
         } else {
             construyeNacionalCapa(capa);
         }
     }
-    
+
     function buscarCapa(nombre) {
         for (let index = 0; index < jsonSimbologia.length; index++) {
             if (jsonSimbologia[index].name == nombre) {
                 return index;
             }
+        }
     }
 
     return (
@@ -2738,17 +2739,17 @@ function ContenedorMapaAnalisis(props) {
                                 <div key={index}>
                                     <p><b>{capa.nom_capa}</b></p>
                                     {
-                                        
+
                                         capa.tipo == "wms" ? (
                                             <img src={capa.simbologia}></img>
 
                                         ) : (
-                                            buscarCapa(capa.nom_capa)!=undefined ? (
+                                            buscarCapa(capa.nom_capa) != undefined ? (
                                                 <div dangerouslySetInnerHTML={{ __html: jsonSimbologia[buscarCapa(capa.nom_capa)].simbologia.tablaSimbologia() }} ></div>
-                                            ):(
+                                            ) : (
                                                 <img className="w-100" src={capa.simbologia}></img>
                                             )
-                                            
+
                                         )
                                     }
                                     <br></br>
@@ -3389,15 +3390,15 @@ function ContenedorMapaAnalisis(props) {
                 </OverlayTrigger>
             </div>
             {
-        props.botones == true
-            ?
-            <Map referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
-                referenciaAnalisis={props.referenciaAnalisis}
-            />
-            :
-            <MapEspejo referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
-                referenciaAnalisis={props.referenciaAnalisis} />
-    }
+                props.botones == true
+                    ?
+                    <Map referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
+                        referenciaAnalisis={props.referenciaAnalisis}
+                    />
+                    :
+                    <MapEspejo referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
+                        referenciaAnalisis={props.referenciaAnalisis} />
+            }
         </>
     )
 }
