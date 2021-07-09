@@ -586,6 +586,11 @@ function ContenedorMapaAnalisis(props) {
                                             feature.properties[nuevoAlias] = keyTemp
                                         }
                                     })
+                                    dataToProps.datos.map((data, index) => {
+                                        dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                            feature.properties[column[1]] = data[column[3]];
+                                        })
+                                    })
                                 }
                                 layerPadre.on('click', function () {
                                     setRasgos([feature]);
@@ -2311,7 +2316,7 @@ function ContenedorMapaAnalisis(props) {
         if(props.referenciaEntidad != undefined) {
             refFunction(props.referenciaEntidad);
         }
-    }, [props.referenciaEntidad])
+    }, [props.referenciaEntidad]);
     
     function refFunction(referenciaEntidad) {
         var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
@@ -2322,6 +2327,14 @@ function ContenedorMapaAnalisis(props) {
             construyeNacionalCapa(capa);
         }
     }
+
+    const [dataToProps, setDataToProps] = useState();
+
+    useEffect(() => {
+        if(props.informacionEspacial != undefined) {
+            setDataToProps(props.informacionEspacial);
+        }
+    }, [props.informacionEspacial]);
 
     return (
         <>

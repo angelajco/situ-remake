@@ -58,6 +58,7 @@ export default function estadisticas() {
     const [isEditMapName, setEditMapName] = useState(true);
     const [isShowAdvancedFilters, setShowAdvancedFilters] = useState(false);
     const [filtersAdded, setFiltersAdded] = useState([]);
+    const [agregationFilters, setAgregationFilters] = useState([]);
     const [isMapVisible, setMapVisible] = useState(false);
     const [layesAdded, setLayesAdded] = useState(0);
     const [datosModal, setDatosModal] = useState(
@@ -145,6 +146,11 @@ export default function estadisticas() {
         setIsLoading(true);
         getTawns(function(data, error) {
             if(data) {
+                var name = entities.find(finded => finded.id_entidades == entity).nombre_entidad;
+                var id = entity;
+                if(statisticalProduct && statisticalProduct.nivel_desagregacion == 'Estatal' && isNacional == 1) {
+                    setAgregationFilters([...agregationFilters, {id: id, name: name}])
+                }
                 setTawns(data);
                 setIsLoading(false);
             } else {
@@ -157,6 +163,11 @@ export default function estadisticas() {
         setIsLoading(true);
         getLocalities(function(data, error) {
             if(data) {
+                var name = tawns.find(finded => finded.cve_mun == tawn).nombre_mun;
+                var id = tawn;
+                if(statisticalProduct && statisticalProduct.nivel_desagregacion == 'Municipal' && isNacional == 1) {
+                    setAgregationFilters([...agregationFilters, {id: id, name: name}])
+                }
                 setLocalities(data);
                 setIsLoading(false);
             } else {
@@ -339,11 +350,15 @@ export default function estadisticas() {
         } else {
             if(statisticalProduct.nivel_desagregacion == 'Estatal') {
                 levelValue = statisticalProduct.col_entidad;
-                args = `${args}&clave=${entity}`;
+                agregationFilters.map(filter => {
+                    args = `${args}&clave=${filter.id}`;
+                });
                 args = `${args}&valorNivel=${levelValue}`;
             } else if(statisticalProduct.nivel_desagregacion == 'Municipal') {
                 levelValue = statisticalProduct.col_municipal;
-                args = `${args}&clave=${tawn}`;
+                agregationFilters.map(filter => {
+                    args = `${args}&clave=${entity}${filter.id}`;
+                });
                 args = `${args}&valorNivel=${levelValue}`;
             } else if(statisticalProduct.nivel_desagregacion == 'Localidad') {
                 levelValue = statisticalProduct.col_localidad;
@@ -359,8 +374,7 @@ export default function estadisticas() {
         filtersAdded.map((filter, index) => {
             filters = `${filters}${index != 0 ? ` AND ` : ``}@${filter.columna} ${filter.operacion} ${filter.valor}${filter.operacion == `BETWEEN` ? ` ${filter.valor2}` : ``}`;
         });
-        console.log('filters: ', filters);
-        args = `${args}${filters.length > 0 ? ` AND ${filters}`: ``}`;
+        args = `${args}${filters.length > 0 ? `&cadenaFiltros=${filters}`: ``}`;
         getTableData(args, function(data, error) {
             if(data && data.mensaje != 'Error') {
                 setTableData([...tableData, {title: `${statisticalProduct.nombre} (${statisticalProduct.descripcion})`, type: 'table', data: data}]);
@@ -472,7 +486,6 @@ export default function estadisticas() {
     }
 
     function addfilterValue(event, index, second) {
-        console.log('event.target.value: ', event.target.value);
         var tmpArray = [];
         var tmpValue = '';
         filtersAdded.map((filter, index_) => {
@@ -501,18 +514,27 @@ export default function estadisticas() {
         setColumns([]);
         setColumnsSelected([]);
         setFiltersAdded([]);
+        setAgregationFilters([]);
     }
 
     function changeMapName(e) {
         setMapName(e.target.value)
     }
 
-    var refFunction;
+    const [spaceData, setSpaceData] = useState();
 
-    function changeMapState(visible) {
+    function changeMapState(visible, data) {
+        setSpaceData(data)
         setMapVisible(visible);
         setLayesAdded(layesAdded + 1);
         referenciaMapa._onResize();
+    }
+
+    function removeAgregation(index) {
+        var tmpArray = [];
+        agregationFilters.map(added => tmpArray.push(added));
+        tmpArray.splice(index, 1);
+        setAgregationFilters(tmpArray);
     }
 
     return (
@@ -632,66 +654,96 @@ export default function estadisticas() {
                                                                 </h4> :
                                                                 columns.length > 0 &&
                                                                 <Form.Group className="row tw-mb-0">
-                                                                    <div className="col-xl-3 col-lg-3 col-md-4 col-sm-12 col-xs-12 tw-mb-2">
-                                                                        <Form.Control as="select" name="aggregationType" onChange={(event) => setNacional(parseInt(event.target.value))}>
-                                                                            {
-                                                                                aggregationLevels.map((item, index) => (
-                                                                                    <option key={index} value={item.id}>
+                                                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-xs-12 tw-mb-2 p-0">
+                                                                        <div className="row">
+                                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-mb-2">
+                                                                                <Form.Control as="select" name="aggregationType" onChange={(event) => setNacional(parseInt(event.target.value))}>
+                                                                                    {
+                                                                                        aggregationLevels.map((item, index) => (
+                                                                                            <option key={index} value={item.id}>
+                                                                                                {
+                                                                                                    item.value
+                                                                                                }
+                                                                                            </option>
+                                                                                        ))
+                                                                                    }
+                                                                                </Form.Control>
+                                                                            </div>
+                                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-mb-2">
+                                                                                <Form.Control as="select" name="entities" onChange={(event) => setEntity(event.target.value)} disabled={statisticalProduct.nivel_desagregacion == 'Nacional' || isNacional == 0}>
+                                                                                    <option value="" hidden>Entidad</option>
+                                                                                    {
+                                                                                        entities ?
+                                                                                            entities.map((item, index) => (
+                                                                                                <option key={index} value={item.id_entidades}>
+                                                                                                    {
+                                                                                                        item.nombre_entidad
+                                                                                                    }
+                                                                                                </option>
+                                                                                            )) :
+                                                                                            ''
+                                                                                    }
+                                                                                </Form.Control>
+                                                                            </div>
+                                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-mb-2">
+                                                                                <Form.Control as="select" name="tawns" onChange={(event) => setTawn(event.target.value)} disabled={statisticalProduct.nivel_desagregacion == 'Estatal' || isNacional == 0}>
+                                                                                    <option value="" hidden>Municipio</option>
+                                                                                    {
+                                                                                        tawns ?
+                                                                                        tawns.map((item, index) => (
+                                                                                            <option key={index} value={item.cve_mun}>
+                                                                                                {
+                                                                                                    item.nombre_mun
+                                                                                                }
+                                                                                            </option>
+                                                                                        )) :
+                                                                                        ''
+                                                                                    }
+                                                                                </Form.Control>
+                                                                            </div>
+                                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-mb-2">
+                                                                                <Form.Control as="select" name="localities" onChange={(event) => setLocality(event.target.value)} disabled={statisticalProduct.nivel_desagregacion != 'Localidad' || isNacional == 0}>
+                                                                                    <option value="" hidden>Localidad</option>
+                                                                                    {
+                                                                                        localities ? 
+                                                                                            localities.map((item, index) => (
+                                                                                                <option key={index} value={item.Codigo}>
+                                                                                                    {
+                                                                                                        item.Nombre
+                                                                                                    }
+                                                                                                </option>
+                                                                                            )) :
+                                                                                            ''
+                                                                                    }
+                                                                                </Form.Control>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-xs-12 tw-mb-2 p-0 table-responsive" style={{maxHeight: '90px'}}>
+                                                                        {
+                                                                            agregationFilters && agregationFilters.length > 0 &&
+                                                                                <Table striped hover>
+                                                                                    <tbody>
                                                                                         {
-                                                                                            item.value
+                                                                                            agregationFilters &&
+                                                                                            agregationFilters.map((item, index) => (
+                                                                                                <tr key={index}>
+                                                                                                    <td>
+                                                                                                        {item.name}
+                                                                                                    </td>
+                                                                                                    <td>
+                                                                                                        <OverlayTrigger overlay={<Tooltip>Eliminar filtro</Tooltip>}>
+                                                                                                            <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer"
+                                                                                                                onClick={() => removeAgregation(index)}
+                                                                                                                icon={faTrash} />
+                                                                                                        </OverlayTrigger>
+                                                                                                    </td>
+                                                                                                </tr>
+                                                                                            ))
                                                                                         }
-                                                                                    </option>
-                                                                                ))
-                                                                            }
-                                                                        </Form.Control>
-                                                                    </div>
-                                                                    <div className="col-xl-3 col-lg-3 col-md-4 col-sm-12 col-xs-12 tw-mb-2">
-                                                                        <Form.Control as="select" name="entities" onChange={(event) => setEntity(event.target.value)} disabled={statisticalProduct.nivel_desagregacion == 'Nacional' || isNacional == 0}>
-                                                                            <option value="" hidden>Entidad</option>
-                                                                            {
-                                                                                entities ?
-                                                                                    entities.map((item, index) => (
-                                                                                        <option key={index} value={item.id_entidades}>
-                                                                                            {
-                                                                                                item.nombre_entidad
-                                                                                            }
-                                                                                        </option>
-                                                                                    )) :
-                                                                                    ''
-                                                                            }
-                                                                        </Form.Control>
-                                                                    </div>
-                                                                    <div className="col-xl-3 col-lg-3 col-md-4 col-sm-12 col-xs-12 tw-mb-2">
-                                                                        <Form.Control as="select" name="tawns" onChange={(event) => setTawn(event.target.value)} disabled={statisticalProduct.nivel_desagregacion == 'Estatal' || isNacional == 0}>
-                                                                            <option value="" hidden>Municipio</option>
-                                                                            {
-                                                                                tawns ?
-                                                                                tawns.map((item, index) => (
-                                                                                    <option key={index} value={item.cve_mun}>
-                                                                                        {
-                                                                                            item.nombre_mun
-                                                                                        }
-                                                                                    </option>
-                                                                                )) :
-                                                                                ''
-                                                                            }
-                                                                        </Form.Control>
-                                                                    </div>
-                                                                    <div className="col-xl-3 col-lg-3 col-md-4 col-sm-12 col-xs-12 tw-mb-2">
-                                                                        <Form.Control as="select" name="localities" onChange={(event) => setLocality(event.target.value)} disabled={statisticalProduct.nivel_desagregacion != 'Localidad' || isNacional == 0}>
-                                                                            <option value="" hidden>Localidad</option>
-                                                                            {
-                                                                                localities ? 
-                                                                                    localities.map((item, index) => (
-                                                                                        <option key={index} value={item.Codigo}>
-                                                                                            {
-                                                                                                item.Nombre
-                                                                                            }
-                                                                                        </option>
-                                                                                    )) :
-                                                                                    ''
-                                                                            }
-                                                                        </Form.Control>
+                                                                                    </tbody>
+                                                                                </Table>
+                                                                        }
                                                                     </div>
                                                                 </Form.Group>
                                                         }
@@ -716,18 +768,6 @@ export default function estadisticas() {
                                                                             filtersAdded.length > 0 &&
                                                                                 <div className="col-12 tw-p-0 mt-1">
                                                                                     <Table striped hover>
-                                                                                        {/* <thead>
-                                                                                            <tr className="tw-text-center">
-                                                                                                <th colSpan={Object.keys(filtersAdded[0]).length}>Filtros</th>
-                                                                                            </tr>
-                                                                                            <tr>
-                                                                                                {
-                                                                                                    Object.keys(filtersAdded[0]).map((header, index) => (
-                                                                                                        <th key={index} hidden={header == 'columna'}>{header}</th>
-                                                                                                    ))
-                                                                                                }
-                                                                                            </tr>
-                                                                                        </thead> */}
                                                                                         <tbody>
                                                                                             {
                                                                                                 filtersAdded.map((content, index) => (
@@ -837,7 +877,7 @@ export default function estadisticas() {
                                 </OverlayTrigger>
                             </div>
                             <div className="col-12 tw-mt-8">
-                                <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} referenciaEntidad={entityObject}/>
+                                <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} referenciaEntidad={entityObject} informacionEspacial={spaceData}/>
                             </div>
                             <div className="col-12 tw-mt-8" hidden>
                                 <ContenedorMapaAnalisis botones={false} referenciaAnalisis={capturaReferenciaMapaEspejo} />
