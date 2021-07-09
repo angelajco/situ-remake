@@ -11,9 +11,16 @@ import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
 import Select from 'react-select';
 import dataPub from '../shared/jsons/publicaciones.json';
+import datosP from '../shared/jsons/Datos.json';
+import jsPDF from 'jspdf';
+import jpt from 'jspdf-autotable';
+
+
 
 
 function PaginationComponent(props) {
+
+  const url_bus = props.informacion;
 
   //Datos para crear el form
   const { register, handleSubmit, watch, clearErrors, setError, errors } = useForm();
@@ -26,9 +33,138 @@ function PaginationComponent(props) {
     { value: '2', label: 'Enlace' }
   ];
 
-  const tipoA = e => {
-    //console.log(e.value);
+  const descargaDoc = async (e) => {
+    var hoy = new Date();
+    var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+    var hora = hoy.getHours() + ':' + hoy.getMinutes();
+    var items = filtrarJson(data);
+    //var items = datosP;
 
+    var img = new Image();
+
+    img.onload = function () {
+      var dataURI = getBase64Image(img);
+      return dataURI;
+    }
+
+    img.src = "images/consulta/encabezado.jpg";
+
+    /// codigo para generar pdf 
+    const columns = Object.keys(items[0]);
+    var result = [];
+    items.forEach(element => {
+      result.push(Object.values(element));
+    });
+    //console.log(Object.values(items[0]))
+    //console.log(result);
+
+    var doc = new jsPDF(); jpt;
+
+    var header = function (data) {
+      doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
+      doc.setFontSize(10);
+      doc.text(20, 43, "Usuario");
+      doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
+      //doc.setFontType("bold");
+      doc.setFontSize(13);
+      doc.text(75, 53, "CONSULTA DOCUMENTAL");
+      doc.setFontSize(10);
+      //doc.setFontType("normal");
+      doc.text(20, 60, "Total de documentos: " + items.length);
+    };
+/*
+    var options = {
+      beforePageContent: header,
+      margin: {
+        top: 65
+      },
+      theme: 'grid'
+    };
+    // doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
+    
+        doc.autoTable(columns, result,
+          { margin: { top: 65 }, theme: 'grid', }
+        );*/
+
+    doc.autoTable(columns, result,  {margin: {top: 65},theme: 'grid', beforePageContent: header});
+    let string = doc.output('datauristring');
+    //let uri = doc.save('Consulta-Documental.pdf');
+    var embed = "<embed width='100%' height='100%' src='" + string + "'/>"
+    var divP = document.getElementById('prev');
+    divP.innerHTML += embed;
+
+  }
+
+  const actBitacora = async (cod) => {
+    //codigo para actualizar la botacora cuendo se descarge un documento
+    const res = await fetch(`${process.env.ruta}/wa/publico/bitacoraDocumento?id_usuario=1&id_documento=${cod}`);
+    const datos = await res.json();
+    console.log(datos);
+
+  }
+
+  const descargarCVS = async (e) => {
+    //codigo para descargar el archivo csv
+    var hoy = new Date();
+    var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+    var hora = hoy.getHours() + ':' + hoy.getMinutes();
+    var items = filtrarJson(data);
+    //var items = datosP;
+    const replacer = (key, value) => value === null ? '' : value; // specify how you want to handle null values here
+    const header = Object.keys(items[0]);
+    let csv = items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','));
+    csv.unshift(header.join(','));
+    csv.unshift("Total de Documentos: " + items.length);
+    csv.unshift("CONSULTA DOCUMENTAL");
+    csv.unshift("FECHA:  " + fecha + "    HORA: " + hora);
+    csv.unshift("USUARIO");
+    csv = csv.join('\r\n');
+    //Download the file as CSV
+    var downloadLink = document.createElement("a");
+    var blob = new Blob(["\ufeff", csv, { type: "txt/csv" }]);
+    var url = URL.createObjectURL(blob);
+    downloadLink.href = url;
+    downloadLink.download = "Consulta-Documental.csv";  //Name the file here
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+  }
+
+  //funcion para convertir la imgen en jpeg
+  function getBase64Image(img) {
+    var canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    var dataURL = canvas.toDataURL("image/jpeg");
+    return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+  }
+
+
+
+  function filtrarJson(d) {
+    //funcion para filtrar el json y generar el pdf y csv
+    let vec = [];
+    d.forEach(element => {
+      let js = {};
+      js.Titulo = element.nombre;
+      js.Clasificacion = element.tipo;
+      js.Tema = element.tema1;
+      js.Cobertura = element.nivel_cobertura;
+      js.Autor = element.autor;
+      js.Formato = element.formato;
+      // js.Archivo = element.url_origen;
+      //js.Nota = "--";
+      vec.push(js);
+    });
+    return vec;
+  }
+
+
+
+  const tipoA = e => {
     if (e == null) {
       setTarchivo("");
     } else {
@@ -37,7 +173,7 @@ function PaginationComponent(props) {
   }
 
 
-  const url_bus = props.informacion;
+
 
   const renderData = data => {
     return (
@@ -49,7 +185,7 @@ function PaginationComponent(props) {
       />
 
         {
-          <div>
+          <div className="conten" name="tablaC">
             <div className="row">
               <table className="table table-bordered">
                 <thead className="thead-dark">
@@ -68,8 +204,8 @@ function PaginationComponent(props) {
                       return (
                         <tr key={todo.id_metadato_documento}>
                           <td>
-                            <a target='_blank'>
-                              <img src='images/consulta/publicacion-situ.png' alt='Miniatura' className='card-img-top' />
+                            <a href={todo.url_origen} target='_blank'>
+                              <img src='images/consulta/PUBLICACION_SITU.png' alt='Miniatura' className='card-img-top' />
                             </a>
                           </td>
                           <td>
@@ -135,6 +271,7 @@ function PaginationComponent(props) {
   const [datosModal, setDatosModal] = useState({});
   const [show, setShow] = useState(false);
   const [showCargaD, setShowCargaD] = useState(false);
+  const [showReporte, setShowReporte] = useState(false);
   //Estados para mostrar el modal
   const handleShow = () => setShow(true);
   const handleClose = () => setShow(false);
@@ -170,9 +307,8 @@ function PaginationComponent(props) {
         <div className="row">
           <div className="col center-block">
             <a download="Archivo.pdf" href={datos[0].url_origen} target="_blank">
-              <button type="button" className="btn btn-light">Descargar</button>
+              <button type="button" className="btn btn-light" onClick={() => actBitacora(cod)}>Descargar</button>
             </a>
-
           </div>
         </div>
       </div >
@@ -264,11 +400,14 @@ function PaginationComponent(props) {
 
   const MuestraCarga = e => {
     setShowCargaD(!showCargaD);
-    setFileUrl(null);
+    setFileUrl('images/consulta/publicacion-situ.png');
   }
-  
 
-  
+  const MuestraDescarga = e => {
+    setShowReporte(!showReporte);
+
+  }
+
   function processImage(event) {
     const imageFile = event.target.files[0];
     const imageUrl = URL.createObjectURL(imageFile);
@@ -278,7 +417,7 @@ function PaginationComponent(props) {
 
   const onSubmitP = async (data) => {
     //se mandan los datos a bd
-    data.portada=imgportada;
+    data.portada = imgportada;
     //console.log(data);
     setFileUrl(null);
   }
@@ -288,10 +427,38 @@ function PaginationComponent(props) {
     {
       //Betty1
     }
+    <Modal dialogAs={DraggableModalDialog} show={showReporte} onHide={() => setShowReporte(!showReporte)}
+      keyboard={false} className="modal-analisis" contentClassName="modal-redimensionable tamanio">
+      <Modal.Header closeButton >
+        <Modal.Title><b>Reportes</b></Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <div id="reporte">
+          <div className="row text-center">
+            <div className="col-5">
+              <button className="btn-admin" onClick={descargarCVS}>Reporte CSV</button>
+            </div>
+
+            <div className="col-5">
+              <button className="btn-admin" onClick={descargaDoc}>Reporte PDF</button>
+            </div>
+          </div>
+          <br></br>
+          <div className="row">
+            <div className="col-12" id="prev">
+
+            </div>
+          </div>
+        </div>
+
+      </Modal.Body>
+    </Modal>
+
+
     <Modal dialogAs={DraggableModalDialog} show={showCargaD} onHide={() => setShowCargaD(!showCargaD)}
       keyboard={false} className="modal-analisis" contentClassName="modal-redimensionable tamanio">
       <Modal.Header closeButton >
-        <Modal.Title><b>Busqueda</b></Modal.Title>
+        <Modal.Title><b>Carga de Documentos</b></Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <div className="row"></div>
@@ -385,10 +552,10 @@ function PaginationComponent(props) {
               </div>
               <div className="row text-center">
                 <div className="col-6">
-                  <Button variant="outline-secondary" className="btn-admin" type="submit" >Guardar</Button>
+                  <Button variant="outline-secondary" className="btn-admin" type="submit">Guardar</Button>
                 </div>
                 <div className="col-6">
-                  <Button variant="outline-danger" className="btn-admin" onClick={MuestraCarga}>Cancelar</Button>
+                  <Button variant="outline-danger" className="btn-admin" onClick={MuestraDescarga}>Cancelar</Button>
                 </div>
               </div>
             </Form>
@@ -438,13 +605,14 @@ function PaginationComponent(props) {
     <div className="row datos-cd">
       {renderData(currentItems)}
     </div>
-
+    <br></br>
+    <br></br>
     <div className="row">
       <div className="col-8">
         <button className="b btn btn-light" onClick={MuestraCarga}> Cargar Documento&nbsp;
           <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
         </button>&nbsp;&nbsp;
-        <button className="b btn btn-light" >Descargar Consulta&nbsp;
+        <button className="b btn btn-light" onClick={MuestraDescarga}>Descargar Reporte&nbsp;
           <FontAwesomeIcon icon={faDownload}></FontAwesomeIcon>
         </button>
       </div>
@@ -469,6 +637,17 @@ function PaginationComponent(props) {
             </button>
           </li>
         </ul>
+      </div>
+    </div>
+
+    <div className="pdf" >
+      <div className="row col-12">
+        <div className="col-3">
+          <img src="images/consulta/Imagen1.png" className="img-fluid"></img>
+        </div>
+      </div>
+      <div>
+        Tabla
       </div>
     </div>
 

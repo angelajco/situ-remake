@@ -198,11 +198,10 @@ body.analisis-geografico-modales {
     height: 200px;
     width: 150px;
 }
-.my-custom-scrollbar {
+.myT-custom-scrollbar {
     position: relative;
-    height: 200px;
     overflow: auto;
 }
-.table-wrapper-scroll-y {
+.tableT-wrapper-scroll-y {
     display: block;
 }

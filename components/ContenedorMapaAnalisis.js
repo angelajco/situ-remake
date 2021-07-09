@@ -2302,6 +2302,15 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
+    function buscarCapa(nombre) {
+        for (let index = 0; index < jsonSimbologia.length; index++) {
+            if (jsonSimbologia[index].name == nombre) {
+                return index;
+            }
+
+        }
+    }
+
     return (
         <>
             <ModalAnalisis
@@ -2570,39 +2579,22 @@ function ContenedorMapaAnalisis(props) {
                 </Modal.Header>
                 <Modal.Body>
                     {
-                        jsonSimbologia.length > 0 ? (
-                            jsonSimbologia.map((capa, index) => (
-                                <div key={index}>
-                                    <h5>{capa.name}</h5>
-                                    <div dangerouslySetInnerHTML={{ __html: capa.simbologia.tablaSimbologia() }} ></div>
-                                </div>
-                            ))
-                        ) : (
-                            capasVisualizadas.map((capa, index) => (
-                                capa.habilitado && (
-
-                                    <div key={index}>
-                                        <p><b>{capa.nom_capa}</b></p>
-                                        <img src={capa.simbologia}></img>
-                                        <br></br>
-                                        <br></br>
-                                    </div>
-
-                                )
-                            ))
-                        )
-
-
-                        /*
                         capasVisualizadas.map((capa, index) => (
                             capa.habilitado && (
                                 <div key={index}>
                                     <p><b>{capa.nom_capa}</b></p>
                                     {
+                                        
                                         capa.tipo == "wms" ? (
                                             <img src={capa.simbologia}></img>
+
                                         ) : (
-                                            <img className="w-100" src={capa.simbologia}></img>
+                                            buscarCapa(capa.nom_capa)!=undefined ? (
+                                                <div dangerouslySetInnerHTML={{ __html: jsonSimbologia[buscarCapa(capa.nom_capa)].simbologia.tablaSimbologia() }} ></div>
+                                            ):(
+                                                <img className="w-100" src={capa.simbologia}></img>
+                                            )
+                                            
                                         )
                                     }
                                     <br></br>
@@ -2610,7 +2602,7 @@ function ContenedorMapaAnalisis(props) {
                                 </div>
                             )
                         ))
-                        */
+
                     }
                 </Modal.Body>
             </Modal>
@@ -3115,10 +3107,10 @@ function ContenedorMapaAnalisis(props) {
                                                                     <FontAwesomeIcon icon={faTrash} />
                                                                 </Button>
                                                                 {
-                                                                    capa.tipo === "wfs" || capa.tipo==='json' ? (
+                                                                    capa.tipo === "wfs" || capa.tipo === 'json' ? (
                                                                         <Button onClick={() => cambioEstilos(capa)} variant="link">
                                                                             <FontAwesomeIcon icon={faPaintBrush} />
-                                                                        </Button>):(<div></div>)
+                                                                        </Button>) : (<div></div>)
                                                                 }
 
                                                                 <CustomToggle eventKey={capa.nom_capa} />
@@ -3244,15 +3236,15 @@ function ContenedorMapaAnalisis(props) {
                 </OverlayTrigger>
             </div>
             {
-                props.botones == true
-                    ?
-                    <Map referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
-                        referenciaAnalisis={props.referenciaAnalisis}
-                    />
-                    :
-                    <MapEspejo referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
-                        referenciaAnalisis={props.referenciaAnalisis} />
-            }
+        props.botones == true
+            ?
+            <Map referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
+                referenciaAnalisis={props.referenciaAnalisis}
+            />
+            :
+            <MapEspejo referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
+                referenciaAnalisis={props.referenciaAnalisis} />
+    }
         </>
     )
 }

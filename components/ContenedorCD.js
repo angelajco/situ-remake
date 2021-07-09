@@ -24,6 +24,15 @@ function ContenedorCD() {
     const [datos, setDatos] = useState([]);
     const [aux, setAux] = useState(false);
     const [tfiltro, setTFiltro] = useState('Tema');
+    //para busqueda avanzada
+    const [titulo, setTitulo] = useState("");
+    const [desc, setDesc] = useState("");
+    const [autor, setAutor] = useState("");
+    const [cobertura, setCobertura] = useState("");
+    const [unidad, setUnidad] = useState("");
+    const [edicion, setEdicion] = useState("");
+    const [tipo, setTipo] = useState("");
+    const [tema, setTema] = useState("");
 
     //Datos para el modal
     const [show, setShow] = useState(false);
@@ -44,7 +53,8 @@ function ContenedorCD() {
         { value: '2', label: 'Titulo' },
         { value: '3', label: 'Autor' },
         { value: '4', label: 'Tema' },
-        { value: '5', label: 'Fecha de Publicación' }
+        { value: '5', label: 'Tipo' },
+        { value: '6', label: 'Fecha de Publicación' }
     ];
 
     const orden = [
@@ -72,6 +82,16 @@ function ContenedorCD() {
         setPub('');
     }
 
+    const cerrarM = e=> {
+        setShowModalB(!showModalB);
+        setTitulo("");
+        setDesc("");
+        setAutor("");
+        setCobertura("");
+        setEdicion("");
+        setTipo("");
+        setTema("");
+    }
 
     function ordenarAsc(p_array_json, p_key) {
         p_array_json.sort(function (a, b) {
@@ -109,32 +129,6 @@ function ContenedorCD() {
         setAux(!aux);
     }
 
-
-    const FiltroT = async (e) => {
-        let tf = document.getElementById("filtro").value;
-
-        if (e.target.value == 'tipo') {
-            //console.log( `"${e.target.value}"   `+tf);
-            //var filtrado = datos.filter(function (v){return v[e.target.value] == tf });
-            //console.log(`${process.env.ruta}/wa/publico/consultaDocumento?search=tipo:*${tf}* OR tema1:*'${tf}'* OR tema2:*'${tf}'*`);
-            const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tipo:*${tf}*`);
-            const datos = await res2.json();
-            console.log(datos);
-            modificaResultado(datos);
-            setPub(`Se Encontraron ${datos.length} Documentos`)
-        } else {
-            const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${tf}* OR tema2:*${tf}*`);
-            const datos = await res2.json();
-            console.log(datos);
-            modificaResultado(datos);
-            setPub(`Se Encontraron ${datos.length} Documentos`)
-        }
-
-        document.getElementById("filtro").value = "";
-    }
-
-
-
     function metadatosModal() {
         const cuerpo =
             <div>
@@ -167,20 +161,23 @@ function ContenedorCD() {
                         .then((response) => response.json())
                         .then((json) => modificaResultado(json));
                 }
-                if(e.value == 3){
+                if (e.value == 3) {
                     //busqueda por autor
                     fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=autor:*${busq.value}* OR autor2:*${busq.value}* OR autor3:*${busq.value}*`)
                         .then((response) => response.json())
                         .then((json) => modificaResultado(json));
                 }
-                if(e.value == 4){
+                if (e.value == 4) {
                     //busqueda por tema
                     fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${busq.value}* OR tema2:*${busq.value}*`)
-                    .then((response) => response.json())
-                    .then((json) => modificaResultado(json));
+                        .then((response) => response.json())
+                        .then((json) => modificaResultado(json));
                 }
-                if(e.value == 5){
-                    //busqueda por fecha de publicacion
+                if (e.value == 5) {
+                    //busqueda por tipo
+                    fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tipo:*${busq.value}*`)
+                        .then((response) => response.json())
+                        .then((json) => modificaResultado(json));
                 }
             }
 
@@ -189,22 +186,12 @@ function ContenedorCD() {
 
     }
 
-    const Filtro = e => {
-        console.log(datos);
-        let tf = document.getElementById("filtro").value;
-        console.log(`"${e.target.value}"   ` + tf);
-        var filtrado = datos.filter(function (v) { return v[e.target.value] == tf });
-        console.log(filtrado);
-        modificaResultado(filtrado);
-    }
-
     const ultimasP = e => {
         console.log("Ultimas publicaciones");
         fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
             .then((response) => response.json())
             .then((json) => modificaResultado(json));
     }
-
 
     useEffect(() => {
         fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
@@ -218,7 +205,6 @@ function ContenedorCD() {
 
         const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:${data.cobertura} OR descripcion:*'${data.descripcion}'* `);
         const datos = await res2.json();
-
         setPub(`Se Encontraron ${datos.length} Docuemntos`)
         modificaResultado(datos);
         setDatos(datos);
@@ -248,35 +234,35 @@ function ContenedorCD() {
                                     <Form className="col-12" onSubmit={handleSubmit(onSubmit)}>
                                         <Form.Group controlId="dato">
                                             <Form.Label>Titulo</Form.Label>
-                                            <Form.Control name="dato" type="text" ref={register()} />
+                                            <Form.Control name="dato" type="text" ref={register()} value={titulo} onChange={(e)=>{setTitulo(e.target.value)}} />
                                         </Form.Group>
                                         <Form.Group controlId="descripcion">
                                             <Form.Label>Descripción</Form.Label>
-                                            <Form.Control name="descripcion" type="text" ref={register()} />
+                                            <Form.Control name="descripcion" type="text" ref={register()} value={desc} onChange={(e)=>{setDesc(e.target.value)}}/>
                                         </Form.Group>
                                         <Form.Group controlId="autor">
                                             <Form.Label>Autor</Form.Label>
-                                            <Form.Control name="autor" type="text" ref={register()} />
+                                            <Form.Control name="autor" type="text" ref={register()} value={autor} onChange={(e)=>{setAutor(e.target.value)}}/>
                                         </Form.Group>
                                         <Form.Group controlId="cobertura">
                                             <Form.Label>Cobertura Geográfica</Form.Label>
-                                            <Form.Control name="cobertura" type="text" ref={register()} />
+                                            <Form.Control name="cobertura" type="text" ref={register()} value={cobertura} onChange={(e)=>{setCobertura(e.target.value)}} />
                                         </Form.Group>
                                         <Form.Group controlId="unidad">
                                             <Form.Label>Unidad Responsable</Form.Label>
-                                            <Form.Control name="unidad" type="text" ref={register()} />
+                                            <Form.Control name="unidad" type="text" ref={register()} value={unidad} onChange={(e)=>{setUnidad(e.target.value)}}/>
                                         </Form.Group>
                                         <Form.Group controlId="año">
                                             <Form.Label>Año de Edición</Form.Label>
-                                            <Form.Control name="año" type="text" ref={register()} />
+                                            <Form.Control name="año" type="text" ref={register()} value={edicion} onChange={(e)=>{setEdicion(e.target.value)}}/>
                                         </Form.Group>
                                         <Form.Group controlId="tipo">
                                             <Form.Label>Tipo</Form.Label>
-                                            <Form.Control name="tipo" type="text" ref={register()} />
+                                            <Form.Control name="tipo" type="text" ref={register()} value={tipo} onChange={(e)=>{setTipo(e.target.value)}}/>
                                         </Form.Group>
                                         <Form.Group controlId="tema">
                                             <Form.Label>Tema</Form.Label>
-                                            <Form.Control name="tema" type="text" ref={register()} />
+                                            <Form.Control name="tema" type="text" ref={register()} value={tema} onChange={(e)=>{setTema(e.target.value)}}/>
                                         </Form.Group>
                                         <div className="text-center"><h6 name="encontrados">{pub}</h6></div>
                                         <div className="row">
@@ -284,7 +270,7 @@ function ContenedorCD() {
                                                 <Button variant="outline-secondary" className="btn-admin" type="submit" >BUSCAR</Button>
                                             </div>
                                             <div className="col-6">
-                                                <Button variant="outline-danger" className="btn-admin" onClick={verModal}>Cerrar</Button>
+                                                <Button variant="outline-danger" className="btn-admin" onClick={cerrarM}>Cerrar</Button>
                                             </div>
                                         </div>
                                     </Form>
@@ -309,7 +295,7 @@ function ContenedorCD() {
                             </div>
                             <div className="col-5">
                                 <Select controlId="filtros"
-                                    placeholder="Búsqueda"
+                                    placeholder="Buscar por"
                                     className="basic-single"
                                     classNamePrefix="Select"
                                     name="filtros"
@@ -353,12 +339,15 @@ function ContenedorCD() {
                 </div>
                 <br></br>
                 {
-                    r.length > 0 &&
-                    (
-                        <PaginationComponent
-                            informacion={r}
-                        />
+                    r != null && (
+                        r.length > 0 &&
+                        (
+                            <PaginationComponent
+                                informacion={r}
+                            />
+                        )
                     )
+
                 }
             </div>
 

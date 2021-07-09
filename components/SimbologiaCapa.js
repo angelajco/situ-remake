@@ -108,7 +108,7 @@ class simbologiaCapa {
 	tablaSimbologia() {
 		if (this.rangos[0].valorMax != 0) {
 			//manda tabla con minimo y maximo
-			let salida = `<table class="table table-wrapper-scroll-y my-custom-scrollbar"><tr><th>Color</th><th>Leyenda</th><th>Valor Minimo</th><th>Valor Maximo</th><tr>`;
+			let salida = `<table class="table tableT-wrapper-scroll-y myT-custom-scrollbar"><tr><th>Color</th><th>Leyenda</th><th>Valor Minimo</th><th>Valor Maximo</th><tr>`;
 
 			for (let i = 0; i < this.rangos.length; i++) {
 				salida += this.rangos[i].filaHtmlSim(1);
@@ -120,7 +120,7 @@ class simbologiaCapa {
 
 		} else {
 			//solo manda color y leyenda
-			let salida = `<table class="table table-wrapper-scroll-y my-custom-scrollbar"><tr><th>Color</th><th>Leyenda</th><tr>`;
+			let salida = `<table class="table tableT-wrapper-scroll-y myT-custom-scrollbar"><tr><th>Color</th><th>Leyenda</th><tr>`;
 
 			for (let i = 0; i < this.rangos.length; i++) {
 				salida += this.rangos[i].filaHtmlSim(0);

@@ -145,3 +145,26 @@ a.columna5{
 .table-wrapper-scroll-y {
     display: block;
 }
+
+.pdf{
+    display:none;
+}
+#prev{
+    height: 500px;
+}
+
+/* Landscape phone to portrait tablet */
+@media (max-width: 767px) { 
+
+    .datos-cd{
+        height: 100%;
+    }
+
+ }
+
+ @media (min-width: 768px) and (max-width: 979px) { 
+
+    .datos-cd{
+        
+    }
+  }
