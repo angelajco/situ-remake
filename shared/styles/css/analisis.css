@@ -206,3 +206,16 @@ body.analisis-geografico-modales {
 .tableT-wrapper-scroll-y {
     display: block;
 }
+
+.circulo {
+    width: 15px;
+    height: 15px;
+    -moz-border-radius: 50%;
+    -webkit-border-radius: 50%;
+    border-radius: 50%;
+}
+
+.rectangulo {
+    width: 35px; 
+    height: 5px; 
+}
