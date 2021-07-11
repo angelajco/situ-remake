@@ -33,6 +33,7 @@ function PaginationComponent(props) {
     { value: '2', label: 'Enlace' }
   ];
 
+
   const descargaDoc = async (e) => {
     var hoy = new Date();
     var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
@@ -41,12 +42,10 @@ function PaginationComponent(props) {
     //var items = datosP;
 
     var img = new Image();
-
     img.onload = function () {
       var dataURI = getBase64Image(img);
       return dataURI;
     }
-
     img.src = "images/consulta/encabezado.jpg";
 
     /// codigo para generar pdf 
@@ -55,9 +54,6 @@ function PaginationComponent(props) {
     items.forEach(element => {
       result.push(Object.values(element));
     });
-    //console.log(Object.values(items[0]))
-    //console.log(result);
-
     var doc = new jsPDF(); jpt;
 
     var header = function (data) {
@@ -72,27 +68,53 @@ function PaginationComponent(props) {
       //doc.setFontType("normal");
       doc.text(20, 60, "Total de documentos: " + items.length);
     };
-/*
-    var options = {
-      beforePageContent: header,
-      margin: {
-        top: 65
-      },
-      theme: 'grid'
-    };
-    // doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
-    
-        doc.autoTable(columns, result,
-          { margin: { top: 65 }, theme: 'grid', }
-        );*/
 
-    doc.autoTable(columns, result,  {margin: {top: 65},theme: 'grid', beforePageContent: header});
+    doc.autoTable(columns, result, { margin: { top: 65 }, theme: 'grid', beforePageContent: header });
     let string = doc.output('datauristring');
     //let uri = doc.save('Consulta-Documental.pdf');
     var embed = "<embed width='100%' height='100%' src='" + string + "'/>"
     var divP = document.getElementById('prev');
     divP.innerHTML += embed;
 
+  }
+
+  function preCargaPDF() {
+    var hoy = new Date();
+    var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+    var hora = hoy.getHours() + ':' + hoy.getMinutes();
+    var items = filtrarJson(data);
+    //var items = datosP;
+
+    var img = new Image();
+    img.onload = function () {
+      var dataURI = getBase64Image(img);
+      return dataURI;
+    }
+    img.src = "images/consulta/encabezado.jpg";
+
+    /// codigo para generar pdf 
+    const columns = Object.keys(items[0]);
+    var result = [];
+    items.forEach(element => {
+      result.push(Object.values(element));
+    });
+    var doc = new jsPDF(); jpt;
+
+    var header = function (data) {
+      doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
+      doc.setFontSize(10);
+      doc.text(20, 43, "Usuario");
+      doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
+      //doc.setFontType("bold");
+      doc.setFontSize(13);
+      doc.text(75, 53, "CONSULTA DOCUMENTAL");
+      doc.setFontSize(10);
+      //doc.setFontType("normal");
+      doc.text(20, 60, "Total de documentos: " + items.length);
+    };
+
+    doc.autoTable(columns, result, { margin: { top: 65 }, theme: 'grid', beforePageContent: header });
+    let string = doc.output('datauristring');
   }
 
   const actBitacora = async (cod) => {
@@ -405,7 +427,7 @@ function PaginationComponent(props) {
 
   const MuestraDescarga = e => {
     setShowReporte(!showReporte);
-
+    preCargaPDF();
   }
 
   function processImage(event) {

@@ -68,10 +68,10 @@ function ContenedorMapaAnalisis(props) {
     //Funciones y variables para cambios de estilos
     var [valorEstilos, setValorEstilos] = useState()
     var [color, setColorFill] = useState('#FF7777')
-    // var [colorFill, setColorFill] = useState('#FF7777')
-    // var [colorborder, setColorBorder] = useState('#FF0000')
-    var [colorFill, setColorFill] = useState('#000000')
-    var [colorborder, setColorBorder] = useState('#FFFFFF')
+    var [colorFill, setColorFill] = useState('#FF7777')
+    var [colorborder, setColorBorder] = useState('#FF0000')
+    //var [colorFill, setColorFill] = useState('#000000')
+    //var [colorborder, setColorBorder] = useState('#FFFFFF')
     /**PRUEBAS**/
     var [showModalEstilos, setShowModalEstilos] = useState(false)
     var [capaSeleccionada, setCapaSeleccionada] = useState(null)
@@ -1048,15 +1048,22 @@ function ContenedorMapaAnalisis(props) {
             if (valorEstilos == 4) {
                 if (tipoDiv == "Cuartiles") {
                     let colores = [];
+                    let au1;
                     let sim1 = new Sim();
                     //generamos los colores apartir del seleccionado por el usuari0
                     if (colores.length > 0) {
                         colores.splice(0, colores.length);
                     }
-
-                    colores = shuffle(colorB);//randomColor({ count: 4, hue: colorFill });
-                    let au1 = sim1.generaCuantiles(4, valoresCampo, colores, "Cuartil ", "#000000", 1, 5);
-
+                    colores = shuffle(colorB);
+                    if (capaSeleccionada.features[0].geometry.type == 'Point') {
+                        au1 = sim1.generaCuantiles(4, valoresCampo, colores, "Cuartil ", "#000000", 1, 5, 0);
+                    }
+                    if (capaSeleccionada.features[0].geometry.type == 'MultiLineString') {
+                        au1 = sim1.generaCuantiles(4, valoresCampo, colores, "Cuartil ", "#000000", 1, 5, 1);
+                    }
+                    if (capaSeleccionada.features[0].geometry.type == 'MultiPolygon') {
+                        au1 = sim1.generaCuantiles(4, valoresCampo, colores, "Cuartil ", "#000000", 1, 5, 2);
+                    }
                     simbologiaF = au1;
                     setRangoAux(4);
                     sim1 = null;
@@ -1066,12 +1073,23 @@ function ContenedorMapaAnalisis(props) {
                 if (tipoDiv == "Deciles") {
                     let colores = [];
                     let sim1 = new Sim();
+                    let au1;
                     //generamos los colores apartir del seleccionado por el usuari0
                     if (colores.length > 0) {
                         colores.splice(0, colores.length);
                     }
                     colores = shuffle(colorB);//colores = randomColor({ count: 10, hue: colorFill });
-                    let au1 = sim1.generaCuantiles(10, valoresCampo, colores, "Decil ", "#000000", 1, 5);
+                    //au1 = sim1.generaCuantiles(10, valoresCampo, colores, "Decil ", "#000000", 1, 5, 0);
+
+                    if (capaSeleccionada.features[0].geometry.type == 'Point') {
+                        au1 = sim1.generaCuantiles(10, valoresCampo, colores, "Decil ", "#000000", 1, 5, 0);
+                    }
+                    if (capaSeleccionada.features[0].geometry.type == 'MultiLineString') {
+                        au1 = sim1.generaCuantiles(10, valoresCampo, colores, "Decil ", "#000000", 1, 5, 1);
+                    }
+                    if (capaSeleccionada.features[0].geometry.type == 'MultiPolygon') {
+                        au1 = sim1.generaCuantiles(10, valoresCampo, colores, "Decil ", "#000000", 1, 5, 2);
+                    }
 
                     setRangoAux(10);
                     simbologiaF = au1;
@@ -1081,12 +1099,22 @@ function ContenedorMapaAnalisis(props) {
                 if (tipoDiv == "Quintiles") {
                     let colores = [];
                     let sim1 = new Sim();
+                    let au1;
                     //generamos los colores apartir del seleccionado por el usuari0
                     if (colores.length > 0) {
                         colores.splice(0, colores.length);
                     }
                     colores = shuffle(colorB);//colores = randomColor({ count: 5, hue: colorFill });
-                    let au1 = sim1.generaCuantiles(5, valoresCampo, colores, "Quintil ", "#000000", 1, 5);
+
+                    if (capaSeleccionada.features[0].geometry.type == 'Point') {
+                        au1 = sim1.generaCuantiles(5, valoresCampo, colores, "Quintil ", "#000000", 1, 5, 0);
+                    }
+                    if (capaSeleccionada.features[0].geometry.type == 'MultiLineString') {
+                        au1 = sim1.generaCuantiles(5, valoresCampo, colores, "Quintil ", "#000000", 1, 5, 1);
+                    }
+                    if (capaSeleccionada.features[0].geometry.type == 'MultiPolygon') {
+                        au1 = sim1.generaCuantiles(5, valoresCampo, colores, "Quintil ", "#000000", 1, 5, 2);
+                    }
                     // console.log(au1);
                     setRangoAux(5);
                     simbologiaF = au1;
@@ -1119,10 +1147,19 @@ function ContenedorMapaAnalisis(props) {
                         auxI++;
                     }//termina for columnas
                 }//termina for filas 
-
+                let linea;
+                if (capaSeleccionada.features[0].geometry.type == 'Point') {
+                    linea = 0;
+                }
+                if (capaSeleccionada.features[0].geometry.type == 'MultiLineString') {
+                    linea = 1;
+                }
+                if (capaSeleccionada.features[0].geometry.type == 'MultiPolygon') {
+                    linea = 2;
+                }
                 let sim1 = new Sim();
                 for (let i = 0; i < lib.length; i += 7) {
-                    sim1.agregaRango(0, lib[i], lib[i + 1], lib[i + 3], lib[i + 2], lib[i + 4], lib[i + 5], lib[i + 6]);
+                    sim1.agregaRango(0, lib[i], lib[i + 1], lib[i + 3], lib[i + 2], lib[i + 4], lib[i + 5], lib[i + 6], linea);
                 }
 
                 simbologiaF = sim1;
@@ -1244,10 +1281,20 @@ function ContenedorMapaAnalisis(props) {
                     limitesmay[i] = limitesmay[i - 1] + (d);
                     limitesmen[i] = limitesmay[i - 1];
                 }
+                let linea;
+                if (capaSeleccionada.features[0].geometry.type == 'Point') {
+                    linea = 0;
+                }
+                if (capaSeleccionada.features[0].geometry.type == 'MultiLineString') {
+                    linea = 1;
+                }
+                if (capaSeleccionada.features[0].geometry.type == 'MultiPolygon') {
+                    linea = 2;
+                }
 
                 let sim1 = new Sim();
                 for (let i = 0; i < limitesmen.length; i++) {
-                    sim1.agregaRango(0, Math.round(limitesmen[i]), Math.round(limitesmay[i]), colores[i], "Rango " + (i + 1), "#000000", 1, 5);
+                    sim1.agregaRango(0, Math.round(limitesmen[i]), Math.round(limitesmay[i]), colores[i], "Rango " + (i + 1), "#000000", 1, 5, linea);
                 }
 
                 simbologiaF = sim1;
@@ -1281,8 +1328,18 @@ function ContenedorMapaAnalisis(props) {
                 }
                 //colores = randomColor({ count: unicos.length, hue: colorFill });
 
+                let linea;
+                if (capaSeleccionada.features[0].geometry.type == 'Point') {
+                    linea = 0;
+                }
+                if (capaSeleccionada.features[0].geometry.type == 'MultiLineString') {
+                    linea = 1;
+                }
+                if (capaSeleccionada.features[0].geometry.type == 'MultiPolygon') {
+                    linea = 2;
+                }
                 for (let i = 0; i < unicos.length; i++) {
-                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1, 5);
+                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1, 5,linea);
                 }
 
                 simbologiaF = sim1;
@@ -1294,6 +1351,7 @@ function ContenedorMapaAnalisis(props) {
         }
 
     }
+
     function leerTabla(aux) {
         if (aux == 0) {
             //cuando es estilo libre
@@ -1321,7 +1379,7 @@ function ContenedorMapaAnalisis(props) {
                 let rango1 = rangoAux;
                 let auxI = 0;
                 for (let i = 0; i < rango1; i++) { //ciclo para recorrer las filas del
-                    for (let j = 0; j < 7; j++) {//ciclo que controla las columnas de la tabla 
+                    for (let j = 0; j < 8; j++) {//ciclo que controla las columnas de la tabla 
                         let aux = document.getElementById(auxI);
                         //console.log(aux);
                         if (aux == null) {
@@ -1339,8 +1397,8 @@ function ContenedorMapaAnalisis(props) {
 
                 //se actualizaron los datos de los intervalos
                 let sim1 = new Sim();
-                for (let i = 0; i < actuali.length; i += 7) {
-                    sim1.agregaRango(0, actuali[i], actuali[i + 1], actuali[i + 3], actuali[i + 2], actuali[i + 4], actuali[i + 5], actuali[i + 6]);
+                for (let i = 0; i < actuali.length; i += 8) {
+                    sim1.agregaRango(0, actuali[i], actuali[i + 1], actuali[i + 3], actuali[i + 2], actuali[i + 4], actuali[i + 5], actuali[i + 6], actuali[i + 7]);
                 }
 
                 simbologiaF = sim1;
