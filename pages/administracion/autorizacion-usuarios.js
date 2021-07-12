@@ -432,6 +432,7 @@ export default function AutorizacionUsuarios() {
                                                                 pagination={pagination}
                                                                 headerClasses="tabla-usuarios-header"
                                                                 wrapperClasses="table-responsive"
+                                                                
                                                             />
                                                         </>
                                                     )

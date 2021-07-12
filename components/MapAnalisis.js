@@ -370,53 +370,9 @@ export default function Map(props) {
         return null;
     }
 
-    //Para obtener el grupo de los dibujos
-    function grupoDibujos(e) {
-        capasDib = e;
-    }
-
-    //Cuando se dibuja sobre el mapa
-    function Dibujos() {
-        let mapaDibujos = useMap();
-        mapaDibujos.on('draw:created', function (e) {
-            var type = e.layerType,
-                layer = e.layer;
-            if (type === 'polyline') {
-                var distance = 0;
-                length = layer.getLatLngs().length;
-                for (var i = 1; i < length; i++) {
-                    distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
-                }
-                layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
-            } else if (type !== 'marker' && type !== 'circle') {
-                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
-            }
-        });
-
-        mapaDibujos.on('draw:edited', function (e) {
-            var layers = e.layers;
-            layers.eachLayer(function (layer) {
-                if (layer instanceof L.Polyline && !(layer instanceof L.rectangle) && !(layer instanceof L.Polygon)) {
-                    var distance = 0;
-                    length = layer.getLatLngs().length;
-                    for (var i = 1; i < length; i++) {
-                        distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
-                    }
-                    layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
-                } else if (!(layer instanceof L.Marker)) {
-                    var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                    console.log('latlngs: ', layer.getLatLngs())
-                    layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
-                }
-            });
-        });
-
-        return null;
-    }
-
     const [lanzaSincronizacion, setLanzaSincronizacion] = useState(true)
     function sincroniza(zoom, centro) {
+        console.log(zoom, centro, "zoom centro")
         setLanzaSincronizacion(false)
         mapaReferencia.setView(centro, zoom);
     }
@@ -462,17 +418,15 @@ export default function Map(props) {
                         />
                     </BaseLayer>
                 </LayersControl>
-                <FeatureGroup ref={(e) => grupoDibujos(e)}>
+                <FeatureGroup>
                     <EditControl
                         position='topright'
                         draw={{
-                            circle: false,
                             circlemarker: false,
                         }}
                     >
                     </EditControl>
                 </FeatureGroup>
-                <Dibujos />
                 <ControlMovimiento />
             </MapContainer>
         </>
