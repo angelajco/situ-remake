@@ -297,7 +297,6 @@ export default function Map(props) {
                     <EditControl
                         position='topright'
                         draw={{
-                            circle: false,
                             circlemarker: false,
                         }}
                     >

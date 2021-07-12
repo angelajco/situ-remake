@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, Fragment } from 'react';
 import { Controller, useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaintBrush, faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle } from '@fortawesome/free-solid-svg-icons';
+import { faPaintBrush, faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle, faLayerGroup, faSquare, faCircle, faDrawPolygon, faGripLines, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
 import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
 import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 import { CSVLink } from "react-csv";
@@ -129,73 +129,6 @@ function ContenedorMapaAnalisis(props) {
                 (error) => console.log(error)
             )
     }, [])
-
-    useEffect(() => {
-        if (capturoReferenciaMapa == true) {
-            setPolygonDrawer(new L.Draw.Circle(referenciaMapa));
-            //Cuando se dibuja algo en el mapa
-            referenciaMapa.on('draw:created', function (e) {
-                let layerDibujada = e.layer;
-                let circlepoly;
-                if (e.layerType !== 'polyline' && e.layerType !== "marker") {
-                    if (e.layerType === "circle") {
-                        var d2r = Math.PI / 180;
-                        var r2d = 180 / Math.PI;
-                        //circulo
-                        var earthsradius = 6379000;
-                        var points = 999;
-                        var rlat = (layerDibujada.options.radius / earthsradius) * r2d;
-                        var rlng = rlat / Math.cos(layerDibujada._latlng.lat * d2r);
-                        var extp = new Array();
-                        for (var i = 0; i < points + 1; i++) {
-                            var theta = Math.PI * (i / (points / 2));
-                            var ex = layerDibujada._latlng.lng + (rlng * Math.cos(theta));
-                            var ey = layerDibujada._latlng.lat + (rlat * Math.sin(theta));
-                            extp.push(new L.LatLng(ey, ex));
-                        }
-                        circlepoly = new L.Polygon(extp);
-                        referenciaMapa.removeLayer(layerDibujada);
-                    }
-
-                    let capasIntersectadas = [];
-                    let capasIntersectadasParaIdentificarSeparadas = [];
-                    referenciaMapa.eachLayer(function (layer) {
-                        if (layer instanceof L.GeoJSON) {
-                            let tempCapasIdentificadasMismaCapa = []
-                            layer.eachLayer(function (layerConFeatures) {
-                                let seIntersectan;
-                                seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), circlepoly ? circlepoly.toGeoJSON() : layerDibujada.toGeoJSON())
-                                if (seIntersectan != null) {
-                                    if (circlepoly) {
-                                        //Arreglo temporal que se limpia cada vez que entra en una nueva capa Padre
-                                        //La cual guardara las capas identificadas de manera independiente
-                                        tempCapasIdentificadasMismaCapa.push(layerConFeatures.feature)
-                                    } else {
-                                        //Se guardan todos los features en el mismo arreglo
-                                        capasIntersectadas.push(layerConFeatures.feature)
-                                    }
-                                }
-                            })
-                            //Si es identificar, vamos agregando las capas separadas
-                            if (tempCapasIdentificadasMismaCapa.length != 0) {
-                                capasIntersectadasParaIdentificarSeparadas.push(tempCapasIdentificadasMismaCapa)
-                            }
-                        }
-                    });
-                    //Si para rasgos hubo interseccion o para capas identificar
-                    if (capasIntersectadas.length != 0 || capasIntersectadasParaIdentificarSeparadas.length != 0) {
-                        if (circlepoly) {
-                            // setCapasIdentificadas(capasIntersectadasParaIdentificarSeparadas)
-                            //Se guardan para despues indentificarse
-                            setSavedToIdentify(capasIntersectadasParaIdentificarSeparadas)
-                        } else {
-                            setRasgos(capasIntersectadas);
-                        }
-                    }
-                }
-            });
-        }
-    }, [capturoReferenciaMapa])
 
     //Variables para guardar los datos de las capas, metadatos de la api
     const [arregloCapasBackEnd, setArregloCapasBackEnd] = useState([])
@@ -2164,7 +2097,6 @@ function ContenedorMapaAnalisis(props) {
                 tempArray.push(feature)
             })
         })
-        console.log(tempArray, "tempArray")
 
         //Para guardar los features en un solo array
         let tempFeaturesArray = []
@@ -2394,20 +2326,227 @@ function ContenedorMapaAnalisis(props) {
     }
 
     useEffect(() => {
-        if(props.referenciaEntidad != undefined) {
+        if (props.referenciaEntidad != undefined) {
             refFunction(props.referenciaEntidad);
         }
     }, [props.referenciaEntidad])
-    
+
     function refFunction(referenciaEntidad) {
         var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
-        var entidad = {id: referenciaEntidad.id_entidades, entidad: referenciaEntidad.nombre_entidad};
-        if(referenciaEntidad !== 'nacional') {
+        var entidad = { id: referenciaEntidad.id_entidades, entidad: referenciaEntidad.nombre_entidad };
+        if (referenciaEntidad !== 'nacional') {
             construyeEntidadCapa(capa, entidad);
         } else {
             construyeNacionalCapa(capa);
         }
     }
+
+    //Para mostrar las capas dibujadas
+    const [modalCapasDibujadas, setModalCapasDibujadas] = useState();
+    const [layersDibujadas, setLayersDibujadas] = useState([]);
+
+    var arregloLayers = [];
+    var iRectangulo = 0;
+    var iCirculo = 0;
+    var iPoligono = 0;
+    var iLinea = 0;
+    var iMarcador = 0;
+    var iOtro = 0;
+
+    const procesaDibujo = (dibujo) => {
+        if (dibujo.layerType == "rectangle") {
+            iRectangulo = iRectangulo + 1;
+            dibujo.tipo = 0
+            dibujo.nombre = `Rectangulo ${iRectangulo}`
+        } else if (dibujo.layerType == "circle") {
+            iCirculo = iCirculo + 1;
+            dibujo.tipo = 1
+            dibujo.nombre = `Circulo ${iCirculo}`
+        } else if (dibujo.layerType == "polygon") {
+            iPoligono = iPoligono + 1;
+            dibujo.tipo = 2
+            dibujo.nombre = `Poligono ${iPoligono}`
+        } else if (dibujo.layerType == "polyline") {
+            iLinea = iLinea + 1;
+            dibujo.tipo = 3
+            dibujo.nombre = `Linea ${iLinea}`
+        } else if (dibujo.layerType == "marker") {
+            iMarcador = iMarcador + 1;
+            dibujo.tipo = 4
+            dibujo.nombre = `Marcador ${iMarcador}`
+        } else {
+            iOtro = iOtro + 1;
+            dibujo.tipo = 5
+            dibujo.nombre = `Otra figura ${iOtro}`
+        }
+        dibujo.habilitado = true;
+        arregloLayers.push(dibujo)
+        setLayersDibujadas(arregloLayers)
+    }
+
+    useEffect(() => {
+        if (capturoReferenciaMapa == true) {
+            //Cuando se dibuja algo en el mapa
+            referenciaMapa.on('draw:created', function (e) {
+                procesaDibujo(e)
+            });
+        }
+    }, [capturoReferenciaMapa])
+
+    function checkCapaDibujada(figuraDibujada) {
+        let capasDibujadasTemporal = layersDibujadas.map((valor) => {
+            if (valor.nombre == figuraDibujada.nombre) {
+                if (valor.habilitado) {
+                    valor.habilitado = false;
+                    referenciaMapa.removeLayer(valor.layer);
+                    return valor;
+                } else {
+                    valor.habilitado = true;
+                    referenciaMapa.addLayer(valor.layer)
+                    return valor;
+                }
+            }
+            else {
+                return valor;
+            }
+        });
+        setLayersDibujadas(capasDibujadasTemporal);
+    }
+
+    const [checkedAll, setCheckedAll] = useState(true);
+
+    function checkAllCapasDibujadas(e) {
+        if (checkedAll == true) {
+            setCheckedAll(false);
+        } else {
+            setCheckedAll(true);
+        }
+        console.log(checkedAll, "checkedAll")
+        let capasDibujadasTemporal = layersDibujadas.map((valor) => {
+            if (e.target.checked == true) {
+                valor.habilitado = true;
+                referenciaMapa.addLayer(valor.layer);
+                return valor;
+            } else {
+                valor.habilitado = false;
+                referenciaMapa.removeLayer(valor.layer)
+                return valor;
+            }
+        });
+        setLayersDibujadas(capasDibujadasTemporal)
+        setModalCapasDibujadas(false);
+    }
+
+    function obtenRasgosIdenCapaDib(figura) {
+        let layerDibujada = figura.layer;
+        let layerTipo = figura.layerType;
+        let circlepoly;
+        if (layerTipo === "circle") {
+            var d2r = Math.PI / 180;
+            var r2d = 180 / Math.PI;
+            //circulo
+            var earthsradius = 6379000;
+            var points = 999;
+            var rlat = (layerDibujada.options.radius / earthsradius) * r2d;
+            var rlng = rlat / Math.cos(layerDibujada._latlng.lat * d2r);
+            var extp = new Array();
+            for (var i = 0; i < points + 1; i++) {
+                var theta = Math.PI * (i / (points / 2));
+                var ex = layerDibujada._latlng.lng + (rlng * Math.cos(theta));
+                var ey = layerDibujada._latlng.lat + (rlat * Math.sin(theta));
+                extp.push(new L.LatLng(ey, ex));
+            }
+            circlepoly = new L.Polygon(extp);
+        }
+
+        //Para rasgos
+        let capasIntersectadas = [];
+        //Para identificar
+        let capasIntersectadasParaIdentificarSeparadas = [];
+        referenciaMapa.eachLayer(function (layer) {
+            if (layer instanceof L.GeoJSON) {
+                //Arreglo temporal que se limpia cada vez que entra en una nueva capa Padre, para identificar
+                let tempCapasIdentificadasMismaCapa = []
+                layer.eachLayer(function (layerConFeatures) {
+                    let seIntersectan;
+                    seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), circlepoly ? circlepoly.toGeoJSON() : layerDibujada.toGeoJSON())
+                    if (seIntersectan != null) {
+                        if (circlepoly) {
+                            //Guarda las capas identificadas de manera independiente
+                            tempCapasIdentificadasMismaCapa.push(layerConFeatures.feature)
+                        } else {
+                            //Se guardan todos los features en el mismo arreglo, que se enviaran a rasgos
+                            capasIntersectadas.push(layerConFeatures.feature)
+                        }
+                    }
+                })
+                //Si es identificar, vamos agregando las capas separadas en el arreglo
+                if (tempCapasIdentificadasMismaCapa.length != 0) {
+                    capasIntersectadasParaIdentificarSeparadas.push(tempCapasIdentificadasMismaCapa)
+                }
+            }
+        });
+        //Si para rasgos hubo interseccion o para capas identificar
+        if (capasIntersectadas.length != 0 || capasIntersectadasParaIdentificarSeparadas.length != 0) {
+            if (circlepoly) {
+                //Se guardan para despues indentificarse
+                setSavedToIdentify(capasIntersectadasParaIdentificarSeparadas)
+                handleShowModalIdentify();
+            } else {
+                setRasgos(capasIntersectadas);
+            }
+        }
+        setModalCapasDibujadas(false);
+    }
+
+    function acercarAlejarCapaDib(figura, tipo) {
+        let layer = figura.layer;
+        if (tipo == 0) {
+            referenciaMapa.fitBounds(layer.getBounds())
+        } else if (tipo == 1) {
+            let zoom = referenciaMapa.getZoom();
+            console.log(zoom, "zoom")
+            let centro = layer.getBounds().getCenter();
+            console.log(centro, "centro", layer, "layer")
+            if (zoom == 5) {
+                referenciaMapa.panTo([centro.lat, centro.lng])
+            } else if (zoom == 6) {
+                zoom = zoom - 1;
+                referenciaMapa.panTo([centro.lat, centro.lng])
+                referenciaMapa.setZoom(5)
+            } else if (zoom >= 7) {
+                let nuevoZoom = zoom - 2
+                referenciaMapa.panTo([centro.lat, centro.lng])
+                referenciaMapa.setZoom(nuevoZoom)
+            }
+        }
+        setModalCapasDibujadas(false);
+    }
+
+    function obtenDistanciaCapaDib(figura) {
+        let layer = figura.layer;
+        let distance = 0;
+        let length = layer.getLatLngs().length;
+        for (var i = 1; i < length; i++) {
+            distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
+        }
+        layer.bindTooltip(`<p class="text-center">Distancia:</p>
+        <p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p>
+        <p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`,
+            { permanent: false, direction: "center" }).openTooltip()
+        setModalCapasDibujadas(false);
+    }
+
+    function obtenAreaCapaDib(figura) {
+        let layer = figura.layer;
+        let area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+        layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p>
+        <p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p>
+        <p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`,
+            { permanent: false, direction: "center" }).openTooltip()
+        setModalCapasDibujadas(false);
+    }
+
 
     return (
         <>
@@ -2417,17 +2556,78 @@ function ContenedorMapaAnalisis(props) {
                 onHide={handleCloseModalAnalisis}
             />
 
-            <ModalAnalisis
-                show={showModalAnalisis}
-                datos={datosModalAnalisis}
-                onHide={handleCloseModalAnalisis}
-            />
-
-            <ModalAnalisis
-                show={showModalAnalisis}
-                datos={datosModalAnalisis}
-                onHide={handleCloseModalAnalisis}
-            />
+            {/* <Modal dialogAs={DraggableModalDialog} show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
+                keyboard={false} backdrop="static" className="modal-analisis" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis"> */}
+                <Modal show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
+                keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
+                <Modal.Header className="tw-cursor-pointer" closeButton>
+                    <Modal.Title>
+                        Capas dibujadas
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {
+                        [
+                            layersDibujadas.length != 0 && (
+                                <Form key="0">
+                                    <Form.Group controlId="checkAll">
+                                        <Form.Check type="checkbox" label="Seleccionar todos" defaultChecked={checkedAll} onChange={(e) => checkAllCapasDibujadas(e)} />
+                                    </Form.Group>
+                                </Form>
+                            ),
+                            layersDibujadas.map((layer, index) => (
+                                <div key={index} className="tw-mb-8">
+                                    <Form className="tw-mb-2">
+                                        <Form.Check>
+                                            <Form.Check.Input type="checkbox" defaultChecked={layer.habilitado} onChange={() => checkCapaDibujada(layer)} />
+                                            <Form.Check.Label>
+                                                <span key="0">{layer.nombre}&nbsp;</span>
+                                                {
+                                                    layer.tipo == 0 ? (
+                                                        <FontAwesomeIcon size="1x" icon={faSquare} />
+                                                    ) : layer.tipo == 1 ? (
+                                                        <FontAwesomeIcon size="1x" icon={faCircle} />
+                                                    ) : layer.tipo == 2 ? (
+                                                        <FontAwesomeIcon size="1x" icon={faDrawPolygon} />
+                                                    ) : layer.tipo == 3 ? (
+                                                        <FontAwesomeIcon size="1x" icon={faGripLines} />
+                                                    ) : layer.tipo == 4 && (
+                                                        <FontAwesomeIcon size="1x" icon={faMapMarkerAlt} />
+                                                    )
+                                                }
+                                            </Form.Check.Label>
+                                        </Form.Check>
+                                    </Form>
+                                    <div className="tw-flex tw-justify-between tw-flex-wrap">
+                                        {
+                                            [
+                                                layer.tipo == 0 && (
+                                                    <Button onClick={() => acercarAlejarCapaDib(layer, 0)} key="1" variant="light">Acercar</Button>
+                                                ),
+                                                layer.tipo == 0 && (
+                                                    <Button onClick={() => acercarAlejarCapaDib(layer, 1)} key="2" variant="light">Alejar</Button>
+                                                ),
+                                                (layer.tipo == 0 || layer.tipo == 2) && (
+                                                    <Button onClick={() => obtenRasgosIdenCapaDib(layer)} key="3" variant="light">Obtener rasgos</Button>
+                                                ),
+                                                (layer.tipo == 0 || layer.tipo == 2) && (
+                                                    <Button onClick={() => obtenAreaCapaDib(layer)} key="4" variant="light">Obtener área</Button>
+                                                ),
+                                                layer.tipo == 3 && (
+                                                    <Button onClick={() => obtenDistanciaCapaDib(layer)} key="5" variant="light">Obtener distancia</Button>
+                                                ),
+                                                layer.tipo == 1 && (
+                                                    <Button onClick={() => obtenRasgosIdenCapaDib(layer)} key="6" variant="light">Identificar</Button>
+                                                )
+                                            ]
+                                        }
+                                    </div>
+                                </div>
+                            ))
+                        ]
+                    }
+                </Modal.Body>
+            </Modal>
 
             <Modal show={showModalJson} onHide={() => setShowModalJson(!showModalJson)} keyboard={false} backdrop="static" className="modal-analisis">
                 {
@@ -2739,7 +2939,13 @@ function ContenedorMapaAnalisis(props) {
 
                                     <div key={index}>
                                         <p><b>{capa.nom_capa}</b></p>
-                                        <img src={capa.simbologia}></img>
+                                        {
+                                            capa.tipo == "wms" ? (
+                                                <img src={capa.simbologia}></img>
+                                            ) : (
+                                                <img className="w-100" src={capa.simbologia}></img>
+                                            )
+                                        }
                                         <br></br>
                                         <br></br>
                                     </div>
@@ -2747,26 +2953,6 @@ function ContenedorMapaAnalisis(props) {
                                 )
                             ))
                         )
-
-
-                        /*
-                        capasVisualizadas.map((capa, index) => (
-                            capa.habilitado && (
-                                <div key={index}>
-                                    <p><b>{capa.nom_capa}</b></p>
-                                    {
-                                        capa.tipo == "wms" ? (
-                                            <img src={capa.simbologia}></img>
-                                        ) : (
-                                            <img className="w-100" src={capa.simbologia}></img>
-                                        )
-                                    }
-                                    <br></br>
-                                    <br></br>
-                                </div>
-                            )
-                        ))
-                        */
                     }
                 </Modal.Body>
             </Modal>
@@ -2803,7 +2989,7 @@ function ContenedorMapaAnalisis(props) {
                                         />
                                     </Form.Group>
                                     {
-                                        valorEstilos != null ? (
+                                        valorEstilos != null && (
                                             valorEstilos == 1 ? (
                                                 //estilo libre 
                                                 <div className="col-12">
@@ -3001,25 +3187,14 @@ function ContenedorMapaAnalisis(props) {
                                                     )
                                                 )
                                             )
-                                        ) : (
-                                            //console.log("la capa no es null, no se ha seleccionado estilo")
-                                            <p></p>
                                         )
                                     }
-
                                 </Form>
-
-
-
-
                             ) : (
                                 //la capa no puede editarse por el formato de origen 
                                 <h1>No puede editarse</h1>
                             )
                         )
-                    }
-                    {
-                        //termina el cuerpo del modal de estilos
                     }
                 </Modal.Body>
             </Modal>
@@ -3270,10 +3445,10 @@ function ContenedorMapaAnalisis(props) {
                                                                     <FontAwesomeIcon icon={faTrash} />
                                                                 </Button>
                                                                 {
-                                                                    capa.tipo === "wfs" || capa.tipo==='json' ? (
+                                                                    capa.tipo === "wfs" || capa.tipo === 'json' ? (
                                                                         <Button onClick={() => cambioEstilos(capa)} variant="link">
                                                                             <FontAwesomeIcon icon={faPaintBrush} />
-                                                                        </Button>):(<div></div>)
+                                                                        </Button>) : (<div></div>)
                                                                 }
 
                                                                 <CustomToggle eventKey={capa.nom_capa} />
@@ -3387,14 +3562,20 @@ function ContenedorMapaAnalisis(props) {
                         </button>
                     </label>
                 </OverlayTrigger>
-                <OverlayTrigger rootClose overlay={<Tooltip>Identificar</Tooltip>}>
-                    <button className="botones-barra-mapa" onClick={() => setIdentify(true)}>
+                {/* <OverlayTrigger rootClose overlay={<Tooltip>Identificar</Tooltip>}> */}
+                {/* <button className="botones-barra-mapa" onClick={() => setIdentify(true)}> */}
+                {/* <button className="botones-barra-mapa" onClick={handleShowModalIdentify}>
                         <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
                     </button>
-                </OverlayTrigger>
-                <OverlayTrigger rootClose overlay={<Tooltip>Paneo</Tooltip>}>
+                </OverlayTrigger> */}
+                {/* <OverlayTrigger rootClose overlay={<Tooltip>Paneo</Tooltip>}>
                     <button className="botones-barra-mapa" onClick={() => setIdentify(false)}>
                         <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
+                    </button>
+                </OverlayTrigger> */}
+                <OverlayTrigger rootClose overlay={<Tooltip>Capas dibujadas</Tooltip>}>
+                    <button className="botones-barra-mapa" onClick={() => setModalCapasDibujadas(true)}>
+                        <FontAwesomeIcon icon={faLayerGroup}></FontAwesomeIcon>
                     </button>
                 </OverlayTrigger>
             </div>
