@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import React, { useState, useEffect, useContext } from 'react'
 
-import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents, GeoJSON, WMSTileLayer } from 'react-leaflet'
+import { MapContainer, ScaleControl, LayersControl, TileLayer, useMap, ZoomControl, FeatureGroup, useMapEvents, WMSTileLayer } from 'react-leaflet'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
@@ -11,16 +11,24 @@ import { EditControl } from 'react-leaflet-draw'
 
 import referenciaMapaContext from '../contexts/ContenedorMapaContext'
 
+<<<<<<< HEAD
 //Si no es necesario cargar los marcadores
 // import "leaflet/dist/leaflet.css"
 //FullScreen
 import 'leaflet-fullscreen/dist/leaflet.fullscreen.css'
+=======
+import 'leaflet'
+import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
+>>>>>>> a0669e60220ea89e73fd76f9a0d4cb8cffd588dc
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
-//Leaflet draw
 import 'leaflet-draw/dist/leaflet.draw.css'
-//Leaflet zoomboz
 import 'leaflet-zoombox'
 import 'leaflet-zoombox/L.Control.ZoomBox.css'
+import 'leaflet-easybutton/src/easy-button.css'
+import 'leaflet-easybutton/src/easy-button.js'
+import 'leaflet-kml'
+import 'leaflet-easyprint'
+
 
 
 export default function Map(props) {
@@ -37,15 +45,9 @@ export default function Map(props) {
     //Para guardar el grupo de capas de dibujo
     var capasDib = null;
 
-    const [loadedFiles, setLoadedFiles] = useState([]);
-    useEffect(() => {
-        if (props.fileUpload)
-            setLoadedFiles([...loadedFiles, props.fileUpload]);
-    }, [props.fileUpload]);
-
     //Para guardar las referencias del mapa    
     useEffect(() => {
-        if (mapaReferencia != null) {
+        if (mapaReferencia != undefined) {
             // refMapContext.refMap = mapaReferencia;
             // refMapContext.objL = L;
             // refMapContext.referenciaMapa();
@@ -93,7 +95,6 @@ export default function Map(props) {
 
     useEffect(() => {
         let lDrLo = L.drawLocal;
-        lDrLo.draw.toolbar.buttons.polyline = "Dibujar una linea"
         lDrLo.draw.toolbar.buttons.polyline = "Dibujar una linea"
         lDrLo.draw.toolbar.buttons.polygon = "Dibujar un poligono"
         lDrLo.draw.toolbar.buttons.marker = "Dibujar un marcador"
@@ -272,22 +273,20 @@ export default function Map(props) {
                 </select>
             </div>
 
-            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false} >
+            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false}>
                 <ScaleControl maxWidth="100" />
                 <ZoomControl position="bottomright" zoomInTitle="Acercar" zoomOutTitle="Alejar" />
 
                 <LayersControl>
                     <BaseLayer checked name="INEGI">
                         <WMSTileLayer
-                        url="http://gaiamapas.inegi.org.mx/mdmCache/service/wms?" layers="MapaBaseTopograficov61_consombreado"
-                        className="tilelayer-base"
+                            url="http://gaiamapas.inegi.org.mx/mdmCache/service/wms?" layers="MapaBaseTopograficov61_consombreado"
                         />
                     </BaseLayer>
                     <BaseLayer name="Open street map">
                         <TileLayer
                             attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            className="tilelayer-base"
                         />
                     </BaseLayer>
                 </LayersControl>
@@ -295,7 +294,6 @@ export default function Map(props) {
                     <EditControl
                         position='topright'
                         draw={{
-                            rectangle: true,
                             circle: false,
                             circlemarker: false,
                         }}
@@ -304,24 +302,7 @@ export default function Map(props) {
                 </FeatureGroup>
                 <Dibujos />
                 <ControlMovimiento />
-                {
-                    loadedFiles.length > 0 && (
-                        loadedFiles.map((file, index) =>
-                            file.type == 'json' ? (
-                                <GeoJSON key={index}
-                                    data={file.data}
-                                />
-                            ) :
-                                file.type == 'kml' ? (
-                                    <ReactLeafletKml key={index}
-                                        kml={new DOMParser().parseFromString(file.data, 'text/xml')} />
-                                ) :
-                                    ''
-                        )
-                    )
-                }
             </MapContainer>
-
         </>
     )
 }

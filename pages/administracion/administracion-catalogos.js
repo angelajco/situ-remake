@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Tabs, Tab, Button, OverlayTrigger, Tooltip } from 'react-bootstrap'
+import { Tabs, Tab, Button, OverlayTrigger, Tooltip, Form, Modal } from 'react-bootstrap'
 
 import dynamic from 'next/dynamic'
 import Router from 'next/router'
@@ -12,16 +12,19 @@ import { faEye, faCheckCircle, faTimesCircle, faUser } from '@fortawesome/free-s
 import 'react-bootstrap-table2-filter/dist/react-bootstrap-table2-filter.min.css';
 import 'react-bootstrap-table2-toolkit/dist/react-bootstrap-table2-toolkit.min.css';
 import 'react-bootstrap-table2-paginator/dist/react-bootstrap-table2-paginator.min.css';
+
 import BootstrapTable from 'react-bootstrap-table-next';
+import cellEditFactory from 'react-bootstrap-table2-editor';
 import ToolkitProvider, { Search } from 'react-bootstrap-table2-toolkit';
 import paginationFactory from 'react-bootstrap-table2-paginator';
-import cellEditFactory from 'react-bootstrap-table2-editor';
 
 import ModalComponent from '../../components/ModalComponent';
 import ModalFunction from '../../components/ModalFunction';
 
 import Cookies from 'universal-cookie'
 const cookies = new Cookies()
+
+import {useForm} from 'react-hook-form' 
 
 export default function AdministracionCatalogos() {
 
@@ -32,14 +35,17 @@ export default function AdministracionCatalogos() {
     const rolCookie = cookies.get('RolUsuario')
     const estatusCookie = cookies.get('EstatusUsuario')
 
-    //Variable para guardar los usuarios
+    //Variable para guardar todos los catálogos
     const [catalogos, setCatalogos] = useState([])
+
+    //Variable para guardar los datos de un solo Catálogo
+    const [infoCatalogo, setInfoCatalogo] = useState()
+
+    const [columnasCat, setColumnasCat] = useState()
+    
     const [usuarios, setUsuarios] = useState([])
     const [noUsuarios, setNoUsuarios] = useState([])
     const [siUsuarios, setSiUsuarios] = useState([])
-    //Variable para guardar los datos de un solo usuario
-    const [infoCatalogo, setInfoCatalogo] = useState()
-
     //Datos para el modal component
     const [show, setShow] = useState(false);
     const [datosModal, setDatosModal] = useState(
@@ -63,7 +69,7 @@ export default function AdministracionCatalogos() {
     );
     //Estados para mostrar el modal component
     const handleCloseFunction = () => setShowFunction(false);
-    const handleShowFunction = () => setShowFunction(true);
+    //const handleShowFunction = () => setShowFunction(true);
 
     //Importar dinamicamente el loader
     const Loader = dynamic(() => import('../../components/Loader'));
@@ -90,6 +96,33 @@ useEffect(() => {
             .catch((error) => {
                 console.log('error ' + error);
             })
+            
+            fetch(`${process.env.ruta}/wa/prot/getOneCatalogo?id_catalogo=1` , {
+            headers: {
+                    Authorization: `Bearer ${tokenCookie}`
+                    }
+            })
+            .then(res => res.json())
+            .then(
+                (data) => {data.map(infoValor => {
+                        infoValor.idCatPadre = 1,
+                        setInfoCatalogo(data)
+                        })
+                //console.log(data, 'data_id_catalogos')
+                },
+                (error) => console.log(error)
+            )
+            
+            fetch(`${process.env.ruta}/wa/prot/getColumnasCatalogo?id_catalogo=1` , {
+            headers: {
+                    Authorization: `Bearer ${tokenCookie}`
+                    }
+            })
+                    .then(res => res.json())
+                    .then(
+                        (data) => setColumnasCat(data),
+                        (error) => console.log(error)
+            )
        }
         else {
             Router.push('/administracion/inicio-sesion')
@@ -112,23 +145,20 @@ useEffect(() => {
                 .then(function (response) {
                     setTokenSesion(response.data['success-boolean'])
                     
-
-                        
                     fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=5&id_rol=1,2`)
                         .then(res => res.json())
                         .then(
                             (data) => setUsuarios(data),
                             (error) => console.log(error)
                         )
-
-
-               
                 })
                 .catch(function (error) {
                     console.log(error)
                     cookies.remove('SessionToken', { path: "/" })
                     Router.push("/administracion/inicio-sesion")
                 })
+                
+
         }
         else {
             Router.push('/administracion/inicio-sesion')
@@ -143,8 +173,23 @@ useEffect(() => {
             })
             .then(res => res.json())
             .then(
-                (data) => setInfoCatalogo(data),
+                (data) => {data.map(infoValor => {
+                        infoValor.idCatPadre = id_catalogos,
+                        setInfoCatalogo(data)
+                        })
+                },
                 (error) => console.log(error)
+            )
+            
+        fetch(`${process.env.ruta}/wa/prot/getColumnasCatalogo?id_catalogo=${id_catalogos}` , {
+            headers: {
+                    Authorization: `Bearer ${tokenCookie}`
+                    }
+            })
+                    .then(res => res.json())
+                    .then(
+                        (data) => setColumnasCat(data),
+                        (error) => console.log(error)
             )
     }
 
@@ -152,27 +197,16 @@ useEffect(() => {
         setInfoCatalogo();
     }
 
-    const abrirModal = (usuario, valor) => {
-        handleShowFunction();
-        if (valor) {
-            setDatosModalFunction({
-                title: 'Autorización de usuario',
-                body: '¿Desea autorizar al usuario ' + usuario.email + "?",
-                id: usuario.id_usuario
-            });
-            setNombreFuncion(true)
-        }
-        else {
-            setDatosModalFunction({
-                title: 'Rechazo de usuario',
-                body: '¿Desea rechazar al usuario ' + usuario.email + "?",
-                id: usuario.id_usuario
-            });
-            setNombreFuncion(false)
-        }
+    const variableHeader = () => {
+     if (infoCatalogo != undefined) {
+          return infoCatalogo.map(x => Object.keys(x))
+          console.log(infoCatalogo.map(x => Object.keys(x))[0]);
+      }
     }
+    
 
 
+ 
     
     const completaNombre = (cell, row) => {
         return row.catalogo
@@ -204,52 +238,52 @@ useEffect(() => {
     ];
 
 
+    
     //Acciones Sobre solo un catálogo    
     const accionesOneCatalogo = (cell, row) => {
         return (
             <div className="tw-text-center">
-                <OverlayTrigger placement="bottom" overlay={<Tooltip>Ver información</Tooltip>}>
-                    <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer" onClick={() => muestraInfo(row.id_ambito_actuacion)} icon={faEye}></FontAwesomeIcon>
+                <OverlayTrigger placement="bottom" overlay={<Tooltip>Actualizar</Tooltip>}>
+                    <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer tw-text-inst-verdec" onClick={() => abrirModal(row, true)} icon={faCheckCircle}></FontAwesomeIcon>
                 </OverlayTrigger>
             </div>
         )
     }
-    
-        
-        
-    const conceptoColumna = (cell, row) => {
-        return catalogos[0]['llave']
-    }
-    
-    const idCatalogo = (cell, row) => {
-        return row.id_catalogos
-    }
-    
-         console.log('idCatalogo: ');
-    console.log(idCatalogo);
-    
-    //console.log(catalogos[0]['llave']);
-    
-    const columnsOneCatalogo = [
-        {
-            dataField: "'"+conceptoColumna+"'",
-            text: "'"+conceptoColumna+"'"
-           // formatter: conceptoColumna
-        },
-        {
-            dataField: 'descripcion',
-            text: 'Descripcion'
-        },
-        {
-            dataField: 'en_uso',
-            text: 'En uso',
-        },
-        {
-            dataField: 'acciones',
-            text: 'Acciones',
-            formatter: accionesOneCatalogo
+         
+  /*  const variableHeader = (cell, row) => {
+     if (infoCatalogo != undefined) {
+          return infoCatalogo.map(x => Object.keys(x)[1])[0]
+          console.log(infoCatalogo.map(x => Object.keys(x)[1])[0]);
+      }
+      else
+      {
+         return variableHeader = 'genero';
+      }
+    }*/
+          
+    const variableConcepto = (cell, row) => {
+            if (infoCatalogo != undefined) {
+                const res = infoCatalogo.map(x => Object.keys(x));
+                return row[res]
+                console.log(row[res], 'conceptos');
+            }
         }
-    ];
+        
+    //ColumnasFormulario2Dinamicas    
+    let variable1 = "[";
+    
+    let variable2 = "";
+    if (columnasCat != undefined) {
+        for(var i = 0; i < columnasCat.length; i++){
+            variable2=variable2+"{dataField : '" + columnasCat[i] + "',text : '" + columnasCat[i] + "'},";
+        }
+    }
+    
+    let variable3 = "{dataField: 'acciones', text: 'Acciones', formatter: accionesOneCatalogo, editable: false}];";
+
+    let variableFinal = variable1 + variable2 + variable3;  
+    
+    const columnsOneCatalogo = eval(variableFinal)
     
     const pagination = paginationFactory({
         sizePerPage: 10,
@@ -260,34 +294,213 @@ useEffect(() => {
         nextPageTitle: []
     });
 
+    //ActualizarDato
+    //InicializarObjetoVacio
+    const columsNull = () => {
+        if (infoCatalogo != undefined) { 
+            let catalogoNull = {};
+            
+            for (var i = 0; i < columnasCat.length; i++){
+                catalogoNull[columnasCat[i]] = null;
+            }
+            return catalogoNull
+        }
+    }
+
+    
+    //const hola = {id_ambito_actuacion: null, ambito_actuacion: null, descripcion: null, en_uso: null}
+    const [updateInfoCatalogo, setUpdateInfoCatalogo] = useState(columsNull)
+    
+    const abrirModal = (infoCatalogo) => {
+            const catalogoFull = [];
+           
+            for (var i = 0; i < columnasCat.length; i++){
+                catalogoFull.push(columnasCat[i]+" : infoCatalogo."+columnasCat[i]);
+            }
+            const textCatFull = eval("({"+catalogoFull.join()+"})");
+
+        setUpdateInfoCatalogo(textCatFull)
+        setShowFunction(true);
+            setDatosModalFunction({
+                title: 'Actualización de catálogos',
+                body: '¿Desea actualizar ' + columnasCat[1] + "?",
+                id: infoCatalogo.idCatPadre
+            });
+        }
+
+    
+    const updateCatalogo = (id) => {
+        handleCloseFunction();
+        const urlprueba = [];
+        for (var i = 0; i < columnasCat.length; i++){
+                urlprueba.push(columnasCat[i]+"='${updateInfoCatalogo."+columnasCat[i]+"}'");
+        }
+        const urlFinal = eval('`'+urlprueba.join('&')+'`');
+        
+        console.log(urlFinal, 'urlFinal');
+        var config = {
+            method: 'get',
+            url: `${process.env.ruta}/wa/prot/updateDatoCatalogo?id_catalogo=${id}&${urlFinal}`,
+            headers: {
+                'Authorization': `Bearer ${tokenCookie}`
+            },
+        };
+        axios(config)
+            .then(function (response) {
+                setDatosModal({
+                    title: response.data['message-subject'],
+                    body: response.data['message']
+                })
+                handleShow();
+
+                fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=5&id_rol=1,2`)
+                    .then(res => res.json())
+                    .then(
+                        (data) => setUsuarios(data),
+                        (error) => console.log(error)
+                    )
+
+                fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=10`)
+                    .then(res => res.json())
+                    .then(
+                        (data) => setSiUsuarios(data),
+                        (error) => console.log(error)
+                    )
+
+        fetch(`${process.env.ruta}/wa/prot/getOneCatalogo?id_catalogo=${id}` , {
+            headers: {
+                    Authorization: `Bearer ${tokenCookie}`
+                    }
+            })
+            .then(res => res.json())
+            .then(
+                (data) => {data.map(infoValor => {
+                        infoValor.idCatPadre = id,
+                        setInfoCatalogo(data)
+                        })
+                },
+                (error) => console.log(error)
+            )
+
+            })
+            .catch(function (error) {
+                console.log(error);
+                setDatosModal({
+                    title: "Conexión no establecida",
+                    body: "El tiempo de respuesta se ha agotado, favor de intentar más tarde."
+                })
+                handleShow();
+            })
+    }
+    
+    //NuevoRenglon
+    const [abreNuevoRenglon, setAbreNuevoRenglon] = useState(false);
+    const {register: registroNuevoRenglon, handleSubmit: handleNuevoRenglon, errors: errorNuevoRenglon,  setError: setErrorNuevoRenglon} = useForm()
+    
+    const submitNuevoRenglon = (data) => {     
+        
+            const res = infoCatalogo.map(x => Object.keys(x));
+            console.log(res, 'conceptos');
+                
+        const foundId = infoCatalogo.find(({ id_concepto }) => id_concepto == data.idrow);
+        if(foundId != undefined)
+            {
+            window.alert('Error: id ' + data.idrow + ' ya esta en uso')
+            }
+        else
+            {
+            let idPadre = infoCatalogo[0].idCatPadre   
+            }
+            
+    /*    var config = {
+            method: 'get',
+            url: `${process.env.ruta}/wa/prot/insertDatoCatalogo?id_catalogo=${idPadre}&concepto='${data.concepto}'&descripcion='${data.descripcion}'&boleano='${data.enUso}'`,
+            headers: {
+                'Authorization': `Bearer ${tokenCookie}`
+            },
+        };
+        axios(config)
+            .then(function (response) {
+                setDatosModal({
+                    title: response.data['message-subject'],
+                    body: response.data['message']
+                })
+                handleShow();
+
+        fetch(`${process.env.ruta}/wa/prot/getOneCatalogo?id_catalogo=${idPadre}` , {
+            headers: {
+                    Authorization: `Bearer ${tokenCookie}`
+                    }
+            })
+            .then(res => res.json())
+            .then(
+                (data) => {data.map(infoValor => {
+                        infoValor.idCatPadre = idPadre,
+                        setInfoCatalogo(data)
+                        })
+                },
+                (error) => console.log(error)
+            )
+
+                fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=10`)
+                    .then(res => res.json())
+                    .then(
+                        (data) => setSiUsuarios(data),
+                        (error) => console.log(error)
+                    )
+
+                fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=93`)
+                    .then(res => res.json())
+                    .then(
+                        (data) => setNoUsuarios(data),
+                        (error) => console.log(error)
+                    )
+
+            })
+            .catch(function (error) {
+                console.log(error);
+                setDatosModal({
+                    title: "Conexión no establecida",
+                    body: "El tiempo de respuesta se ha agotado, favor de intentar más tarde."
+                })
+                handleShow();
+            })*/
+    }
+    
+    /*const nuevoRenglon = () => {
+        setAbreNuevoRenglon(true)
+
+       // Object.keys(infoCatalogo[0]).map(valor => {console.log(valor, 'valor')})
+    }*/
+    
+    let variableModal1 = "<Modal show={abreNuevoRenglon} onHide={() => setAbreNuevoRenglon(!abreNuevoRenglon)} keyboard={false} backdrop='static' >                    <Modal.Header closeButton><Modal.Title>Nuevo registro</Modal.Title></Modal.Header><Modal.Body><Form onSubmit={handleNuevoRenglon(submitNuevoRenglon)}>";
+                            
+    let variableModal2 = "";
+    if (columnasCat != undefined) {
+        for(var i = 0; i < columnasCat.length; i++){
+            variableModal2=variableModal2+"<Form.Group controlId='form"+columnasCat[i]+"'><Form.Label>"+columnasCat[i]+"</Form.Label><Form.Control name='"+columnasCat[i]+"' ref = {registroNuevoRenglon} type='text' /></Form.Group>";
+        }
+    }
+    
+    let variableModal3 = "<Button variant='outline-danger' type='submit'>Registrar</Button></Form></Modal.Body></Modal>";
+          
+    let varModelFinal = variableModal1 + variableModal2 + variableModal3;
+       
     return (
         <>
-            {
-                nombreFuncion == true ?
                     <ModalFunction
                         show={showFunction}
                         datos={datosModalFunction}
                         onHide={handleCloseFunction}
                         onClick={handleCloseFunction}
-                        funcion={autoriza}
+                        funcion={updateCatalogo}
                     />
-                    :
-                    <ModalFunction
-                        show={showFunction}
-                        datos={datosModalFunction}
-                        onHide={handleCloseFunction}
-                        onClick={handleCloseFunction}
-                       // funcion={rechaza}
-                    />
-            }
 
-            <ModalComponent
-                show={show}
-                datos={datosModal}
-                onHide={handleClose}
-                onClick={handleClose}
-            />
 
+
+
+
+                     
             {
                 tokenSesion
                     ?
@@ -297,10 +510,10 @@ useEffect(() => {
                             <div className="row">
                                 <div className="col-12 col-tabs-usuarios">
 
-                                    <Tabs defaultActiveKey="autorizar" className="tabs-autorizacion">
-                                        <Tab eventKey="autorizar" title="Administración de Catálogos" className="tab-tabla">
+                                    <Tabs defaultActiveKey="actualizar" className="tabs-autorizacion">
+                                        <Tab eventKey="actualizar" title="Administración de Catálogos" className="tab-tabla">
 
-                                            <ToolkitProvider keyField="id_catalogos" data={catalogos} columns={columnsCatalogos} search={{ searchFormatted: true }}>
+                                            <ToolkitProvider keyField="id_concepto" data={catalogos} columns={columnsCatalogos} search={{ searchFormatted: true }}>
                                                 {
                                                     props => (
                                                         <>
@@ -308,7 +521,7 @@ useEffect(() => {
                                                                 <SearchBar
                                                                     {...props.searchProps}
                                                                     placeholder="Buscar"
-                                                                    tableId="autorizar"
+                                                                    tableId="actualizar"
                                                                 />
                                                             </div>
                                                             <BootstrapTable
@@ -317,10 +530,6 @@ useEffect(() => {
                                                                 pagination={pagination}
                                                                 headerClasses="tabla-usuarios-header"
                                                                 wrapperClasses="table-responsive"
-                                                                cellEdit={ cellEditFactory({
-                                                                    mode: 'click',
-                                                                    blurToSave: true
-                                                                }) }
                                                             />
                                                         </>
                                                     )
@@ -329,15 +538,18 @@ useEffect(() => {
                                         </Tab>
                         
                                     </Tabs>
+                
+
+
 
                                     {
                                         infoCatalogo && (
                                             <>
                                               
-                                              <Tabs defaultActiveKey="acciones" className="tabs-autorizacion">
+                                        <Tabs defaultActiveKey="acciones" className="tabs-autorizacion">
                                         <Tab eventKey="acciones" title="Catálogo: " className="tab-tabla">
 
-                                            <ToolkitProvider keyField="id_catalogos" data={infoCatalogo} columns={columnsOneCatalogo} search={{ searchFormatted: true }}>
+                                            <ToolkitProvider keyField="id" data={infoCatalogo} insertRow columns={columnsOneCatalogo} search={{ searchFormatted: true }}>
                                                 {
                                                     props => (
                                                         <>
@@ -348,13 +560,22 @@ useEffect(() => {
                                                                     tableId="acciones"
                                                                 />
                                                             </div>
+                                                            
+
                                                             <BootstrapTable
                                                                 {...props.baseProps}
                                                                 noDataIndication="No hay resultados de la búsqueda"
-                                                                pagination={pagination}
+                                                               // pagination={pagination}
                                                                 headerClasses="tabla-usuarios-header"
                                                                 wrapperClasses="table-responsive"
+                                                                cellEdit={ cellEditFactory({
+                                                                    mode: 'click',
+                                                                    blurToSave: true                                                 
+                                                                }) }
                                                             />
+
+                                                        
+                                                        
                                                         </>
                                                     )
                                                 }

@@ -2,28 +2,41 @@ import React, { useState, useEffect, useContext, Fragment } from 'react';
 import { Controller, useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle } from '@fortawesome/free-solid-svg-icons';
+import { faPaintBrush, faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle } from '@fortawesome/free-solid-svg-icons';
 import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
 import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 import { CSVLink } from "react-csv";
 import { Typeahead } from 'react-bootstrap-typeahead';
-import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
+
 import * as toPdf from '@react-pdf/renderer';
 import * as htmlToImage from 'html-to-image';
+import * as turf from '@turf/turf';
+
 
 import $ from 'jquery';
-import * as turf from '@turf/turf';
 import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
 import dynamic from 'next/dynamic';
 import shpjs from 'shpjs';
 import xml2js from 'xml2js'
 import xpath from 'xml2js-xpath'
+// import omnivore from '@mapbox/leaflet-omnivore'
+
 
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 import ModalAnalisis from './ModalAnalisis'
 import catalogoEntidades from "../shared/jsons/entidades.json";
+
+//Son algunos elementos para la funcionalidad de simbologia
+import randomColor from 'randomcolor';
+import Sim from './SimbologiaCapa';
+import coloresPaletta from "../shared/jsons/colores.json";
+import coloresJ from "../shared/jsons/ColoresSelect.json";
+import TablaSimbologia from './TablaSimbologia';
+import TablaLib from './TablaLibre';
+
+
 
 const Map = dynamic(
     () => import('./MapAnalisis'),
@@ -42,14 +55,56 @@ const MapEspejo = dynamic(
 )
 
 var referenciaMapa = null;
+//son algunas variables para Simbologia
+var jsonSimbologia = [];
+var simbologiaF = {};
+var colorB = [];
+var omisionColor;
 
 function ContenedorMapaAnalisis(props) {
 
+    //------------------Betty-------------------------------
+    //variables utilizadas para simbologia 
+    //Funciones y variables para cambios de estilos
+    var [valorEstilos, setValorEstilos] = useState()
+    var [colorFill, setColorFill] = useState('#FF7777')
+    var [color, setColorFill] = useState('#FF7777')
+    var [colorborder, setColorBorder] = useState('#FF0000')
+    var [showModalEstilos, setShowModalEstilos] = useState(false)
+    var [capaSeleccionada, setCapaSeleccionada] = useState(null)
+    var [rango, setRango] = useState(null)
+    var [valoresCampo, setValoresCampo] = useState([])
+    var [tipoTrata, setTipoTrata] = useState()
+    var [tipoDiv, setTipoDiv] = useState(null)
+    var [nomAtributos, setNomAtributos] = useState([])
+    var [varSeleccionada, setVarSeleccionada] = useState(-1)
+    var [auxSelect, setAuxSelect] = useState([])
+    var [cuantil, setCuantil] = useState()
+    var [tipoColor, setTipoColor] = useState()
+    const [rangoAux, setRangoAux] = useState(null);
+    const [intervalo, setIntervalo] = useState(null);
+
+    const trata = [
+        { value: '1', label: 'Libre' },
+        { value: '2', label: 'Valores unicos' },
+        { value: '4', label: 'Cuantiles' },
+        { value: '3', label: 'Rangos Equidistantes' }
+    ];
+
+    const cuantil1 = [
+        { value: '1', label: 'Cuartiles' },
+        { value: '2', label: 'Quintiles' },
+        { value: '3', label: 'Deciles' }
+    ];
+
+
+
     const [polygonDrawer, setPolygonDrawer] = useState();
     const [zIndexCapas, setZIndex] = useState(0)
+    const [numeroIndex, setNumeroIndex] = useState(300);
     //Obten referencia del mapa
     const [capturoReferenciaMapa, setCapturoReferenciaMapa] = useState(false)
-    function capturaReferenciaMapa(mapa) {
+    function capturaReferenciaMapa(mapa, objeto) {
         referenciaMapa = mapa;
         if (referenciaMapa != null) {
             setTimeout(() => {
@@ -58,8 +113,9 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
-    const [listaMunicipios, setListaMunicipios] = useState([])
-
+    // const [listaMunicipios, setListaMunicipios] = useState([])
+    //Para saber si hubo una conexión con la base de datos
+    const [conexionEndPointGetCapas, setConexionEndPointGetCapas] = useState(false);
     useEffect(() => {
         //Datos para construir el catalogo
         fetch(`${process.env.ruta}/wa/publico/getCapas/`)
@@ -67,6 +123,7 @@ function ContenedorMapaAnalisis(props) {
             .then(
                 (data) => {
                     construyeCatalogoTemas(data);
+                    setConexionEndPointGetCapas(true);
                 },
                 (error) => console.log(error)
             )
@@ -328,19 +385,37 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
+    //Para buscar los metadatos de la capa
+    const { register: registraAgregaCapa, handleSubmit: handleAgregaCapa, control: controlAgregaCapa } = useForm();
+    const submitAgregaCapa = (data) => {
+        let capa = JSON.parse(data.capa);
+        if (capa.filtro_minimo == "0") {
+            if (data.entidadAgregar.length != 0) {
+                construyeEntidadCapa(capa, data.entidadAgregar[0])
+            } else {
+                construyeNacionalCapa(capa)
+            }
+        } else if (capa.filtro_minimo == "5") {
+            if (data.entidadAgregar.length != 0) {
+                construyeEntidadCapa(capa, data.entidadAgregar[0])
+            } else {
+                console.log("se debe agregar una capa");
+            }
+        }
+    }
+
     //Muestra los botones de mosaico o elementos
     const [botonesAgregaCapaIdeWFSWMS, setBotonesAgregaCapaIdeWFSWMS] = useState([false, null])
-    //Checa si se tienen que mostrar los botnes de mosaico o elementos o no
+    //Checa si se tienen que mostrar los botones de mosaico o elementos o no
     const agregaCapaBusquedaIde = (e) => {
         let capaIde = JSON.parse(e.target.value)
         setBotonesAgregaCapaIdeWFSWMS([])
-        setEntidadesMostrarListado(false)
         setBotonesAgregaCapaIdeWFSWMS([true, capaIde])
     }
 
     //Para crear la simbologia de las capas WMS
-    const creaSVG = (nombreCapa) => {
-        var creaSVG = `<svg height='20' xmlns='http://www.w3.org/2000/svg'><rect x='0' y='0' width='15' height='15' fill='#FF7777' stroke='#FF0000' strokeWidth='2'></rect><text x='20' y='15' width='200' height='200' fontSize='12.5' fontWeight='500' font-family='Montserrat, sans-serif'>${nombreCapa}</text></svg>`
+    const creaSVG = (nombreCapa, estilos) => {
+        var creaSVG = `<svg height='20' xmlns='http://www.w3.org/2000/svg'><rect x='0' y='0' width='15' height='15' fill='${estilos.fillColor}' stroke='${estilos.color}' strokeWidth='2'></rect><text x='20' y='15' width='200' height='200' fontSize='12.5' fontWeight='500' font-family='Montserrat, sans-serif'>${nombreCapa}</text></svg>`
         var DOMURL = self.URL || self.webkitURL || self;
         var svg = new Blob([creaSVG], { type: "image/svg+xml;charset=utf-8" });
         var url = DOMURL.createObjectURL(svg);
@@ -406,7 +481,6 @@ function ContenedorMapaAnalisis(props) {
             capaWMS["transparencia"] = 1;
             capaWMS["zoomMinimo"] = 5;
             capaWMS["zoomMaximo"] = 18;
-            capaWMS.isActive = false;
             //fuente = 0, proviene de la IDE
             //fuente = 1, proviene de un servicio
             if (fuente == 0) {
@@ -431,7 +505,7 @@ function ContenedorMapaAnalisis(props) {
             }
             setZIndex(zIndexCapas + 1)
             referenciaMapa.createPane(`${zIndexCapas}`)
-            referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = 650 + capasVisualizadas.length;
+            referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
             let layer = L.tileLayer.wms(capaWMS.url, {
                 layers: capaWMS.layers,
                 format: capaWMS.format,
@@ -453,10 +527,6 @@ function ContenedorMapaAnalisis(props) {
             setShowModalAnalisis(true);
         }
     }
-
-    //Para mostrar el catalogo entidades
-    const [entidadesMostrarListado, setEntidadesMostrarListado] = useState(false)
-    const [municipiosMostrarListado, setMunicipiosMostrarListado] = useState(false)
 
 
     const agregaCapaWFS = (capaFiltrada) => {
@@ -496,13 +566,13 @@ function ContenedorMapaAnalisis(props) {
                     response["habilitado"] = true;
                     response['tipo'] = capaFiltrada.tipo;
                     response['transparencia'] = 1;
-                    response['simbologia'] = creaSVG(capaFiltrada.titulo)
+                    response['simbologia'] = creaSVG(capaFiltrada.titulo, capaFiltrada.estilos)
                     response.download = [{ nom_capa: response.nom_capa, link: JSON.stringify(response), tipo: 'GeoJSON' }];
                     // response.cveEnt = capaFiltrada.valor_filtro;
                     response.isActive = false;
                     setZIndex(zIndexCapas + 1)
                     referenciaMapa.createPane(`${zIndexCapas}`)
-                    referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = 650 + capasVisualizadas.length;
+                    referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
                     let layer = L.geoJSON(response, {
                         pane: `${zIndexCapas}`,
                         style: capaFiltrada.estilos,
@@ -514,6 +584,7 @@ function ContenedorMapaAnalisis(props) {
                             })
                         }
                     });
+                    console.log(layer, "layer wfs")
                     response['layer'] = layer;
                     // setCapasVisualizadas([...capasVisualizadas, response])
                     setCapasVisualizadas([response, ...capasVisualizadas])
@@ -544,13 +615,851 @@ function ContenedorMapaAnalisis(props) {
         let arrTemp = capasVisualizadas.filter(capaArr => capaArr.nom_capa != capa.nom_capa)
         //Para reordenar el z index de las capas
         arrTemp.map((valor, index) => {
-            referenciaMapa.getPane(valor.layer.options.pane).style.zIndex = 650 + arrTemp.length - index - 1;;
+            referenciaMapa.getPane(valor.layer.options.pane).style.zIndex = numeroIndex + arrTemp.length - index - 1;;
         })
         setCapasVisualizadas(arrTemp);
 
         let paneRemove = referenciaMapa.getPane(capa.layer.options.pane)
         paneRemove.remove();
+
+        //esto es para eliminar los datos de memoria
+        let index;
+        for (let i = 0; i < jsonSimbologia.length; i++) {
+            if (jsonSimbologia[i].name == capa.nom_capa) {
+                // console.log(capa.nom_capa);
+                index = i;
+            }
+        }
+        jsonSimbologia.splice(index, 1);
+
+
+
     }
+
+
+
+    //////////////////////////////////////Aqui empieza el codigo para cambiar la simbologia del
+
+    ///---------------------Betty1--------------------------------------
+    //aqui empiezan los codigos para simbologia
+    const [simboAux, setSimboAux] = useState({});
+    const cambioEstilos = (capa) => {
+        console.log(capa);
+        let band = false;
+        //con este metodo verificamos la capa seleccionada 
+        //y si es wfs se puede editar
+        if (capa.tipo == 'wfs' || capa.tipo == 'json' ) {
+            setAtributos([capa.features, capa.nom_capa])
+            setCapaSeleccionada(capa);
+            setShowModalEstilos(true)
+            if (atributos != null) {
+                setNomAtributos(Object.keys(capa.features[0].properties))
+                setAuxSelect(Object.keys(capa.features[0].properties))
+            }
+            //buscamos la capa en el Json de configuracion 
+            for (let i = 0; i < jsonSimbologia.length; i++) {
+                if (jsonSimbologia[i].name == capa.nom_capa) {
+                    setTipoTrata(jsonSimbologia[i].tipoTrata);
+                    setCuantil(jsonSimbologia[i].cuantil);
+                    setValorEstilos(jsonSimbologia[i].valorEstilos);
+                    setVarSeleccionada(jsonSimbologia[i].varSeleccionada);
+                    setTipoDiv(jsonSimbologia[i].tipoDiv);
+                    setRango(jsonSimbologia[i].rango);
+                    if (valorEstilos == 1) {
+                        setRango(null);
+                        setSimboAux(jsonSimbologia[i]);
+                        setIntervalo(null);
+                    } else {
+                        setIntervalo(jsonSimbologia[i].intervalo);
+                    }
+                    simbologiaF = jsonSimbologia[i].simbologia;
+                    setNomAtributos(jsonSimbologia[i].nomAtributos);
+                } else {
+                    band = true;
+                }
+            }
+
+            if (band == true) {
+                setTipoTrata(null);
+                setCuantil(null);
+                setRango(null);
+                setValorEstilos(null);
+                setVarSeleccionada(-1);
+                setTipoDiv(null);
+                simbologiaF = {};
+                setTipoTrata(null);
+                setNomAtributos([]);
+            }
+
+        } else {
+            setShowModalEstilos(true)
+
+        }
+    }
+
+    const [colorOmision, setColorOmision] = useState('#000000');
+    function cambioColorO(e) {
+        //console.log(e.target.value);
+        setColorOmision(e.target.value)
+        omisionColor = e.target.value;
+        //console.log(omisionColor);
+        //aplicarEstilo();
+    }
+
+    function generarT() {
+        let tab = document.getElementById("tablaR");
+        if (tab != null) {
+            tab.innerHTML = '';
+            tab.innerHTML += simbologiaF.tablahtml(1);
+        }
+
+    }
+
+
+    const handleChangeCuantil = selectedOption => {
+        let opt;
+        if (selectedOption[0] != null) {
+            opt = selectedOption[0]['value'];
+            setCuantil(selectedOption);
+            // console.log(opt);
+        } else {
+            setCuantil(selectedOption);
+            opt = -1;
+        }
+        //funcion para cambiar el tipo de division cantil, quintil, decil 
+
+        if (opt == 1) {
+            setTipoDiv("Cuartiles")
+            tipoDiv = "Cuartiles";
+            //console.log("Selecciono Cuartiles")
+        } else {
+            if (opt == 3) {
+                setTipoDiv("Deciles")
+                tipoDiv = "Deciles";
+                //console.log("Selecciono Deciles")
+            } else {
+                if (opt == 2) {
+                    setTipoDiv("Quintiles")
+                    tipoDiv = "Quintiles";
+                    //console.log("Quintiles")
+                }
+            }
+        }
+    }
+
+    const handleChangeColores = selectedOption => {
+
+        let op;
+        //console.log(selectedOption)
+        if (selectedOption[0] != null) {
+            op = selectedOption[0]['value'];
+            //setTipoColor(selectedOption);
+            colorB = coloresPaletta[op].colores;
+            aplicarEstilo();
+        } else {
+            setTipoColor(selectedOption)
+            op = -1;
+        }
+
+
+    }
+
+
+    const handleChangeEstilo = selectedOption => {
+        var option;
+        if (selectedOption[0] != null) {
+            option = selectedOption[0]['value'];
+            setTipoTrata(selectedOption);
+            //console.log(option);
+        } else {
+            setTipoTrata(selectedOption);
+            option = -1;
+        }
+
+        nomAtributos = auxSelect;
+        let nomAux = [];
+        var aux = capaSeleccionada.features[0].properties
+        setValorEstilos(option)
+        if (option == '1') {
+            let nomAux = [];
+            tipoTrata = 'Libre'
+            //se obtienen los nombres de variables a utilizar en este tipo de filtro number
+            if (nomAux.length > 0) {
+                nomAux.splice(0, nomAux.length);
+            }
+            for (let i = 0; i < nomAtributos.length; i++) {
+                var aux1 = typeof (aux[nomAtributos[i]]);
+                if (aux1 == 'number') {
+                    nomAux.push(nomAtributos[i])
+                }
+            }
+            setNomAtributos(nomAux);
+            nomAtributos = nomAux;
+            //console.log(nomAtributos);
+
+        }
+        if (option == '2') {
+            let nomAux = [];
+            //setTipoTrata("Valores Unicos")
+            tipoTrata = 'Valores Unicos';
+            if (nomAux.length > 0) {
+                nomAux.splice(0, nomAux.length);
+            }
+            for (let i = 0; i < nomAtributos.length; i++) {
+                var aux1 = typeof (aux[nomAtributos[i]]);
+                if (aux1 == 'string') {
+                    nomAux.push(nomAtributos[i])
+                }
+            }
+            //setNomAtributos(nomAux);
+
+            setNomAtributos(nomAux);
+            nomAtributos = nomAux;
+            //console.log(nomAtributos);
+
+        }
+        if (option == '3') {
+            //setTipoTrata("Rangos Equidistantes")
+            tipoTrata = 'Rangos Equidistantes';
+            //se obtienen los nombres de variables a utilizar en este tipo de filtro number
+            if (nomAux.length > 0) {
+                nomAux.splice(0, nomAux.length);
+            }
+            for (let i = 0; i < nomAtributos.length; i++) {
+                var aux1 = typeof (aux[nomAtributos[i]]);
+                if (aux1 == 'number') {
+                    nomAux.push(nomAtributos[i])
+                }
+            }
+            setNomAtributos(nomAux);
+
+        }
+        if (option == '4') {
+            //setTipoTrata("Cuantiles")
+            tipoTrata = 'Cuantiles';
+            if (nomAux.length > 0) {
+                nomAux.splice(0, nomAux.length);
+            }
+            for (let i = 0; i < nomAtributos.length; i++) {
+                var aux1 = typeof (aux[nomAtributos[i]]);
+                if (aux1 == 'number') {
+                    nomAux.push(nomAtributos[i])
+                }
+            }
+            setNomAtributos(nomAux);
+        }
+        if (option == '5') {
+            //setTipoTrata("Rompimientos Naturales de Jenks")
+            tipoTrata = 'Rompimientos Naturales de Jenks';
+            if (nomAux.length > 0) {
+                nomAux.splice(0, nomAux.length);
+            }
+            for (let i = 0; i < nomAtributos.length; i++) {
+                var aux1 = typeof (aux[nomAtributos[i]]);
+                if (aux1 == 'number') {
+                    nomAux.push(nomAtributos[i])
+                }
+            }
+            setNomAtributos(nomAux);
+
+        }
+
+    };
+
+    //funcion que captura el valor de numero de intervalos
+    function cambioRango(rang) {
+        rango = rang.target.value;
+        setRango(rang.target.value);
+    }
+
+    //funcion que captura el valor de numero de intervalos
+    //cuando es estilo libre
+
+
+    function cambioRango1(rang) {
+        setRangoAux(rang.target.value);
+        setIntervalo(rang.target.value)
+        simbologiaF = {};
+        generarTabla(rang.target.value);
+
+    }
+
+    //funcion para guardar el atributo sobre el que se va a trabajar 
+    function campoUtilizado(campo) {
+        //console.log(campo);
+        varSeleccionada = campo;
+        setVarSeleccionada(campo);
+        //setAuxSelect(nomAtributos[campo])
+
+        let valores = [];
+        for (var i = 0; i < capaSeleccionada.features.length; i++) {
+            var aux = capaSeleccionada.features[i].properties
+            valores.push(aux[nomAtributos[campo]]);
+        }
+        valoresCampo = valores;
+        setValoresCampo(valores);
+        //console.log(nomAtributos[campo]);
+        if (valorEstilos == 2) {
+            aplicarEstilo();
+        }
+    }
+
+    function generarTabla(num) {
+        // Obtener la referencia del elemento body
+        var body = document.getElementById("tablaI");
+        body.innerHTML = '';
+
+        // Crea un elemento <table> y un elemento <tbody>
+        var tabla = document.createElement("table");
+        var tblBody = document.createElement("tbody");
+
+        var tblhead = document.createElement("thead");
+        var h1 = document.createElement("tr");
+
+        var textoCelda = document.createTextNode("Valor Inicial");
+        var celda = document.createElement("th");
+        celda.appendChild(textoCelda);
+        h1.appendChild(celda);
+        tblhead.appendChild(h1);
+
+        var celda1 = document.createElement("th");
+        var textoCelda1 = document.createTextNode("Valor Final");
+        celda1.appendChild(textoCelda1);
+        h1.appendChild(celda1);
+        tblhead.appendChild(h1);
+
+        var celda1 = document.createElement("th");
+        var textoCelda1 = document.createTextNode("Leyenda");
+        celda1.appendChild(textoCelda1);
+        h1.appendChild(celda1);
+        tblhead.appendChild(h1);
+
+        var celda1 = document.createElement("th");
+        var textoCelda1 = document.createTextNode("Color");
+        celda1.appendChild(textoCelda1);
+        h1.appendChild(celda1);
+        tblhead.appendChild(h1);
+
+        var celda1 = document.createElement("th");
+        var textoCelda1 = document.createTextNode("Borde");
+        celda1.appendChild(textoCelda1);
+        h1.appendChild(celda1);
+        tblhead.appendChild(h1);
+
+
+        tabla.appendChild(tblhead);
+        let num1 = 0;
+        // Crea las celdas
+        for (var i = 0; i < num; i++) {
+            // Crea las hileras de la tabla
+            var hilera = document.createElement("tr");
+
+            for (var j = 0; j < 5; j++) {
+                // Crea un elemento <td> y un nodo de texto, haz que el nodo de
+                // texto sea el contenido de <td>, ubica el elemento <td> al final
+                // de la hilera de la tabla
+                let celda = document.createElement("td");
+                let input = document.createElement("input");
+                if (j == 3 || j == 4) {
+                    //var input = document.createElement("input");
+                    input.setAttribute("type", "color");
+                    input.setAttribute("id", "" + num1);
+                } else {
+                    input.setAttribute("type", "text");
+                    input.setAttribute("id", "" + num1);
+                    input.setAttribute('size', '7');
+                }
+                if (j == 5) {
+                    input.setAttribute('size', '7');
+                    input.setAttribute("type", "number");
+                }
+                num1++;
+
+                celda.appendChild(input);
+                hilera.appendChild(celda);
+            }
+
+            // agrega la hilera al final de la tabla (al final del elemento tblbody)
+            tblBody.appendChild(hilera);
+        }
+        // posiciona el <tbody> debajo del elemento <table>
+        tabla.appendChild(tblBody);
+        // appends <table> into <body>
+        body.appendChild(tabla);
+        // modifica el atributo "border" de la tabla y lo fija a "2";
+        tabla.setAttribute("class", "table-wrapper-scroll-y my-custom-scrollbar");
+        tabla.setAttribute("id", "tab");
+
+    }
+
+    function shuffle(arr) {
+        var i,
+            j,
+            temp;
+        for (i = arr.length - 1; i > 0; i--) {
+            j = Math.floor(Math.random() * (i + 1));
+            temp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
+        }
+        return arr;
+    };
+
+
+
+    //funcion para aplicar el estilo
+    function aplicarEstilo() {
+        if (capaSeleccionada.tipo == 'wfs' || capaSeleccionada.tipo == 'json') {
+            //verificamos que la capa se a wfs para poder editarla
+            if (valorEstilos == 4) {
+                if (tipoDiv == "Cuartiles") {
+                    let colores = [];
+                    let sim1 = new Sim();
+                    //generamos los colores apartir del seleccionado por el usuari0
+                    if (colores.length > 0) {
+                        colores.splice(0, colores.length);
+                    }
+
+                    colores = shuffle(colorB);//randomColor({ count: 4, hue: colorFill });
+                    let au1 = sim1.generaCuantiles(4, valoresCampo, colores, "Cuartil ", "#000000", 1);
+
+                    simbologiaF = au1;
+                    setRangoAux(4);
+                    sim1 = null;
+                    //se deben guardar todas las configuraciones de la capa
+                }//termina el estilo del cuartil
+
+                if (tipoDiv == "Deciles") {
+                    let colores = [];
+                    let sim1 = new Sim();
+                    //generamos los colores apartir del seleccionado por el usuari0
+                    if (colores.length > 0) {
+                        colores.splice(0, colores.length);
+                    }
+                    colores = shuffle(colorB);//colores = randomColor({ count: 10, hue: colorFill });
+                    let au1 = sim1.generaCuantiles(10, valoresCampo, colores, "Decil ", "#000000", 1);
+
+                    setRangoAux(10);
+                    simbologiaF = au1;
+                    sim1 = null;
+                    //se deben guardar todas las configuraciones de la capa
+                }//se termina el estilo del decil
+                if (tipoDiv == "Quintiles") {
+                    let colores = [];
+                    let sim1 = new Sim();
+                    //generamos los colores apartir del seleccionado por el usuari0
+                    if (colores.length > 0) {
+                        colores.splice(0, colores.length);
+                    }
+                    colores = shuffle(colorB);//colores = randomColor({ count: 5, hue: colorFill });
+                    let au1 = sim1.generaCuantiles(5, valoresCampo, colores, "Quintil ", "#000000", 1);
+                    // console.log(au1);
+                    setRangoAux(5);
+                    simbologiaF = au1;
+                    //se aplica el estilo a la capa 
+                    sim1 = null;
+                    //se deben guardar todas las configuraciones de la capa
+                }//termina opcion de Quintiles
+
+            }
+            if (valorEstilos == 1) {
+                //codigo para implementar simbologia libre
+                var layer = capaSeleccionada.layer;
+                let lib = [];
+                let json1;
+                let rango1 = rangoAux;
+                let auxI = 0;
+                for (let i = 0; i < rango1; i++) { //ciclo para recorrer las filas del
+                    for (let j = 0; j < 6; j++) {//ciclo que controla las columnas de la tabla 
+                        let aux = document.getElementById(auxI);
+                        //console.log(aux);
+                        if (aux == null) {
+
+                        } else {
+                            if (aux.tagName == 'INPUT') {
+                                lib.push(aux.value);
+                            } else {
+                                lib.push(aux.textContent);
+                            }
+                        }
+                        auxI++;
+                    }//termina for columnas
+                }//termina for filas 
+
+                let sim1 = new Sim();
+                for (let i = 0; i < lib.length; i += 6) {
+                    sim1.agregaRango(0, lib[i], lib[i + 1], lib[i + 3], lib[i + 2], lib[i + 4], lib[i + 5]);
+                }
+
+                simbologiaF = sim1;
+
+                //codigo para mandar el color dependiendo del rango
+                var layer = capaSeleccionada.layer;
+                function restyleLayerL(propertyName) {
+                    layer.eachLayer(function (featureInstanceLayer) {
+                        var propertyValue = featureInstanceLayer.feature.properties[propertyName];
+                        var myFillColor = sim1.getSimbologia(propertyValue);
+                        //console.log(myFillColor);
+                        if (myFillColor.tipo === 'default') {
+                            featureInstanceLayer.setStyle({
+                                fillColor: omisionColor,
+                                color: colorOmision,
+                                fillOpacity: myFillColor.fillOpacity,
+                                weight: 1
+                            });
+                        } else {
+                            featureInstanceLayer.setStyle({
+                                fillColor: myFillColor.colorFill,
+                                color: myFillColor.colorBorde,
+                                fillOpacity: myFillColor.fillOpacity,
+                                weight: myFillColor.anchoBorde
+                            });
+                        }
+
+                    });
+                }
+
+                //se guarda la configuracion de la capa
+                json1 = {};
+                let bnd = false;
+                if (jsonSimbologia.length != 0) {
+                    for (let i = 0; i < jsonSimbologia.length; i++) {
+                        if (jsonSimbologia[i].name == capaSeleccionada.nom_capa) {
+                            console.log("se actualiza informacion");
+                            jsonSimbologia[i].nomVariable = nomAtributos[varSeleccionada];
+                            jsonSimbologia[i].varSeleccionada = varSeleccionada;
+                            jsonSimbologia[i].simbologia = simbologiaF;
+                            jsonSimbologia[i].valorEstilos = valorEstilos;
+                            jsonSimbologia[i].tipoDiv = tipoDiv;
+                            jsonSimbologia[i].tipoTrata = tipoTrata;
+                            jsonSimbologia[i].rango = rango;
+                            jsonSimbologia[i].intervalo = intervalo;
+                            jsonSimbologia[i].cuantil = cuantil;
+                            jsonSimbologia[i].nomAtributos = nomAtributos;
+                        } else {
+                            bnd = true;
+                            //quiere decir que es una capa nueva
+                        }
+                    }
+                } else {
+                    json1.name = capaSeleccionada.nom_capa
+                    json1.capa = capaSeleccionada;
+                    json1.nomVariable = nomAtributos[varSeleccionada];
+                    json1.varSeleccionada = varSeleccionada;
+                    json1.simbologia = simbologiaF;
+                    json1.valorEstilos = valorEstilos;
+                    json1.tipoDiv = tipoDiv;
+                    json1.tipoTrata = tipoTrata;
+                    json1.rango = rango;
+                    json1.intervalo = intervalo;
+                    json1.cuantil = cuantil;
+                    json1.nomAtributos = nomAtributos;
+                    jsonSimbologia.push(json1);
+                }
+
+                if (bnd == true) {
+                    json1.name = capaSeleccionada.nom_capa
+                    json1.capa = capaSeleccionada;
+                    json1.nomVariable = nomAtributos[varSeleccionada];
+                    json1.varSeleccionada = varSeleccionada;
+                    json1.simbologia = simbologiaF;
+                    json1.valorEstilos = valorEstilos;
+                    json1.tipoDiv = tipoDiv;
+                    json1.tipoTrata = tipoTrata;
+                    json1.rango = rango;
+                    json1.intervalo = intervalo;
+                    json1.cuantil = cuantil;
+                    json1.nomAtributos = nomAtributos;
+                    jsonSimbologia.push(json1);
+                }
+
+                restyleLayerL(nomAtributos[varSeleccionada]);
+
+                sim1 = null;
+                setRango(null);
+                setIntervalo(null);
+                //se deben guardar todas las configuraciones de la capa
+            }//termina estilo Libre
+
+            //opcion para rangos equidistantes
+            if (valorEstilos == 3) {
+                // console.log("Rangos Equidistantes");
+                var numRangos = rango;
+                let limitesmay = [];
+                let limitesmen = [];
+                let colores = [];
+
+
+                //se generan los colores para mostrar
+                if (colores.length > 0) {
+                    colores.splice(0, colores.length);
+                }
+                colores = shuffle(colorB);
+                //colores = randomColor({ count: 10, hue: colorFill });
+                //se ordena el array de valores
+                valoresCampo.sort(function (a, b) { return a - b });
+
+                var min = valoresCampo[0];
+                var max = valoresCampo[valoresCampo.length - 1];
+                var r = max - min;
+                var d = (r + 1) / numRangos;
+                limitesmen[0] = min;
+                limitesmay[0] = min + d;
+                for (let i = 1; i < numRangos; i++) {
+                    limitesmay[i] = limitesmay[i - 1] + (d);
+                    limitesmen[i] = limitesmay[i - 1];
+                }
+
+                let sim1 = new Sim();
+                for (let i = 0; i < limitesmen.length; i++) {
+                    sim1.agregaRango(0, Math.round(limitesmen[i]), Math.round(limitesmay[i]), colores[i], "Rango " + (i + 1), "#000000", 1);
+                }
+
+                simbologiaF = sim1;
+                setRangoAux(numRangos);
+
+                sim1 = null;
+                //se deben guardar todas las configuraciones de la capa
+            }
+
+            if (valorEstilos == 2) {
+                //se selecciono valores unicos 
+                let unicos = [];
+                let colores = [];
+                let sim1 = new Sim();
+                if (unicos.length > 0) {
+                    unicos.splice(0, unicos.length);
+                }
+                //este codigo elimina los valores repetidos de una array dejando solo uno de cada uno 
+                unicos = valoresCampo.reduce((acc, item) => {
+                    if (!acc.includes(item)) {
+                        acc.push(item);
+                    }
+                    return acc;
+                }, [])
+
+                if (colores.length > 0) {
+                    colores.splice(0, colores.length);
+                }
+                for (let i = 0; i < unicos.length; i++) {
+                    colores.push("#" + ((1 << 24) * Math.random() | 0).toString(16));
+                }
+                //colores = randomColor({ count: unicos.length, hue: colorFill });
+
+                for (let i = 0; i < unicos.length; i++) {
+                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1);
+                }
+
+                simbologiaF = sim1;
+                setRangoAux(unicos.length);
+
+                sim1 = null;
+
+            }//termina opcion valores unicos
+        }
+
+    }
+    function leerTabla(aux) {
+        if (aux == 0) {
+            //cuando es estilo libre
+            //funcion que actualiza la tabla de simbologia
+            if ($('#tablaR').is(':empty') == false) {
+                let actuali = [];
+                //indica previsualizacion y requiere actualizar simbologia
+                var table = document.getElementById('tablaR');
+                let cells = table.getElementsByTagName('tr');
+                for (let i = 0, len = cells.length; i < len; i++) {
+                    let fila = cells[i].getElementsByTagName('td');
+                    for (let j = 0; j < fila.length; j++) {
+                        //console.log(fila[j].innerText);
+                        actuali.push(fila[j].children[0].value);
+                        /*
+                        if (j == 2 || j == 3 || j == 4 || j == 5) {
+                            actuali.push(fila[j].children[0].value);
+                        } else {
+                            actuali.push(fila[j].innerText);
+                        }
+                        */
+                        /*
+                                                if (j == 2) {
+                                                    actuali.push(fila[j].children[0].value);
+                                                } else {
+                                                    if (j == 3) {
+                                                        actuali.push(fila[j].children[0].value);
+                                                    } else {
+                                                        actuali.push(fila[j].innerText);
+                                                    }
+                                                }
+                        */
+                    }
+                }
+                //console.log(actuali);
+                return actuali;
+            }
+        } else {
+            //funcion que actualiza la tabla de simbologia
+            if ($('#tablaR').is(':empty') == false) {
+                //Betty7
+                let actuali = [];
+                let rango1 = rangoAux;
+                let auxI = 0;
+                for (let i = 0; i < rango1; i++) { //ciclo para recorrer las filas del
+                    for (let j = 0; j < 6; j++) {//ciclo que controla las columnas de la tabla 
+                        let aux = document.getElementById(auxI);
+                        //console.log(aux);
+                        if (aux == null) {
+
+                        } else {
+                            if (aux.tagName == 'INPUT') {
+                                actuali.push(aux.value);
+                            } else {
+                                actuali.push(aux.textContent);
+                            }
+                        }
+                        auxI++;
+                    }//termina for columnas
+                }//termina for filas 
+
+                /*
+                 //indica previsualizacion y requiere actualizar simbologia
+                 var table = document.getElementById('tablaE');
+                 let cells = table.getElementsByTagName('tr');
+                 for (let i = 0, len = cells.length; i < len; i++) {
+                     let fila = cells[i].getElementsByTagName('td');
+                     for (let j = 0; j < fila.length; j++) {
+                         //console.log(fila[j].innerText);
+ 
+                         if (j == 2 || j == 3 || j == 4 || j == 5) {
+                             actuali.push(fila[j].children[0].value);
+                         } else {
+                             actuali.push(fila[j].innerText);
+                         }
+                         /*
+                                                 if (j == 2) {
+                                                     actuali.push(fila[j].children[0].value);
+                                                 } else {
+                                                     if (j == 3) {
+                                                         actuali.push(fila[j].children[0].value);
+                                                     } else {
+                                                         actuali.push(fila[j].innerText);
+                                                     }
+                                                 }
+                         
+ 
+                     }
+                 }
+                */
+
+                //console.log(actuali);
+                //se actualizaron los datos de los intervalos
+
+                let sim1 = new Sim();
+                for (let i = 0; i < actuali.length; i += 6) {
+                    // sim1.agregaRango(0, lib[i], lib[i + 1], lib[i + 3], lib[i + 2], lib[i + 4], lib[i + 5]);
+                    sim1.agregaRango(0, actuali[i], actuali[i + 1], actuali[i + 3], actuali[i + 2], actuali[i + 4], actuali[i + 5]);
+                }
+
+                simbologiaF = sim1;
+
+            }
+        }
+
+
+    }
+
+    function aplicaEstiloF() {
+
+        leerTabla();
+
+        //codigo para mandar el color dependiendo del rango
+        var layer = capaSeleccionada.layer;
+        function restyleLayerL(propertyName) {
+            layer.eachLayer(function (featureInstanceLayer) {
+                var propertyValue = featureInstanceLayer.feature.properties[propertyName];
+                var myFillColor = simbologiaF.getSimbologia(propertyValue);
+                //console.log(myFillColor);
+                if (myFillColor.tipo === 'default') {
+                    featureInstanceLayer.setStyle({
+                        fillColor: omisionColor,
+                        color: colorOmision,
+                        fillOpacity: myFillColor.fillOpacity,
+                        weight: 1
+                    });
+                } else {
+                    featureInstanceLayer.setStyle({
+                        fillColor: myFillColor.colorFill,
+                        color: myFillColor.colorBorde,
+                        fillOpacity: myFillColor.fillOpacity,
+                        weight: myFillColor.anchoBorde
+                    });
+                }
+
+            });
+        }
+
+        //se guarda la configuracion de la capa
+        let json1 = {};
+        let bnd = false;
+        if (jsonSimbologia.length != 0) {
+            for (let i = 0; i < jsonSimbologia.length; i++) {
+                if (jsonSimbologia[i].name == capaSeleccionada.nom_capa) {
+                    jsonSimbologia[i].nomVariable = nomAtributos[varSeleccionada];
+                    jsonSimbologia[i].varSeleccionada = varSeleccionada;
+                    jsonSimbologia[i].simbologia = simbologiaF;
+                    jsonSimbologia[i].valorEstilos = valorEstilos;
+                    jsonSimbologia[i].tipoDiv = tipoDiv;
+                    jsonSimbologia[i].tipoTrata = tipoTrata;
+                    jsonSimbologia[i].rango = rango;
+                    jsonSimbologia[i].intervalo = intervalo;
+                    jsonSimbologia[i].cuantil = cuantil;
+                    jsonSimbologia[i].nomAtributos = nomAtributos;
+
+                } else {
+                    bnd = true;
+                    //quiere decir que es una capa nueva
+                }
+            }
+        } else {
+            json1.name = capaSeleccionada.nom_capa
+            json1.capa = capaSeleccionada;
+            json1.nomVariable = nomAtributos[varSeleccionada];
+            json1.varSeleccionada = varSeleccionada;
+            json1.simbologia = simbologiaF;
+            json1.valorEstilos = valorEstilos;
+            json1.tipoDiv = tipoDiv;
+            json1.tipoTrata = tipoTrata;
+            json1.rango = rango;
+            json1.intervalo = intervalo;
+            json1.cuantil = cuantil;
+            json1.nomAtributos = nomAtributos;
+            jsonSimbologia.push(json1);
+        }
+
+        if (bnd == true) {
+            json1.name = capaSeleccionada.nom_capa
+            json1.capa = capaSeleccionada;
+            json1.nomVariable = nomAtributos[varSeleccionada];
+            json1.varSeleccionada = varSeleccionada;
+            json1.simbologia = simbologiaF;
+            json1.valorEstilos = valorEstilos;
+            json1.tipoDiv = tipoDiv;
+            json1.tipoTrata = tipoTrata;
+            json1.rango = rango;
+            json1.intervalo = intervalo;
+            json1.cuantil = cuantil;
+            json1.nomAtributos = nomAtributos;
+            jsonSimbologia.push(json1);
+        }
+
+        //se aplica el estilo a la capa 
+        restyleLayerL(nomAtributos[varSeleccionada]);
+        //simbologiaF = {};
+        //console.log(jsonSimbologia);
+
+    }
+
+    ///////////////////////////////////Termina el codigo para cambiar la simbologia
+
 
     //Funcion para cambiar el estado del checkbox
     const cambiaCheckbox = ({ target }) => {
@@ -584,7 +1493,7 @@ function ContenedorMapaAnalisis(props) {
             //Si es igual a la entidad que se envia, se cambia la transparencia
             if (valor.nom_capa == target.name) {
                 valor.transparencia = target.value;
-                if (valor.tipo == "wfs") {
+                if (valor.tipo == "wfs" || valor.tipo == "kml" || valor.tipo == 'json') {
                     valor.layer.setStyle({ opacity: valor.transparencia, fillOpacity: valor.transparencia })
                 }
                 else if (valor.tipo == "wms") {
@@ -641,7 +1550,7 @@ function ContenedorMapaAnalisis(props) {
 
         //Para reordenar el z index de las capas
         items.map((valor, index) => {
-            referenciaMapa.getPane(valor.layer.options.pane).style.zIndex = 650 + items.length - index - 1;
+            referenciaMapa.getPane(valor.layer.options.pane).style.zIndex = numeroIndex + items.length - index - 1;
         })
 
         // Actualizamos datos entidades
@@ -798,8 +1707,107 @@ function ContenedorMapaAnalisis(props) {
     const [identifyOption, setIdentifyOption] = useState();
     const [pdfContent, setPdfcontent] = useState();
 
+    //Para agregar capas json al mapa cuando se sube un archivo
+    const agregaFileJsonCapa = (capaFile, nombreFile) => {
+        let nombreTemp = nombreFile.split(".")[0] + ` - ${(nombreFile.split(".")[1]).toUpperCase()} Cargada`;
+        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === nombreTemp)) {
+            setDatosModalAnalisis({
+                title: "Capa existente",
+                body: "La capa ya se ha agregado anteriormente"
+            });
+            setShowModalAnalisis(true);
+            return;
+        } else {
+            let capaJson = {}
+            capaJson["nom_capa"] = nombreTemp;
+            capaJson["habilitado"] = true;
+            capaJson['tipo'] = "json";
+            capaJson['transparencia'] = 1;
+            capaJson.estilos = {
+                color: "#FFFFFF",
+                fillColor: "#000000",
+                opacity: "1",
+                fillOpacity: "1"
+            }
+            capaJson['simbologia'] = creaSVG(nombreFile.split(".")[0], capaJson.estilos)
+            // capaJson.isActive = false;
+            capaJson["features"] = capaFile.features;
+            setZIndex(zIndexCapas + 1)
+            referenciaMapa.createPane(`${zIndexCapas}`)
+            referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
+            let layer = L.geoJSON(capaFile, {
+                pane: `${zIndexCapas}`,
+                style: capaJson.estilos,
+                nombre: capaJson["nom_capa"],
+                interactive: false,
+                // onEachFeature: function (feature = {}, layerPadre) {
+                //     layerPadre.on('click', function () {
+                //         feature.properties["nombre_capa"] = layerPadre.options["nombre"];
+                //         setRasgos([feature.properties]);
+                //     })
+                // }
+            });
+            capaJson['layer'] = layer;
+            setCapasVisualizadas([capaJson, ...capasVisualizadas])
+            referenciaMapa.addLayer(layer);
+            setDatosModalAnalisis({
+                title: "Capa agregada",
+                body: "La capa se ha agregado con exito"
+            });
+            setShowModalAnalisis(true);
+        }
+    }
+
+    //Cuando se agrega una capa kml o kmz cuando se sube un archivo
+    const agregaFileKML = (capa, nombreFile) => {
+        let nombreTemp = nombreFile.split(".")[0] + ` - ${(nombreFile.split(".")[1]).toUpperCase()} Cargada`;
+        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === nombreTemp)) {
+            setDatosModalAnalisis({
+                title: "Capa existente",
+                body: "La capa ya se ha agregado anteriormente"
+            });
+            setShowModalAnalisis(true);
+            return;
+        } else {
+            let capaKml = {};
+            capaKml["nom_capa"] = nombreTemp;
+            capaKml["habilitado"] = true;
+            capaKml['transparencia'] = 1;
+            capaKml['tipo'] = "kml";
+            capaKml.estilos = {
+                color: "#00FFFF",
+                fillColor: "#007777",
+                opacity: "1",
+                fillOpacity: "1",
+            }
+            capaKml['simbologia'] = creaSVG(nombreFile.split(".")[0], capaKml.estilos)
+            setZIndex(zIndexCapas + 1)
+            referenciaMapa.createPane(`${zIndexCapas}`)
+            referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
+            /* Si se usa KML */
+            let parser = new DOMParser();
+            let kml = parser.parseFromString(capa, 'text/xml');
+            let layer = new L.KML(kml);
+            layer.setStyle({ pane: `${zIndexCapas}`, ...capaKml.estilos, interactive: false })
+            //Para poder borrar el pane
+            layer.options = { pane: `${zIndexCapas}` }
+            /* Si se usa omnivore */
+            // let customLayer = L.geoJson(null, { pane: `${zIndexCapas}` });
+            // let conpane = omnivore.kml.parse(capa, null, customLayer)
+            /***************************/
+            capaKml['layer'] = layer;
+
+            setCapasVisualizadas([capaKml, ...capasVisualizadas])
+            referenciaMapa.addLayer(layer)
+            setDatosModalAnalisis({
+                title: "Capa agregada",
+                body: "La capa se ha agregado con exito"
+            });
+            setShowModalAnalisis(true);
+        }
+    }
+
     //Para subir archivos
-    const [fileUpload, setFileUpload] = useState();
     function processInputFile(event) {
         var fileType = event.target.files[0].name;
         fileType = fileType.substring(fileType.indexOf('.') + 1);
@@ -808,14 +1816,16 @@ function ContenedorMapaAnalisis(props) {
                 var fileReader = new FileReader();
                 fileReader.readAsText(event.target.files[0], "UTF-8");
                 fileReader.onload = loaded => {
-                    setFileUpload({ data: JSON.parse(loaded.target.result), type: fileType });
+                    // setFileUpload({ data: JSON.parse(loaded.target.result), type: fileType });
+                    agregaFileJsonCapa(JSON.parse(loaded.target.result), event.target.files[0].name)
                 };
                 break;
             case 'kml':
                 var fileReader = new FileReader();
                 fileReader.readAsText(event.target.files[0], "UTF-8");
                 fileReader.onload = loaded => {
-                    setFileUpload({ data: loaded.target.result, type: fileType });
+                    // setFileUpload({ data: loaded.target.result, type: fileType });
+                    agregaFileKML(loaded.target.result, event.target.files[0].name)
                 };
                 break;
             case 'kmz':
@@ -828,7 +1838,8 @@ function ContenedorMapaAnalisis(props) {
                         Object.keys(unzippedFiles.files).map(key => {
                             if (key.includes('kml')) {
                                 unzippedFiles.files[key].async("string").then(content => {
-                                    setFileUpload({ data: content, type: 'kml' });
+                                    // setFileUpload({ data: content, type: 'kml' });
+                                    agregaFileKML(content, event.target.files[0].name)
                                 })
                             }
                         })
@@ -840,7 +1851,8 @@ function ContenedorMapaAnalisis(props) {
                 fileReader.readAsArrayBuffer(event.target.files[0]);
                 fileReader.onload = loaded => {
                     shpjs(loaded.currentTarget.result).then(function (result) {
-                        setFileUpload({ data: result, type: 'json' });
+                        // setFileUpload({ data: result, type: 'json' });
+                        agregaFileJsonCapa(result, event.target.files[0].name);
                     });
                 };
                 break;
@@ -852,7 +1864,6 @@ function ContenedorMapaAnalisis(props) {
                 setShowModalAnalisis(true)
                 break;
         }
-        // event.target.value = "";
     }
 
     useEffect(() => {
@@ -1178,137 +2189,119 @@ function ContenedorMapaAnalisis(props) {
                 <Modal.Body>
                     <Tabs defaultActiveKey="sedatu">
                         <Tab eventKey="sedatu" title="Capa">
-                            <Button key="6" variant="link" onClick={cambiaBusquedaAvanzada}>{busquedaAvanzada == false ? "Búsqueda avanzada" : "Búsqueda básica"}</Button>
                             {
-                                busquedaAvanzada == false ? (
-                                    <>
-                                        <p className="tw-mt-4"><b>Escoge un tema</b></p>
-                                        <div className="tw-flex tw-flex-wrap tw-justify-around">
+                                [
+                                    conexionEndPointGetCapas == true ? (
+                                        <Fragment key="1">
+                                            <Button variant="link" onClick={cambiaBusquedaAvanzada}>{busquedaAvanzada == false ? "Búsqueda avanzada" : "Búsqueda básica"}</Button>
                                             {
-                                                listaMetadatosTemasCapasBackEnd.map((value, index) => (
-                                                    value.seleccionado ?
-                                                        <Button className="tw-mb-4 tw-border tw-border-black" variant="light" key={index} onClick={() => construyeCatalogoSubtemas(value.titulo)}>{value.titulo}</Button>
-                                                        :
-                                                        <Button className="tw-mb-4" variant="light" key={index} onClick={() => construyeCatalogoSubtemas(value.titulo)}>{value.titulo}</Button>
-                                                ))
-                                            }
-                                        </div>
-                                        <p><b>Escoge un subtema</b></p>
-                                        <div className="row">
-                                            <div className="col-6">
-                                                {
-                                                    listaMetadatosSubtemasCapasBackEnd.map((value, index) => (
-                                                        value.seleccionado ?
-                                                            <Button className="tw-block tw-mb-4 tw-border tw-border-black" variant="light" key={index} onClick={() => contruyeCatalogoTitulo(value.titulo)}>{value.titulo}</Button>
-                                                            :
-                                                            <Button className="tw-block tw-mb-4" variant="light" key={index} onClick={() => contruyeCatalogoTitulo(value.titulo)}>{value.titulo}</Button>
-
-                                                    ))
-                                                }
-                                            </div>
-                                            {
-                                                listaMetadatosTitulosCapasBackEnd.length != 0 && (
-                                                    <div className="col-6">
-                                                        <Form>
-                                                            <Form.Group controlId="lista-capas">
-                                                                <Form.Label>Selecciona una capa</Form.Label>
-                                                                <Form.Control custom as="select" htmlSize={listaMetadatosTitulosCapasBackEnd.length + 1} onChange={(e) => agregaCapaBusquedaIde(e)}>
-                                                                    {
-                                                                        listaMetadatosTitulosCapasBackEnd.map((valor, index) => (
-                                                                            <option key={index} value={JSON.stringify(valor)}>{valor.titulo}</option>
-                                                                        ))
-                                                                    }
-                                                                </Form.Control>
-                                                            </Form.Group>
-                                                        </Form>
-                                                    </div>
-                                                )
-                                            }
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Form className="tw-mt-4 tw-mb-4" onSubmit={handleSubmitMetadatos(busquedaAvanzadaMetadatos)}>
-                                            <Form.Group controlId="palabra">
-                                                <Form.Label>Escribe la palabra a buscar</Form.Label>
-                                                <Form.Control type="text" name="palabra" required ref={registraMetadatos} />
-                                            </Form.Group>
-                                            <button className="btn-analisis" type="submit">BUSCAR</button>
-                                        </Form>
-                                        {
-                                            [
-                                                avisoBusquedaCapasIde && (
-                                                    <p key="1">{avisoBusquedaCapasIde}</p>
-                                                ),
-                                                listaMetadatosTitulosBusquedaAvanzada.length != 0 && (
-                                                    <Form key="2">
-                                                        <Form.Group controlId="lista-capas-metadatos">
-                                                            <Form.Label>Selecciona una capa</Form.Label>
-                                                            <Form.Control as="select" htmlSize={listaMetadatosTitulosBusquedaAvanzada.length + 1} custom onChange={(e) => agregaCapaBusquedaIde(e)}>
+                                                busquedaAvanzada == false ? (
+                                                    <>
+                                                        <p className="tw-mt-4"><b>Escoge un tema</b></p>
+                                                        <div className="tw-flex tw-flex-wrap tw-justify-around">
+                                                            {
+                                                                listaMetadatosTemasCapasBackEnd.map((value, index) => (
+                                                                    value.seleccionado ?
+                                                                        <Button className="tw-mb-4 tw-border tw-border-black" variant="light" key={index} onClick={() => construyeCatalogoSubtemas(value.titulo)}>{value.titulo}</Button>
+                                                                        :
+                                                                        <Button className="tw-mb-4" variant="light" key={index} onClick={() => construyeCatalogoSubtemas(value.titulo)}>{value.titulo}</Button>
+                                                                ))
+                                                            }
+                                                        </div>
+                                                        <p><b>Escoge un subtema</b></p>
+                                                        <div className="row">
+                                                            <div className="col-6">
                                                                 {
-                                                                    listaMetadatosTitulosBusquedaAvanzada.map((valor, index) => (
-                                                                        <option key={index} value={JSON.stringify(valor)}>{valor.titulo}</option>
+                                                                    listaMetadatosSubtemasCapasBackEnd.map((value, index) => (
+                                                                        value.seleccionado ?
+                                                                            <Button className="tw-block tw-mb-4 tw-border tw-border-black" variant="light" key={index} onClick={() => contruyeCatalogoTitulo(value.titulo)}>{value.titulo}</Button>
+                                                                            :
+                                                                            <Button className="tw-block tw-mb-4" variant="light" key={index} onClick={() => contruyeCatalogoTitulo(value.titulo)}>{value.titulo}</Button>
                                                                     ))
                                                                 }
-                                                            </Form.Control>
-                                                        </Form.Group>
-                                                    </Form>
+                                                            </div>
+                                                            {
+                                                                listaMetadatosTitulosCapasBackEnd.length != 0 && (
+                                                                    <div className="col-6">
+                                                                        <Form>
+                                                                            <Form.Group controlId="lista-capas">
+                                                                                <Form.Label>Selecciona una capa</Form.Label>
+                                                                                <Form.Control custom as="select" htmlSize={listaMetadatosTitulosCapasBackEnd.length + 1} onChange={(e) => agregaCapaBusquedaIde(e)}>
+                                                                                    {
+                                                                                        listaMetadatosTitulosCapasBackEnd.map((valor, index) => (
+                                                                                            <option key={index} value={JSON.stringify(valor)}>{valor.titulo}</option>
+                                                                                        ))
+                                                                                    }
+                                                                                </Form.Control>
+                                                                            </Form.Group>
+                                                                        </Form>
+                                                                    </div>
+                                                                )
+                                                            }
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Form className="tw-mt-4 tw-mb-4" onSubmit={handleSubmitMetadatos(busquedaAvanzadaMetadatos)}>
+                                                            <Form.Group controlId="palabra">
+                                                                <Form.Label>Escribe la palabra a buscar</Form.Label>
+                                                                <Form.Control type="text" name="palabra" required ref={registraMetadatos} />
+                                                            </Form.Group>
+                                                            <button className="btn-analisis" type="submit">BUSCAR</button>
+                                                        </Form>
+                                                        {
+                                                            [
+                                                                avisoBusquedaCapasIde && (
+                                                                    <p key="1">{avisoBusquedaCapasIde}</p>
+                                                                ),
+                                                                listaMetadatosTitulosBusquedaAvanzada.length != 0 && (
+                                                                    <Form key="2">
+                                                                        <Form.Group controlId="lista-capas-metadatos">
+                                                                            <Form.Label>Selecciona una capa</Form.Label>
+                                                                            <Form.Control as="select" htmlSize={listaMetadatosTitulosBusquedaAvanzada.length + 1} custom onChange={(e) => agregaCapaBusquedaIde(e)}>
+                                                                                {
+                                                                                    listaMetadatosTitulosBusquedaAvanzada.map((valor, index) => (
+                                                                                        <option key={index} value={JSON.stringify(valor)}>{valor.titulo}</option>
+                                                                                    ))
+                                                                                }
+                                                                            </Form.Control>
+                                                                        </Form.Group>
+                                                                    </Form>
+                                                                )
+                                                            ]
+                                                        }
+                                                    </>
                                                 )
-                                            ]
-                                        }
-                                    </>
-                                )
-                            }
-                            {
-                                botonesAgregaCapaIdeWFSWMS[0] == true &&
-                                (
-                                    <div className="tw-mt-4">
-                                        <p>Selecciona como quieres agregar esta capa</p>
-                                        <div className="tw-flex tw-flex-wrap tw-justify-around tw-mb-4">
-                                            <Button variant="light" onClick={() => agregaCapaWMS(botonesAgregaCapaIdeWFSWMS[1], 0)}>Mosaico</Button>
-                                            {
-                                                [
-                                                    (botonesAgregaCapaIdeWFSWMS[1].filtro_minimo == "0" && botonesAgregaCapaIdeWFSWMS[1].wfs !== "") && (
-                                                        <Fragment key="1">
-                                                            <Button variant="light" onClick={() => construyeNacionalCapa(botonesAgregaCapaIdeWFSWMS[1])}>Nacional</Button>
-                                                            <Button variant="light" onClick={() => setEntidadesMostrarListado(true)}>Elementos</Button>
-                                                            {/* <Button variant="light" onClick={() => setMunicipiosMostrarListado(true)}>Municipios</Button> */}
-                                                        </Fragment>
-                                                    ),
-                                                    botonesAgregaCapaIdeWFSWMS[1].filtro_minimo == "5" &&
-                                                    <Button key="2" variant="light" onClick={() => setEntidadesMostrarListado(true)}>Elementos</Button>
-                                                ]
                                             }
-                                        </div>
-                                        {
-                                            entidadesMostrarListado &&
-                                            <Typeahead
-                                                id="entidadesMostrarListado"
-                                                labelKey={"entidad"}
+                                        </Fragment>
+                                    ) : (
+                                        <p key="2" className="tw-mt-4">Ha ocurrido un error, intente más tarde.</p>
+                                    ),
+                                    botonesAgregaCapaIdeWFSWMS[0] == true &&
+                                    (
+                                        <Form key="3" className="tw-mt-4" onSubmit={handleAgregaCapa(submitAgregaCapa)}>
+                                            <p>Selecciona como quieres agregar esta capa</p>
+                                            <input type="hidden" value={JSON.stringify(botonesAgregaCapaIdeWFSWMS[1])} name="capa" ref={registraAgregaCapa}></input>
+                                            <Controller
+                                                as={Typeahead}
+                                                control={controlAgregaCapa}
                                                 options={catalogoEntidades}
+                                                labelKey="entidad"
+                                                id="entidadesListado"
+                                                name="entidadAgregar"
+                                                defaultValue=""
                                                 placeholder="Selecciona una entidad"
-                                                onChange={(entidad) => construyeEntidadCapa(botonesAgregaCapaIdeWFSWMS[1], entidad[0])}
-                                                defaultValue=""
                                                 clearButton
-                                                paginationText="Desplegar más resultados"
                                                 emptyLabel="No se encontraron resultados"
+                                                className="tw-mb-4"
                                             />
-                                        }
-                                        {/* {
-                                            municipiosMostrarListado &&
-                                            <Typeahead
-                                                id="municipiosMostrarListado"
-                                                labelKey={"nombre_municipio"}
-                                                options={listaMunicipios}
-                                                placeholder="Selecciona un municipio"
-                                                defaultValue=""
-                                                clearButton
-                                                paginationText="Desplegar más resultados"
-                                                emptyLabel="No se encontraron resultados"
-                                            />
-                                        } */}
-                                    </div>
-                                )
+                                            <div className="tw-flex tw-flex-wrap tw-justify-around tw-mb-4">
+                                                <Button variant="light" type="button" onClick={() => agregaCapaWMS(botonesAgregaCapaIdeWFSWMS[1], 0)}>Mosaico</Button>
+                                                <Button variant="light" type="submit">Elementos</Button>
+                                            </div>
+                                        </Form>
+                                    )
+                                ]
                             }
                         </Tab>
                         <Tab eventKey="servicios" title="Servicio">
@@ -1417,7 +2410,7 @@ function ContenedorMapaAnalisis(props) {
                         </Tab>
                     </Tabs>
                 </Modal.Body>
-            </Modal>
+            </Modal >
 
             <Modal dialogAs={DraggableModalDialog} show={showModalSimbologia} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
                 onHide={() => setShowModalSimbologia(!showModalSimbologia)} className="tw-pointer-events-none modal-analisis">
@@ -1430,6 +2423,30 @@ function ContenedorMapaAnalisis(props) {
                 </Modal.Header>
                 <Modal.Body>
                     {
+                        jsonSimbologia.length > 0 ? (
+                            jsonSimbologia.map((capa) => (
+                                <div>
+                                    <h5>{capa.name}</h5>
+                                    <div dangerouslySetInnerHTML={{ __html: capa.simbologia.tablaSimbologia() }} ></div>
+                                </div>
+                            ))
+                        ) : (
+                            capasVisualizadas.map((capa, index) => (
+                                capa.habilitado && (
+                                    <div>
+                                        <div key={index}>
+                                            <p><b>{capa.nom_capa}</b></p>
+                                            <img src={capa.simbologia}></img>
+                                            <br></br>
+                                            <br></br>
+                                        </div>
+                                    </div>
+                                )
+                            ))
+                        )
+
+
+                        /*
                         capasVisualizadas.map((capa, index) => (
                             capa.habilitado && (
                                 <div key={index}>
@@ -1446,6 +2463,260 @@ function ContenedorMapaAnalisis(props) {
                                 </div>
                             )
                         ))
+                        */
+                    }
+                </Modal.Body>
+            </Modal>
+
+            <Modal dialogAs={DraggableModalDialog} show={showModalEstilos} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
+                onHide={() => setShowModalEstilos(!showModalEstilos)} className="tw-pointer-events-none modal-analisis">
+                <Modal.Header className="tw-cursor-pointer" closeButton >
+                    <Modal.Title><b>Simbología</b></Modal.Title>
+                    <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
+                        <FontAwesomeIcon icon={faWindowRestore} />
+                    </button>
+                </Modal.Header>
+                <Modal.Body className="tw-overflow-y-auto">
+                    {/* inicia el cuerpo del modal de estilo />  BettyE*/}
+                    {
+                        capaSeleccionada == null ? (
+                            //no se ha seleccionaado capa para edicion
+                            <div className="row text-center">
+                                <h1>Esta capa no puede editarse</h1>
+                            </div>
+                        ) : (
+                            capaSeleccionada.tipo == "wfs" || capaSeleccionada.tipo == "json" ? (
+                                //la capa puede editarse por el formato de origen
+                                <Form id="cuerpo">
+                                    <Form.Group controlId="tratamiento" className="col-10">
+                                        <Form.Label>Tipo de tratamiento</Form.Label>
+                                        <Typeahead
+                                            id="tratamiento"
+                                            labelKey={"label"}
+                                            options={trata}
+                                            onChange={handleChangeEstilo}
+                                            selected={tipoTrata}
+                                            placeholder="Selecciona una opcion"
+                                        />
+                                    </Form.Group>
+                                    {
+                                        valorEstilos != null ? (
+                                            valorEstilos == 1 ? (
+                                                //estilo libre 
+                                                <div className="col-12">
+                                                    <div className="row">
+                                                        <Form.Group controlId="variable1" className="col-10">
+                                                            <Form.Label>Variable a Utilizar</Form.Label>
+                                                            <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
+                                                                <option value="">Selecciona una opción</option>
+                                                                {
+                                                                    nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                }
+                                                            </Form.Control>
+                                                        </Form.Group>
+                                                        <br></br>
+                                                        <Form.Group controlId="intervalos1" className="col-10">
+                                                            <Form.Label>Número de Intervalos</Form.Label>
+                                                            <Form.Control type="number" value={intervalo} onChange={(e) => cambioRango1(e)} min="0" />
+                                                        </Form.Group>
+                                                        <br></br>
+                                                        <div className="col-9">
+                                                            <p><b>Simbologia por Omisión</b></p>
+                                                        </div>
+                                                        <div className="col-3">
+                                                            <Form.Control type="color" value={colorOmision} onChange={(e) => cambioColorO(e)} />
+                                                        </div>
+                                                        <div id="tablaI">
+                                                            <TablaLib rango={intervalo}></TablaLib>
+                                                        </div>
+                                                        <br></br>
+                                                    </div>
+                                                    <div className="row" id="contenedorT">
+                                                        <TablaSimbologia info={simbologiaF} />
+
+                                                    </div>
+                                                    <div className="row align-items-center">
+                                                        <Button className="btn btn-primary" onClick={aplicarEstilo}>Aplicar Estilo </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                valorEstilos == 4 ? (
+                                                    //cuantiles
+                                                    <div className="col-12">
+                                                        <div className="row">
+                                                            <Form.Group controlId="tratamiento" className="col-10">
+                                                                <Form.Label>División</Form.Label>
+                                                                <Typeahead
+                                                                    id="basic-typeahead-multiple"
+                                                                    labelKey={"label"}
+                                                                    options={cuantil1}
+                                                                    onChange={handleChangeCuantil}
+                                                                    selected={cuantil}
+                                                                    placeholder="Selecciona una opcion"
+                                                                />
+                                                            </Form.Group>
+                                                            <br></br>
+                                                            <Form.Group controlId="variable2" className="col-10">
+                                                                <Form.Label>Variable a Utilizar</Form.Label>
+                                                                <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
+                                                                    <option value="">Selecciona una opción</option>
+                                                                    {
+                                                                        nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                    }
+                                                                </Form.Control>
+                                                            </Form.Group>
+                                                            <br></br>
+                                                            <Form.Group controlId="coloresB" className="col-10">
+                                                                <Form.Label>Color Base</Form.Label>
+                                                                <Typeahead
+                                                                    id="basic-typeahead-multiple"
+                                                                    labelKey={"label"}
+                                                                    options={coloresJ}
+                                                                    onChange={handleChangeColores}
+                                                                    selected={tipoColor}
+                                                                    placeholder="Selecciona una opcion"
+                                                                />
+                                                            </Form.Group>
+                                                            <br></br>
+                                                            <br></br>
+                                                        </div>
+                                                        <div className="row">
+                                                            <div className="col-8">
+                                                                <p><b>Simbologia por Omisión</b></p>
+                                                            </div>
+                                                            <div className="col-3">
+                                                                <Form.Control type="color" value={colorOmision} onChange={(e) => cambioColorO(e)} />
+                                                            </div>
+                                                        </div>
+                                                        <div className="row" id="contenedorT">
+                                                            <TablaSimbologia info={simbologiaF} />
+                                                        </div>
+                                                        <div className="row text-center">
+                                                            <div className="col-6">
+                                                                <Button className="btn btn-primary" onClick={generarT}>Previsualizar </Button>
+                                                            </div>
+                                                            <div className="col-6">
+                                                                <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    valorEstilos == 3 ? (
+                                                        //Rangos Equidistantes
+                                                        <div className="col-12">
+                                                            <div className="row">
+                                                                <Form.Group controlId="intervalos2" className="col-10">
+                                                                    <Form.Label>Número de Intervalos</Form.Label>
+                                                                    <Form.Control type="text" value={rango} onChange={(e) => cambioRango(e)} />
+                                                                </Form.Group>
+                                                                <br></br>
+                                                                <Form.Group controlId="variable2" className="col-10">
+                                                                    <Form.Label>Variable a Utilizar</Form.Label>
+                                                                    <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
+                                                                        <option value="">Selecciona una opción</option>
+                                                                        {
+                                                                            nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                        }
+                                                                    </Form.Control>
+                                                                </Form.Group>
+                                                                <br></br>
+                                                                <Form.Group controlId="coloresB" className="col-10">
+                                                                    <Form.Label>Color Base</Form.Label>
+                                                                    <Typeahead
+                                                                        id="basic-typeahead-multiple"
+                                                                        labelKey={"label"}
+                                                                        options={coloresJ}
+                                                                        onChange={handleChangeColores}
+                                                                        selected={tipoColor}
+                                                                        placeholder="Selecciona una opcion"
+                                                                    />
+                                                                </Form.Group>
+                                                                <br></br>
+                                                                <br></br>
+                                                            </div>
+                                                            <div className="row">
+                                                                <div className="col-8">
+                                                                    <p><b>Simbologia por Omisión</b></p>
+                                                                </div>
+                                                                <div className="col-3">
+                                                                    <Form.Control type="color" value={colorOmision} onChange={(e) => cambioColorO(e)} />
+                                                                </div>
+                                                            </div>
+                                                            <div className="row" id="contenedorT">
+                                                                <TablaSimbologia info={simbologiaF} />
+                                                            </div>
+                                                            <div className="row text-center">
+                                                                <div className="col-6">
+                                                                    <Button className="btn btn-primary" onClick={generarT}>Previsualizar </Button>
+                                                                </div>
+                                                                <div className="col-6">
+                                                                    <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        valorEstilos == 2 ? (
+                                                            //valores unicos
+                                                            <div className="col-12">
+                                                                <div className="row">
+                                                                    <Form.Group controlId="variable3" className="col-10">
+                                                                        <Form.Label>Variable a Utilizar</Form.Label>
+                                                                        <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
+                                                                            <option value="">Selecciona una opción</option>
+                                                                            {
+                                                                                nomAtributos.map((aux, index) => <option key={index} value={index}>{aux}</option>)
+                                                                            }
+                                                                        </Form.Control>
+                                                                    </Form.Group>
+                                                                    <br></br>
+                                                                    <br></br>
+                                                                </div>
+                                                                <div className="row">
+                                                                    <div className="col-8">
+                                                                        <p><b>Simbologia por Omisión</b></p>
+                                                                    </div>
+                                                                    <div className="col-3">
+                                                                        <Form.Control type="color" value={colorOmision} onChange={(e) => cambioColorO(e)} />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="row" id="contenedorT">
+                                                                    <TablaSimbologia info={simbologiaF} />
+                                                                    <div id="tablaR"></div>
+                                                                </div>
+                                                                <div className="row text-center">
+                                                                    <div className="col-6">
+                                                                        <Button className="btn btn-primary" onClick={generarT}>Previsualizar </Button>
+                                                                    </div>
+                                                                    <div className="col-6">
+                                                                        <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <p></p>
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        ) : (
+                                            //console.log("la capa no es null, no se ha seleccionado estilo")
+                                            <p></p>
+                                        )
+                                    }
+
+                                </Form>
+
+
+
+
+                            ) : (
+                                //la capa no puede editarse por el formato de origen 
+                                <h1>No puede editarse</h1>
+                            )
+                        )
+                    }
+                    {
+                        //termina el cuerpo del modal de estilos
                     }
                 </Modal.Body>
             </Modal>
@@ -1459,34 +2730,39 @@ function ContenedorMapaAnalisis(props) {
                     </button>
                 </Modal.Header>
                 <Modal.Body className="tw-overflow-y-auto">
-                    <Table striped bordered hover responsive>
-                        <thead>
-                            <tr className="tw-text-center">
-                                <th colSpan="5">{atributos.length != 0 && atributos[1]}</th>
-                            </tr>
-                            <tr>
-                                <th>fid</th>
-                                <th>CVEGEO</th>
-                                <th>CVE_ENT</th>
-                                <th>CVE_MUN</th>
-                                <th>NOMGEO</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {
-                                atributos.length != 0 &&
-                                atributos[0].map((value, index) => (
-                                    <tr key={index}>
-                                        <td>{value.properties.fid}</td>
-                                        <td>{value.properties.CVEGEO}</td>
-                                        <td>{value.properties.CVE_ENT}</td>
-                                        <td>{value.properties.CVE_MUN}</td>
-                                        <td>{value.properties.NOMGEO}</td>
+                    {
+                        atributos.length != 0 && (
+                            <Table striped bordered hover responsive>
+                                <thead>
+                                    <tr className="tw-text-center">
+                                        <th colSpan={Object.keys(atributos[0][0].properties).length}>{atributos[1]}</th>
                                     </tr>
-                                ))
-                            }
-                        </tbody>
-                    </Table>
+                                    <tr>
+                                        {
+                                            Object.keys(atributos[0][0].properties).map((valueKey, indexKey) => (
+                                                <th key={indexKey}>{valueKey}</th>
+                                            ))
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {
+                                        atributos[0].map((value, index) => (
+                                            <tr key={index}>
+                                                {
+                                                    Object.keys(value.properties).map((valueKey, indexKey) => {
+                                                        return (
+                                                            <td key={indexKey}>{value.properties[valueKey]}</td>
+                                                        )
+                                                    })
+                                                }
+                                            </tr>
+                                        ))
+                                    }
+                                </tbody>
+                            </Table>
+                        )
+                    }
                 </Modal.Body>
             </Modal>
 
@@ -1531,8 +2807,7 @@ function ContenedorMapaAnalisis(props) {
                                                         {
                                                             Object.keys(selected.features[0]).map((header, index_) => (
                                                                 <th key={index_}>{header}</th>
-                                                            )
-                                                            )
+                                                            ))
                                                         }
                                                     </tr>
                                                 </thead>
@@ -1543,8 +2818,7 @@ function ContenedorMapaAnalisis(props) {
                                                                 {
                                                                     Object.keys(selected.features[0]).map((header_, index___) => (
                                                                         <td key={index___}>{content[header_]}</td>
-                                                                    )
-                                                                    )
+                                                                    ))
                                                                 }
                                                             </tr>
                                                         )
@@ -1673,19 +2947,27 @@ function ContenedorMapaAnalisis(props) {
                                                                 <Form.Group>
                                                                     <Form.Check type="checkbox" inline defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event)} value={capa.nom_capa} />
                                                                 </Form.Group>
-                                                                <OverlayTrigger overlay={<Tooltip>Establecer como activa</Tooltip>}>
-                                                                    <Button onClick={() => enableLayer(index)} variant="link">
-                                                                        <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
-                                                                    </Button>
-                                                                </OverlayTrigger>
                                                                 {
-                                                                    capa.tipo === "wfs" &&
-                                                                    <Button onClick={() => muestraAtributos(capa)} variant="link">
-                                                                        <FontAwesomeIcon icon={faTable} />
-                                                                    </Button>
+                                                                    [
+                                                                        capa.isActive != undefined && (
+                                                                            <OverlayTrigger key="1" overlay={<Tooltip>Establecer como activa</Tooltip>}>
+                                                                                <Button onClick={() => enableLayer(index)} variant="link">
+                                                                                    <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
+                                                                                </Button>
+                                                                            </OverlayTrigger>
+                                                                        ),
+                                                                        capa.tipo === "wfs" && (
+                                                                            <Button key="2" onClick={() => muestraAtributos(capa)} variant="link">
+                                                                                <FontAwesomeIcon icon={faTable} />
+                                                                            </Button>
+                                                                        )
+                                                                    ]
                                                                 }
                                                                 <Button onClick={() => eliminaCapa(capa)} variant="link">
                                                                     <FontAwesomeIcon icon={faTrash} />
+                                                                </Button>
+                                                                <Button onClick={() => cambioEstilos(capa)} variant="link">
+                                                                    <FontAwesomeIcon icon={faPaintBrush} />
                                                                 </Button>
                                                                 <CustomToggle eventKey={capa.nom_capa} />
                                                             </Card.Header>
@@ -1743,7 +3025,7 @@ function ContenedorMapaAnalisis(props) {
                                                                             </div>
                                                                         )}
                                                                     {
-                                                                        capa.download != undefined && (
+                                                                        capa.download && (
                                                                             <>
                                                                                 <hr />
                                                                                 <div className="d-flex justify-content-center">
@@ -1812,13 +3094,11 @@ function ContenedorMapaAnalisis(props) {
             {
                 props.botones == true
                     ?
-                    <Map fileUpload={fileUpload} referencia={capturaReferenciaMapa} datos={capasVisualizadas} />
+                    <Map referencia={capturaReferenciaMapa} datos={capasVisualizadas} />
                     :
-                    <MapEspejo fileUpload={fileUpload} referencia={capturaReferenciaMapa} datos={capasVisualizadas}
+                    <MapEspejo referencia={capturaReferenciaMapa} datos={capasVisualizadas}
                         referenciaAnalisis={props.referenciaAnalisis} />
-
             }
-
         </>
     )
 }
