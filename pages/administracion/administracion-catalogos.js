@@ -40,8 +40,8 @@ export default function AdministracionCatalogos() {
 
     //Variable para guardar los datos de un solo Catálogo
     const [infoCatalogo, setInfoCatalogo] = useState()
-
-    const [columnasCat, setColumnasCat] = useState()
+    //Variable para guardar los datos de las columnas
+    const [columnasCat, setColumnasCat] = useState([])
     
     const [usuarios, setUsuarios] = useState([])
     const [noUsuarios, setNoUsuarios] = useState([])
@@ -80,7 +80,7 @@ export default function AdministracionCatalogos() {
         }
     }, [rolCookie, estatusCookie])
 
-useEffect(() => {
+    useEffect(() => {
         if (tokenCookie != undefined) 
         {
             let config1 = {
@@ -249,18 +249,7 @@ useEffect(() => {
             </div>
         )
     }
-         
-  /*  const variableHeader = (cell, row) => {
-     if (infoCatalogo != undefined) {
-          return infoCatalogo.map(x => Object.keys(x)[1])[0]
-          console.log(infoCatalogo.map(x => Object.keys(x)[1])[0]);
-      }
-      else
-      {
-         return variableHeader = 'genero';
-      }
-    }*/
-          
+                  
     const variableConcepto = (cell, row) => {
             if (infoCatalogo != undefined) {
                 const res = infoCatalogo.map(x => Object.keys(x));
@@ -335,6 +324,7 @@ useEffect(() => {
         for (var i = 0; i < columnasCat.length; i++){
                 urlprueba.push(columnasCat[i]+"='${updateInfoCatalogo."+columnasCat[i]+"}'");
         }
+        console.log(urlprueba, 'urlprueba');
         const urlFinal = eval('`'+urlprueba.join('&')+'`');
         
         console.log(urlFinal, 'urlFinal');
@@ -381,6 +371,17 @@ useEffect(() => {
                 },
                 (error) => console.log(error)
             )
+            
+          fetch(`${process.env.ruta}/wa/prot/getColumnasCatalogo?id_catalogo=${id}` , {
+            headers: {
+                    Authorization: `Bearer ${tokenCookie}`
+                    }
+            })
+                    .then(res => res.json())
+                    .then(
+                        (data) => setColumnasCat(data),
+                        (error) => console.log(error)
+            )
 
             })
             .catch(function (error) {
@@ -394,27 +395,29 @@ useEffect(() => {
     }
     
     //NuevoRenglon
+    //InsertarDatos    
     const [abreNuevoRenglon, setAbreNuevoRenglon] = useState(false);
+            
     const {register: registroNuevoRenglon, handleSubmit: handleNuevoRenglon, errors: errorNuevoRenglon,  setError: setErrorNuevoRenglon} = useForm()
-    
+            
     const submitNuevoRenglon = (data) => {     
         
             const res = infoCatalogo.map(x => Object.keys(x));
             console.log(res, 'conceptos');
                 
-        const foundId = infoCatalogo.find(({ id_concepto }) => id_concepto == data.idrow);
+        const foundId = infoCatalogo.find(({ id }) => id == data.id);
         if(foundId != undefined)
             {
-            window.alert('Error: id ' + data.idrow + ' ya esta en uso')
+            window.alert('Error: id ' + data.id + ' ya esta en uso')
             }
         else
             {
             let idPadre = infoCatalogo[0].idCatPadre   
             }
             
-    /*    var config = {
+        var config = {
             method: 'get',
-            url: `${process.env.ruta}/wa/prot/insertDatoCatalogo?id_catalogo=${idPadre}&concepto='${data.concepto}'&descripcion='${data.descripcion}'&boleano='${data.enUso}'`,
+            url: `${process.env.ruta}/wa/prot/insertDatoCatalogo?id_catalogo=${infoCatalogo.idCatPadre}&id_llave=${data.id}&concepto='${data.concepto}'&descripcion='${data.descripcion}'&boleano='${data.enUso}'`,
             headers: {
                 'Authorization': `Bearer ${tokenCookie}`
             },
@@ -455,6 +458,17 @@ useEffect(() => {
                         (data) => setNoUsuarios(data),
                         (error) => console.log(error)
                     )
+                    
+            fetch(`${process.env.ruta}/wa/prot/getColumnasCatalogo?id_catalogo=${idPadre}` , {
+            headers: {
+                    Authorization: `Bearer ${tokenCookie}`
+                    }
+            })
+                    .then(res => res.json())
+                    .then(
+                        (data) => setColumnasCat(data),
+                        (error) => console.log(error)
+            )       
 
             })
             .catch(function (error) {
@@ -464,30 +478,18 @@ useEffect(() => {
                     body: "El tiempo de respuesta se ha agotado, favor de intentar más tarde."
                 })
                 handleShow();
-            })*/
+            })
     }
     
-    /*const nuevoRenglon = () => {
-        setAbreNuevoRenglon(true)
 
-       // Object.keys(infoCatalogo[0]).map(valor => {console.log(valor, 'valor')})
-    }*/
+
+
     
-    let variableModal1 = "<Modal show={abreNuevoRenglon} onHide={() => setAbreNuevoRenglon(!abreNuevoRenglon)} keyboard={false} backdrop='static' >                    <Modal.Header closeButton><Modal.Title>Nuevo registro</Modal.Title></Modal.Header><Modal.Body><Form onSubmit={handleNuevoRenglon(submitNuevoRenglon)}>";
-                            
-    let variableModal2 = "";
-    if (columnasCat != undefined) {
-        for(var i = 0; i < columnasCat.length; i++){
-            variableModal2=variableModal2+"<Form.Group controlId='form"+columnasCat[i]+"'><Form.Label>"+columnasCat[i]+"</Form.Label><Form.Control name='"+columnasCat[i]+"' ref = {registroNuevoRenglon} type='text' /></Form.Group>";
-        }
-    }
-    
-    let variableModal3 = "<Button variant='outline-danger' type='submit'>Registrar</Button></Form></Modal.Body></Modal>";
-          
-    let varModelFinal = variableModal1 + variableModal2 + variableModal3;
-       
     return (
         <>
+        
+
+
                     <ModalFunction
                         show={showFunction}
                         datos={datosModalFunction}
@@ -498,7 +500,28 @@ useEffect(() => {
 
 
 
-
+                       <Modal show={abreNuevoRenglon} onHide={() => setAbreNuevoRenglon(!abreNuevoRenglon)} keyboard={false} backdrop="static" >
+                        <Modal.Header closeButton>
+                            <Modal.Title>
+                              Nuevo registro  
+                            </Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <Form onSubmit={handleNuevoRenglon(submitNuevoRenglon)}>
+                            
+                            { columnasCat.length != 0 && 
+                                columnasCat.map((name, index) => (
+                                <Form.Group Key={index} controlId={name}>
+                                        <Form.Label>{name}</Form.Label>      
+                                        <Form.Control name={name} ref = {registroNuevoRenglon} type="text" />
+                                    </Form.Group>
+                            ))}
+                        
+                        <Button variant="outline-danger" type="submit">Registrar</Button>
+                            
+                            </Form>
+                        </Modal.Body>
+                    </Modal>
 
                      
             {
@@ -541,6 +564,11 @@ useEffect(() => {
                 
 
 
+    <div>
+      <button variant="outline-secondary" className="btn-analisis" onClick={() => setAbreNuevoRenglon(true)}>
+        +Nuevo
+      </button>
+    </div>
 
                                     {
                                         infoCatalogo && (
