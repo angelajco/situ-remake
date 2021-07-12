@@ -58,6 +58,11 @@ export default function administracionSistema() {
                                     <a>Autorización de usuarios</a>
                                 </Link>
                             </div>
+                            <div className="col-12">
+                                <Link href="/administracion/administracion-catalogos">
+                                    <a>Administración de Catálogos</a>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                     :
