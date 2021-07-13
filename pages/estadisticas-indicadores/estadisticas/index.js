@@ -34,8 +34,8 @@ export default function estadisticas() {
         {title: 'Menor a', value: '<'},
         {title: 'Menor igual a', value: '<='},
         {title: 'Entre', value: 'BETWEEN'},
-        {title: 'Ninguno', value: 'NOT IN'},
-        {title: 'Todos', value: 'IN'}
+        {title: 'Cualquiera que no esté en', value: 'NOT IN'},
+        {title: 'Cualquiera que esté en', value: 'IN'}
     ])
     const [statisticalProducts, setStatisticalProducts] = useState([]);
     const [statisticalProduct, setStatisticalProduct] = useState();
@@ -177,6 +177,19 @@ export default function estadisticas() {
     }, [tawn]);
 
     useEffect(() => {
+        setIsLoading(true);
+        if(localities.length > 0) {
+            // console.log('localities: ', localities);
+            var name = localities.find(finded => finded.Codigo == locality).Nombre;
+            var id = locality;
+            if(statisticalProduct && statisticalProduct.nivel_desagregacion == 'Localidad' && isNacional == 1) {
+                setAgregationFilters([...agregationFilters, {id: id, name: name}])
+            }
+            setIsLoading(false);
+        }
+    }, [locality]);
+
+    useEffect(() => {
         switch(selectionType) {
             case 1:
                 var array = [];
@@ -233,17 +246,37 @@ export default function estadisticas() {
 
     useEffect(() => {
         if(isMapVisible == true) {
-            var entity_ = entities.find(ent => ent.id_entidades == entity);
-            if(entity_ == undefined)
-                entity_ = 'nacional';
-            console.log('entity_: ', entity_)
-            setEntityObject(entity_);
+            if(isNacional == 1) {
+                var entity_ = entities.find(ent => ent.id_entidades == entity);
+                var tawn_ = tawns.find(taw => taw.cve_mun == tawn);
+                var locality_ = localities.find(loc => loc.Codigo == locality);
+                if(entity_ == undefined) {
+                    setEntityObject('2');
+                } else if(locality_ != null) {
+                    setEntityObject({entity: locality_, capa: '6'});
+                } else if(tawn_ != null) {
+                    tawn_.cve_mun = `${entity}${tawn_.cve_mun}`;
+                    setEntityObject({entity: tawn_, capa: '3'});
+                } else {
+                    setEntityObject({entity: entity_, capa: '2'});
+                }
+            } else {
+                setEntityObject('nacional');
+            }
         }
     }, [layesAdded]);
 
-    // useEffect(() => {
-    //     console.log('filtersAdded: ', filtersAdded);
-    // }, [filtersAdded]);
+    useEffect(() => {
+        if(agregationFilters.length > 5) {
+            renderModal('Solo se pueden agregar 5 elementos');
+            var tmpArray = [];
+            agregationFilters.map((filter, index) => {
+                if(index <= 4)
+                    tmpArray.push(filter);
+            });
+            setAgregationFilters(tmpArray);
+        }
+    }, [agregationFilters]);
 
     function getEntities(response) {
         fetch(`${process.env.ruta}/wa/publico/catEntidades`)
@@ -362,7 +395,9 @@ export default function estadisticas() {
                 args = `${args}&valorNivel=${levelValue}`;
             } else if(statisticalProduct.nivel_desagregacion == 'Localidad') {
                 levelValue = statisticalProduct.col_localidad;
-                args = `${args}&clave=${entity}${tawn}${locality}`;
+                agregationFilters.map(filter => {
+                    args = `${args}&clave=${entity}${tawn}${filter.id}`;
+                });
                 args = `${args}&valorNivel=${levelValue}`;
             }
         }
@@ -515,6 +550,9 @@ export default function estadisticas() {
         setColumnsSelected([]);
         setFiltersAdded([]);
         setAgregationFilters([]);
+        setEntity();
+        setTawn();
+        setLocality();
     }
 
     function changeMapName(e) {

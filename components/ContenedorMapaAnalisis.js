@@ -604,11 +604,13 @@ function ContenedorMapaAnalisis(props) {
                                             feature.properties[nuevoAlias] = keyTemp
                                         }
                                     })
-                                    dataToProps.datos.map((data, index) => {
-                                        dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
-                                            feature.properties[column[1]] = data[column[3]];
+                                    if(dataToProps && dataToProps.datos > 0) {
+                                        dataToProps.datos.map((data, index) => {
+                                            dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                                feature.properties[column[1]] = data[column[3]];
+                                            })
                                         })
-                                    })
+                                    }
                                 }
                                 layerPadre.on('click', function () {
                                     setRasgos([feature]);
@@ -2405,11 +2407,14 @@ function ContenedorMapaAnalisis(props) {
     }, [props.referenciaEntidad]);
     
     function refFunction(referenciaEntidad) {
-        var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
-        var entidad = { id: referenciaEntidad.id_entidades, entidad: referenciaEntidad.nombre_entidad };
+        var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == referenciaEntidad.capa);
+        console.log('referenciaEntidad: ', referenciaEntidad);
         if (referenciaEntidad !== 'nacional') {
+            var entidad = { id: (referenciaEntidad.capa == 2 ? referenciaEntidad.entity.id_entidades : referenciaEntidad.capa == 3 ? referenciaEntidad.entity.cve_mun : referenciaEntidad.entity.Codigo), entidad: (referenciaEntidad.capa == 2 ? referenciaEntidad.entity.nombre_entidad : referenciaEntidad.capa == 3 ? referenciaEntidad.entity.nombre_mun : referenciaEntidad.entity.Nombre) };
+            capa.filtro_entidad = referenciaEntidad.capa == 3 ? capa.filtro_municipio : capa.filtro_entidad;
             construyeEntidadCapa(capa, entidad);
         } else {
+            capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
             construyeNacionalCapa(capa);
         }
     }
