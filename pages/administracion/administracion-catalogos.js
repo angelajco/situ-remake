@@ -39,7 +39,7 @@ export default function AdministracionCatalogos() {
     const [catalogos, setCatalogos] = useState([])
 
     //Variable para guardar los datos de un solo Catálogo
-    const [infoCatalogo, setInfoCatalogo] = useState()
+    const [infoCatalogo, setInfoCatalogo] = useState([])
     //Variable para guardar los datos de las columnas
     const [columnasCat, setColumnasCat] = useState([])
     
@@ -254,7 +254,6 @@ export default function AdministracionCatalogos() {
             if (infoCatalogo != undefined) {
                 const res = infoCatalogo.map(x => Object.keys(x));
                 return row[res]
-                console.log(row[res], 'conceptos');
             }
         }
         
@@ -296,7 +295,6 @@ export default function AdministracionCatalogos() {
         }
     }
 
-    
     //const hola = {id_ambito_actuacion: null, ambito_actuacion: null, descripcion: null, en_uso: null}
     const [updateInfoCatalogo, setUpdateInfoCatalogo] = useState(columsNull)
     
@@ -414,10 +412,15 @@ export default function AdministracionCatalogos() {
             {
             let idPadre = infoCatalogo[0].idCatPadre   
             }
-            
+        const urlPreInsert = [];
+        for (var i = 0; i < columnasCat.length; i++){
+                urlPreInsert.push(columnasCat[i]+"='${data."+columnasCat[i]+"}'");
+        }
+        const urlInsert = eval('`'+urlPreInsert.join('&')+'`');
+        
         var config = {
             method: 'get',
-            url: `${process.env.ruta}/wa/prot/insertDatoCatalogo?id_catalogo=${infoCatalogo.idCatPadre}&id_llave=${data.id}&concepto='${data.concepto}'&descripcion='${data.descripcion}'&boleano='${data.enUso}'`,
+            url: `${process.env.ruta}/wa/prot/insertDatoCatalogo?id_catalogo=${infoCatalogo[0].idCatPadre}&${urlInsert}`,
             headers: {
                 'Authorization': `Bearer ${tokenCookie}`
             },
@@ -430,7 +433,7 @@ export default function AdministracionCatalogos() {
                 })
                 handleShow();
 
-        fetch(`${process.env.ruta}/wa/prot/getOneCatalogo?id_catalogo=${idPadre}` , {
+        fetch(`${process.env.ruta}/wa/prot/getOneCatalogo?id_catalogo=${infoCatalogo[0].idCatPadre}` , {
             headers: {
                     Authorization: `Bearer ${tokenCookie}`
                     }
@@ -459,7 +462,7 @@ export default function AdministracionCatalogos() {
                         (error) => console.log(error)
                     )
                     
-            fetch(`${process.env.ruta}/wa/prot/getColumnasCatalogo?id_catalogo=${idPadre}` , {
+            fetch(`${process.env.ruta}/wa/prot/getColumnasCatalogo?id_catalogo=${infoCatalogo[0].idCatPadre}` , {
             headers: {
                     Authorization: `Bearer ${tokenCookie}`
                     }
@@ -516,7 +519,11 @@ export default function AdministracionCatalogos() {
                                         <Form.Control name={name} ref = {registroNuevoRenglon} type="text" />
                                     </Form.Group>
                             ))}
-                        
+                         {infoCatalogo.length != 0 && 
+                             <Form.Group controlId="idCatPadre">    
+                                    <Form.Control name="idCatPadre" value={infoCatalogo.idCatPadre} type="hidden" />
+                                    </Form.Group>}
+                                    
                         <Button variant="outline-danger" type="submit">Registrar</Button>
                             
                             </Form>
@@ -566,6 +573,7 @@ export default function AdministracionCatalogos() {
 
     <div>
       <button variant="outline-secondary" className="btn-analisis" onClick={() => setAbreNuevoRenglon(true)}>
+      {console.log(infoCatalogo, 'infoCatalogo.idCatPadre789')}
         +Nuevo
       </button>
     </div>
