@@ -23,6 +23,7 @@ export default function Menu() {
     const rolCookie = cookies.get('RolUsuario')
     const estatusCookie = cookies.get('EstatusUsuario')
     const usuarioCookie = cookies.get('Usuario')
+   
 
     //Para ver la URL
     const router = useRouter();
@@ -80,17 +81,20 @@ export default function Menu() {
                 .then(response => response.data)
                 .then(
                     (datosSesion) => {
+
                         setTokenSesion(datosSesion['success-boolean'])
                     },
                     (error) => {
                         console.log(error)
                     }
                 )
+                
         }
     }, [tokenCookie])
 
     useEffect(() => {
         if ((rolCookie == 1 || rolCookie == 2) && estatusCookie == 10) {
+            
             setRolEstatus(true)
         }
         if (usuarioCookie != undefined) {
@@ -154,6 +158,7 @@ export default function Menu() {
                                 </Link>
                         }
                         {
+
                             nombreUsuario &&
                             <Navbar.Text className={noActive}>
                                 {usuarioCookie}
