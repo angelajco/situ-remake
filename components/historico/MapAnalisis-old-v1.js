@@ -13,7 +13,7 @@ import Popout from 'react-popout'
 //Si no es necesario cargar los marcadores
 // import "leaflet/dist/leaflet.css"
 
-import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
+import 'leaflet-fullscreen/dist/leaflet.fullscreen.css'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import 'leaflet-easyprint'

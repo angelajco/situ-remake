@@ -7,7 +7,7 @@ const { BaseLayer } = LayersControl;
 import { EditControl } from 'react-leaflet-draw'
 
 import 'leaflet'
-import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
+import 'leaflet-fullscreen/dist/leaflet.fullscreen.css'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import 'leaflet-zoombox'
