@@ -24,7 +24,7 @@ function ContenedorCD() {
     const [aux, setAux] = useState(false);
     const [tfiltro, setTFiltro] = useState('Tema');
     //para busqueda avanzada
-    const [titulo, setTitulo] = useState();
+    let [titulo, setTitulo] = useState(" ");
     const [desc, setDesc] = useState();
     const [autor, setAutor] = useState();
     const [cobertura, setCobertura] = useState();
@@ -41,7 +41,7 @@ function ContenedorCD() {
     //Para mostra la busqueda
     const [muestraTablABusqueda, setMuestraTablaBusqueda] = useState(false)
     //Datos para crear el form
-    const { register, handleSubmit, watch, clearErrors, setError, errors } = useForm();
+    const { register, handleSubmit,handleChange, watch, clearErrors, setError, errors } = useForm();
 
     //json para los select de los filtros
     const filtros = [
@@ -106,11 +106,12 @@ function ContenedorCD() {
     const verModal = e => {
         setShowModalB(!showModalB);
         setPub('');
+        setTitulo(null);
     }
 
     const cerrarM = e => {
         setShowModalB(!showModalB);
-        setTitulo();
+        setTitulo(null);
         setDesc();
         setAutor();
         setCobertura();
@@ -257,23 +258,26 @@ function ContenedorCD() {
 
 
     const onSubmit = async (data) => {
-        //console.log(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*'${data.tema}*' OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:${data.cobertura} OR descripcion:*'${data.descripcion}'* `);
-        const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tema}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:${data.cobertura} OR descripcion:*'${data.descripcion}'*`);
+        //console.log(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tema}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tema}* OR instancia:*${data.unidad}*`);
+        const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tema}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tema}* OR instancia:*${data.unidad}*`);
         const datos = await res2.json();
         setPub(`Se Encontraron ${datos.length} Docuemntos`)
         modificaResultado(datos);
         setDatos(datos);
         setTitulo(data.dato);
-        setDesc(data.descripcion);
-        setAutor(data.autor);
-        setCobertura(data.cobertura);
-        setUnidad(data.unidad);
-        setEdicion(data.edicion);
-        setTipo(data.tipo);
-        setTema(data.tema);
+       // setDesc(data.descripcion);
+        //setAutor(data.autor);
+       // setCobertura(data.cobertura);
+       // setUnidad(data.unidad);
+       // setEdicion(data.edicion);
+       // setTipo(data.tipo);
+       // setTema(data.tema);
         //modificaURL(`http://172.16.117.11/wa/publico/consultaDocumental?search=nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:${data.cobertura} OR descripcion:*${data.descripcion}* OR tipo:*${data.tipo}*`);
     }//fin del metodo onSubmit
 
+    function cambioD(e){
+        console.log(dato);
+    }
 
     return (
         <>
@@ -283,7 +287,7 @@ function ContenedorCD() {
                 onHide={handleClose}
                 onClick={handleClose}
             />
-            <Modal dialogAs={DraggableModalDialog} show={showModalB} onHide={() => setShowModalB(!showModalB)}
+            <Modal dialogAs={DraggableModalDialog} show={showModalB} onHide={(e) => setShowModalB(!showModalB)}
                 keyboard={false} className="modal-analisis" contentClassName="modal-redimensionable">
                 <Modal.Header closeButton >
                     <Modal.Title><b>Busqueda</b></Modal.Title>
@@ -297,35 +301,35 @@ function ContenedorCD() {
                                     <Form className="col-12" onSubmit={handleSubmit(onSubmit)}>
                                         <Form.Group controlId="dato">
                                             <Form.Label>Titulo</Form.Label>
-                                            <Form.Control name="dato" type="text" ref={register()} value={titulo} />
+                                            <Form.Control name="dato" type="text" ref={register()} />
                                         </Form.Group>
                                         <Form.Group controlId="descripcion">
                                             <Form.Label>Descripción</Form.Label>
-                                            <Form.Control name="descripcion" type="text" ref={register()} value={desc} />
+                                            <Form.Control name="descripcion" type="text" ref={register()}  />
                                         </Form.Group>
                                         <Form.Group controlId="autor">
                                             <Form.Label>Autor</Form.Label>
-                                            <Form.Control name="autor" type="text" ref={register()} value={autor} />
+                                            <Form.Control name="autor" type="text" ref={register()}  />
                                         </Form.Group>
                                         <Form.Group controlId="cobertura">
                                             <Form.Label>Cobertura Geográfica</Form.Label>
-                                            <Form.Control name="cobertura" type="text" ref={register()} value={cobertura} />
+                                            <Form.Control name="cobertura" type="text" ref={register()}  />
                                         </Form.Group>
                                         <Form.Group controlId="unidad">
                                             <Form.Label>Unidad Responsable</Form.Label>
-                                            <Form.Control name="unidad" type="text" ref={register()} value={unidad} />
+                                            <Form.Control name="unidad" type="text" ref={register()}  />
                                         </Form.Group>
-                                        <Form.Group controlId="año">
+                                        <Form.Group controlId="anio">
                                             <Form.Label>Año de Publicación</Form.Label>
-                                            <Form.Control name="año" type="text" ref={register()} value={edicion} />
+                                            <Form.Control name="anio" type="text" ref={register()}  />
                                         </Form.Group>
                                         <Form.Group controlId="tipo">
                                             <Form.Label>Tipo</Form.Label>
-                                            <Form.Control name="tipo" type="text" ref={register()} value={tipo} />
+                                            <Form.Control name="tipo" type="text" ref={register()}  />
                                         </Form.Group>
                                         <Form.Group controlId="tema">
                                             <Form.Label>Tema</Form.Label>
-                                            <Form.Control name="tema" type="text" ref={register()} value={tema} />
+                                            <Form.Control name="tema" type="text" ref={register()}  />
                                         </Form.Group>
                                         <div className="text-center"><h6 name="encontrados">{pub}</h6></div>
                                         <div className="row">
