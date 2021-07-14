@@ -17,16 +17,16 @@ import 'leaflet-easybutton/src/easy-button.js'
 import 'leaflet-kml'
 import 'leaflet-easyprint'
 
+import { ContextoCreado } from '../context/contextoMapasProvider'
 
+var mueveOtroMapa = true;
 
 export default function Map(props) {
+    const valoresContexto = useContext(ContextoCreado)
     //Para guardar la referencia al mapa cuando se crea
     const [mapaReferencia, setmapaReferencia] = useState(null);
     props.referencia(mapaReferencia);
     props.referenciaAnalisis(mapaReferencia);
-
-    //Para guardar el grupo de capas de dibujo
-    var capasDib = null;
 
     //Para guardar las referencias del mapa    
     useEffect(() => {
@@ -119,6 +119,13 @@ export default function Map(props) {
         lDrLo.edit.handlers.remove.tooltip.text = "Clic en la figura para borrarla"
     }, [])
 
+    useEffect(() => {
+        if (valoresContexto.valoresMapa.centro != null) {
+            mueveOtroMapa = false
+            mapaReferencia.setView(valoresContexto.valoresMapa.centro, valoresContexto.valoresMapa.zoom)
+        }
+    }, [valoresContexto.valoresMapa])
+
     const [tipoCoordenada, setTipoCoordenada] = useState(1)
     function cambiaTipoCoordenada({ target }) {
         if (target.value == 1) {
@@ -138,10 +145,10 @@ export default function Map(props) {
             moveend(e) {
                 let centroUndoRedo = mapaEventos.getCenter();
                 let zoomUndoRedo = mapaEventos.getZoom();
-                if (lanzaSincronizacion) {
-                    props.sincronizaMapa("B", zoomUndoRedo, centroUndoRedo)
+                if (mueveOtroMapa == true) {
+                    valoresContexto.setValoresMapaEspejo({ centro: centroUndoRedo, zoom: zoomUndoRedo})
                 }
-                setLanzaSincronizacion(true);
+                mueveOtroMapa = true;
             },
             mousemove(e) {
                 if (tipoCoordenada == 1) {
@@ -208,59 +215,6 @@ export default function Map(props) {
         return null;
     }
 
-    //Para obtener el grupo de los dibujos
-    function grupoDibujos(e) {
-        capasDib = e;
-    }
-
-    //Cuando se dibuja sobre el mapa
-    function Dibujos() {
-        let mapaDibujos = useMap();
-        mapaDibujos.on('draw:created', function (e) {
-            var type = e.layerType,
-                layer = e.layer;
-            if (type === 'polyline') {
-                var distance = 0;
-                length = layer.getLatLngs().length;
-                for (var i = 1; i < length; i++) {
-                    distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
-                }
-                layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
-            } else if (type !== 'marker' && type !== 'circle') {
-                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
-            }
-        });
-
-        mapaDibujos.on('draw:edited', function (e) {
-            var layers = e.layers;
-            layers.eachLayer(function (layer) {
-                if (layer instanceof L.Polyline && !(layer instanceof L.rectangle) && !(layer instanceof L.Polygon)) {
-                    var distance = 0;
-                    length = layer.getLatLngs().length;
-                    for (var i = 1; i < length; i++) {
-                        distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
-                    }
-                    layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
-                } else if (!(layer instanceof L.Marker) && !(layer instanceof L.Circle)) {
-                    var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                    console.log('latlngs: ', layer.getLatLngs())
-                    layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
-                }
-            });
-        });
-
-        return null;
-    }
-
-    const [lanzaSincronizacion, setLanzaSincronizacion] = useState(true)
-
-    function sincroniza(zoom, centro) {
-        setLanzaSincronizacion(false)
-        mapaReferencia.setView(centro, zoom);
-    }
-    props.funcionEnlace("B", sincroniza)
-
     return (
         <>
             <Head>
@@ -275,6 +229,10 @@ export default function Map(props) {
                     <option value='3'>Grados, minutos y segundos</option>
                 </select>
             </div>
+
+            <a>
+                {/* <h1>{valoresContexto.aa}</h1> */}
+            </a>
 
             <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false}>
                 <ScaleControl maxWidth="100" />
@@ -293,7 +251,7 @@ export default function Map(props) {
                         />
                     </BaseLayer>
                 </LayersControl>
-                <FeatureGroup ref={(e) => grupoDibujos(e)}>
+                <FeatureGroup>
                     <EditControl
                         position='topright'
                         draw={{
@@ -302,7 +260,6 @@ export default function Map(props) {
                     >
                     </EditControl>
                 </FeatureGroup>
-                <Dibujos />
                 <ControlMovimiento />
             </MapContainer>
         </>
