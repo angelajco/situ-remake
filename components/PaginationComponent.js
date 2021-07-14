@@ -14,6 +14,8 @@ import dataPub from '../shared/jsons/publicaciones.json';
 //import datosP from '../shared/jsons/Datos.json';
 import jsPDF from 'jspdf';
 import jpt from 'jspdf-autotable';
+import Cookies from 'universal-cookie'
+const cookies = new Cookies()
 
 
 
@@ -21,6 +23,11 @@ import jpt from 'jspdf-autotable';
 function PaginationComponent(props) {
 
   const url_bus = props.informacion;
+  //console.log(url_bus);
+  const usuarioCookie = cookies.get('Usuario')
+  const usuarioI = cookies.get('IDU')
+  //console.log(usuarioCookie);
+  // console.log(usuarioI);
 
   //Datos para crear el form
   const { register, handleSubmit, watch, clearErrors, setError, errors } = useForm();
@@ -59,7 +66,7 @@ function PaginationComponent(props) {
     var header = function (data) {
       doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
       doc.setFontSize(10);
-      doc.text(20, 43, "Usuario");
+      doc.text(20, 43, "Nombre Usuario: " + usuarioCookie);
       doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
       //doc.setFontType("bold");
       doc.setFontSize(13);
@@ -72,9 +79,20 @@ function PaginationComponent(props) {
     doc.autoTable(columns, result, { margin: { top: 65 }, theme: 'grid', beforePageContent: header });
     let string = doc.output('datauristring');
     //let uri = doc.save('Consulta-Documental.pdf');
+    /*
     var embed = "<embed width='100%' height='100%' src='" + string + "'/>"
     var divP = document.getElementById('prev');
     divP.innerHTML += embed;
+    doc.save('Consulta-Documental');*/
+
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      doc.save('Consulta-Documental');
+    } else {
+      var embed = "<embed width='100%' height='100%' src='" + string + "'/>"
+      var divP = document.getElementById('prev');
+      divP.innerHTML += embed;
+     // doc.save('Consulta-Documental');
+    }
 
   }
 
@@ -103,7 +121,7 @@ function PaginationComponent(props) {
     var header = function (data) {
       doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
       doc.setFontSize(10);
-      doc.text(20, 43, "Usuario");
+      doc.text(20, 43, "Nombre Usuario: " + usuarioCookie);
       doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
       //doc.setFontType("bold");
       doc.setFontSize(13);
@@ -115,14 +133,14 @@ function PaginationComponent(props) {
 
     doc.autoTable(columns, result, { margin: { top: 65 }, theme: 'grid', beforePageContent: header });
     let string = doc.output('datauristring');
+
   }
 
   const actBitacora = async (cod) => {
     //codigo para actualizar la botacora cuendo se descarge un documento
-    const res = await fetch(`${process.env.ruta}/wa/publico/bitacoraDocumento?id_usuario=1&id_documento=${cod}`);
+    const res = await fetch(`${process.env.ruta}/wa/publico/bitacoraDocumento?id_usuario=${usuarioI}&id_documento=${cod}`);
     const datos = await res.json();
-    console.log(datos);
-
+    //console.log(datos);
   }
 
   const descargarCVS = async (e) => {
@@ -139,7 +157,7 @@ function PaginationComponent(props) {
     csv.unshift("Total de Documentos: " + items.length);
     csv.unshift("CONSULTA DOCUMENTAL");
     csv.unshift("FECHA:  " + fecha + "    HORA: " + hora);
-    csv.unshift("USUARIO");
+    csv.unshift("Nombre Usuario: " + usuarioCookie);
     csv = csv.join('\r\n');
     //Download the file as CSV
     var downloadLink = document.createElement("a");
@@ -207,54 +225,52 @@ function PaginationComponent(props) {
       />
 
         {
-          <div className="conten" name="tablaC">
-            <div className="row">
-              <table className="table table-bordered">
-                <thead className="thead-dark">
-                  <tr>
-                    <th>Portada</th>
-                    <th className="columna1">Titulo</th>
-                    <th className="columna2">Autor</th>
-                    <th className="columna3">Tema</th>
-                    <th className="columna4">Fecha de Publicación</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {
-                    data.map((todo) => {
-                      return (
-                        <tr key={todo.id_metadato_documento}>
-                          <td>
-                            <a href={todo.url_origen} target='_blank'>
-                              <img src='images/consulta/PUBLICACION_SITU.png' alt='Miniatura' className='card-img-top' />
-                            </a>
-                          </td>
-                          <td>
-                            {todo.nombre}
-                          </td>
-                          <td>
-                            {todo.autor}
-                          </td>
-                          <td>
-                            <p>{todo.tema1}</p>
-                            <p>{todo.tema2}</p>
-                          </td>
-                          <td>
-                            <p>{todo.ano_publicacion}-{todo.mes_publicacion}-{todo.dia_publicacion}</p>
-                          </td>
-                          <td >
-                            <a className="columna5" onClick={() => metadatosModal(todo.id_metadato_documento)}><FontAwesomeIcon icon={faEye} /></a>
-                          </td>
-                        </tr>
-                      )
-                    }) //termiina funcion map
-                  }
-                </tbody>
-              </table>
-
-            </div>
+          <div className="col-12 col-md-12 col-lg-12">
+            <table className="table table-bordered table-responsive">
+              <thead className="thead-dark">
+                <tr>
+                  <th>Portada</th>
+                  <th className="columna1">Titulo</th>
+                  <th className="columna2">Autor</th>
+                  <th className="columna3">Tema</th>
+                  <th className="columna4">Fecha de Publicación</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {
+                  data.map((todo) => {
+                    return (
+                      <tr key={todo.id_metadato_documento}>
+                        <td>
+                          <a href={todo.url_origen} target='_blank' onClick={() => actBitacora(todo.id_metadato_documento)}>
+                            <img src='images/consulta/PUBLICACION_SITU.png' alt='Miniatura' className='card-img-top' />
+                          </a>
+                        </td>
+                        <td>
+                          {todo.nombre}
+                        </td>
+                        <td>
+                          {todo.autor}
+                        </td>
+                        <td>
+                          <p>{todo.tema1}</p>
+                          <p>{todo.tema2}</p>
+                        </td>
+                        <td>
+                          <p>{todo.ano_publicacion}-{todo.mes_publicacion}-{todo.dia_publicacion}</p>
+                        </td>
+                        <td >
+                          <a className="columna5" onClick={() => metadatosModal(todo.id_metadato_documento)}><FontAwesomeIcon icon={faEye} /></a>
+                        </td>
+                      </tr>
+                    )
+                  }) //termiina funcion map
+                }
+              </tbody>
+            </table>
           </div>
+
 
         /*  data.map((todo) => {
             return (
@@ -323,7 +339,14 @@ function PaginationComponent(props) {
         </div>
         <div className="row">
           <div className="col-12">
-            <p><b>{datos[0].pais}</b> &nbsp;&nbsp;&nbsp;&nbsp;{datos[0].ano_publicacion}</p>
+            <p><b>{datos[0].pais}</b> &nbsp;&nbsp;&nbsp;&nbsp;{datos[0].ano_publicacion}&nbsp;&nbsp;&nbsp;&nbsp;
+            Tipo de documento:&nbsp;<b>{datos[0].tipo}</b></p>
+          </div>
+        </div>
+        <div className="row">
+          <div className="col-12 col-md-12 col-lg-12">
+            <p>Tema 1:&nbsp;<b>{datos[0].tema1}</b></p>
+            <p>Tema 2:&nbsp;<b>{datos[0].tema2}</b></p>
           </div>
         </div>
         <div className="row">
@@ -449,7 +472,7 @@ function PaginationComponent(props) {
     {
       //Betty1
     }
-    <Modal dialogAs={DraggableModalDialog} show={showReporte} onHide={() => setShowReporte(!showReporte)}
+    <Modal dialogAs={DraggableModalDialog} show={showReporte} onHide={MuestraDescarga}
       keyboard={false} className="modal-analisis" contentClassName="modal-redimensionable tamanio">
       <Modal.Header closeButton >
         <Modal.Title><b>Reportes</b></Modal.Title>
@@ -457,12 +480,15 @@ function PaginationComponent(props) {
       <Modal.Body>
         <div id="reporte">
           <div className="row text-center">
-            <div className="col-5">
+            <div className="col-4">
               <button className="btn-admin" onClick={descargarCVS}>Reporte CSV</button>
             </div>
 
-            <div className="col-5">
+            <div className="col-4">
               <button className="btn-admin" onClick={descargaDoc}>Reporte PDF</button>
+            </div>
+            <div className="col-4">
+              <Button variant="outline-danger" className="btn-admin" onClick={MuestraDescarga}>Cerrar</Button>
             </div>
           </div>
           <br></br>
@@ -624,22 +650,26 @@ function PaginationComponent(props) {
 
 
 
-    <div className="row datos-cd">
+    <div className="row">
       {renderData(currentItems)}
     </div>
     <br></br>
-    <br></br>
     <div className="row">
-      <div className="col-8">
-        <button className="b btn btn-light" onClick={MuestraCarga}> Cargar Documento&nbsp;
-          <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
-        </button>&nbsp;&nbsp;
+      <div className="col-12 col-md-7 col-lg-7">
+        {
+          /*
+                  }
+                  <button className="b btn btn-light" onClick={MuestraCarga}> Cargar Documento&nbsp;
+                    <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
+                  </button>&nbsp;&nbsp;
+          {
+            */
+        }
         <button className="b btn btn-light" onClick={MuestraDescarga}>Descargar Reporte&nbsp;
           <FontAwesomeIcon icon={faDownload}></FontAwesomeIcon>
         </button>
       </div>
-      <div className="col-1"></div>
-      <div className="py-2 col-2 text-align-left">
+      <div className="col-11 col-md-2 col-lg-2 text-align-left">
         <ul className="pageNumbers">
           <li>
             <button onClick={handlePrevbtn}

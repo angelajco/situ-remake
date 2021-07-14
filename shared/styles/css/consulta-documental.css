@@ -5,7 +5,6 @@
    
 }
 
-
 .modal-consulta{
     width: 100%;
 }
@@ -82,7 +81,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 3em;
+    /*height: 3em;*/
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     border: 1px solid #000;
 }
@@ -119,14 +118,12 @@ a.columna5{
 }
 
 .b{
-    width: 15em;
+    width: 13em;
     height: 3em;
-    font-size: 16pt;
+    font-size: 14pt;
     border: 1px solid #000;
 }
-.datos-cd{
-    height: 820px;
-}
+
 
 .tamanio{
     width: 800px;
@@ -153,7 +150,7 @@ a.columna5{
     height: 500px;
 }
 
-/* Landscape phone to portrait tablet */
+/* Landscape phone to portrait tablet 
 @media (max-width: 767px) { 
 
     .datos-cd{
@@ -162,4 +159,8 @@ a.columna5{
 
  }
 
+ .datos-cd{
+    height: 820px;
+}
+*/
  
