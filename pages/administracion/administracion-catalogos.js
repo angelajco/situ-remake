@@ -104,11 +104,8 @@ export default function AdministracionCatalogos() {
             })
             .then(res => res.json())
             .then(
-                (data) => {data.map(infoValor => {
-                        infoValor.idCatPadre = 1,
-                        setInfoCatalogo(data)
-                        })
-                //console.log(data, 'data_id_catalogos')
+                (data) => {setIdActual(1)
+                    setInfoCatalogo(data)
                 },
                 (error) => console.log(error)
             )
@@ -164,7 +161,9 @@ export default function AdministracionCatalogos() {
             Router.push('/administracion/inicio-sesion')
         }
     }, [tokenCookie])
-
+    
+    const [idActual, setIdActual] = useState(null)
+    
     const muestraInfo = (id_catalogos) => {
         fetch(`${process.env.ruta}/wa/prot/getOneCatalogo?id_catalogo=${id_catalogos}` , {
             headers: {
@@ -173,10 +172,8 @@ export default function AdministracionCatalogos() {
             })
             .then(res => res.json())
             .then(
-                (data) => {data.map(infoValor => {
-                        infoValor.idCatPadre = id_catalogos,
-                        setInfoCatalogo(data)
-                        })
+                (data) => {setIdActual(id_catalogos)
+                    setInfoCatalogo(data)
                 },
                 (error) => console.log(error)
             )
@@ -193,9 +190,9 @@ export default function AdministracionCatalogos() {
             )
     }
 
-    const limpiaInfo = () => {
+  /*  const limpiaInfo = () => {
         setInfoCatalogo();
-    }
+    } */
 
     const variableHeader = () => {
      if (infoCatalogo != undefined) {
@@ -203,10 +200,6 @@ export default function AdministracionCatalogos() {
           console.log(infoCatalogo.map(x => Object.keys(x))[0]);
       }
     }
-    
-
-
- 
     
     const completaNombre = (cell, row) => {
         return row.catalogo
@@ -216,7 +209,7 @@ export default function AdministracionCatalogos() {
         return (
             <div className="tw-text-center">
                 <OverlayTrigger placement="bottom" overlay={<Tooltip>Ver información</Tooltip>}>
-                    <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer" onClick={() => muestraInfo(row.id_catalogos)} icon={faEye}></FontAwesomeIcon>
+                    <FontAwesomeIcon className="tw-mr-3 tw-cursor-pointer" onClick={() => { muestraInfo(row.id_catalogos)}} icon={faEye}></FontAwesomeIcon>
                 </OverlayTrigger>
             </div>
         )
@@ -249,14 +242,7 @@ export default function AdministracionCatalogos() {
             </div>
         )
     }
-                  
-    const variableConcepto = (cell, row) => {
-            if (infoCatalogo != undefined) {
-                const res = infoCatalogo.map(x => Object.keys(x));
-                return row[res]
-            }
-        }
-        
+                          
     //ColumnasFormulario2Dinamicas    
     let variable1 = "[";
     
@@ -311,7 +297,7 @@ export default function AdministracionCatalogos() {
             setDatosModalFunction({
                 title: 'Actualización de catálogos',
                 body: '¿Desea actualizar ' + columnasCat[1] + "?",
-                id: infoCatalogo.idCatPadre
+                id: idActual
             });
         }
 
@@ -362,10 +348,8 @@ export default function AdministracionCatalogos() {
             })
             .then(res => res.json())
             .then(
-                (data) => {data.map(infoValor => {
-                        infoValor.idCatPadre = id,
-                        setInfoCatalogo(data)
-                        })
+                (data) => {setIdActual(id)
+                    setInfoCatalogo(data)
                 },
                 (error) => console.log(error)
             )
@@ -401,17 +385,14 @@ export default function AdministracionCatalogos() {
     const submitNuevoRenglon = (data) => {     
         
             const res = infoCatalogo.map(x => Object.keys(x));
-            console.log(res, 'conceptos');
+            console.log(data, 'dataNuevoRenglon');
                 
         const foundId = infoCatalogo.find(({ id }) => id == data.id);
         if(foundId != undefined)
             {
             window.alert('Error: id ' + data.id + ' ya esta en uso')
-            }
-        else
-            {
-            let idPadre = infoCatalogo[0].idCatPadre   
-            }
+            } else {   
+        }
         const urlPreInsert = [];
         for (var i = 0; i < columnasCat.length; i++){
                 urlPreInsert.push(columnasCat[i]+"='${data."+columnasCat[i]+"}'");
@@ -420,7 +401,7 @@ export default function AdministracionCatalogos() {
         
         var config = {
             method: 'get',
-            url: `${process.env.ruta}/wa/prot/insertDatoCatalogo?id_catalogo=${infoCatalogo[0].idCatPadre}&${urlInsert}`,
+            url: `${process.env.ruta}/wa/prot/insertDatoCatalogo?id_catalogo=${data.idCatPadre}&${urlInsert}`,
             headers: {
                 'Authorization': `Bearer ${tokenCookie}`
             },
@@ -433,17 +414,15 @@ export default function AdministracionCatalogos() {
                 })
                 handleShow();
 
-        fetch(`${process.env.ruta}/wa/prot/getOneCatalogo?id_catalogo=${infoCatalogo[0].idCatPadre}` , {
+        fetch(`${process.env.ruta}/wa/prot/getOneCatalogo?id_catalogo=${data.idCatPadre}` , {
             headers: {
                     Authorization: `Bearer ${tokenCookie}`
                     }
             })
             .then(res => res.json())
             .then(
-                (data) => {data.map(infoValor => {
-                        infoValor.idCatPadre = idPadre,
-                        setInfoCatalogo(data)
-                        })
+                (datos) => {setIdActual(data.idCatPadre)
+                    setInfoCatalogo(datos)
                 },
                 (error) => console.log(error)
             )
@@ -462,7 +441,7 @@ export default function AdministracionCatalogos() {
                         (error) => console.log(error)
                     )
                     
-            fetch(`${process.env.ruta}/wa/prot/getColumnasCatalogo?id_catalogo=${infoCatalogo[0].idCatPadre}` , {
+            fetch(`${process.env.ruta}/wa/prot/getColumnasCatalogo?id_catalogo=${data.idCatPadre}` , {
             headers: {
                     Authorization: `Bearer ${tokenCookie}`
                     }
@@ -483,15 +462,9 @@ export default function AdministracionCatalogos() {
                 handleShow();
             })
     }
-    
-
-
-
-    
+        
     return (
         <>
-        
-
 
                     <ModalFunction
                         show={showFunction}
@@ -519,11 +492,11 @@ export default function AdministracionCatalogos() {
                                         <Form.Control name={name} ref = {registroNuevoRenglon} type="text" />
                                     </Form.Group>
                             ))}
-                         {infoCatalogo.length != 0 && 
-                             <Form.Group controlId="idCatPadre">    
-                                    <Form.Control name="idCatPadre" value={infoCatalogo.idCatPadre} type="hidden" />
-                                    </Form.Group>}
-                                    
+                           { idActual != null &&
+                           <Form.Group controlId="idCatPadre">
+                                <Form.Control name="idCatPadre" ref = {registroNuevoRenglon} value={idActual} type="hidden" />
+                            </Form.Group>}
+                                
                         <Button variant="outline-danger" type="submit">Registrar</Button>
                             
                             </Form>
@@ -573,7 +546,6 @@ export default function AdministracionCatalogos() {
 
     <div>
       <button variant="outline-secondary" className="btn-analisis" onClick={() => setAbreNuevoRenglon(true)}>
-      {console.log(infoCatalogo, 'infoCatalogo.idCatPadre789')}
         +Nuevo
       </button>
     </div>
@@ -619,11 +591,7 @@ export default function AdministracionCatalogos() {
                                         </Tab>
                         
                                     </Tabs>
-                                    <div className="col-12 tw-text-center tw-mt-6">
-                                        <Button variant="outline-secondary" className="btn-admin" onClick={limpiaInfo}>CERRAR</Button>
-                                     </div>
-                                               
-                                               
+                                                                                    
 
                                             </>
                                         )
