@@ -19,6 +19,9 @@ import 'leaflet-easybutton/src/easy-button.js'
 import 'leaflet-kml'
 import 'leaflet-easyprint'
 
+import { ContextoCreado } from '../context/contextoMapasProvider'
+
+var mueveOtroMapa = true;
 //Funcion del timeline undo redo
 var registraMovimiento = true;
 var _timeline = {
@@ -139,13 +142,11 @@ L.Personal = L.Handler.extend({
 L.Map.addInitHook('addHandler', 'personal', L.Personal);
 
 export default function Map(props) {
+    const valoresContexto = useContext(ContextoCreado)
     //Para guardar la referencia al mapa cuando se crea
     const [mapaReferencia, setmapaReferencia] = useState(null);
     props.referencia(mapaReferencia);
     props.referenciaAnalisis(mapaReferencia);
-
-    //Para guardar el grupo de capas de dibujo
-    var capasDib = null;
 
     //Para guardar las referencias del mapa    
     useEffect(() => {
@@ -286,6 +287,13 @@ export default function Map(props) {
         }
     }
 
+    useEffect(() => {
+        if (valoresContexto.valoresMapaEspejo.centro != null) {
+            mueveOtroMapa = false;
+            mapaReferencia.setView(valoresContexto.valoresMapaEspejo.centro, valoresContexto.valoresMapaEspejo.zoom)
+        }
+    }, [valoresContexto.valoresMapaEspejo])
+
     function ControlMovimiento() {
         const [coordenadas, setCoordenadas] = useState("")
         const mapa = useMap();
@@ -299,11 +307,11 @@ export default function Map(props) {
                     update(nextTodos);
                 }
                 registraMovimiento = true;
-
-                if (lanzaSincronizacion) {
-                    props.sincronizaMapa("A", zoomUndoRedo, centroUndoRedo)
+                //Para mover el otro mapa
+                if (mueveOtroMapa == true) {
+                    valoresContexto.setValoresMapa({ centro: centroUndoRedo, zoom: zoomUndoRedo })
                 }
-                setLanzaSincronizacion(true);
+                mueveOtroMapa = true;
             },
             mousemove(e) {
                 if (tipoCoordenada == 1) {
@@ -369,14 +377,6 @@ export default function Map(props) {
 
         return null;
     }
-
-    const [lanzaSincronizacion, setLanzaSincronizacion] = useState(true)
-    function sincroniza(zoom, centro) {
-        console.log(zoom, centro, "zoom centro")
-        setLanzaSincronizacion(false)
-        mapaReferencia.setView(centro, zoom);
-    }
-    props.funcionEnlace("A", sincroniza)
 
 
     return (

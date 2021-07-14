@@ -11,7 +11,7 @@ import Header from '../components/Header'
 import Menu from '../components/Menu'
 import Footer from '../components/Footer'
 
-import {useEffect} from 'react'
+import { useEffect } from 'react'
 import '../config/i18n'
 
 function MyApp({ Component, pageProps }) {

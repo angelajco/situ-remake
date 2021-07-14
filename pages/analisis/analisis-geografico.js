@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEdit, faCheck } from '@fortawesome/free-solid-svg-icons'
 
 import ContenedorMapaAnalisis from '../../components/ContenedorMapaAnalisis'
+import ContextoMapasProvider from '../../context/contextoMapasProvider'
 
 var referenciaMapaEspejoAnalisis = null;
 function capturaReferenciaMapaEspejo(mapa) {
@@ -55,59 +56,54 @@ export default function AnalisisGeografico() {
             <div className="main tw-mb-12">
                 <div className="container">
                     <div className="row">
-                        {/* <div className="col-12 tw-mb-6">
-                            <button className="btn-dividir-pantalla" onClick={dividirPantalla}>
-                                <img src="/images/analisis/pantalla-dividida.png" title="Pantalla dividida"></img>
-                            </button>
-                        </div> */}
-
-                        <div className={`${dobleMapa} col-mapa tw-pt-6`}>
-                            <div className="row">
-                                <div className="col-2">
-                                    <button className="btn-dividir-pantalla" onClick={dividirPantalla}>
-                                        <img src="/images/analisis/pantalla-dividida.png" title="Pantalla dividida"></img>
-                                    </button>
-                                </div>
-                                <div className="col-8 tw-text-center">
-                                    <p>
-                                        {nombreMapa}
-                                        <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
-                                            <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setmuestraEditarNombreMapa(false)} icon={faEdit} />
+                        <ContextoMapasProvider>
+                            <div className={`${dobleMapa} col-mapa tw-pt-6`}>
+                                <div className="row">
+                                    <div className="col-2">
+                                        <button className="btn-dividir-pantalla" onClick={dividirPantalla}>
+                                            <img src="/images/analisis/pantalla-dividida.png" title="Pantalla dividida"></img>
+                                        </button>
+                                    </div>
+                                    <div className="col-8 tw-text-center">
+                                        <p>
+                                            {nombreMapa}
+                                            <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
+                                                <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setmuestraEditarNombreMapa(false)} icon={faEdit} />
+                                            </OverlayTrigger>
+                                        </p>
+                                        <input type="text" hidden={muestraEditarNombreMapa} onChange={(event) => cambiaNombreMapa(event, 0)} value={nombreMapa}></input>
+                                        <OverlayTrigger overlay={<Tooltip>Finalizar edición</Tooltip>}>
+                                            <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" hidden={muestraEditarNombreMapa} onClick={() => setmuestraEditarNombreMapa(true)} icon={faCheck}></FontAwesomeIcon>
                                         </OverlayTrigger>
-                                    </p>
-                                    <input type="text" hidden={muestraEditarNombreMapa} onChange={(event) => cambiaNombreMapa(event, 0)} value={nombreMapa}></input>
-                                    <OverlayTrigger overlay={<Tooltip>Finalizar edición</Tooltip>}>
-                                        <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" hidden={muestraEditarNombreMapa} onClick={() => setmuestraEditarNombreMapa(true)} icon={faCheck}></FontAwesomeIcon>
-                                    </OverlayTrigger>
-                                </div>
+                                    </div>
 
-                                <div className="col-12">
-                                    <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} />
+                                    <div className="col-12">
+                                        <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className={`col-6 col-mapa tw-pt-6 ${pantallaDividida == false && "esconde-mapa"}`}>
-                            <div className="row">
-                                <div className="col-12 tw-text-center">
-                                    <p>
-                                        {nombreMapaEspejo}
-                                        <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
-                                            <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setmuestraEditarNombreMapaEspejo(false)} icon={faEdit}></FontAwesomeIcon>
+                            <div className={`col-6 col-mapa tw-pt-6 ${pantallaDividida == false && "esconde-mapa"}`}>
+                                <div className="row">
+                                    <div className="col-12 tw-text-center">
+                                        <p>
+                                            {nombreMapaEspejo}
+                                            <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
+                                                <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setmuestraEditarNombreMapaEspejo(false)} icon={faEdit}></FontAwesomeIcon>
+                                            </OverlayTrigger>
+                                        </p>
+                                        <input type="text" hidden={muestraEditarNombreMapaEspejo} onChange={(event) => cambiaNombreMapa(event, 1)} value={nombreMapaEspejo}></input>
+                                        <OverlayTrigger overlay={<Tooltip>Finalizar edición</Tooltip>}>
+                                            <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" hidden={muestraEditarNombreMapaEspejo} onClick={() => setmuestraEditarNombreMapaEspejo(true)} icon={faCheck}></FontAwesomeIcon>
                                         </OverlayTrigger>
-                                    </p>
-                                    <input type="text" hidden={muestraEditarNombreMapaEspejo} onChange={(event) => cambiaNombreMapa(event, 1)} value={nombreMapaEspejo}></input>
-                                    <OverlayTrigger overlay={<Tooltip>Finalizar edición</Tooltip>}>
-                                        <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" hidden={muestraEditarNombreMapaEspejo} onClick={() => setmuestraEditarNombreMapaEspejo(true)} icon={faCheck}></FontAwesomeIcon>
-                                    </OverlayTrigger>
-                                </div>
+                                    </div>
 
-                                <div className="col-12">
-                                    <ContenedorMapaAnalisis botones={false} referenciaAnalisis={capturaReferenciaMapaEspejo} />
+                                    <div className="col-12">
+                                        <ContenedorMapaAnalisis botones={false} referenciaAnalisis={capturaReferenciaMapaEspejo} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
+                        </ContextoMapasProvider>
                     </div>
                 </div>
             </div>

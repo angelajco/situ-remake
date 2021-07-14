@@ -21,6 +21,7 @@ import xml2js from 'xml2js'
 import xpath from 'xml2js-xpath'
 // import omnivore from '@mapbox/leaflet-omnivore'
 
+import ExampleContextProvider from '../context/contextoMapasProvider'
 
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
@@ -1277,7 +1278,7 @@ function ContenedorMapaAnalisis(props) {
                     linea = 2;
                 }
                 for (let i = 0; i < unicos.length; i++) {
-                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1, 5,linea);
+                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1, 5, linea);
                 }
 
                 simbologiaF = sim1;
@@ -2372,22 +2373,6 @@ function ContenedorMapaAnalisis(props) {
         }
     }, [rasgos]);
 
-    //Para el movimiento de los dos mapas
-    function enlaceMapa(tag, funcion) {
-        if (tag == 'A') {
-            sincronizaA = funcion
-        } else {
-            sincronizaB = funcion
-        }
-    }
-    const sincronizaMapa = (tag, zoom, centro) => {
-        if (tag == 'A') {
-            sincronizaB(zoom, centro)
-        } else {
-            sincronizaA(zoom, centro)
-        }
-    }
-
     useEffect(() => {
         if (props.referenciaEntidad != undefined) {
             refFunction(props.referenciaEntidad);
@@ -2414,10 +2399,11 @@ function ContenedorMapaAnalisis(props) {
     const [dataToProps, setDataToProps] = useState();
 
     useEffect(() => {
-        if(props.informacionEspacial != undefined) {
+        if (props.informacionEspacial != undefined) {
             setDataToProps(props.informacionEspacial);
         }
     }, [props.informacionEspacial]);
+
     //Para mostrar las capas dibujadas
     const [modalCapasDibujadas, setModalCapasDibujadas] = useState();
     const [layersDibujadas, setLayersDibujadas] = useState([]);
@@ -2456,9 +2442,20 @@ function ContenedorMapaAnalisis(props) {
             dibujo.tipo = 5
             dibujo.nombre = `Otra figura ${iOtro}`
         }
+        dibujo.id = dibujo.layer._leaflet_id;
         dibujo.habilitado = true;
         arregloLayers.push(dibujo)
         setLayersDibujadas(arregloLayers)
+    }
+
+    const eliminaDibujo = (dibujo) => {
+        let idArreglo = []
+        for (var i in dibujo.layers._layers) {
+            idArreglo.push(dibujo.layers._layers[i]._leaflet_id);
+        }
+        let nuevoArr = arregloLayers.filter(valor => !idArreglo.includes(valor.id))
+        arregloLayers = nuevoArr;
+        setLayersDibujadas(nuevoArr)
     }
 
     useEffect(() => {
@@ -2466,6 +2463,10 @@ function ContenedorMapaAnalisis(props) {
             //Cuando se dibuja algo en el mapa
             referenciaMapa.on('draw:created', function (e) {
                 procesaDibujo(e)
+            });
+
+            referenciaMapa.on('draw:deleted', function (e) {
+                eliminaDibujo(e)
             });
         }
     }, [capturoReferenciaMapa])
@@ -2498,7 +2499,6 @@ function ContenedorMapaAnalisis(props) {
         } else {
             setCheckedAll(true);
         }
-        console.log(checkedAll, "checkedAll")
         let capasDibujadasTemporal = layersDibujadas.map((valor) => {
             if (e.target.checked == true) {
                 valor.habilitado = true;
@@ -2582,19 +2582,18 @@ function ContenedorMapaAnalisis(props) {
             referenciaMapa.fitBounds(layer.getBounds())
         } else if (tipo == 1) {
             let zoom = referenciaMapa.getZoom();
-            console.log(zoom, "zoom")
             let centro = layer.getBounds().getCenter();
-            console.log(centro, "centro", layer, "layer")
             if (zoom == 5) {
-                referenciaMapa.panTo([centro.lat, centro.lng])
+                // referenciaMapa.panTo([centro.lat, centro.lng])
+                referenciaMapa.setView([centro.lat, centro.lng], 5)
             } else if (zoom == 6) {
                 zoom = zoom - 1;
-                referenciaMapa.panTo([centro.lat, centro.lng])
-                referenciaMapa.setZoom(5)
+                // referenciaMapa.panTo([centro.lat, centro.lng])
+                // referenciaMapa.setZoom(5)
+                referenciaMapa.setView([centro.lat, centro.lng], zoom)
             } else if (zoom >= 7) {
-                let nuevoZoom = zoom - 2
-                referenciaMapa.panTo([centro.lat, centro.lng])
-                referenciaMapa.setZoom(nuevoZoom)
+                zoom = zoom - 2
+                referenciaMapa.setView([centro.lat, centro.lng], zoom)
             }
         }
         setModalCapasDibujadas(false);
@@ -2635,7 +2634,7 @@ function ContenedorMapaAnalisis(props) {
 
             {/* <Modal dialogAs={DraggableModalDialog} show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
                 keyboard={false} backdrop="static" className="modal-analisis" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis"> */}
-                <Modal show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
+            <Modal show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
                 keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
                 <Modal.Header className="tw-cursor-pointer" closeButton>
                     <Modal.Title>
@@ -3649,19 +3648,17 @@ function ContenedorMapaAnalisis(props) {
                 </OverlayTrigger> */}
                 <OverlayTrigger rootClose overlay={<Tooltip>Capas dibujadas</Tooltip>}>
                     <button className="botones-barra-mapa" onClick={() => setModalCapasDibujadas(true)}>
-                        <FontAwesomeIcon icon={faLayerGroup}></FontAwesomeIcon>
+                        <img src="/images/analisis/capas_dib.png" alt="Capas dibujadas" className="tw-w-5" />
                     </button>
                 </OverlayTrigger>
             </div>
+
             {
                 props.botones == true
                     ?
-                    <Map referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
-                        referenciaAnalisis={props.referenciaAnalisis}
-                    />
+                    <Map referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} />
                     :
-                    <MapEspejo referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
-                        referenciaAnalisis={props.referenciaAnalisis} />
+                    <MapEspejo referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} />
             }
         </>
     )
