@@ -244,21 +244,34 @@ export default function AdministracionCatalogos() {
     }
                           
     //ColumnasFormulario2Dinamicas    
+
+    
     let variable1 = "[";
     
     let variable2 = "";
     if (columnasCat != undefined) {
-        for(var i = 0; i < columnasCat.length; i++){
-            variable2=variable2+"{dataField : '" + columnasCat[i] + "',text : '" + columnasCat[i] + "'},";
-        }
+        const foundBoleano = columnasCat.find(boleano => boleano === "en_uso");
+        if(foundBoleano != undefined)
+            {
+            for(var i = 0; i < columnasCat.length - 1; i++){
+                variable2=variable2+"{dataField : '" + columnasCat[i] + "',text : '" + columnasCat[i] + "', sort: true},";
+                } 
+            variable2=variable2+"{dataField: 'en_uso', text: 'en_uso', validator: (newValue, row, column) => {if ((newValue === 'true') || (newValue === 'false')) { return true; } else {return {valid: false, message: 'Solo acepta: true/false'};} return true}},";   
+            }
+        else
+            {
+            for(var i = 0; i < columnasCat.length; i++){
+                variable2=variable2+"{dataField : '" + columnasCat[i] + "',text : '" + columnasCat[i] + "', sort: true},";
+                }
+            }
     }
     
     let variable3 = "{dataField: 'acciones', text: 'Acciones', formatter: accionesOneCatalogo, editable: false}];";
 
     let variableFinal = variable1 + variable2 + variable3;  
     
-    const columnsOneCatalogo = eval(variableFinal)
-    
+   const columnsOneCatalogo = eval(variableFinal)
+                  
     const pagination = paginationFactory({
         sizePerPage: 10,
         alwaysShowAllBtns: true,
@@ -296,12 +309,11 @@ export default function AdministracionCatalogos() {
         setShowFunction(true);
             setDatosModalFunction({
                 title: 'Actualización de catálogos',
-                body: '¿Desea actualizar ' + columnasCat[1] + "?",
+                body: '¿Desea actualizar ' + infoCatalogo.concepto + "?",
                 id: idActual
             });
         }
 
-    
     const updateCatalogo = (id) => {
         handleCloseFunction();
         const urlprueba = [];
@@ -485,13 +497,36 @@ export default function AdministracionCatalogos() {
                         <Modal.Body>
                             <Form onSubmit={handleNuevoRenglon(submitNuevoRenglon)}>
                             
-                            { columnasCat.length != 0 && 
+                            {columnasCat.length != 0 && 
+                                columnasCat.find(boleano => boleano === "en_uso") 
+                                
+                                ? 
+
+                                columnasCat.filter(word => word != "en_uso").map((name, index) => (
+                                <Form.Group Key={index} controlId={name}>
+                                        <Form.Label>{name}</Form.Label>      
+                                        <Form.Control name={name} ref = {registroNuevoRenglon} type="text" />
+                                </Form.Group> 
+                                ))           
+                            .concat(
+                                <Form.Group controlId="en_uso">
+                                    <Form.Label>en_uso</Form.Label>
+                                    <Form.Control name="en_uso" ref = {registroNuevoRenglon} as="select" defaultValue="true">
+                                    <option>true</option>
+                                    <option>false</option>
+                                    </Form.Control>
+                                </Form.Group>)
+                                                          
+                                :
+                                
                                 columnasCat.map((name, index) => (
                                 <Form.Group Key={index} controlId={name}>
                                         <Form.Label>{name}</Form.Label>      
                                         <Form.Control name={name} ref = {registroNuevoRenglon} type="text" />
                                     </Form.Group>
-                            ))}
+                                ))
+                            }
+                            
                            { idActual != null &&
                            <Form.Group controlId="idCatPadre">
                                 <Form.Control name="idCatPadre" ref = {registroNuevoRenglon} value={idActual} type="hidden" />
