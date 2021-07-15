@@ -2582,14 +2582,12 @@ function ContenedorMapaAnalisis(props) {
 
     function obtenerBuffer(figura) {
         console.log(figura, "figura")
-        // let buffer = turf.buffer(figura.layer, 500);
 
-        // var point = turf.point(figura.layer._latlng);
-        // var buffered = turf.buffer(point, 500, { units: 'miles' });
-        // console.log(buffered, "buffer")
-        // var bufferedLayer = L.geoJSON(null);
-        // bufferedLayer.addData(buffered);
-        // bufferedLayer.addTo(referenciaMapa);
+        var point = turf.point([figura.layer._latlng.lng, figura.layer._latlng.lat]);
+        var buffered = turf.buffer(point, 500);
+        var bufferedLayer = L.geoJSON(null);
+        bufferedLayer.addData(buffered);
+        bufferedLayer.addTo(referenciaMapa);
     }
 
 
