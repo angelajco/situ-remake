@@ -67,6 +67,7 @@ export default function InicioSesion() {
                     cookies.set('RolUsuario', response.data.messager, { path: "/" })
                     cookies.set('EstatusUsuario', response.data.messagee, { path: "/" })
                     cookies.set('Usuario', response.data.nameUser, { path: "/" })
+                    cookies.set('IDU', response.data.messagei, { path: "/" })
                     //Se redirecciona
                     Router.push("/")
                 }

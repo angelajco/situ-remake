@@ -21,7 +21,6 @@ import xml2js from 'xml2js'
 import xpath from 'xml2js-xpath'
 // import omnivore from '@mapbox/leaflet-omnivore'
 
-
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 import ModalAnalisis from './ModalAnalisis'
@@ -529,6 +528,7 @@ function ContenedorMapaAnalisis(props) {
                             onEachFeature: function (feature = {}, layerPadre) {
                                 feature["nombre_capa"] = layerPadre.options["nombre"];
                                 if (resultado !== null) {
+                                    var current = capaFiltrada.valor_filtro == 2 ? `${feature.properties['CVE_ENT']}` : capaFiltrada.valor_filtro == 3 ? `${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
                                     Object.keys(feature.properties).map(key => {
                                         let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
                                         if (nuevoAlias !== "") {
@@ -537,11 +537,22 @@ function ContenedorMapaAnalisis(props) {
                                             feature.properties[nuevoAlias] = keyTemp
                                         }
                                     })
-                                    dataToProps.datos.map((data, index) => {
-                                        dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
-                                            feature.properties[column[1]] = data[column[3]];
+                                    if(dataToProps) {
+                                        dataToProps.datos.map((data, index) => {
+                                            if(layerPadre.options["nombre"].includes('Nacional')) {
+                                                if(data[0] == current) {
+                                                    dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                                        feature.properties[column[1]] = data[column[3]];
+                                                    })
+                                                }
+                                            } else {
+                                                dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                                    feature.properties[column[1]] = data[column[3]];
+                                                })
+                                            }
                                         })
-                                    })
+                                        setDataToProps();
+                                    }
                                 }
                                 layerPadre.on('click', function () {
                                     setRasgos([feature]);
@@ -1277,7 +1288,7 @@ function ContenedorMapaAnalisis(props) {
                     linea = 2;
                 }
                 for (let i = 0; i < unicos.length; i++) {
-                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1, 5,linea);
+                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1, 5, linea);
                 }
 
                 simbologiaF = sim1;
@@ -2077,49 +2088,6 @@ function ContenedorMapaAnalisis(props) {
         }
     }, [isIdentifyActive]);
 
-    /************************************A BORRAR************************************/
-    // function changeIdentifyType() {
-    //     switch (parseInt(identifyOption)) {
-    //         case 1:
-    //             setSelectedToIdentify(savedToIdentify);
-    //             prepareDataToExport(savedToIdentify, function (data) {
-    //                 addToExportWithPivot(data);
-    //                 // generatePdf(savedToIdentify.length, function() {
-    //                 //     console.log('pdfOk!!!');
-    //                 //     console.log('pdfDocument!!!', pdfDocument);
-    //                 // });
-    //             });
-    //             break;
-    //         case 2:
-    //             getTopLayer(function (index) {
-    //                 setSelectedToIdentify([savedToIdentify[index]]);
-    //                 prepareDataToExport([savedToIdentify[savedToIdentify.length - 1]], function (data) {
-    //                     addToExportWithPivot(data);
-    //                     // generatePdf(1, function() {
-    //                     //     console.log('pdfOk!!!');
-    //                     //     console.log('pdfDocument!!!', pdfDocument);
-    //                     // });
-    //                 });
-    //             });
-    //             break;
-    //         case 3:
-    //             includeActiveLayer(function (index, isActive) {
-    //                 setSelectedToIdentify(isActive == true ? [savedToIdentify[index]] : []);
-    //                 prepareDataToExport(isActive == true ? [savedToIdentify[index]] : [], function (data) {
-    //                     addToExportWithPivot(data);
-    //                     // generatePdf(1, function() {
-    //                     //     console.log('pdfOk!!!');
-    //                     //     console.log('pdfDocument!!!', pdfDocument);
-    //                     // });
-    //                 });
-    //             });
-    //             break;
-    //         default:
-    //             console.log('parseInt(identifyOption): ', parseInt(identifyOption))
-    //             break;
-    //     }
-    // }
-
     function includeActiveLayer(success) {
         let capaActiva = capasVisualizadas.find(displayed => displayed.isActive == true);
         var tempArray = []
@@ -2140,15 +2108,6 @@ function ContenedorMapaAnalisis(props) {
         }
 
         success(tempFeaturesArray);
-
-        // capasVisualizadas.filter(displayed => displayed.isActive == true).map((active) => {
-        //     savedToIdentify.map((saved, index_) => {
-        //         if (saved.layer == active.nom_capa) {
-        //             index = index_;
-        //             isActive = true;
-        //         }
-        //     });
-        // });
     }
 
     //Obtiene la capa superior para la comparación de la identificación
@@ -2372,22 +2331,6 @@ function ContenedorMapaAnalisis(props) {
         }
     }, [rasgos]);
 
-    //Para el movimiento de los dos mapas
-    function enlaceMapa(tag, funcion) {
-        if (tag == 'A') {
-            sincronizaA = funcion
-        } else {
-            sincronizaB = funcion
-        }
-    }
-    const sincronizaMapa = (tag, zoom, centro) => {
-        if (tag == 'A') {
-            sincronizaB(zoom, centro)
-        } else {
-            sincronizaA(zoom, centro)
-        }
-    }
-
     useEffect(() => {
         if (props.referenciaEntidad != undefined) {
             refFunction(props.referenciaEntidad);
@@ -2395,11 +2338,13 @@ function ContenedorMapaAnalisis(props) {
     }, [props.referenciaEntidad]);
 
     function refFunction(referenciaEntidad) {
-        var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
-        var entidad = { id: referenciaEntidad.id_entidades, entidad: referenciaEntidad.nombre_entidad };
+        var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == referenciaEntidad.capa);
         if (referenciaEntidad !== 'nacional') {
+            var entidad = { id: (referenciaEntidad.capa == 2 ? referenciaEntidad.entity.id_entidades : referenciaEntidad.capa == 3 ? referenciaEntidad.entity.cve_mun : referenciaEntidad.entity.Codigo), entidad: (referenciaEntidad.capa == 2 ? referenciaEntidad.entity.nombre_entidad : referenciaEntidad.capa == 3 ? referenciaEntidad.entity.nombre_mun : referenciaEntidad.entity.Nombre) };
+            capa.filtro_entidad = referenciaEntidad.capa == 3 ? capa.filtro_municipio : capa.filtro_entidad;
             construyeEntidadCapa(capa, entidad);
         } else {
+            capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
             construyeNacionalCapa(capa);
         }
     }
@@ -2414,10 +2359,11 @@ function ContenedorMapaAnalisis(props) {
     const [dataToProps, setDataToProps] = useState();
 
     useEffect(() => {
-        if(props.informacionEspacial != undefined) {
+        if (props.informacionEspacial != undefined) {
             setDataToProps(props.informacionEspacial);
         }
     }, [props.informacionEspacial]);
+
     //Para mostrar las capas dibujadas
     const [modalCapasDibujadas, setModalCapasDibujadas] = useState();
     const [layersDibujadas, setLayersDibujadas] = useState([]);
@@ -2456,9 +2402,20 @@ function ContenedorMapaAnalisis(props) {
             dibujo.tipo = 5
             dibujo.nombre = `Otra figura ${iOtro}`
         }
+        dibujo.id = dibujo.layer._leaflet_id;
         dibujo.habilitado = true;
         arregloLayers.push(dibujo)
         setLayersDibujadas(arregloLayers)
+    }
+
+    const eliminaDibujo = (dibujo) => {
+        let idArreglo = []
+        for (var i in dibujo.layers._layers) {
+            idArreglo.push(dibujo.layers._layers[i]._leaflet_id);
+        }
+        let nuevoArr = arregloLayers.filter(valor => !idArreglo.includes(valor.id))
+        arregloLayers = nuevoArr;
+        setLayersDibujadas(nuevoArr)
     }
 
     useEffect(() => {
@@ -2466,6 +2423,10 @@ function ContenedorMapaAnalisis(props) {
             //Cuando se dibuja algo en el mapa
             referenciaMapa.on('draw:created', function (e) {
                 procesaDibujo(e)
+            });
+
+            referenciaMapa.on('draw:deleted', function (e) {
+                eliminaDibujo(e)
             });
         }
     }, [capturoReferenciaMapa])
@@ -2498,7 +2459,6 @@ function ContenedorMapaAnalisis(props) {
         } else {
             setCheckedAll(true);
         }
-        console.log(checkedAll, "checkedAll")
         let capasDibujadasTemporal = layersDibujadas.map((valor) => {
             if (e.target.checked == true) {
                 valor.habilitado = true;
@@ -2582,19 +2542,15 @@ function ContenedorMapaAnalisis(props) {
             referenciaMapa.fitBounds(layer.getBounds())
         } else if (tipo == 1) {
             let zoom = referenciaMapa.getZoom();
-            console.log(zoom, "zoom")
             let centro = layer.getBounds().getCenter();
-            console.log(centro, "centro", layer, "layer")
             if (zoom == 5) {
-                referenciaMapa.panTo([centro.lat, centro.lng])
+                referenciaMapa.setView([centro.lat, centro.lng], 5)
             } else if (zoom == 6) {
                 zoom = zoom - 1;
-                referenciaMapa.panTo([centro.lat, centro.lng])
-                referenciaMapa.setZoom(5)
+                referenciaMapa.setView([centro.lat, centro.lng], zoom)
             } else if (zoom >= 7) {
-                let nuevoZoom = zoom - 2
-                referenciaMapa.panTo([centro.lat, centro.lng])
-                referenciaMapa.setZoom(nuevoZoom)
+                zoom = zoom - 2
+                referenciaMapa.setView([centro.lat, centro.lng], zoom)
             }
         }
         setModalCapasDibujadas(false);
@@ -2624,6 +2580,16 @@ function ContenedorMapaAnalisis(props) {
         setModalCapasDibujadas(false);
     }
 
+    function obtenerBuffer(figura) {
+        console.log(figura, "figura")
+
+        var point = turf.point([figura.layer._latlng.lng, figura.layer._latlng.lat]);
+        var buffered = turf.buffer(point, 500);
+        var bufferedLayer = L.geoJSON(null);
+        bufferedLayer.addData(buffered);
+        bufferedLayer.addTo(referenciaMapa);
+    }
+
 
     return (
         <>
@@ -2635,7 +2601,7 @@ function ContenedorMapaAnalisis(props) {
 
             {/* <Modal dialogAs={DraggableModalDialog} show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
                 keyboard={false} backdrop="static" className="modal-analisis" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis"> */}
-                <Modal show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
+            <Modal show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
                 keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
                 <Modal.Header className="tw-cursor-pointer" closeButton>
                     <Modal.Title>
@@ -2695,6 +2661,9 @@ function ContenedorMapaAnalisis(props) {
                                                 ),
                                                 layer.tipo == 1 && (
                                                     <Button onClick={() => obtenRasgosIdenCapaDib(layer)} key="6" variant="light">Identificar</Button>
+                                                ),
+                                                (layer.tipo == 3 || layer.tipo == 4) && (
+                                                    <Button onClick={() => obtenerBuffer(layer)} key="7" variant="light">Obtener buffer</Button>
                                                 )
                                             ]
                                         }
@@ -3649,19 +3618,17 @@ function ContenedorMapaAnalisis(props) {
                 </OverlayTrigger> */}
                 <OverlayTrigger rootClose overlay={<Tooltip>Capas dibujadas</Tooltip>}>
                     <button className="botones-barra-mapa" onClick={() => setModalCapasDibujadas(true)}>
-                        <FontAwesomeIcon icon={faLayerGroup}></FontAwesomeIcon>
+                        <img src="/images/analisis/capas_dib.png" alt="Capas dibujadas" className="tw-w-5" />
                     </button>
                 </OverlayTrigger>
             </div>
+
             {
                 props.botones == true
                     ?
-                    <Map referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
-                        referenciaAnalisis={props.referenciaAnalisis}
-                    />
+                    <Map referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} />
                     :
-                    <MapEspejo referencia={capturaReferenciaMapa} funcionEnlace={enlaceMapa} sincronizaMapa={sincronizaMapa}
-                        referenciaAnalisis={props.referenciaAnalisis} />
+                    <MapEspejo referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} />
             }
         </>
     )
