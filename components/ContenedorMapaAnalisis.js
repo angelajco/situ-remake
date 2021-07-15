@@ -528,6 +528,7 @@ function ContenedorMapaAnalisis(props) {
                             onEachFeature: function (feature = {}, layerPadre) {
                                 feature["nombre_capa"] = layerPadre.options["nombre"];
                                 if (resultado !== null) {
+                                    var current = capaFiltrada.valor_filtro == 2 ? `${feature.properties['CVE_ENT']}` : capaFiltrada.valor_filtro == 3 ? `${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
                                     Object.keys(feature.properties).map(key => {
                                         let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
                                         if (nuevoAlias !== "") {
@@ -536,12 +537,21 @@ function ContenedorMapaAnalisis(props) {
                                             feature.properties[nuevoAlias] = keyTemp
                                         }
                                     })
-                                    if (dataToProps && dataToProps.datos > 0) {
+                                    if(dataToProps) {
                                         dataToProps.datos.map((data, index) => {
-                                            dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
-                                                feature.properties[column[1]] = data[column[3]];
-                                            })
+                                            if(layerPadre.options["nombre"].includes('Nacional')) {
+                                                if(data[0] == current) {
+                                                    dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                                        feature.properties[column[1]] = data[column[3]];
+                                                    })
+                                                }
+                                            } else {
+                                                dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                                    feature.properties[column[1]] = data[column[3]];
+                                                })
+                                            }
                                         })
+                                        setDataToProps();
                                     }
                                 }
                                 layerPadre.on('click', function () {
