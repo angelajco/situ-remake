@@ -24,7 +24,7 @@ function ContenedorCD() {
     const [aux, setAux] = useState(false);
     const [tfiltro, setTFiltro] = useState('Tema');
     //para busqueda avanzada
-    let [titulo, setTitulo] = useState(" ");
+    let [titulo, setTitulo] = useState();
     const [desc, setDesc] = useState();
     const [autor, setAutor] = useState();
     const [cobertura, setCobertura] = useState();
@@ -41,7 +41,7 @@ function ContenedorCD() {
     //Para mostra la busqueda
     const [muestraTablABusqueda, setMuestraTablaBusqueda] = useState(false)
     //Datos para crear el form
-    const { register, handleSubmit,handleChange, watch, clearErrors, setError, errors } = useForm();
+    const { register, handleSubmit, watch, clearErrors, setError, errors } = useForm();
 
     //json para los select de los filtros
     const filtros = [
@@ -106,12 +106,18 @@ function ContenedorCD() {
     const verModal = e => {
         setShowModalB(!showModalB);
         setPub('');
-        setTitulo(null);
+        setTitulo();
+        setDesc();
+        setAutor();
+        setCobertura();
+        setEdicion();
+        setTipo();
+        setTema();
     }
 
     const cerrarM = e => {
         setShowModalB(!showModalB);
-        setTitulo(null);
+        setTitulo();
         setDesc();
         setAutor();
         setCobertura();
@@ -261,23 +267,49 @@ function ContenedorCD() {
         //console.log(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tema}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tema}* OR instancia:*${data.unidad}*`);
         const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tema}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tema}* OR instancia:*${data.unidad}*`);
         const datos = await res2.json();
-        setPub(`Se Encontraron ${datos.length} Docuemntos`)
+        setPub(`Se Encontraron ${datos.length}  Documentos`)
         modificaResultado(datos);
         setDatos(datos);
         setTitulo(data.dato);
-       // setDesc(data.descripcion);
-        //setAutor(data.autor);
-       // setCobertura(data.cobertura);
-       // setUnidad(data.unidad);
-       // setEdicion(data.edicion);
-       // setTipo(data.tipo);
-       // setTema(data.tema);
+        setDesc(data.descripcion);
+        setAutor(data.autor);
+        setCobertura(data.cobertura);
+        setUnidad(data.unidad);
+        setEdicion(data.anio);
+        setTipo(data.tipo);
+        setTema(data.tema);
         //modificaURL(`http://172.16.117.11/wa/publico/consultaDocumental?search=nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:${data.cobertura} OR descripcion:*${data.descripcion}* OR tipo:*${data.tipo}*`);
-    }//fin del metodo onSubmit
-
-    function cambioD(e){
-        console.log(dato);
+    };//fin del metodo onSubmit
+    
+    function cambioD(e){ 
+        if(e.target.name === 'dato'){
+            setTitulo();
+        }
+        if(e.target.name === 'descripcion'){
+            setDesc();
+        }
+        if(e.target.name === 'autor'){
+            setAutor();
+        }
+        if(e.target.name === 'cobertura'){
+            setCobertura();
+        }
+        if(e.target.name === 'unidad'){
+            setUnidad();
+        }
+        if(e.target.name === 'anio'){
+            setEdicion();
+        }  
+        if(e.target.name === 'tipo'){
+            setTipo();
+        }
+        if(e.target.name === 'tema'){
+            setTema();
+        }
+          
     }
+   
+
 
     return (
         <>
@@ -295,43 +327,45 @@ function ContenedorCD() {
                 <Modal.Body>
                     <div className="main">
                         <div className="container">
-                            <div className="row"></div>
+                            <div className="row">
+                            <div className=" col-12 text-center"><h6 name="encontrados">{pub}</h6></div>
+                            </div>
                             <div className="row">
                                 <div className="col-12">
                                     <Form className="col-12" onSubmit={handleSubmit(onSubmit)}>
                                         <Form.Group controlId="dato">
                                             <Form.Label>Titulo</Form.Label>
-                                            <Form.Control name="dato" type="text" ref={register()} />
+                                            <Form.Control name="dato" type="text" ref={register()} value={titulo} onChange={(e) => cambioD(e)} />
                                         </Form.Group>
                                         <Form.Group controlId="descripcion">
                                             <Form.Label>Descripción</Form.Label>
-                                            <Form.Control name="descripcion" type="text" ref={register()}  />
+                                            <Form.Control name="descripcion" type="text" ref={register()} value={desc} onChange={(e) => cambioD(e)}  />
                                         </Form.Group>
                                         <Form.Group controlId="autor">
                                             <Form.Label>Autor</Form.Label>
-                                            <Form.Control name="autor" type="text" ref={register()}  />
+                                            <Form.Control name="autor" type="text" ref={register()} value={autor} onChange={(e) => cambioD(e)} />
                                         </Form.Group>
                                         <Form.Group controlId="cobertura">
                                             <Form.Label>Cobertura Geográfica</Form.Label>
-                                            <Form.Control name="cobertura" type="text" ref={register()}  />
+                                            <Form.Control name="cobertura" type="text" ref={register()} value={cobertura} onChange={(e) => cambioD(e)}/>
                                         </Form.Group>
                                         <Form.Group controlId="unidad">
                                             <Form.Label>Unidad Responsable</Form.Label>
-                                            <Form.Control name="unidad" type="text" ref={register()}  />
+                                            <Form.Control name="unidad" type="text" ref={register()} value={unidad} onChange={(e) => cambioD(e)}/>
                                         </Form.Group>
                                         <Form.Group controlId="anio">
                                             <Form.Label>Año de Publicación</Form.Label>
-                                            <Form.Control name="anio" type="text" ref={register()}  />
+                                            <Form.Control name="anio" type="text" ref={register()} value={edicion} onChange={(e) => cambioD(e)} />
                                         </Form.Group>
                                         <Form.Group controlId="tipo">
                                             <Form.Label>Tipo</Form.Label>
-                                            <Form.Control name="tipo" type="text" ref={register()}  />
+                                            <Form.Control name="tipo" type="text" ref={register()} value={tipo} onChange={(e) => cambioD(e)}/>
                                         </Form.Group>
                                         <Form.Group controlId="tema">
                                             <Form.Label>Tema</Form.Label>
-                                            <Form.Control name="tema" type="text" ref={register()}  />
+                                            <Form.Control name="tema" type="text" ref={register()} value={tema} onChange={(e) => cambioD(e)} />
                                         </Form.Group>
-                                        <div className="text-center"><h6 name="encontrados">{pub}</h6></div>
+                                        
                                         <div className="row">
                                             <div className="col-6">
                                                 <Button variant="outline-secondary" className="btn-admin" type="submit" >BUSCAR</Button>
