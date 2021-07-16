@@ -319,9 +319,7 @@ function ContenedorMapaAnalisis(props) {
     //Para buscar los metadatos de la capa
     const { register: registraAgregaCapa, handleSubmit: handleAgregaCapa, control: controlAgregaCapa, errors: erroresAgregaCapa, setError: setErrorAgregaCapa } = useForm();
     const submitAgregaCapa = (data) => {
-        console.log('data: ', data);
         let capa = JSON.parse(data.capa);
-        console.log('capa: ', capa);
         if (capa.filtro_minimo == "0") {
             if (data.entidadAgregar != undefined && data.entidadAgregar.length != 0) {
                 construyeEntidadCapa(capa, data.entidadAgregar[0])
@@ -493,7 +491,6 @@ function ContenedorMapaAnalisis(props) {
             }
             var parameters = L.Util.extend(defaultParameters);
             var url = capaFiltrada.url + L.Util.getParamString(parameters);
-            console.log(url, "url")
             //Hace la petición para traer los datos de la entidad
             $.ajax({
                 jsonpCallback: 'getJson',
@@ -537,10 +534,10 @@ function ContenedorMapaAnalisis(props) {
                                             feature.properties[nuevoAlias] = keyTemp
                                         }
                                     })
-                                    if(dataToProps) {
+                                    if (dataToProps) {
                                         dataToProps.datos.map((data, index) => {
-                                            if(layerPadre.options["nombre"].includes('Nacional')) {
-                                                if(data[0] == current) {
+                                            if (layerPadre.options["nombre"].includes('Nacional')) {
+                                                if (data[0] == current) {
                                                     dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
                                                         feature.properties[column[1]] = data[column[3]];
                                                     })
@@ -2581,13 +2578,33 @@ function ContenedorMapaAnalisis(props) {
     }
 
     function obtenerBuffer(figura) {
-        console.log(figura, "figura")
+        // console.log(figura, "figura")
 
         var point = turf.point([figura.layer._latlng.lng, figura.layer._latlng.lat]);
         var buffered = turf.buffer(point, 500);
-        var bufferedLayer = L.geoJSON(null);
-        bufferedLayer.addData(buffered);
-        bufferedLayer.addTo(referenciaMapa);
+        // var bufferedLayer = L.geoJSON(buffered);
+        // bufferedLayer.addTo(referenciaMapa);
+
+        console.log(buffered, "buffered")
+        
+        // console.log(bufferedLayer, "bufferedLayer")
+        let capasIntersectadas = []
+        // referenciaMapa.eachLayer(function (layer) {
+        //     if (layer instanceof L.GeoJSON) {
+        //         layer.eachLayer(function (layerConFeatures) {
+        //             let seIntersectan;
+        //             seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), buffered)
+        //             console.log(seIntersectan, "seIntersectan")
+        //             if (seIntersectan != null) {
+        //                 capasIntersectadas.push(layerConFeatures.feature)
+        //             }
+        //         })
+        //     }
+        // });
+        if (capasIntersectadas.length != 0) {
+            setRasgos(capasIntersectadas);
+        }
+        setModalCapasDibujadas(false);
     }
 
 
