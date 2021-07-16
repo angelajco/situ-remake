@@ -20,6 +20,7 @@ import 'leaflet-kml'
 import 'leaflet-easyprint'
 
 import { ContextoCreado } from '../context/contextoMapasProvider'
+import { ContextoCreadoFeature } from '../context/contextoFeatureGroupDibujadas'
 
 var mueveOtroMapa = true;
 //Funcion del timeline undo redo
@@ -143,6 +144,7 @@ L.Map.addInitHook('addHandler', 'personal', L.Personal);
 
 export default function Map(props) {
     const valoresContexto = useContext(ContextoCreado)
+    const featureContexto = useContext(ContextoCreadoFeature)
     //Para guardar la referencia al mapa cuando se crea
     const [mapaReferencia, setmapaReferencia] = useState(null);
     props.referencia(mapaReferencia);
@@ -378,6 +380,17 @@ export default function Map(props) {
         return null;
     }
 
+const [sigueEjecutando, setSigueEjecutando] = useState(true)
+
+    function grupoDibujos(e) {
+        if (e != null && sigueEjecutando == true) {
+            setSigueEjecutando(false)
+            setTimeout(() => {
+                featureContexto.setValorFeature(e)
+            }, 5000)
+        }
+    }
+
 
     return (
         <>
@@ -418,7 +431,7 @@ export default function Map(props) {
                         />
                     </BaseLayer>
                 </LayersControl>
-                <FeatureGroup>
+                <FeatureGroup ref={(e) => grupoDibujos(e)}>
                     <EditControl
                         position='topright'
                         draw={{

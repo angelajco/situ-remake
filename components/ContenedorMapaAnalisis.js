@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, Fragment } from 'react';
 import { Controller, useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaintBrush, faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle, faLayerGroup, faSquare, faCircle, faDrawPolygon, faGripLines, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
+import { faPaintBrush, faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle, faSquare, faCircle, faDrawPolygon, faGripLines, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
 import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
 import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 import { CSVLink } from "react-csv";
@@ -34,6 +34,8 @@ import coloresJ from "../shared/jsons/ColoresSelect.json";
 import TablaSimbologia from './TablaSimbologia';
 import TablaLib from './TablaLibre';
 
+import { ContextoCreadoFeature } from '../context/contextoFeatureGroupDibujadas'
+
 const Map = dynamic(
     () => import('./MapAnalisis'),
     {
@@ -50,9 +52,6 @@ const MapEspejo = dynamic(
     }
 )
 
-var sincronizaA;
-var sincronizaB;
-
 var referenciaMapa = null;
 //son algunas variables para Simbologia
 var jsonSimbologia = [];
@@ -61,7 +60,6 @@ var colorB = [];
 var omisionColor;
 
 function ContenedorMapaAnalisis(props) {
-
     //------------------Betty-------------------------------
     //variables utilizadas para simbologia 
     //Funciones y variables para cambios de estilos
@@ -69,8 +67,6 @@ function ContenedorMapaAnalisis(props) {
     var [color, setColorFill] = useState('#FF7777')
     var [colorFill, setColorFill] = useState('#FF7777')
     var [colorborder, setColorBorder] = useState('#FF0000')
-    //var [colorFill, setColorFill] = useState('#000000')
-    //var [colorborder, setColorBorder] = useState('#FFFFFF')
     /**PRUEBAS**/
     var [showModalEstilos, setShowModalEstilos] = useState(false)
     var [capaSeleccionada, setCapaSeleccionada] = useState(null)
@@ -2057,39 +2053,15 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
-
-    //Para activar o desactivar cursor para identificar las capas
-    const [isIdentifyActive, setIdentify] = useState(false);
     //Para mostrar las capas identificadas
     const [muestraTablasCapasIdentificadas, setMuestraTablasCapasIdentificadas] = useState([])
     //Para guardar los datos de las capas a indentificar despues de seleccionar el tipo de seleccion
     const [savedToIdentify, setSavedToIdentify] = useState([]);
 
-
-    //Valor del select para el identify
-    const [selectedToIdentify, setSelectedToIdentify] = useState([]);
-
-    //Para activar o desactivar el poligono (circulo) para dibujar
-    const [polygonDrawer, setPolygonDrawer] = useState();
-    useEffect(() => {
-        if (polygonDrawer) {
-            if (isIdentifyActive == true) {
-                //Abre el modal de identificar
-                handleShowModalIdentify();
-                //activa la opcion de dibujar
-                polygonDrawer.enable();
-            } else {
-                //Desactiva la opción de dibujar
-                polygonDrawer.disable();
-            }
-        }
-    }, [isIdentifyActive]);
-
     function includeActiveLayer(success) {
         let capaActiva = capasVisualizadas.find(displayed => displayed.isActive == true);
         var tempArray = []
         let tempFeaturesArray = []
-
         if (capaActiva != undefined && capaActiva.length != 0) {
             savedToIdentify.map(capasSeparadas => {
                 capasSeparadas.map(feature => {
@@ -2103,30 +2075,25 @@ function ContenedorMapaAnalisis(props) {
                 }
             });
         }
-
         success(tempFeaturesArray);
     }
 
     //Obtiene la capa superior para la comparación de la identificación
     function getTopLayer(success) {
         var tempArray = []
-
         savedToIdentify.map(capasSeparadas => {
             capasSeparadas.map(feature => {
                 tempArray.push(feature)
             })
         })
-
         //Para guardar los features en un solo array
         let tempFeaturesArray = []
         var capasWFS = capasVisualizadas.filter(capa => capa.tipo == "wfs");
-        tempArray.map((valorSaved, indexTemp) => {
+        tempArray.map((valorSaved) => {
             if (valorSaved.nombre_capa == capasWFS[0].nom_capa) {
                 tempFeaturesArray.push(valorSaved)
             }
         })
-
-        // console.log(index, "index")
         success(tempFeaturesArray);
     }
 
@@ -2412,7 +2379,7 @@ function ContenedorMapaAnalisis(props) {
         }
         let nuevoArr = arregloLayers.filter(valor => !idArreglo.includes(valor.id))
         arregloLayers = nuevoArr;
-        setLayersDibujadas(nuevoArr)
+        setLayersDibujadas(arregloLayers)
     }
 
     useEffect(() => {
@@ -2577,30 +2544,37 @@ function ContenedorMapaAnalisis(props) {
         setModalCapasDibujadas(false);
     }
 
+    const valorContextoFeature = useContext(ContextoCreadoFeature)
+
     function obtenerBuffer(figura) {
-        // console.log(figura, "figura")
+        let grupo = valorContextoFeature.valorFeature;
+
+        if(figura.buffer){
+            referenciaMapa.removeLayer(figura.buffer)
+        }
 
         var point = turf.point([figura.layer._latlng.lng, figura.layer._latlng.lat]);
         var buffered = turf.buffer(point, 500);
-        // var bufferedLayer = L.geoJSON(buffered);
-        // bufferedLayer.addTo(referenciaMapa);
+        var bufferedLayer = L.geoJSON(buffered);
+        bufferedLayer.options.buffer = true
+        bufferedLayer.addTo(grupo);
 
-        console.log(buffered, "buffered")
-        
-        // console.log(bufferedLayer, "bufferedLayer")
+        figura.buffer = bufferedLayer;
+
         let capasIntersectadas = []
-        // referenciaMapa.eachLayer(function (layer) {
-        //     if (layer instanceof L.GeoJSON) {
-        //         layer.eachLayer(function (layerConFeatures) {
-        //             let seIntersectan;
-        //             seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), buffered)
-        //             console.log(seIntersectan, "seIntersectan")
-        //             if (seIntersectan != null) {
-        //                 capasIntersectadas.push(layerConFeatures.feature)
-        //             }
-        //         })
-        //     }
-        // });
+        referenciaMapa.eachLayer(function (layer) {
+            if (layer instanceof L.GeoJSON) {
+                if (!layer.options.hasOwnProperty("buffer")) {
+                    layer.eachLayer(function (layerConFeatures) {
+                        let seIntersectan;
+                        seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), buffered)
+                        if (seIntersectan != null) {
+                            capasIntersectadas.push(layerConFeatures.feature)
+                        }
+                    })
+                }
+            }
+        });
         if (capasIntersectadas.length != 0) {
             setRasgos(capasIntersectadas);
         }
