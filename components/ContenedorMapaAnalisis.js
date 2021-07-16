@@ -2466,24 +2466,27 @@ function ContenedorMapaAnalisis(props) {
         let capasIntersectadasParaIdentificarSeparadas = [];
         referenciaMapa.eachLayer(function (layer) {
             if (layer instanceof L.GeoJSON) {
-                //Arreglo temporal que se limpia cada vez que entra en una nueva capa Padre, para identificar
-                let tempCapasIdentificadasMismaCapa = []
-                layer.eachLayer(function (layerConFeatures) {
-                    let seIntersectan;
-                    seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), circlepoly ? circlepoly.toGeoJSON() : layerDibujada.toGeoJSON())
-                    if (seIntersectan != null) {
-                        if (circlepoly) {
-                            //Guarda las capas identificadas de manera independiente
-                            tempCapasIdentificadasMismaCapa.push(layerConFeatures.feature)
-                        } else {
-                            //Se guardan todos los features en el mismo arreglo, que se enviaran a rasgos
-                            capasIntersectadas.push(layerConFeatures.feature)
+                //Para saber si no es un buffer, ya que estos se agregan como GeoJson
+                if (!layer.options.hasOwnProperty("buffer")) {
+                    //Arreglo temporal que se limpia cada vez que entra en una nueva capa Padre, para identificar
+                    let tempCapasIdentificadasMismaCapa = []
+                    layer.eachLayer(function (layerConFeatures) {
+                        let seIntersectan;
+                        seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), circlepoly ? circlepoly.toGeoJSON() : layerDibujada.toGeoJSON())
+                        if (seIntersectan != null) {
+                            if (circlepoly) {
+                                //Guarda las capas identificadas de manera independiente
+                                tempCapasIdentificadasMismaCapa.push(layerConFeatures.feature)
+                            } else {
+                                //Se guardan todos los features en el mismo arreglo, que se enviaran a rasgos
+                                capasIntersectadas.push(layerConFeatures.feature)
+                            }
                         }
+                    })
+                    //Si es identificar, vamos agregando las capas separadas en el arreglo
+                    if (tempCapasIdentificadasMismaCapa.length != 0) {
+                        capasIntersectadasParaIdentificarSeparadas.push(tempCapasIdentificadasMismaCapa)
                     }
-                })
-                //Si es identificar, vamos agregando las capas separadas en el arreglo
-                if (tempCapasIdentificadasMismaCapa.length != 0) {
-                    capasIntersectadasParaIdentificarSeparadas.push(tempCapasIdentificadasMismaCapa)
                 }
             }
         });
@@ -2547,18 +2550,28 @@ function ContenedorMapaAnalisis(props) {
     const valorContextoFeature = useContext(ContextoCreadoFeature)
 
     function obtenerBuffer(figura) {
+        console.log(figura, "figura")
         let grupo = valorContextoFeature.valorFeature;
-
-        if(figura.buffer){
+        let buffer = null;
+        if (figura.buffer) {
             referenciaMapa.removeLayer(figura.buffer)
         }
+        if (figura.layerType == "polyline") {
+            let latLngs = figura.layer.getLatLngs();
+            let arrayLatLngs = []
+            for (var i in latLngs) {
+                arrayLatLngs.push([latLngs[i].lng, latLngs[i].lat]);
+            }
+            let lineaString = turf.lineString(arrayLatLngs);
+            buffer = turf.buffer(lineaString, 25);
+        } else if (figura.layerType == "marker") {
+            let point = turf.point([figura.layer._latlng.lng, figura.layer._latlng.lat]);
+            buffer = turf.buffer(point, 500);
+        }
 
-        var point = turf.point([figura.layer._latlng.lng, figura.layer._latlng.lat]);
-        var buffered = turf.buffer(point, 500);
-        var bufferedLayer = L.geoJSON(buffered);
+        var bufferedLayer = L.geoJSON(buffer);
         bufferedLayer.options.buffer = true
         bufferedLayer.addTo(grupo);
-
         figura.buffer = bufferedLayer;
 
         let capasIntersectadas = []
@@ -2567,7 +2580,7 @@ function ContenedorMapaAnalisis(props) {
                 if (!layer.options.hasOwnProperty("buffer")) {
                     layer.eachLayer(function (layerConFeatures) {
                         let seIntersectan;
-                        seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), buffered)
+                        seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), buffer)
                         if (seIntersectan != null) {
                             capasIntersectadas.push(layerConFeatures.feature)
                         }
@@ -2611,6 +2624,9 @@ function ContenedorMapaAnalisis(props) {
                             ),
                             layersDibujadas.map((layer, index) => (
                                 <div key={index} className="tw-mb-8">
+                                    {
+                                        console.log(layer, "layer modal")
+                                    }
                                     <Form className="tw-mb-2">
                                         <Form.Check>
                                             <Form.Check.Input type="checkbox" defaultChecked={layer.habilitado} onChange={() => checkCapaDibujada(layer)} />

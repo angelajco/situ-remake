@@ -414,7 +414,7 @@ const [sigueEjecutando, setSigueEjecutando] = useState(true)
 
             <div id="rose"></div>
 
-            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false}>
+            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={0} zoomControl={false}>
                 <ScaleControl maxWidth="100" />
                 <ZoomControl position="bottomright" zoomInTitle="Acercar" zoomOutTitle="Alejar" />
 
