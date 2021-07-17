@@ -86,6 +86,7 @@ function ContenedorMapaAnalisis(props) {
     var [tipoColor, setTipoColor] = useState()
     const [rangoAux, setRangoAux] = useState(null);
     const [intervalo, setIntervalo] = useState(null);
+    let [varutil, setVarUtil] = useState();
 
     const trata = [
         { value: '1', label: 'Libre' },
@@ -790,6 +791,7 @@ function ContenedorMapaAnalisis(props) {
             //setTipoColor(selectedOption);
             colorB = coloresPaletta[op].colores;
             aplicarEstilo();
+            setTipoColor(selectedOption)
         } else {
             setTipoColor(selectedOption)
             op = -1;
@@ -798,7 +800,7 @@ function ContenedorMapaAnalisis(props) {
 
     }
 
-
+    
     const handleChangeEstilo = selectedOption => {
         var option;
         if (selectedOption[0] != null) {
@@ -821,12 +823,17 @@ function ContenedorMapaAnalisis(props) {
             if (nomAux.length > 0) {
                 nomAux.splice(0, nomAux.length);
             }
+
             for (let i = 0; i < nomAtributos.length; i++) {
+                let json1 = {};
                 var aux1 = typeof (aux[nomAtributos[i]]);
                 if (aux1 == 'number') {
-                    nomAux.push(nomAtributos[i])
+                    json1.value = i;
+                    json1.label = nomAtributos[i]
+                    nomAux.push(json1);
                 }
             }
+            //console.log(nomAux);
             setNomAtributos(nomAux);
             nomAtributos = nomAux;
             //console.log(nomAtributos);
@@ -840,9 +847,12 @@ function ContenedorMapaAnalisis(props) {
                 nomAux.splice(0, nomAux.length);
             }
             for (let i = 0; i < nomAtributos.length; i++) {
+                let json1 = {};
                 var aux1 = typeof (aux[nomAtributos[i]]);
                 if (aux1 == 'string') {
-                    nomAux.push(nomAtributos[i])
+                    json1.value = i;
+                    json1.label = nomAtributos[i]
+                    nomAux.push(json1);
                 }
             }
             //setNomAtributos(nomAux);
@@ -860,9 +870,12 @@ function ContenedorMapaAnalisis(props) {
                 nomAux.splice(0, nomAux.length);
             }
             for (let i = 0; i < nomAtributos.length; i++) {
+                let json1 = {};
                 var aux1 = typeof (aux[nomAtributos[i]]);
                 if (aux1 == 'number') {
-                    nomAux.push(nomAtributos[i])
+                    json1.value = i;
+                    json1.label = nomAtributos[i]
+                    nomAux.push(json1);
                 }
             }
             setNomAtributos(nomAux);
@@ -875,9 +888,12 @@ function ContenedorMapaAnalisis(props) {
                 nomAux.splice(0, nomAux.length);
             }
             for (let i = 0; i < nomAtributos.length; i++) {
+                let json1 = {};
                 var aux1 = typeof (aux[nomAtributos[i]]);
                 if (aux1 == 'number') {
-                    nomAux.push(nomAtributos[i])
+                    json1.value = i;
+                    json1.label = nomAtributos[i]
+                    nomAux.push(json1);
                 }
             }
             setNomAtributos(nomAux);
@@ -889,9 +905,12 @@ function ContenedorMapaAnalisis(props) {
                 nomAux.splice(0, nomAux.length);
             }
             for (let i = 0; i < nomAtributos.length; i++) {
+                let json1 = {};
                 var aux1 = typeof (aux[nomAtributos[i]]);
                 if (aux1 == 'number') {
-                    nomAux.push(nomAtributos[i])
+                    json1.value = i;
+                    json1.label = nomAtributos[i]
+                    nomAux.push(json1);
                 }
             }
             setNomAtributos(nomAux);
@@ -920,21 +939,39 @@ function ContenedorMapaAnalisis(props) {
 
     //funcion para guardar el atributo sobre el que se va a trabajar 
     function campoUtilizado(campo) {
-        //console.log(campo);
-        varSeleccionada = campo;
-        setVarSeleccionada(campo);
-        //setAuxSelect(nomAtributos[campo])
 
-        let valores = [];
-        for (var i = 0; i < capaSeleccionada.features.length; i++) {
-            var aux = capaSeleccionada.features[i].properties
-            valores.push(aux[nomAtributos[campo]]);
-        }
-        valoresCampo = valores;
-        setValoresCampo(valores);
-        //console.log(nomAtributos[campo]);
-        if (valorEstilos == 2) {
-            aplicarEstilo();
+        if (campo[0] != undefined) {
+            setVarUtil(campo);
+           // console.log(campo[0].label + " "+campo[0].value );
+            let aux2 = campo[0].label;
+            varSeleccionada = campo[0].label;
+            setVarSeleccionada(campo[0].label);
+            //setAuxSelect(nomAtributos[campo])
+
+            let valores = [];
+            for (var i = 0; i < capaSeleccionada.features.length; i++) {
+                var aux = capaSeleccionada.features[i].properties;
+               // console.log(nomAtributos[aux2].label);
+               if (capaSeleccionada.tipo == 'json') {
+               
+               }
+               valores.push(aux[aux2]);
+                
+            }
+            valores.sort(function (a, b) {
+                return a - b;
+            });
+           // console.log(valores);
+            valoresCampo = valores;
+            setValoresCampo(valores);
+            //console.log(nomAtributos[campo]);
+            if (valorEstilos == 2) {
+                aplicarEstilo();
+            }
+
+
+        } else {
+            setVarUtil();
         }
     }
 
@@ -1044,6 +1081,7 @@ function ContenedorMapaAnalisis(props) {
     //funcion para aplicar el estilo
     function aplicarEstilo() {
         if (capaSeleccionada.tipo == 'wfs' || capaSeleccionada.tipo == 'json') {
+            //console.log(valoresCampo);
             //verificamos que la capa se a wfs para poder editarla
             if (valorEstilos == 4) {
                 if (tipoDiv == "Cuartiles") {
@@ -1244,8 +1282,9 @@ function ContenedorMapaAnalisis(props) {
                     json1.nomAtributos = nomAtributos;
                     jsonSimbologia.push(json1);
                 }
-
-                restyleLayerL(nomAtributos[varSeleccionada]);
+                //valores.push(aux[nomAtributos[aux2].label]);
+                
+                restyleLayerL(varutil[0].label);
 
                 sim1 = null;
                 setRango(null);
@@ -1339,7 +1378,7 @@ function ContenedorMapaAnalisis(props) {
                     linea = 2;
                 }
                 for (let i = 0; i < unicos.length; i++) {
-                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1, 5,linea);
+                    sim1.agregaRango(0, unicos[i], 0, colores[i], unicos[i], "#000000", 1, 5, linea);
                 }
 
                 simbologiaF = sim1;
@@ -1412,6 +1451,7 @@ function ContenedorMapaAnalisis(props) {
     function aplicaEstiloF() {
 
         leerTabla();
+        //console.log(varutil[0].label);
         //codigo para mandar el color dependiendo del rango
         var layer = capaSeleccionada.layer;
         if (capaSeleccionada.features[0].geometry.type == 'Point') {
@@ -1421,7 +1461,8 @@ function ContenedorMapaAnalisis(props) {
             var layeraux = L.geoJSON(capa1, {
                 pointToLayer: function (feature, latlng) {
                     //console.log(feature.properties[nomAtributos[varSeleccionada]]);
-                    var propertyValue = feature.properties[nomAtributos[varSeleccionada]];
+                    
+                    var propertyValue = feature.properties[varutil[0].label];
                     var aux1 = simbologiaF.getSimbologia(propertyValue);
                     //console.log(aux1);
                     return L.circleMarker(latlng, {
@@ -1447,7 +1488,7 @@ function ContenedorMapaAnalisis(props) {
             let capa1 = capaSeleccionada;
 
             function estilosL(feature) {
-                var propertyValue = feature.properties[nomAtributos[varSeleccionada]];
+                var propertyValue = feature.properties[varutil[0].label];
                 var myFillColor = simbologiaF.getSimbologia(propertyValue);
                 // console.log(myFillColor);
                 return {
@@ -1550,7 +1591,7 @@ function ContenedorMapaAnalisis(props) {
         }
 
         //se aplica el estilo a la capa 
-        restyleLayerL(nomAtributos[varSeleccionada]);
+        restyleLayerL(varutil[0].label);
         //simbologiaF = {};
         //console.log(jsonSimbologia);
 
@@ -2475,6 +2516,7 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
+    const handleClose = () => setShowModalEstilos(!showModalEstilos);
     return (
         <>
             <ModalAnalisis
@@ -2821,7 +2863,7 @@ function ContenedorMapaAnalisis(props) {
             </Modal>
 
             <Modal dialogAs={DraggableModalDialog} show={showModalEstilos} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
-                onHide={() => setShowModalEstilos(!showModalEstilos)} className="tw-pointer-events-none modal-analisis">
+                onHide={handleClose} className="tw-pointer-events-none modal-analisis">
                 <Modal.Header className="tw-cursor-pointer" closeButton >
                     <Modal.Title><b>Simbología</b></Modal.Title>
                     <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
@@ -2849,6 +2891,7 @@ function ContenedorMapaAnalisis(props) {
                                             onChange={handleChangeEstilo}
                                             selected={tipoTrata}
                                             placeholder="Selecciona una opcion"
+                                            clearButton
                                         />
                                     </Form.Group>
                                     {
@@ -2859,12 +2902,30 @@ function ContenedorMapaAnalisis(props) {
                                                     <div className="row">
                                                         <Form.Group controlId="variable1" className="col-10">
                                                             <Form.Label>Variable a Utilizar</Form.Label>
-                                                            <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
-                                                                <option value="">Selecciona una opción</option>
+                                                            {/*
+                                                            <Form.Control as="select" htmlSize={nomAtributos.length + 1} custom onChange={(e) => campoUtilizado(e.target.value)}>
                                                                 {
-                                                                    nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
+                                                                    nomAtributos.map((valor, index) => (
+                                                                        <option key={index} value={valor}>{valor}</option>
+                                                                    ))
                                                                 }
                                                             </Form.Control>
+                                                            */}
+                                                            <Typeahead
+                                                                id="variableUtil1"
+                                                                labelKey={'label'}
+                                                                options={nomAtributos}
+                                                                placeholder="Selecciona una Variable"
+                                                                onChange={(e) => campoUtilizado(e)}
+                                                                selected={varutil}
+                                                                clearButton
+                                                            />
+                                                            {/*
+                                                                    <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
+                                                                        <option value="">Selecciona una opción</option>
+                                                                    nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
+                                                                    </Form.Control>
+                                                                */  }
                                                         </Form.Group>
                                                         <br></br>
                                                         <Form.Group controlId="intervalos1" className="col-10">
@@ -2896,7 +2957,7 @@ function ContenedorMapaAnalisis(props) {
                                                     //cuantiles
                                                     <div className="col-12">
                                                         <div className="row">
-                                                            <Form.Group controlId="tratamiento" className="col-10">
+                                                            <Form.Group controlId="tratamiento2" className="col-10">
                                                                 <Form.Label>División</Form.Label>
                                                                 <Typeahead
                                                                     id="cuantiles"
@@ -2905,28 +2966,41 @@ function ContenedorMapaAnalisis(props) {
                                                                     onChange={handleChangeCuantil}
                                                                     selected={cuantil}
                                                                     placeholder="Selecciona una opcion"
+                                                                    clearButton
                                                                 />
                                                             </Form.Group>
                                                             <br></br>
                                                             <Form.Group controlId="variable2" className="col-10">
                                                                 <Form.Label>Variable a Utilizar</Form.Label>
+                                                                <Typeahead
+                                                                    id="variableUtil2"
+                                                                    labelKey={'label'}
+                                                                    options={nomAtributos}
+                                                                    placeholder="Selecciona una Variable"
+                                                                    onChange={(e) => campoUtilizado(e)}
+                                                                    selected={varutil}
+                                                                    clearButton
+                                                                />
+                                                                {/*
                                                                 <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
                                                                     <option value="">Selecciona una opción</option>
                                                                     {
                                                                         nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
                                                                     }
                                                                 </Form.Control>
+                                                                */}
                                                             </Form.Group>
                                                             <br></br>
                                                             <Form.Group controlId="coloresB" className="col-10">
                                                                 <Form.Label>Color Base</Form.Label>
                                                                 <Typeahead
-                                                                    id="colores"
+                                                                    id="colores1"
                                                                     labelKey={"label"}
                                                                     options={coloresJ}
                                                                     onChange={handleChangeColores}
                                                                     selected={tipoColor}
                                                                     placeholder="Selecciona una opcion"
+                                                                    clearButton
                                                                 />
                                                             </Form.Group>
                                                             <br></br>
@@ -2962,14 +3036,25 @@ function ContenedorMapaAnalisis(props) {
                                                                     <Form.Control type="text" value={rango} onChange={(e) => cambioRango(e)} />
                                                                 </Form.Group>
                                                                 <br></br>
-                                                                <Form.Group controlId="variable2" className="col-10">
+                                                                <Form.Group controlId="variable3" className="col-10">
                                                                     <Form.Label>Variable a Utilizar</Form.Label>
+                                                                    <Typeahead
+                                                                    id="variableUtil3"
+                                                                    labelKey={'label'}
+                                                                    options={nomAtributos}
+                                                                    placeholder="Selecciona una Variable"
+                                                                    onChange={(e) => campoUtilizado(e)}
+                                                                    selected={varutil}
+                                                                    clearButton
+                                                                />
+                                                                {/*
                                                                     <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
                                                                         <option value="">Selecciona una opción</option>
                                                                         {
                                                                             nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
                                                                         }
                                                                     </Form.Control>
+                                                                    */}
                                                                 </Form.Group>
                                                                 <br></br>
                                                                 <Form.Group controlId="coloresB" className="col-10">
@@ -2981,6 +3066,7 @@ function ContenedorMapaAnalisis(props) {
                                                                         onChange={handleChangeColores}
                                                                         selected={tipoColor}
                                                                         placeholder="Selecciona una opcion"
+                                                                        clearButton
                                                                     />
                                                                 </Form.Group>
                                                                 <br></br>
@@ -3013,12 +3099,23 @@ function ContenedorMapaAnalisis(props) {
                                                                 <div className="row">
                                                                     <Form.Group controlId="variable3" className="col-10">
                                                                         <Form.Label>Variable a Utilizar</Form.Label>
+                                                                        <Typeahead
+                                                                            id="variableUtil"
+                                                                            labelKey={'label'}
+                                                                            options={nomAtributos}
+                                                                            placeholder="Selecciona una Variable"
+                                                                            onChange={(e) => campoUtilizado(e)}
+                                                                            selected={varutil}
+                                                                            clearButton
+                                                                        />
+                                                                        {/*
                                                                         <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
                                                                             <option value="">Selecciona una opción</option>
                                                                             {
                                                                                 nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
                                                                             }
                                                                         </Form.Control>
+                                                                        */}
                                                                     </Form.Group>
                                                                     <br></br>
                                                                     <br></br>

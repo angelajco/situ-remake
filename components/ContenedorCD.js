@@ -280,36 +280,34 @@ function ContenedorCD() {
         setTema(data.tema);
         //modificaURL(`http://172.16.117.11/wa/publico/consultaDocumental?search=nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:${data.cobertura} OR descripcion:*${data.descripcion}* OR tipo:*${data.tipo}*`);
     };//fin del metodo onSubmit
-    
-    function cambioD(e){ 
-        if(e.target.name === 'dato'){
+
+    function cambioD(e) {
+        if (e.target.name === 'dato') {
             setTitulo();
         }
-        if(e.target.name === 'descripcion'){
+        if (e.target.name === 'descripcion') {
             setDesc();
         }
-        if(e.target.name === 'autor'){
+        if (e.target.name === 'autor') {
             setAutor();
         }
-        if(e.target.name === 'cobertura'){
+        if (e.target.name === 'cobertura') {
             setCobertura();
         }
-        if(e.target.name === 'unidad'){
+        if (e.target.name === 'unidad') {
             setUnidad();
         }
-        if(e.target.name === 'anio'){
+        if (e.target.name === 'anio') {
             setEdicion();
-        }  
-        if(e.target.name === 'tipo'){
+        }
+        if (e.target.name === 'tipo') {
             setTipo();
         }
-        if(e.target.name === 'tema'){
+        if (e.target.name === 'tema') {
             setTema();
         }
-          
-    }
-   
 
+    }
 
     return (
         <>
@@ -319,7 +317,8 @@ function ContenedorCD() {
                 onHide={handleClose}
                 onClick={handleClose}
             />
-            <Modal dialogAs={DraggableModalDialog} show={showModalB} onHide={(e) => setShowModalB(!showModalB)}
+
+            <Modal show={showModalB} onHide={() => setShowModalB(!showModalB)} dialogAs={DraggableModalDialog}
                 keyboard={false} className="modal-analisis" contentClassName="modal-redimensionable">
                 <Modal.Header closeButton >
                     <Modal.Title><b>Busqueda</b></Modal.Title>
@@ -328,7 +327,7 @@ function ContenedorCD() {
                     <div className="main">
                         <div className="container">
                             <div className="row">
-                            <div className=" col-12 text-center"><h6 name="encontrados">{pub}</h6></div>
+                                <div className=" col-12 text-center"><h6 name="encontrados">{pub}</h6></div>
                             </div>
                             <div className="row">
                                 <div className="col-12">
@@ -339,7 +338,7 @@ function ContenedorCD() {
                                         </Form.Group>
                                         <Form.Group controlId="descripcion">
                                             <Form.Label>Descripción</Form.Label>
-                                            <Form.Control name="descripcion" type="text" ref={register()} value={desc} onChange={(e) => cambioD(e)}  />
+                                            <Form.Control name="descripcion" type="text" ref={register()} value={desc} onChange={(e) => cambioD(e)} />
                                         </Form.Group>
                                         <Form.Group controlId="autor">
                                             <Form.Label>Autor</Form.Label>
@@ -347,11 +346,11 @@ function ContenedorCD() {
                                         </Form.Group>
                                         <Form.Group controlId="cobertura">
                                             <Form.Label>Cobertura Geográfica</Form.Label>
-                                            <Form.Control name="cobertura" type="text" ref={register()} value={cobertura} onChange={(e) => cambioD(e)}/>
+                                            <Form.Control name="cobertura" type="text" ref={register()} value={cobertura} onChange={(e) => cambioD(e)} />
                                         </Form.Group>
                                         <Form.Group controlId="unidad">
                                             <Form.Label>Unidad Responsable</Form.Label>
-                                            <Form.Control name="unidad" type="text" ref={register()} value={unidad} onChange={(e) => cambioD(e)}/>
+                                            <Form.Control name="unidad" type="text" ref={register()} value={unidad} onChange={(e) => cambioD(e)} />
                                         </Form.Group>
                                         <Form.Group controlId="anio">
                                             <Form.Label>Año de Publicación</Form.Label>
@@ -359,18 +358,19 @@ function ContenedorCD() {
                                         </Form.Group>
                                         <Form.Group controlId="tipo">
                                             <Form.Label>Tipo</Form.Label>
-                                            <Form.Control name="tipo" type="text" ref={register()} value={tipo} onChange={(e) => cambioD(e)}/>
+                                            <Form.Control name="tipo" type="text" ref={register()} value={tipo} onChange={(e) => cambioD(e)} />
                                         </Form.Group>
                                         <Form.Group controlId="tema">
                                             <Form.Label>Tema</Form.Label>
                                             <Form.Control name="tema" type="text" ref={register()} value={tema} onChange={(e) => cambioD(e)} />
                                         </Form.Group>
-                                        
+
                                         <div className="row">
-                                            <div className="col-6">
+                                            <div className="col-11 col-md-6 col-lg-6">
                                                 <Button variant="outline-secondary" className="btn-admin" type="submit" >BUSCAR</Button>
                                             </div>
-                                            <div className="col-6">
+                
+                                            <div className="col-11 col-md-6 col-lg-6">
                                                 <Button variant="outline-danger" className="btn-admin" onClick={cerrarM}>Cerrar</Button>
                                             </div>
                                         </div>
