@@ -94,13 +94,15 @@ export default function GenericTable(props) {
                 csvHeaders.push(header[1]);
             });
             csvData_.push(csvHeaders);
-            rasgosObtenidos.datos.map((data) => {
-                csvContent = [];
-                rasgosObtenidos.columnas.filter(columna => columna[2] == true).map((column) => {
-                    csvContent.push(data[column[3]]);
+            if(rasgosObtenidos && rasgosObtenidos.datos && rasgosObtenidos.datos !== null) {
+                rasgosObtenidos.datos.map((data) => {
+                    csvContent = [];
+                    rasgosObtenidos.columnas.filter(columna => columna[2] == true).map((column) => {
+                        csvContent.push(data[column[3]]);
+                    });
+                    csvData_.push(csvContent);
                 });
-                csvData_.push(csvContent);
-            });
+            }
             setCsvData(csvData_);
         });
     }
@@ -237,19 +239,20 @@ export default function GenericTable(props) {
             columnas: [],
             datos: []
         };
-        tabular.table.data.columnas.map((column, index) => {
-            column.push(true);
-            column.push(index);
-            tmpObject.columnas.push(column);
-        });
+        if(tabular.table.data.columnas) {
+            tabular.table.data.columnas.map((column, index) => {
+                column.push(true);
+                column.push(index);
+                tmpObject.columnas.push(column);
+            });
+        }
         tmpObject.datos = tabular.table.data.datos;
         tmpObject.nombreTabla = tabular.table.data.nombreTabla;
         setDinamicData(tmpObject);
     }, [tabular]);
 
     useEffect(() => {
-        if(dinamicData) {
-            console.log('dinamicData:', dinamicData);
+        if(dinamicData && dinamicData.datos && dinamicData.columnas) {
             generateFiles(function() {
                 var headers = [];
                 var row = [];
@@ -265,7 +268,6 @@ export default function GenericTable(props) {
                     });
                     data_.push(row);
                 });
-                console.log('spaceData: ', {nombreTabla: dinamicData.nombreTabla, columnas: headers, datos: data_});
                 setSpaceData({nombreTabla: dinamicData.nombreTabla, columnas: headers, datos: data_})
             });
         }
@@ -279,7 +281,7 @@ export default function GenericTable(props) {
                     ''
             }
             {
-                dinamicData && dinamicData.datos.length > 0 &&
+                dinamicData && dinamicData.datos && dinamicData.datos.length > 0 &&
                     <div className="row mx-0 mb-2">
                         <div className="row mx-0 mb-2">
                             <div className="col-12">
@@ -400,7 +402,7 @@ export default function GenericTable(props) {
                                                         <div className="row mx-auto my-2">
                                                             <div className="col-12 tw-p-0 text-center">
                                                                 <button className="btn-analisis"
-                                                                    onClick={() => props.showMap(true)}
+                                                                    onClick={() => props.showMap(true, spaceData)}
                                                                     >Aplicar</button>
                                                             </div>
                                                             <div className="col-12 tw-p-0">
@@ -417,28 +419,17 @@ export default function GenericTable(props) {
                                                                     >Ninguna</button>
                                                             </div>
                                                         </div>
-                                                        <DragDropContext onDragEnd={handleOnDragEndSpaceData}>
-                                                            <Droppable droppableId="space-columns">
-                                                                {(provided) => (
-                                                                    <div className="row mx-auto columns-container" {...provided.droppableProps} ref={provided.innerRef}>
-                                                                        {
-                                                                            spaceData &&
-                                                                            spaceData.columnas.map((column, index) => (
-                                                                                <DraggableDnd key={index} draggableId={column[0]} index={index}>
-                                                                                    {(provided) => (
-                                                                                        <div className="row mx-3" {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                                                            <Form.Check key={index} custom type="checkbox" className="mb-12" onChange={(event) => columnsSelectedTospacePresentation(event.target.value)}
-                                                                                                checked={column[2]} value={column[3]} label={column[1]} id={`space-column-${column[3]}`}/>
-                                                                                        </div>
-                                                                                    )}
-                                                                                </DraggableDnd>
-                                                                            ))
-                                                                        }
-                                                                        {provided.placeholder}
+                                                        <div className="row mx-auto columns-container">
+                                                            {
+                                                                spaceData &&
+                                                                spaceData.columnas.map((column, index) => (
+                                                                    <div key={index} className="row mx-3">
+                                                                        <Form.Check key={index} custom type="checkbox" className="mb-12" onChange={(event) => columnsSelectedTospacePresentation(event.target.value)}
+                                                                            checked={column[2]} value={column[3]} label={column[1]} id={`space-column-${column[3]}`}/>
                                                                     </div>
-                                                                )}
-                                                            </Droppable>
-                                                        </DragDropContext>
+                                                                ))
+                                                            }
+                                                        </div>
                                                     </div>
                                                 </Tab.Pane>
                                             </Tab.Content>
@@ -469,10 +460,10 @@ export default function GenericTable(props) {
                                                 {
                                                     dinamicData.columnas.filter(columna => columna[2] == true).map((column, index_) => (
                                                         <td className={
-                                                            data[column[3]].constructor.name === "String" ?
+                                                            (data[column[3]] !== null ? data[column[3]].constructor.name === "String" : true) ?
                                                             "border-bottom border-green-600" :
                                                             "border-bottom border-green-600 text-right"
-                                                        } key={index_}>{data[column[3]].constructor.name === "String" ?
+                                                        } key={index_}>{(data[column[3]] !== null ? data[column[3]].constructor.name === "String" : true) ?
                                                             data[column[3]] :
                                                             new Intl.NumberFormat('en-US').format(data[column[3]])}
                                                         </td>

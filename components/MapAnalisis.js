@@ -9,7 +9,7 @@ const { BaseLayer } = LayersControl;
 import { EditControl } from 'react-leaflet-draw'
 
 import 'leaflet'
-import 'leaflet-fullscreen/dist/Leaflet.fullscreen.css'
+import 'leaflet-fullscreen/dist/leaflet.fullscreen.css'
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import 'leaflet-zoombox'
@@ -19,6 +19,10 @@ import 'leaflet-easybutton/src/easy-button.js'
 import 'leaflet-kml'
 import 'leaflet-easyprint'
 
+import { ContextoCreado } from '../context/contextoMapasProvider'
+import { ContextoCreadoFeature } from '../context/contextoFeatureGroupDibujadas'
+
+var mueveOtroMapa = true;
 //Funcion del timeline undo redo
 var registraMovimiento = true;
 var _timeline = {
@@ -139,13 +143,12 @@ L.Personal = L.Handler.extend({
 L.Map.addInitHook('addHandler', 'personal', L.Personal);
 
 export default function Map(props) {
+    const valoresContexto = useContext(ContextoCreado)
+    const featureContexto = useContext(ContextoCreadoFeature)
     //Para guardar la referencia al mapa cuando se crea
     const [mapaReferencia, setmapaReferencia] = useState(null);
     props.referencia(mapaReferencia);
     props.referenciaAnalisis(mapaReferencia);
-
-    //Para guardar el grupo de capas de dibujo
-    var capasDib = null;
 
     //Para guardar las referencias del mapa    
     useEffect(() => {
@@ -286,6 +289,13 @@ export default function Map(props) {
         }
     }
 
+    useEffect(() => {
+        if (valoresContexto.valoresMapaEspejo.centro != null) {
+            mueveOtroMapa = false;
+            mapaReferencia.setView(valoresContexto.valoresMapaEspejo.centro, valoresContexto.valoresMapaEspejo.zoom)
+        }
+    }, [valoresContexto.valoresMapaEspejo])
+
     function ControlMovimiento() {
         const [coordenadas, setCoordenadas] = useState("")
         const mapa = useMap();
@@ -299,11 +309,11 @@ export default function Map(props) {
                     update(nextTodos);
                 }
                 registraMovimiento = true;
-
-                if (lanzaSincronizacion) {
-                    props.sincronizaMapa("A", zoomUndoRedo, centroUndoRedo)
+                //Para mover el otro mapa
+                if (mueveOtroMapa == true) {
+                    valoresContexto.setValoresMapa({ centro: centroUndoRedo, zoom: zoomUndoRedo })
                 }
-                setLanzaSincronizacion(true);
+                mueveOtroMapa = true;
             },
             mousemove(e) {
                 if (tipoCoordenada == 1) {
@@ -370,57 +380,16 @@ export default function Map(props) {
         return null;
     }
 
-    //Para obtener el grupo de los dibujos
+const [sigueEjecutando, setSigueEjecutando] = useState(true)
+
     function grupoDibujos(e) {
-        capasDib = e;
+        if (e != null && sigueEjecutando == true) {
+            setSigueEjecutando(false)
+            setTimeout(() => {
+                featureContexto.setValorFeature(e)
+            }, 5000)
+        }
     }
-
-    //Cuando se dibuja sobre el mapa
-    function Dibujos() {
-        let mapaDibujos = useMap();
-        mapaDibujos.on('draw:created', function (e) {
-            var type = e.layerType,
-                layer = e.layer;
-            if (type === 'polyline') {
-                var distance = 0;
-                length = layer.getLatLngs().length;
-                for (var i = 1; i < length; i++) {
-                    distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
-                }
-                layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
-            } else if (type !== 'marker' && type !== 'circle') {
-                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
-            }
-        });
-
-        mapaDibujos.on('draw:edited', function (e) {
-            var layers = e.layers;
-            layers.eachLayer(function (layer) {
-                if (layer instanceof L.Polyline && !(layer instanceof L.rectangle) && !(layer instanceof L.Polygon)) {
-                    var distance = 0;
-                    length = layer.getLatLngs().length;
-                    for (var i = 1; i < length; i++) {
-                        distance += layer.getLatLngs()[i].distanceTo(layer.getLatLngs()[i - 1]);
-                    }
-                    layer.bindTooltip(`<p class="text-center">Distancia:</p><p>${new Intl.NumberFormat('en-US').format((distance / 1000))} km</p><p>${new Intl.NumberFormat('en-US').format((distance))} m</p>`, { permanent: false, direction: "center" }).openTooltip()
-                } else if (!(layer instanceof L.Marker)) {
-                    var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                    console.log('latlngs: ', layer.getLatLngs())
-                    layer.bindTooltip(`<p class="text-center">Área:</p><p>${new Intl.NumberFormat('en-US').format((area / 10000))} ha</p><p>${new Intl.NumberFormat('en-US').format((area / 1000000))} km<sup>2</sup></p><p>${new Intl.NumberFormat('en-US').format((area / 1000))} m<sup>2</sup></p>`, { permanent: false, direction: "center" }).openTooltip()
-                }
-            });
-        });
-
-        return null;
-    }
-
-    const [lanzaSincronizacion, setLanzaSincronizacion] = useState(true)
-    function sincroniza(zoom, centro) {
-        setLanzaSincronizacion(false)
-        mapaReferencia.setView(centro, zoom);
-    }
-    props.funcionEnlace("A", sincroniza)
 
 
     return (
@@ -445,7 +414,7 @@ export default function Map(props) {
 
             <div id="rose"></div>
 
-            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false}>
+            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={0} zoomControl={false}>
                 <ScaleControl maxWidth="100" />
                 <ZoomControl position="bottomright" zoomInTitle="Acercar" zoomOutTitle="Alejar" />
 
@@ -466,13 +435,11 @@ export default function Map(props) {
                     <EditControl
                         position='topright'
                         draw={{
-                            circle: false,
                             circlemarker: false,
                         }}
                     >
                     </EditControl>
                 </FeatureGroup>
-                <Dibujos />
                 <ControlMovimiento />
             </MapContainer>
         </>
