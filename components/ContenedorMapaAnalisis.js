@@ -531,16 +531,17 @@ function ContenedorMapaAnalisis(props) {
                                             feature.properties[nuevoAlias] = keyTemp
                                         }
                                     })
-                                    if (dataToProps) {
-                                        dataToProps.datos.map((data, index) => {
-                                            if (layerPadre.options["nombre"].includes('Nacional')) {
-                                                if (data[0] == current) {
-                                                    dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                    // console.log('dataToProps: ', props.informacionEspacial);
+                                    if(props.informacionEspacial) {
+                                        props.informacionEspacial.datos.map((data, index) => {
+                                            if(layerPadre.options["nombre"].includes('Nacional')) {
+                                                if(data[0] == current) {
+                                                    props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
                                                         feature.properties[column[1]] = data[column[3]];
                                                     })
                                                 }
                                             } else {
-                                                dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                                props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
                                                     feature.properties[column[1]] = data[column[3]];
                                                 })
                                             }
@@ -2343,14 +2344,149 @@ function ContenedorMapaAnalisis(props) {
     }, [props.referenciaEntidad]);
 
     function refFunction(referenciaEntidad) {
-        var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == referenciaEntidad.capa);
-        if (referenciaEntidad !== 'nacional') {
-            var entidad = { id: (referenciaEntidad.capa == 2 ? referenciaEntidad.entity.id_entidades : referenciaEntidad.capa == 3 ? referenciaEntidad.entity.cve_mun : referenciaEntidad.entity.Codigo), entidad: (referenciaEntidad.capa == 2 ? referenciaEntidad.entity.nombre_entidad : referenciaEntidad.capa == 3 ? referenciaEntidad.entity.nombre_mun : referenciaEntidad.entity.Nombre) };
-            capa.filtro_entidad = referenciaEntidad.capa == 3 ? capa.filtro_municipio : capa.filtro_entidad;
-            construyeEntidadCapa(capa, entidad);
-        } else {
-            capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
-            construyeNacionalCapa(capa);
+        var layers = [];
+        referenciaEntidad.map(referencia => {
+            var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == referencia.capa);
+            setDataToProps(props.informacionEspacial);
+            if (referencia != 'nacional') {
+                var entidad = { id: (referencia.capa == 2 ? referencia.entity.id_entidades : referencia.capa == 3 ? referencia.entity.cve_mun : referencia.entity.Codigo), entidad: (referencia.capa == 2 ? referencia.entity.nombre_entidad : referencia.capa == 3 ? referencia.entity.nombre_mun : referencia.entity.Nombre) };
+                capa.filtro_entidad = referencia.capa == 3 ? capa.filtro_municipio : capa.filtro_entidad;
+                layers.push({capa: capa, entidad: entidad})
+            } else {
+                capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
+                capa.titulo = props.informacionEspacial.nombreTabla;
+                construyeNacionalCapa(capa);
+            }
+        });
+        construyeEntidadCapaCB(layers)
+    }
+    
+    function construyeEntidadCapaCB(layers) {
+        if (layers.length && layers[0].entidad != undefined) {
+            let capaEntidad = {};
+            capaEntidad.valor_filtro = '(';
+            layers.map((layer, index) => {
+                capaEntidad.valor_filtro = `${capaEntidad.valor_filtro}'${layer.entidad.id}'${layers.length == index + 1 ? ')' : ','}`;
+            });
+            capaEntidad.titulo = props.informacionEspacial.nombreTabla;
+            capaEntidad.url = layers[0].capa.url;
+            capaEntidad.capa = layers[0].capa.nombre_capa;
+            capaEntidad.filtro_entidad = layers[0].capa.filtro_entidad;
+            capaEntidad.wfs = layers[0].capa.wfs;
+            capaEntidad.wms = layers[0].capa.wms;
+            capaEntidad.opcion = 5;
+            capaEntidad.estilos = {
+                color: "#BB0000",
+                fillColor: "#BB7777",
+                opacity: "1",
+                fillOpacity: "1"
+            }
+            capaEntidad["id_capa"] = layers[0].capa.id_capa
+            agregaCapaWFSCB(capaEntidad);
+        }
+    }
+
+    function agregaCapaWFSCB(capaFiltrada){
+        setShowModalAgregarCapas(false);
+        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === capaFiltrada.titulo)) {
+            setDatosModalAnalisis({
+                title: "Capa existente",
+                body: "La capa ya se ha agregado anteriormente"
+            })
+            setShowModalAnalisis(true);
+            return;
+        }
+        else {
+            let filtroDescarga = "";
+            let defaultParameters = {
+                service: 'WFS',
+                version: '2.0',
+                request: 'GetFeature',
+                typeName: capaFiltrada.capa,
+                outputFormat: 'text/javascript',
+                format_options: 'callback:getJson',
+            }
+            if (capaFiltrada.opcion == "0") {
+                //La agregará como nacional
+            } else if (capaFiltrada.opcion == "5") {
+                //La agregara como municipio
+                defaultParameters.cql_filter = capaFiltrada.filtro_entidad + " IN" + capaFiltrada.valor_filtro;
+                filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
+            }
+            var parameters = L.Util.extend(defaultParameters);
+            var url = capaFiltrada.url + L.Util.getParamString(parameters);
+            console.log(url, "url")
+            //Hace la petición para traer los datos de la entidad
+            $.ajax({
+                jsonpCallback: 'getJson',
+                url: url,
+                dataType: 'jsonp',
+                success: function (response) {
+                    response["nom_capa"] = capaFiltrada.titulo;
+                    response["habilitado"] = true;
+                    response['tipo'] = "wfs";
+                    response['transparencia'] = 1;
+                    response['simbologia'] = creaSVG(capaFiltrada.titulo, capaFiltrada.estilos)
+                    response["idCapaBack"] = capaFiltrada["id_capa"]
+
+                    let urlDescarga = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaFiltrada.capa}${filtroDescarga}&outputFormat=`
+
+                    response.download = [
+                        { nom_capa: response.nom_capa, link: JSON.stringify(response), tipo: 'GeoJSON' },
+                        { nom_capa: response.nom_capa, link: `${urlDescarga}KML`, tipo: 'KML' },
+                        { nom_capa: response.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaFiltrada.capa}${filtroDescarga}&bbox=-180,-90,180,90`, tipo: 'KMZ' },
+                        { nom_capa: response.nom_capa, link: `${urlDescarga}SHAPE-ZIP`, tipo: 'SHAPE' }
+                    ];
+
+                    response.isActive = false;
+                    setZIndex(zIndexCapas + 1)
+                    referenciaMapa.createPane(`${zIndexCapas}`)
+                    referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
+                    obtenAliasFuncion(capaFiltrada["id_capa"], function (resultado) {
+                        let layer = L.geoJSON(response, {
+                            pane: `${zIndexCapas}`,
+                            style: capaFiltrada.estilos,
+                            nombre: response["nom_capa"],
+                            onEachFeature: function (feature = {}, layerPadre) {
+                                feature["nombre_capa"] = layerPadre.options["nombre"];
+                                if (resultado !== null) {
+                                    var current = capaFiltrada.id_capa == "2" ? `${feature.properties['CVE_ENT']}` : capaFiltrada.id_capa == "3" ? `${feature.properties['CVE_ENT']}${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
+                                    Object.keys(feature.properties).map(key => {
+                                        let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
+                                        if (nuevoAlias !== "") {
+                                            let keyTemp = feature.properties[key]
+                                            delete feature.properties[key]
+                                            feature.properties[nuevoAlias] = keyTemp
+                                        }
+                                    })
+                                    if(props.informacionEspacial) {
+                                        props.informacionEspacial.datos.map((data, index) => {
+                                                if(data[0] == current) {
+                                                    props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                                        feature.properties[column[1]] = data[column[3]];
+                                                    })
+                                                }
+                                        })
+                                        setDataToProps();
+                                    }
+                                }
+                                layerPadre.on('click', function () {
+                                    setRasgos([feature]);
+                                })
+                            }
+                        });
+                        response['layer'] = layer;
+
+                        setCapasVisualizadas([response, ...capasVisualizadas])
+                        referenciaMapa.addLayer(response.layer);
+                        setDatosModalAnalisis({
+                            title: "Capa agregada",
+                            body: "La capa se ha agregado con exito"
+                        });
+                        setShowModalAnalisis(true);
+                    })
+                }
+            });
         }
     }
 
@@ -2363,11 +2499,11 @@ function ContenedorMapaAnalisis(props) {
     }
     const [dataToProps, setDataToProps] = useState();
 
-    useEffect(() => {
-        if (props.informacionEspacial != undefined) {
-            setDataToProps(props.informacionEspacial);
-        }
-    }, [props.informacionEspacial]);
+    // useEffect(() => {
+    //     if (props.informacionEspacial != undefined) {
+    //         setDataToProps(props.informacionEspacial);
+    //     }
+    // }, [props.informacionEspacial]);
 
     //Para mostrar las capas dibujadas
     const [modalCapasDibujadas, setModalCapasDibujadas] = useState();
