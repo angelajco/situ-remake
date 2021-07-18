@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCogs, faAlignJustify, faAlignLeft, faFileCsv, faFilePdf, faSquare, faCheckSquare } from '@fortawesome/free-solid-svg-icons';
-import { Button, Form, OverlayTrigger, Tooltip, Tab, Row, Col, Nav } from 'react-bootstrap'
+import { faCogs, faAlignJustify, faAlignLeft, faFileCsv, faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { Form, OverlayTrigger, Tooltip, Tab, Row, Col, Nav } from 'react-bootstrap'
 import { CSVLink } from "react-csv";
 import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 
-// import * as toPdf from '@react-pdf/renderer';
-import * as htmlToImage from 'html-to-image';
+import jsPDF from 'jspdf';
+import jpt from 'jspdf-autotable';
+import Cookies from 'universal-cookie'
 
 import Loader from '../Loader'
+
+const cookies = new Cookies()
 
 export default function GenericTable(props) {
 
@@ -17,21 +20,11 @@ export default function GenericTable(props) {
     const [spaceData, setSpaceData] = useState();
     const [csvData, setCsvData] = useState([]);
     const [csvFileName, setCsvFileName] = useState('');
+    const [pdfData, setPdfData] = useState();
     const [isHiddenTools, setHiddenTools] = useState(true);
-    // const [pdfDocument, setPdfDocument] = useState(<toPdf.Document></toPdf.Document>);
     const [isLoading, setIsLoading] = useState(false);
 
-    // const styles = toPdf.StyleSheet.create({
-    //     page: {
-    //         // flexDirection: 'row',
-    //         backgroundColor: '#FFFFFF'
-    //     },
-    //     section: {
-    //         margin: 10,
-    //         padding: 10,
-    //         flexGrow: 1
-    //     }
-    // });
+    const usuarioCookie = cookies.get('Usuario')
 
     resetServerContext();
     
@@ -49,22 +42,6 @@ export default function GenericTable(props) {
         items.splice(result.destination.index, 0, reorderedItem);
         tmpObject.columnas = items;
         setDinamicData(tmpObject);
-    }
-    
-    function handleOnDragEndSpaceData(result) {
-        if (!result.destination) {
-            return
-        }
-        let tmpObject = {
-            nombreTabla: spaceData.nombreTabla,
-            columnas: spaceData.columnas,
-            datos: spaceData.datos
-        };
-        let items = Array.from(tmpObject.columnas);
-        let [reorderedItem] = items.splice(result.source.index, 1);
-        items.splice(result.destination.index, 0, reorderedItem);
-        tmpObject.columnas = items;
-        setSpaceData(tmpObject);
     }
 
     function addToExportWithPivot_(rasgosObtenidos) {
@@ -104,6 +81,8 @@ export default function GenericTable(props) {
                 });
             }
             setCsvData(csvData_);
+            descargaDoc(function() {
+            });
         });
     }
 
@@ -115,43 +94,26 @@ export default function GenericTable(props) {
         setCsvFileName(fileName);
         success();
     }
-
-    // function generatePdf() {
-    //     var node = document.getElementById(`table-estatitistics-${tabular.index}`);
-    //     htmlToImage.toPng(node).then(function (dataUrl) {
-    //         setPdfDocument(
-    //             <toPdf.Document>
-    //                 <toPdf.Page size="A4" style={styles.page} wrap>
-    //                     <toPdf.View style={styles.section}>
-    //                         <toPdf.Text>{tabular.table.title}</toPdf.Text>
-    //                         <toPdf.Image src={dataUrl} />
-    //                     </toPdf.View>
-    //                 </toPdf.Page>
-    //             </toPdf.Document>
-    //         );
-    //     }).catch(function (error) {
-    //         console.log('errorPdfImage: ', error);
-    //         // setDatosModalAnalisis({
-    //         //     title: '¡Error!',
-    //         //     body: 'No se pudó generar el contenido del PDF (mapa)',
-    //         // });
-    //         // setShowModalAnalisis(true)
-    //     });
-    // }
+    
+    function getBase64Image(img) {
+      var canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      var dataURL = canvas.toDataURL("image/jpeg");
+      return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+    }
 
     function renderTools() {
-        setIsLoading(true);
-        // props.showMap(false);
         generateFiles(function() {
             setHiddenTools(!isHiddenTools);
-            setIsLoading(false);
         });
     }
     
     function generateFiles(success) {
         setDinamicData(dinamicData);
         addToExportWithPivot(dinamicData);
-        // generatePdf();
         success();
     }
 
@@ -231,7 +193,45 @@ export default function GenericTable(props) {
         tmpObject.columnas = tmparray;
         setDinamicData(tmpObject);
     }
-    
+
+    function descargaDoc(success) {
+        if(spaceData) {
+            var hoy = new Date();
+            var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+            var hora = hoy.getHours() + ':' + hoy.getMinutes();
+            var items = spaceData;
+            var img = new Image();
+            img.onload = function () {
+                var dataURI = getBase64Image(img);
+                return dataURI;
+            }
+            img.src = "../images/consulta/encabezado.jpg";
+            var columns = [];
+            items.columnas.map(column => {
+                columns.push(column[1]);
+            })
+            var result = items.datos;
+            var user = usuarioCookie ? usuarioCookie : "-";
+            var doc = new jsPDF(); jpt;
+            setTimeout(() => {
+                var header = function (data) {
+                    doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
+                    doc.setFontSize(10);
+                    doc.text(20, 43, "Nombre Usuario: " + user);
+                    doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
+                    doc.setFontSize(13);
+                    doc.text(75, 53, items.nombreTabla);
+                };
+                doc.autoTable(columns, result, { margin: { top: 65 }, theme: 'grid', beforePageContent: header });
+                setPdfData(doc);
+                success()
+            }, 3000);
+        }
+    }
+
+    function downloadPdf() {
+        pdfData.save(`${csvFileName}.pdf`);
+    }
     
     useEffect(() => {
         var tmpObject = {
@@ -332,24 +332,24 @@ export default function GenericTable(props) {
                                                 <Tab.Pane eventKey="1">
                                                     <div className="row my-3">
                                                         <div className="col-6 text-center">
-                                                            <OverlayTrigger overlay={<Tooltip>Exportar CSV</Tooltip>}>
-                                                                <CSVLink className="tw-text-titulo tw-font-bold tw-cursor-pointer" data={csvData} filename={`${csvFileName}-${tabular.index}.csv`}>
-                                                                    <FontAwesomeIcon size="4x" icon={faFileCsv} />
-                                                                </CSVLink>
-                                                            </OverlayTrigger>
+                                                            {
+                                                                csvData &&
+                                                                    <OverlayTrigger overlay={<Tooltip>Exportar CSV</Tooltip>}>
+                                                                        <CSVLink className="tw-text-titulo tw-font-bold tw-cursor-pointer" data={csvData} filename={`${csvFileName}-${tabular.index}.csv`}>
+                                                                            <FontAwesomeIcon size="4x" icon={faFileCsv} />
+                                                                        </CSVLink>
+                                                                    </OverlayTrigger>
+                                                            }
                                                         </div>
-                                                        {/* <div className="col-6 text-center">
-                                                            <OverlayTrigger overlay={<Tooltip>Exportar PDF</Tooltip>}>
-                                                                <toPdf.PDFDownloadLink id="download-pdf" document={pdfDocument} fileName={`${csvFileName}-${tabular.index}.pdf`}>
-                                                                    {
-                                                                        ({ blob, url, loading, error }) =>
-                                                                            loading ?
-                                                                                <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFilePdf} /> :
-                                                                                <FontAwesomeIcon className="tw-text-titulo" size="4x" icon={faFilePdf} />
-                                                                    }
-                                                                </toPdf.PDFDownloadLink>
-                                                            </OverlayTrigger>
-                                                        </div> */}
+                                                        <div className="col-6 text-center">
+                                                            {
+                                                                pdfData &&
+                                                                    <OverlayTrigger overlay={<Tooltip>Exportar PDF</Tooltip>}>
+                                                                        <FontAwesomeIcon className="tw-text-titulo tw-font-bold tw-cursor-pointer" size="4x"
+                                                                            icon={faFilePdf} onClick={event => {downloadPdf()}}/>
+                                                                    </OverlayTrigger>
+                                                            }
+                                                        </div>
                                                     </div>
                                                 </Tab.Pane>
                                                 <Tab.Pane eventKey="2">
