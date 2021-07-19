@@ -2376,8 +2376,8 @@ function ContenedorMapaAnalisis(props) {
             capaEntidad.wms = layers[0].capa.wms;
             capaEntidad.opcion = 5;
             capaEntidad.estilos = {
-                color: "#BB0000",
-                fillColor: "#BB7777",
+                color: "#3366FF",
+                fillColor: "#66CCFF",
                 opacity: "1",
                 fillOpacity: "1"
             }
