@@ -42,6 +42,10 @@ export default function AnalisisGeografico() {
     //Mapa espejo
     const [nombreMapaEspejo, setNombreMapaEspejo] = useState("Titulo mapa")
     const [muestraEditarNombreMapaEspejo, setmuestraEditarNombreMapaEspejo] = useState(true)
+    const [entityObject, setEntityObject] = useState();
+    const [spaceData, setSpaceData] = useState();
+    const [entityObjectEspejo, setEntityObjectEspejo] = useState();
+    const [spaceDataEspejo, setSpaceDataEspejo] = useState();
 
     function cambiaNombreMapa(e, mapa) {
         if (mapa == 0) {
@@ -80,7 +84,7 @@ export default function AnalisisGeografico() {
                                         </div>
 
                                         <div className="col-12">
-                                            <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} />
+                                            <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} referenciaEntidad={entityObject} informacionEspacial={spaceData} setReferenciaEntidad={setEntityObject} setInformacionEspacial={setSpaceData} />
                                         </div>
                                     </div>
                                 </div>
@@ -101,7 +105,7 @@ export default function AnalisisGeografico() {
                                         </div>
 
                                         <div className="col-12">
-                                            <ContenedorMapaAnalisis botones={false} referenciaAnalisis={capturaReferenciaMapaEspejo} />
+                                            <ContenedorMapaAnalisis botones={false} referenciaAnalisis={capturaReferenciaMapaEspejo} referenciaEntidad={entityObjectEspejo} informacionEspacial={spaceDataEspejo} setReferenciaEntidad={setEntityObjectEspejo} setInformacionEspacial={setSpaceDataEspejo} />
                                         </div>
                                     </div>
                                 </div>
