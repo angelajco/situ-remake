@@ -380,7 +380,7 @@ export default function Map(props) {
         return null;
     }
 
-const [sigueEjecutando, setSigueEjecutando] = useState(true)
+    const [sigueEjecutando, setSigueEjecutando] = useState(true)
 
     function grupoDibujos(e) {
         if (e != null && sigueEjecutando == true) {
