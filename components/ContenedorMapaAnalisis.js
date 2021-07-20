@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, Fragment } from 'react';
+import React, { useState, useEffect, useContext, Fragment, createRef, useRef, useMemo } from 'react';
 import { Controller, useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -2378,6 +2378,14 @@ function ContenedorMapaAnalisis(props) {
             idArreglo.push(dibujo.layers._layers[i]._leaflet_id);
         }
         let nuevoArr = arregloLayers.filter(valor => !idArreglo.includes(valor.id))
+        let arrDeleted = arregloLayers.filter(valor => idArreglo.includes(valor.id))
+        arrDeleted.map(valor => {
+            if(valor.tipo == 3 || valor.tipo == 4){
+                if(valor.buffer){
+                    referenciaMapa.removeLayer(valor.buffer)
+                }
+            }
+        });
         arregloLayers = nuevoArr;
         setLayersDibujadas(arregloLayers)
     }
@@ -2547,11 +2555,20 @@ function ContenedorMapaAnalisis(props) {
         setModalCapasDibujadas(false);
     }
 
+    //Para el grupo de capas donde se guardan los dibujos
     const valorContextoFeature = useContext(ContextoCreadoFeature)
 
-    function obtenerBuffer(figura) {
-        console.log(figura, "figura")
-        let grupo = valorContextoFeature.valorFeature;
+    function tamañoBuffer(e) {
+        e.preventDefault();
+        let padre = e.target
+        let idTemp = $(padre).children(".idFigura");
+        let id = idTemp[0].value;
+        let tamanoTemp = $(padre).find(".tamano");
+        let tamano = tamanoTemp[0].value;
+        let figuraPosicion = layersDibujadas.findIndex(x => x.id == id);
+        let figura = layersDibujadas[figuraPosicion]
+
+        // let grupo = valorContextoFeature.valorFeature;
         let buffer = null;
         if (figura.buffer) {
             referenciaMapa.removeLayer(figura.buffer)
@@ -2563,15 +2580,17 @@ function ContenedorMapaAnalisis(props) {
                 arrayLatLngs.push([latLngs[i].lng, latLngs[i].lat]);
             }
             let lineaString = turf.lineString(arrayLatLngs);
-            buffer = turf.buffer(lineaString, 25);
+            buffer = turf.buffer(lineaString, tamano);
         } else if (figura.layerType == "marker") {
             let point = turf.point([figura.layer._latlng.lng, figura.layer._latlng.lat]);
-            buffer = turf.buffer(point, 500);
+            buffer = turf.buffer(point, tamano);
         }
 
-        var bufferedLayer = L.geoJSON(buffer);
+        var bufferedLayer = L.geoJSON(buffer, { interactive: false });
+        bufferedLayer.setZIndex = 0;
         bufferedLayer.options.buffer = true
-        bufferedLayer.addTo(grupo);
+        referenciaMapa.addLayer(bufferedLayer)
+        // bufferedLayer.addTo(grupo);
         figura.buffer = bufferedLayer;
 
         let capasIntersectadas = []
@@ -2624,14 +2643,11 @@ function ContenedorMapaAnalisis(props) {
                             ),
                             layersDibujadas.map((layer, index) => (
                                 <div key={index} className="tw-mb-8">
-                                    {
-                                        console.log(layer, "layer modal")
-                                    }
                                     <Form className="tw-mb-2">
                                         <Form.Check>
                                             <Form.Check.Input type="checkbox" defaultChecked={layer.habilitado} onChange={() => checkCapaDibujada(layer)} />
                                             <Form.Check.Label>
-                                                <span key="0">{layer.nombre}&nbsp;</span>
+                                                <span>{layer.nombre}&nbsp;</span>
                                                 {
                                                     layer.tipo == 0 ? (
                                                         <FontAwesomeIcon size="1x" icon={faSquare} />
@@ -2648,7 +2664,23 @@ function ContenedorMapaAnalisis(props) {
                                             </Form.Check.Label>
                                         </Form.Check>
                                     </Form>
-                                    <div className="tw-flex tw-justify-between tw-flex-wrap">
+                                    <div>
+                                        {
+                                            (layer.tipo == 3 || layer.tipo == 4) && (
+                                                <Form onSubmit={tamañoBuffer} className="tw-text-center formulario">
+                                                    <input type="hidden" value={layer.id} className="idFigura" />
+                                                    <Form.Group controlId="tamano" className="tw-mb-0">
+                                                        <Form.Control name="tamano" className="tamano" type="number" step="any" required min={0.001} max={2000} placeholder="Ingresa un número entre 0.001 y 2000" />
+                                                        <Form.Text className="text-muted">
+                                                            El valor ingresado estára en kilometros
+                                                        </Form.Text>
+                                                    </Form.Group>
+                                                    <Button type="submit" variant="light">Obtener buffer</Button>
+                                                </Form>
+                                            )
+                                        }
+                                    </div>
+                                    <div className="tw-flex tw-justify-between tw-flex-wrap tw-mt-4">
                                         {
                                             [
                                                 layer.tipo == 0 && (
@@ -2669,9 +2701,9 @@ function ContenedorMapaAnalisis(props) {
                                                 layer.tipo == 1 && (
                                                     <Button onClick={() => obtenRasgosIdenCapaDib(layer)} key="6" variant="light">Identificar</Button>
                                                 ),
-                                                (layer.tipo == 3 || layer.tipo == 4) && (
-                                                    <Button onClick={() => obtenerBuffer(layer)} key="7" variant="light">Obtener buffer</Button>
-                                                )
+                                                // (layer.tipo == 3 || layer.tipo == 4) && (
+                                                //     <Button onClick={() => obtenerBuffer(layer)} key="7" variant="light">Obtener buffer</Button>
+                                                // )
                                             ]
                                         }
                                     </div>
