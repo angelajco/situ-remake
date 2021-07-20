@@ -36,6 +36,8 @@ import TablaLib from './TablaLibre';
 
 import { ContextoCreadoFeature } from '../context/contextoFeatureGroupDibujadas'
 
+import ConsultaDinamica from './ConsultaDinamica'
+
 const Map = dynamic(
     () => import('./MapAnalisis'),
     {
@@ -2500,7 +2502,7 @@ function ContenedorMapaAnalisis(props) {
     }, [rasgos]);
 
     useEffect(() => {
-        if (props.referenciaEntidad != undefined) {
+        if (props.referenciaEntidad) {
             refFunction(props.referenciaEntidad);
         }
     }, [props.referenciaEntidad]);
@@ -2935,6 +2937,20 @@ function ContenedorMapaAnalisis(props) {
 
 
     const handleClose = () => setShowModalEstilos(!showModalEstilos);
+
+    const [mapState, setMapState] = useState();
+    const [spaceData, setSpaceData] = useState();
+    const [entityObject, setEntityObject] = useState();
+
+    useEffect(() => {
+        if(mapState) {
+            if(mapState.entityObject.length > 0){
+                props.setInformacionEspacial(mapState.spaceData);
+                props.setReferenciaEntidad(mapState.entityObject);
+            }
+        }
+    }, [mapState]);
+
     return (
         <>
             <ModalAnalisis
@@ -3231,50 +3247,54 @@ function ContenedorMapaAnalisis(props) {
                                 </Form>
                             }
                         </Tab>
-                        <Tab eventKey="datos" title="Datos">
-                            <Form className="tw-mt-4">
-                                <Form.Group controlId="temasDatos">
-                                    <Form.Label>Temas</Form.Label>
-                                    <Form.Control onChange={temaDato} as="select">
-                                        <option value=""></option>
-                                        <option>Tema 1</option>
-                                        <option>Tema 2</option>
-                                        <option>Tema 3</option>
-                                        <option>Tema 4</option>
-                                        <option>Tema 5</option>
-                                    </Form.Control>
-                                </Form.Group>
-                                {
-                                    valoresSubtemasDatos == true &&
-                                    <Form.Group controlId="subtemasDatos">
-                                        <Form.Label>Subtemas</Form.Label>
-                                        <Form.Control onChange={subtemaDatos} as="select">
-                                            <option value=""></option>
-                                            <option>Subtema 1</option>
-                                            <option>Subtema 2</option>
-                                            <option>Subtema 3</option>
-                                            <option>Subtema 4</option>
-                                            <option>Subtema 5</option>
-                                        </Form.Control>
-                                    </Form.Group>
-                                }
-                                {
-                                    valoresTablasDatos == true &&
-                                    <Form.Group controlId="tablasDatos">
-                                        <Form.Label>Tablas</Form.Label>
-                                        <Form.Control as="select">
-                                            <option value=""></option>
-                                            <option>Tabla 1</option>
-                                            <option>Tabla 2</option>
-                                            <option>Tabla 3</option>
-                                            <option>Tabla 4</option>
-                                            <option>Tabla 5</option>
-                                        </Form.Control>
-                                    </Form.Group>
-                                }
-                                <button className="btn-analisis" type="submit">CONSULTAR</button>
-                            </Form>
-                        </Tab>
+                        {
+                            (props.setReferenciaEntidad && props.setInformacionEspacial) &&
+                                <Tab eventKey="datos" title="Datos">
+                                    <ConsultaDinamica mapState={setMapState}/>
+                                    {/* <Form className="tw-mt-4">
+                                        <Form.Group controlId="temasDatos">
+                                            <Form.Label>Temas</Form.Label>
+                                            <Form.Control onChange={temaDato} as="select">
+                                                <option value=""></option>
+                                                <option>Tema 1</option>
+                                                <option>Tema 2</option>
+                                                <option>Tema 3</option>
+                                                <option>Tema 4</option>
+                                                <option>Tema 5</option>
+                                            </Form.Control>
+                                        </Form.Group>
+                                        {
+                                            valoresSubtemasDatos == true &&
+                                            <Form.Group controlId="subtemasDatos">
+                                                <Form.Label>Subtemas</Form.Label>
+                                                <Form.Control onChange={subtemaDatos} as="select">
+                                                    <option value=""></option>
+                                                    <option>Subtema 1</option>
+                                                    <option>Subtema 2</option>
+                                                    <option>Subtema 3</option>
+                                                    <option>Subtema 4</option>
+                                                    <option>Subtema 5</option>
+                                                </Form.Control>
+                                            </Form.Group>
+                                        }
+                                        {
+                                            valoresTablasDatos == true &&
+                                            <Form.Group controlId="tablasDatos">
+                                                <Form.Label>Tablas</Form.Label>
+                                                <Form.Control as="select">
+                                                    <option value=""></option>
+                                                    <option>Tabla 1</option>
+                                                    <option>Tabla 2</option>
+                                                    <option>Tabla 3</option>
+                                                    <option>Tabla 4</option>
+                                                    <option>Tabla 5</option>
+                                                </Form.Control>
+                                            </Form.Group>
+                                        }
+                                        <button className="btn-analisis" type="submit">CONSULTAR</button>
+                                    </Form> */}
+                                </Tab>
+                        }
                         <Tab eventKey="consultas" title={<>Consultas<br />prediseñadas</>}>
                             <Form className="tw-mt-4">
                                 <Form.Group controlId="temasConsultas">
