@@ -87,7 +87,8 @@ function ContenedorMapaAnalisis(props) {
         { value: '1', label: 'Libre' },
         { value: '2', label: 'Valores unicos' },
         { value: '4', label: 'Cuantiles' },
-        { value: '3', label: 'Rangos Equidistantes' }
+        { value: '3', label: 'Rangos Equidistantes' },
+        { value: '5', label: 'Rompimientos Naturales Jenks' }
     ];
 
     const cuantil1 = [
@@ -669,6 +670,8 @@ function ContenedorMapaAnalisis(props) {
                 simbologiaF = {};
                 setTipoTrata(null);
                 setNomAtributos([]);
+                setVarUtil(null);
+                setTipoColor(null);
             }
             setShowModalEstilos(true)
         } else {
@@ -742,7 +745,7 @@ function ContenedorMapaAnalisis(props) {
 
     }
 
-    
+
     const handleChangeEstilo = selectedOption => {
         var option;
         if (selectedOption[0] != null) {
@@ -884,7 +887,7 @@ function ContenedorMapaAnalisis(props) {
 
         if (campo[0] != undefined) {
             setVarUtil(campo);
-           // console.log(campo[0].label + " "+campo[0].value );
+            // console.log(campo[0].label + " "+campo[0].value );
             let aux2 = campo[0].label;
             varSeleccionada = campo[0].label;
             setVarSeleccionada(campo[0].label);
@@ -893,25 +896,23 @@ function ContenedorMapaAnalisis(props) {
             let valores = [];
             for (var i = 0; i < capaSeleccionada.features.length; i++) {
                 var aux = capaSeleccionada.features[i].properties;
-               // console.log(nomAtributos[aux2].label);
-               if (capaSeleccionada.tipo == 'json') {
-               
-               }
-               valores.push(aux[aux2]);
-                
+                // console.log(nomAtributos[aux2].label);
+                if (capaSeleccionada.tipo == 'json') {
+
+                }
+                valores.push(aux[aux2]);
+
             }
             valores.sort(function (a, b) {
                 return a - b;
             });
-           // console.log(valores);
+            // console.log(valores);
             valoresCampo = valores;
             setValoresCampo(valores);
             //console.log(nomAtributos[campo]);
             if (valorEstilos == 2) {
                 aplicarEstilo();
             }
-
-
         } else {
             setVarUtil();
         }
@@ -1225,7 +1226,7 @@ function ContenedorMapaAnalisis(props) {
                     jsonSimbologia.push(json1);
                 }
                 //valores.push(aux[nomAtributos[aux2].label]);
-                
+
                 restyleLayerL(varutil[0].label);
 
                 sim1 = null;
@@ -1329,6 +1330,41 @@ function ContenedorMapaAnalisis(props) {
                 sim1 = null;
 
             }//termina opcion valores unicos
+            if (valorEstilos == 5) {
+                //opcion para rupturas Naturales
+               
+                let colores = [];
+                let au1;
+                let sim = new Sim();
+                let aux22 = jenks(valoresCampo, 5);
+             
+                //generamos los colores apartir del seleccionado por el usuari0
+                if (colores.length > 0) {
+                    colores.splice(0, colores.length);
+                }
+                colores = shuffle(colorB);
+                if (capaSeleccionada.features[0].geometry.type == 'Point') {
+                    for (let i = 0; i < aux22.length - 1; i++) {
+                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i+1), "#000000", 1, 5, 0);
+                    }
+                }
+                if (capaSeleccionada.features[0].geometry.type == 'MultiLineString') {
+                    for (let i = 0; i < aux22.length - 1; i++) {
+                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i+1), "#000000", 1, 5, 1);
+                    }
+                }
+                if (capaSeleccionada.features[0].geometry.type == 'MultiPolygon') {
+                    for (let i = 0; i < aux22.length - 1; i++) {
+                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i+1), "#000000", 1, 5, 2);
+                    }
+                }
+
+
+                simbologiaF = sim;
+                setRangoAux(5);
+
+                sim = null;
+            }//termina Rupturas naturales
         }
 
     }
@@ -1383,6 +1419,7 @@ function ContenedorMapaAnalisis(props) {
                 }
 
                 simbologiaF = sim1;
+                //console.log(simbologiaF);
 
             }
         }
@@ -1403,7 +1440,7 @@ function ContenedorMapaAnalisis(props) {
             var layeraux = L.geoJSON(capa1, {
                 pointToLayer: function (feature, latlng) {
                     //console.log(feature.properties[nomAtributos[varSeleccionada]]);
-                    
+
                     var propertyValue = feature.properties[varutil[0].label];
                     var aux1 = simbologiaF.getSimbologia(propertyValue);
                     //console.log(aux1);
@@ -1537,6 +1574,131 @@ function ContenedorMapaAnalisis(props) {
         //simbologiaF = {};
         //console.log(jsonSimbologia);
 
+    }
+    function jenksMatrices(data, n_classes) {
+        // in the original implementation, these matrices are referred to
+        // as `LC` and `OP`
+        //
+        // * lower_class_limits (LC): optimal lower class limits
+        // * variance_combinations (OP): optimal variance combinations for all classes
+        var lower_class_limits = [],
+            variance_combinations = [],
+            // loop counters
+            i,
+            j,
+            // the variance, as computed at each step in the calculation
+            variance = 0;
+
+        // Initialize and fill each matrix with zeroes
+        for (i = 0; i < data.length + 1; i++) {
+            var tmp1 = [],
+                tmp2 = [];
+            for (j = 0; j < n_classes + 1; j++) {
+                tmp1.push(0);
+                tmp2.push(0);
+            }
+            lower_class_limits.push(tmp1);
+            variance_combinations.push(tmp2);
+        }
+
+        for (i = 1; i < n_classes + 1; i++) {
+            lower_class_limits[1][i] = 1;
+            variance_combinations[1][i] = 0;
+            // in the original implementation, 9999999 is used but
+            // since Javascript has `Infinity`, we use that.
+            for (j = 2; j < data.length + 1; j++) {
+                variance_combinations[j][i] = Infinity;
+            }
+        }
+
+        for (var l = 2; l < data.length + 1; l++) {
+            // `SZ` originally. this is the sum of the values seen thus
+            // far when calculating variance.
+            var sum = 0,
+                // `ZSQ` originally. the sum of squares of values seen
+                // thus far
+                sum_squares = 0,
+                // `WT` originally. This is the number of
+                w = 0,
+                // `IV` originally
+                i4 = 0;
+
+            // in several instances, you could say `Math.pow(x, 2)`
+            // instead of `x * x`, but this is slower in some browsers
+            // introduces an unnecessary concept.
+            for (var m = 1; m < l + 1; m++) {
+                // `III` originally
+                var lower_class_limit = l - m + 1,
+                    val = data[lower_class_limit - 1];
+
+                // here we're estimating variance for each potential classing
+                // of the data, for each potential number of classes. `w`
+                // is the number of data points considered so far.
+                w++;
+
+                // increase the current sum and sum-of-squares
+                sum += val;
+                sum_squares += val * val;
+
+                // the variance at this point in the sequence is the difference
+                // between the sum of squares and the total x 2, over the number
+                // of samples.
+                variance = sum_squares - (sum * sum) / w;
+
+                i4 = lower_class_limit - 1;
+
+                if (i4 !== 0) {
+                    for (j = 2; j < n_classes + 1; j++) {
+                        if (
+                            variance_combinations[l][j] >=
+                            variance + variance_combinations[i4][j - 1]
+                        ) {
+                            lower_class_limits[l][j] = lower_class_limit;
+                            variance_combinations[l][j] =
+                                variance + variance_combinations[i4][j - 1];
+                        }
+                    }
+                }
+            }
+
+            lower_class_limits[l][1] = 1;
+            variance_combinations[l][1] = variance;
+        }
+
+        return {
+            lower_class_limits: lower_class_limits,
+            variance_combinations: variance_combinations,
+        };
+    }
+
+    function jenks(data, n_classes) {
+        // sort data in numerical order
+        data = data.slice().sort(function (a, b) {
+            return a - b;
+        });
+
+        // get our basic matrices
+        var matrices = jenksMatrices(data, n_classes),
+            // we only need lower class limits here
+            lower_class_limits = matrices.lower_class_limits,
+            k = data.length - 1,
+            kclass = [],
+            countNum = n_classes;
+
+        // the calculation of classes will never include the upper and
+        // lower bounds, so we need to explicitly set them
+        kclass[n_classes] = data[data.length - 1];
+        kclass[0] = data[0];
+
+        // the lower_class_limits matrix is used as indexes into itself
+        // here: the `k` variable is reused in each iteration.
+        while (countNum > 1) {
+            kclass[countNum - 1] = data[lower_class_limits[k][countNum] - 2];
+            k = lower_class_limits[k][countNum] - 1;
+            countNum--;
+        }
+
+        return kclass;
     }
 
     ///////////////////////////////////Termina el codigo para cambiar la simbologia
@@ -3226,15 +3388,15 @@ function ContenedorMapaAnalisis(props) {
                                                                 <Form.Group controlId="variable3" className="col-10">
                                                                     <Form.Label>Variable a Utilizar</Form.Label>
                                                                     <Typeahead
-                                                                    id="variableUtil3"
-                                                                    labelKey={'label'}
-                                                                    options={nomAtributos}
-                                                                    placeholder="Selecciona una Variable"
-                                                                    onChange={(e) => campoUtilizado(e)}
-                                                                    selected={varutil}
-                                                                    clearButton
-                                                                />
-                                                                {/*
+                                                                        id="variableUtil3"
+                                                                        labelKey={'label'}
+                                                                        options={nomAtributos}
+                                                                        placeholder="Selecciona una Variable"
+                                                                        onChange={(e) => campoUtilizado(e)}
+                                                                        selected={varutil}
+                                                                        clearButton
+                                                                    />
+                                                                    {/*
                                                                     <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
                                                                         <option value="">Selecciona una opción</option>
                                                                         {
@@ -3329,7 +3491,61 @@ function ContenedorMapaAnalisis(props) {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <p></p>
+                                                            valorEstilos == 5 ? (
+                                                                <div className="col-12">
+                                                                    <div className="row">
+                                                                        <Form.Group controlId="variable4" className="col-10">
+                                                                            <Form.Label>Variable a Utilizar</Form.Label>
+                                                                            <Typeahead
+                                                                                id="variableUtil"
+                                                                                labelKey={'label'}
+                                                                                options={nomAtributos}
+                                                                                placeholder="Selecciona una Variable"
+                                                                                onChange={(e) => campoUtilizado(e)}
+                                                                                selected={varutil}
+                                                                                clearButton
+                                                                            />
+                                                                        </Form.Group>
+                                                                        <br></br>
+                                                                        <br></br>
+                                                                        <br></br>
+                                                                        <Form.Group controlId="coloresB" className="col-10">
+                                                                            <Form.Label>Color Base</Form.Label>
+                                                                            <Typeahead
+                                                                                id="colores1"
+                                                                                labelKey={"label"}
+                                                                                options={coloresJ}
+                                                                                onChange={handleChangeColores}
+                                                                                selected={tipoColor}
+                                                                                placeholder="Selecciona una opcion"
+                                                                                clearButton
+                                                                            />
+                                                                        </Form.Group>
+                                                                    </div>
+                                                                    <div className="row">
+                                                                        <div className="col-8">
+                                                                            <p><b>Simbologia por Omisión</b></p>
+                                                                        </div>
+                                                                        <div className="col-3">
+                                                                            <Form.Control type="color" value={colorOmision} onChange={(e) => cambioColorO(e)} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="row" id="contenedorT">
+                                                                        <TablaSimbologia info={simbologiaF} />
+                                                                        <div id="tablaR"></div>
+                                                                    </div>
+                                                                    <div className="row text-center">
+                                                                        <div className="col-6">
+                                                                            <Button className="btn btn-primary" onClick={generarT}>Previsualizar </Button>
+                                                                        </div>
+                                                                        <div className="col-6">
+                                                                            <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <p></p>
+                                                            )
                                                         )
                                                     )
                                                 )
