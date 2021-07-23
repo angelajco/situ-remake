@@ -1,28 +1,27 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
-import { Form, Modal, Button, Table, Tabs, Tab, Pagination } from 'react-bootstrap'
-import BootstrapTable from 'react-bootstrap-table-next';
-import ModalComponent from '../components/ModalComponent'
-import ReactPaginate from 'react-paginate';
-import Link from 'next/link';
-import PaginationComponent from '../components/PaginationComponent'
+import { Form, Modal, Button} from 'react-bootstrap'
+import ModalComponent from './ModalComponent'
+import PaginationComponent from './PaginationComponent'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUpload, faDownload, faSearch } from '@fortawesome/free-solid-svg-icons';
-import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
-import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
 import Select from 'react-select';
+import { Typeahead } from 'react-bootstrap-typeahead';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import Cookies from 'universal-cookie'
+const cookies = new Cookies()
 
 
 
 function ContenedorCD() {
+    const usuarioCookie = cookies.get('Usuario')
+    const usuarioI = cookies.get('IDU')
 
     const [pub, setPub] = useState('');
     const [r, modificaResultado] = useState([]);
     const [datos, setDatos] = useState([]);
     const [aux, setAux] = useState(false);
-    const [tfiltro, setTFiltro] = useState('Tema');
     //para busqueda avanzada
     let [titulo, setTitulo] = useState();
     const [desc, setDesc] = useState();
@@ -31,7 +30,20 @@ function ContenedorCD() {
     const [unidad, setUnidad] = useState();
     const [edicion, setEdicion] = useState();
     const [tipo, setTipo] = useState();
-    const [tema, setTema] = useState();
+    const [temaP, setTemaP] = useState();
+    const [temaS, setTemaS] = useState();
+    const [cober, setCober] = useState();
+    const [tipoD, setTipoD] = useState();
+    const [tem1, setTem1] = useState();
+    const [tem2, setTem2] = useState();
+    const [busquedaPR, setBusquedaPR] = useState(null);
+    const [busqAnt, setBusqAnt] = useState([]);
+    const [busq1, setBusq1] = useState([]);
+    const [busq2, setBusq2] = useState([]);
+    const [busq3, setBusq3] = useState([]);
+
+
+
     //Datos para el modal
     const [show, setShow] = useState(false);
     const [datosModal, setDatosModal] = useState({});
@@ -44,13 +56,10 @@ function ContenedorCD() {
     const { register, handleSubmit, watch, clearErrors, setError, errors } = useForm();
 
     //json para los select de los filtros
-    const filtros = [
-        //{ value: '1', label: 'ID' },
-        { value: '2', label: 'Titulo' },
-        { value: '3', label: 'Autor' },
-        { value: '4', label: 'Tema' },
-        { value: '5', label: 'Tipo' },
-        { value: '6', label: 'Fecha de Publicación' }
+    const busqueda1 = [
+        { value: '1', label: 'Acervo' },
+        { value: '2', label: 'Últimas publicaciones' },
+        { value: '3', label: 'Más consultados' },
     ];
     const orden = [
         { value: '1', label: 'Nombre A-Z' },
@@ -72,7 +81,7 @@ function ContenedorCD() {
         { value: '9', label: 'Investigación' },
         { value: '10', label: 'Otro' }
     ];
-    const temaF = [
+    const tema1 = [
         { value: '1', label: 'Ambiental' },
         { value: '2', label: 'Demográfico' },
         { value: '3', label: 'Energía' },
@@ -84,15 +93,27 @@ function ContenedorCD() {
         { value: '9', label: 'Tecnológico' },
         { value: '10', label: 'Territorial' },
         { value: '11', label: 'Movilidad' },
-        { value: '12', label: 'Planeación' },
-        { value: '13', label: 'Ordenamiento Territorial y Urbano' },
-        { value: '14', label: 'Ordenamiento Ecológico' },
-        { value: '15', label: 'Vivienda' },
-        { value: '16', label: 'Desarrollo Agrario' },
-        { value: '17', label: 'Desarrollo Rural' },
-        { value: '18', label: 'Riesgos' },
-        { value: '19', label: 'Catastro' },
-        { value: '20', label: 'Gobernanza' }
+    ];
+    const tema2 = [
+        { value: '1', label: 'Planeación' },
+        { value: '2', label: 'Ordenamiento Territorial y Urbano' },
+        { value: '3', label: 'Ordenamiento Ecológico' },
+        { value: '4', label: 'Vivienda' },
+        { value: '5', label: 'Desarrollo Agrario' },
+        { value: '6', label: 'Desarrollo Rural' },
+        { value: '7', label: 'Riesgos' },
+        { value: '8', label: 'Catastro' },
+        { value: '9', label: 'Gobernanza' }
+    ];
+    const coberturaG = [
+        { value: '1', label: 'Nacional', name: 'cobertura' },
+        { value: '2', label: 'Regional', name: 'cobertura' },
+        { value: '3', label: 'Metropolitano', name: 'cobertura' },
+        { value: '4', label: 'Estatal', name: 'cobertura' },
+        { value: '5', label: 'Municipal', name: 'cobertura' },
+        { value: '6', label: 'Subregional', name: 'cobertura' },
+        { value: '7', label: 'Localidad', name: 'cobertura' },
+        { value: '8', label: 'General', name: 'cobertura' }
     ];
 
     //Para agregar la funcionalidad de mover modal
@@ -112,7 +133,12 @@ function ContenedorCD() {
         setCobertura();
         setEdicion();
         setTipo();
-        setTema();
+        setTem2();
+        setTem1();
+        setCober();
+        setTipoD();
+        setTemaP();
+        setTemaS();
     }
 
     const cerrarM = e => {
@@ -123,7 +149,12 @@ function ContenedorCD() {
         setCobertura();
         setEdicion();
         setTipo();
-        setTema();
+        setTem2();
+        setTem1();
+        setCober();
+        setTipoD();
+        setTemaP();
+        setTemaS();
     }
 
     function ordenarAsc(p_array_json, p_key) {
@@ -154,8 +185,15 @@ function ContenedorCD() {
                 modificaResultado(r);
             }
             if (e.value == '4') {
-
                 ordenarAsc(r, 'ano_publicacion');
+                modificaResultado(r);
+            }
+            if (e.value == '5') {
+                ordenarAsc(r, 'instancia');
+                modificaResultado(r);
+            }
+            if (e.value == '6') {
+                ordenarDesc(r, 'instancia');
                 modificaResultado(r);
             }
         }
@@ -164,26 +202,44 @@ function ContenedorCD() {
 
     const filtroTipo = e => {
         if (e != null) {
-            //console.log(e.label);
+            setBusq1(busq1);
             var datos = r;
             var filtrado = datos.filter(function (v) { return v['tipo'] == e.label });
-            //console.log(filtrado);
             modificaResultado(filtrado);
+        } else {
+            modificaResultado(busq1);
         }
     }
 
-    const filtroTema = e => {
+    const filtroTema1 = e => {
         if (e != null) {
-            //console.log(e.label);
+            setBusq2(r);
             var datos = r;
-            var filtrado = [];// datos.filter(function (v) { return (v['tema1'] == e.label || v['tema2'] == e.label) });
+            var filtrado = [];
             datos.forEach(element => {
-                if (element['tema2'] == e.label || element['tema1'] == e.label) {
+                if (element['tema1'] == e.label) {
                     filtrado.push(element);
                 }
             });
-            //console.log(filtrado);
             modificaResultado(filtrado);
+        } else {
+            modificaResultado(busq2);
+        }
+    }
+
+    const filtroTema2 = e => {
+        if (e != null) {
+            setBusq3(r);
+            var datos = r;
+            var filtrado = [];
+            datos.forEach(element => {
+                if (element['tema2'] == e.label) {
+                    filtrado.push(element);
+                }
+            });
+            modificaResultado(filtrado);
+        } else {
+            modificaResultado(busq3);
         }
     }
 
@@ -204,55 +260,30 @@ function ContenedorCD() {
         setShow(true)
     }
 
-    const busqueda = e => {
+    const busquedaP = e => {
         if (e != null) {
-            //console.log(e.value);
-            let busq = document.getElementById('inputF');
-            //console.log(busq.value);
-            if (busq.value === "") {
-                metadatosModal()
-            } else {
-                if (e.value == 2) {
-                    //busqueda por titulo
-                    fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=nombre:*${busq.value}*`)
-                        .then((response) => response.json())
-                        .then((json) => modificaResultado(json));
-                }
-                if (e.value == 3) {
-                    //busqueda por autor
-                    fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=autor:*${busq.value}* OR autor2:*${busq.value}* OR autor3:*${busq.value}*`)
-                        .then((response) => response.json())
-                        .then((json) => modificaResultado(json));
-                }
-                if (e.value == 4) {
-                    //busqueda por tema
-                    fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${busq.value}* OR tema2:*${busq.value}*`)
-                        .then((response) => response.json())
-                        .then((json) => modificaResultado(json));
-                }
-                if (e.value == 5) {
-                    //busqueda por tipo
-                    fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tipo:*${busq.value}*`)
-                        .then((response) => response.json())
-                        .then((json) => modificaResultado(json));
-                }
+            if (e.value == 1) {
+                setBusquedaPR(e.value);
             }
+            if (e.value == 2) {
+                //ultimas publicaciones 
+                fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
+                    .then((response) => response.json())
+                    .then((json) => modificaResultado(json));
+                    setBusq1(r);
+                setBusquedaPR();
+            }
+            if (e.value == 3) {
+                //mas consultados
+                fetch(`${process.env.ruta}/wa/publico/documentosMasConsultados`)
+                    .then((response) => response.json())
+                    .then((json) => modificaResultado(json));
+                    setBusq1(r);
+                setBusquedaPR();
+            }
+        } else {
+            setBusquedaPR();
         }
-    }
-
-    const ultimasP = e => {
-        //console.log("Ultimas publicaciones");
-        fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
-            .then((response) => response.json())
-            .then((json) => modificaResultado(json));
-    }
-    const masConsultadas = e => {
-        console.log("Mas Consultadas");
-
-        fetch(`${process.env.ruta}/wa/publico/documentosMasConsultados`)
-            .then((response) => response.json())
-            .then((json) => modificaResultado(json));
-
     }
 
     useEffect(() => {
@@ -264,11 +295,12 @@ function ContenedorCD() {
 
 
     const onSubmit = async (data) => {
+        //console.log(data);
         //console.log(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tema}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tema}* OR instancia:*${data.unidad}*`);
-        const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tema}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tema}* OR instancia:*${data.unidad}*`);
+        const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tem1}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tem2}* OR instancia:*${data.unidad}*`);
         const datos = await res2.json();
-        setPub(`Se Encontraron ${datos.length}  Documentos`)
         modificaResultado(datos);
+        setBusq1(datos);
         setDatos(datos);
         setTitulo(data.dato);
         setDesc(data.descripcion);
@@ -277,8 +309,8 @@ function ContenedorCD() {
         setUnidad(data.unidad);
         setEdicion(data.anio);
         setTipo(data.tipo);
-        setTema(data.tema);
-        //modificaURL(`http://172.16.117.11/wa/publico/consultaDocumental?search=nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:${data.cobertura} OR descripcion:*${data.descripcion}* OR tipo:*${data.tipo}*`);
+        setTem1(data.tem1);
+        setTem1(data.tem2);
     };//fin del metodo onSubmit
 
     function cambioD(e) {
@@ -303,10 +335,53 @@ function ContenedorCD() {
         if (e.target.name === 'tipo') {
             setTipo();
         }
-        if (e.target.name === 'tema') {
-            setTema();
+        if (e.target.name === 'temaP') {
+            setTemaP();
         }
+        if (e.target.name === 'temaS') {
+            setTemaS();
+        }
+    }
 
+    function cambioC(e) {
+        if (e[0] != undefined) {
+            if (e[0].name == 'cobertura') {
+                setCobertura(e[0].label);
+                setCober(e);
+            }
+        } else {
+            setCober();
+            setCobertura();
+        }
+    }
+
+    function cambioT(e) {
+        if (e[0] != undefined) {
+            setTipo(e[0].label);
+            setTipoD(e);
+        } else {
+            setTipo();
+            setTipoD();
+        }
+    }
+    function cambioTema1(e) {
+        if (e[0] != undefined) {
+            setTemaP(e[0].label);
+            setTem1(e);
+        } else {
+            setTemaP();
+            setTem1();
+        }
+    }
+
+    function cambioTema2(e) {
+        if (e[0] != undefined) {
+            setTemaS(e[0].label);
+            setTem2(e);
+        } else {
+            setTemaS();
+            setTem2();
+        }
     }
 
     return (
@@ -346,7 +421,17 @@ function ContenedorCD() {
                                         </Form.Group>
                                         <Form.Group controlId="cobertura">
                                             <Form.Label>Cobertura Geográfica</Form.Label>
-                                            <Form.Control name="cobertura" type="text" ref={register()} value={cobertura} onChange={(e) => cambioD(e)} />
+                                            <Form.Control name="cobertura" type="hidden" ref={register()} value={cobertura} onChange={(e) => cambioD(e)} />
+                                            <Typeahead
+                                                id="coberturaG"
+                                                name="coberturaG"
+                                                labelKey={"label"}
+                                                options={coberturaG}
+                                                onChange={(e) => cambioC(e)}
+                                                selected={cober}
+                                                placeholder="Selecciona una opcion"
+                                                clearButton
+                                            />
                                         </Form.Group>
                                         <Form.Group controlId="unidad">
                                             <Form.Label>Unidad Responsable</Form.Label>
@@ -354,22 +439,56 @@ function ContenedorCD() {
                                         </Form.Group>
                                         <Form.Group controlId="anio">
                                             <Form.Label>Año de Publicación</Form.Label>
-                                            <Form.Control name="anio" type="text" ref={register()} value={edicion} onChange={(e) => cambioD(e)} />
+                                            <Form.Control placeholder="Ej. 2001" name="anio" type="text" ref={register()} value={edicion} onChange={(e) => cambioD(e)} pattern="[0-9]{4}" title="El año debe ser en formato AAAA" />
                                         </Form.Group>
                                         <Form.Group controlId="tipo">
                                             <Form.Label>Tipo</Form.Label>
-                                            <Form.Control name="tipo" type="text" ref={register()} value={tipo} onChange={(e) => cambioD(e)} />
+                                            <Form.Control name="tipo" type="hidden" ref={register()} value={tipo} onChange={(e) => cambioD(e)} />
+                                            <Typeahead
+                                                id="tipoD"
+                                                name="tipoD"
+                                                labelKey={"label"}
+                                                options={tipoF}
+                                                onChange={(e) => cambioT(e)}
+                                                selected={tipoD}
+                                                placeholder="Selecciona una opcion"
+                                                clearButton
+                                            />
                                         </Form.Group>
-                                        <Form.Group controlId="tema">
-                                            <Form.Label>Tema</Form.Label>
-                                            <Form.Control name="tema" type="text" ref={register()} value={tema} onChange={(e) => cambioD(e)} />
+                                        <Form.Group controlId="tema1">
+                                            <Form.Label>Tema Principal</Form.Label>
+                                            <Form.Control name="tema1" type="hidden" ref={register()} value={temaP} onChange={(e) => cambioD(e)} />
+                                            <Typeahead
+                                                id="temaP"
+                                                name="temaP"
+                                                labelKey={"label"}
+                                                options={tema1}
+                                                onChange={(e) => cambioTema1(e)}
+                                                selected={tem1}
+                                                placeholder="Selecciona una opcion"
+                                                clearButton
+                                            />
+                                        </Form.Group>
+                                        <Form.Group controlId="tema2">
+                                            <Form.Label>Tema Secundario</Form.Label>
+                                            <Form.Control name="tema2" type="hidden" ref={register()} value={temaS} onChange={(e) => cambioD(e)} />
+                                            <Typeahead
+                                                id="temaS"
+                                                name="temaS"
+                                                labelKey={"label"}
+                                                options={tema2}
+                                                onChange={(e) => cambioTema2(e)}
+                                                selected={tem2}
+                                                placeholder="Selecciona una opcion"
+                                                clearButton
+                                            />
                                         </Form.Group>
 
                                         <div className="row">
                                             <div className="col-11 col-md-6 col-lg-6">
                                                 <Button variant="outline-secondary" className="btn-admin" type="submit" >BUSCAR</Button>
                                             </div>
-                
+
                                             <div className="col-11 col-md-6 col-lg-6">
                                                 <Button variant="outline-danger" className="btn-admin" onClick={cerrarM}>Cerrar</Button>
                                             </div>
@@ -382,102 +501,123 @@ function ContenedorCD() {
                 </Modal.Body>
             </Modal >
 
-            {//BettyP
-            }
-            <div className="col-12 col-sm-12">
-                <div className="tit-cd row">
-                    <div className="col-12 col-sm-12 col-md-6 col-lg-6">
-                        <h5><b>CONSULTA DOCUMENTAL SITU</b></h5>
+            {//BettyP <div className="col-8 col-sm-8"></div>
+            /*
+            <div className="col-8 col-sm-8">
+                <h4>{mensaje}</h4>
+            </div>
+            */ }
+            {
+                busquedaPR != null && (
+                    <div className="row">
+                        <div className="col-8 col-sm-8"></div>
+                        <div className="col-1 col-sm-1 align-self-end">
+                            <button className="busq" onClick={verModal}>
+                                <FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>
+                            </button>
+                        </div>
                     </div>
-                    <div className="col-12 col-sm-12 col-md-6 col-lg-6">
-                        <div className="row sinpadding">
-                            <div className="col-5 col-sm-5 col-md-5 col-lg-5">
-                                <Form.Group controlId="inputF" className="busq1" >
-                                    <Form.Control type="text" />
-                                </Form.Group>
+                )
+            }
+
+            <div className="row">
+                <div className="col-9 col-sm-9">
+                    {
+                        r != null && (
+                            r.length > 0 &&
+                            (
+                                <PaginationComponent
+                                    informacion={r}
+                                />
+                            )
+                        )
+
+                    }
+                </div>
+                <div className="col-3 col-sm-3">
+                    <div className="row">
+                        <div className="col-12 col-md-12 col-lg-12">
+                            <Select
+                                controlId="orden"
+                                placeholder="Busqueda"
+                                className="basic-single"
+                                classNamePrefix="Select"
+                                name="orden"
+                                options={busqueda1}
+                                isClearable={true}
+                                onChange={busquedaP}
+                            ></Select>
+                        </div>
+                    </div>
+                    <br></br>
+                    <div className="row">
+                        <div className="col-12 col-md-12 col-lg-12">
+                            <Select
+                                controlId="orden"
+                                placeholder="Ordenar por"
+                                className="basic-single"
+                                classNamePrefix="Select"
+                                name="orden"
+                                options={orden}
+                                isClearable={true}
+                                onChange={ordenDatos}
+                            ></Select>
+                        </div>
+                    </div>
+                    <br></br>
+                    <div className="row justify-content-center">
+                        <div className="col-11 caja">
+                            <p>Filtros</p>
+                            <div className="row">
+                                <div className="col-12 col-md-12 col-lg-12">
+                                    <Select
+                                        controlId="tipo"
+                                        placeholder="Tipo de documento"
+                                        className="basic-single"
+                                        classNamePrefix="Select"
+                                        name="tipo"
+                                        options={tipoF}
+                                        isClearable={true}
+                                        onChange={filtroTipo}
+                                    ></Select>
+                                </div>
                             </div>
-                            <div className="col-5 col-sm-5 col-md-5 col-lg-5">
-                                <Select controlId="filtros"
-                                    placeholder="Buscar por"
-                                    className="basic-single"
-                                    classNamePrefix="Select"
-                                    name="filtros"
-                                    options={filtros}
-                                    isClearable={true}
-                                    onChange={busqueda}
-                                ></Select>
+                            <br></br>
+                            <div className="row">
+                                <div className="col-12 col-md-12 col-lg-12">
+                                    <Select
+                                        controlId="tema"
+                                        placeholder="Tema principal"
+                                        className="basic-single"
+                                        classNamePrefix="Select"
+                                        name="tema"
+                                        options={tema1}
+                                        isClearable={true}
+                                        onChange={filtroTema1}
+                                    ></Select>
+                                </div>
                             </div>
-                            <div className="col-1">
-                                <button className="busq" onClick={verModal}>
-                                    <FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>
-                                </button>
+                            <br></br>
+                            <div className="row">
+                                <div className="col-12 col-md-12 col-lg-12">
+                                    <Select
+                                        controlId="tema"
+                                        placeholder="Tema secundario"
+                                        className="basic-single"
+                                        classNamePrefix="Select"
+                                        name="tema"
+                                        options={tema2}
+                                        isClearable={true}
+                                        onChange={filtroTema2}
+                                    ></Select>
+                                </div>
                             </div>
+                            <br></br>
                         </div>
                     </div>
                 </div>
-                <div className="row sinpadding">
-                    <div className="col-12 col-sm-12 col-md-6 col-lg-6">
-                        <Button className="btn-light bot-cd" onClick={ultimasP}>ÚLTIMAS PUBLICACIONES</Button>
-                    </div>
-                    <div className="col-12 col-sm-12 col-md-6 col-lg-6">
-                        <Button className="btn-light bot-cd" onClick={masConsultadas}>MÁS CONSULTADAS</Button>
-                    </div>
-                </div>
-                <div className="row filtros-cd ">
-                    <div className="col-12 col-md-3 col-lg-3">
-                        <p><b className="number-cd">{r.length}</b> Resultados en el Sistema</p>
-                    </div>
-                    <div className="col-12 col-md-3 col-lg-3">
-                        <Select
-                            controlId="orden"
-                            placeholder="Ordenar por"
-                            className="basic-single"
-                            classNamePrefix="Select"
-                            name="orden"
-                            options={orden}
-                            isClearable={true}
-                            onChange={ordenDatos}
-                        ></Select>
-                    </div>
-                    <div className="col-12 col-md-3 col-lg-3">
-                        <Select
-                            controlId="tipo"
-                            placeholder="Filtro por Tipo"
-                            className="basic-single"
-                            classNamePrefix="Select"
-                            name="tipo"
-                            options={tipoF}
-                            isClearable={true}
-                            onChange={filtroTipo}
-                        ></Select>
-                    </div>
-                    <div className="col-12 col-md-3 col-lg-3">
-                        <Select
-                            controlId="tema"
-                            placeholder="Filtro por Tema"
-                            className="basic-single"
-                            classNamePrefix="Select"
-                            name="tema"
-                            options={temaF}
-                            isClearable={true}
-                            onChange={filtroTema}
-                        ></Select>
-                    </div>
-                </div>
-                <br></br>
-                {
-                    r != null && (
-                        r.length > 0 &&
-                        (
-                            <PaginationComponent
-                                informacion={r}
-                            />
-                        )
-                    )
-
-                }
             </div>
-
+           
         </>
     )
 
