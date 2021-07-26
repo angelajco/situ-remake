@@ -22,6 +22,8 @@ import 'leaflet-easyprint'
 import { ContextoCreado } from '../context/contextoMapasProvider'
 import { ContextoCreadoFeature } from '../context/contextoFeatureGroupDibujadas'
 
+import Head from 'next/head'
+
 var mueveOtroMapa = true;
 //Funcion del timeline undo redo
 var registraMovimiento = true;
@@ -94,54 +96,6 @@ function useTimeline() {
     return [state, { canUndo, canRedo, update, undo, redo }];
 }
 
-L.Personal = L.Handler.extend({
-    addHooks: function () {
-        console.log("estoy en addHook")
-        console.log(this, "this")
-        L.DomEvent.on(document, 'mousedown', this._onMouseDown, this);
-    },
-
-    removeHooks: function () {
-        L.DomEvent.off(document, 'mousedown', this._onMouseDown, this);
-    },
-
-    _onMouseDown: function (e) {
-        this._startPoint = this._map.mouseEventToContainerPoint(e);
-        L.DomEvent.on(document, {
-            mousemove: this._onMouseMove,
-            mouseup: this._onMouseUp,
-        }, this);
-        console.log("estoy en down", this._startPoint)
-    },
-
-    _onMouseMove: function (e) {
-        this._point = this._map.mouseEventToContainerPoint(e);
-        let bounds = new L.Bounds(this._point, this._startPoint);
-        // create an orange rectangle
-        console.log("estoy en mouve", bounds)
-    },
-
-    _finish: function () {
-        L.DomEvent.off(document, {
-            mousemove: this._onMouseMove,
-            mouseup: this._onMouseUp,
-        }, this);
-    },
-
-    _onMouseUp: function (e) {
-        this._finish();
-
-        let boundsDos = new L.LatLngBounds(
-            this._map.containerPointToLatLng(this._startPoint),
-            this._map.containerPointToLatLng(this._point)
-        );
-        L.rectangle(boundsDos, { color: "#ff7800", weight: 1 }).addTo(this._map);
-        console.log("estoy en up", boundsDos)
-    },
-});
-
-L.Map.addInitHook('addHandler', 'personal', L.Personal);
-
 export default function Map(props) {
     const valoresContexto = useContext(ContextoCreado)
     const featureContexto = useContext(ContextoCreadoFeature)
@@ -171,23 +125,17 @@ export default function Map(props) {
             };
             north.addTo(mapaReferencia);
 
-            var options = {
-                modal: true,
-                title: "Acercar a un área determinada"
-            };
-            var control = L.control.zoomBox(options);
-            mapaReferencia.addControl(control);
+            // var options = {
+            //     modal: true,
+            //     title: "Acercar a un área determinada"
+            // };
+            // var control = L.control.zoomBox(options);
+            // mapaReferencia.addControl(control);
 
             // L.easyPrint({
             //     title: 'Imprimir',
             //     position: 'topleft',
             //     sizeModes: ['A4Portrait', 'A4Landscape']
-            // }).addTo(mapaReferencia);
-
-            // L.easyButton('<img src="/images/analisis/lupa_negativa.png" width=25px height=25px>', function (btn, map) {
-            //     map.dragging.disable();
-            //     map.personal.addHooks();
-            //     // map.boxZoom.addHooks();
             // }).addTo(mapaReferencia);
         }
     }, [mapaReferencia])
@@ -394,6 +342,11 @@ export default function Map(props) {
 
     return (
         <>
+            <Head>
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+                    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
+            </Head>
+            
             <div className="div-herramientas-mapa">
                 <select onChange={(e) => cambiaTipoCoordenada(e)} className="tw-mr-5 select-cambia-coordenadas">
                     <option value='1'>Grados decimales</option>
@@ -412,9 +365,7 @@ export default function Map(props) {
                 </OverlayTrigger>
             </div>
 
-            <div id="rose"></div>
-
-            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={0} zoomControl={false}>
+            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false}>
                 <ScaleControl maxWidth="100" />
                 <ZoomControl position="bottomright" zoomInTitle="Acercar" zoomOutTitle="Alejar" />
 

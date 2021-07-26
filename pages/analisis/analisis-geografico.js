@@ -42,6 +42,7 @@ export default function AnalisisGeografico() {
     //Mapa espejo
     const [nombreMapaEspejo, setNombreMapaEspejo] = useState("Titulo mapa")
     const [muestraEditarNombreMapaEspejo, setmuestraEditarNombreMapaEspejo] = useState(true)
+    //Para datos
     const [entityObject, setEntityObject] = useState();
     const [spaceData, setSpaceData] = useState();
     const [entityObjectEspejo, setEntityObjectEspejo] = useState();

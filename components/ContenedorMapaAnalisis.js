@@ -535,10 +535,10 @@ function ContenedorMapaAnalisis(props) {
                                         }
                                     })
                                     // console.log('dataToProps: ', props.informacionEspacial);
-                                    if(props.informacionEspacial) {
+                                    if (props.informacionEspacial) {
                                         props.informacionEspacial.datos.map((data, index) => {
-                                            if(layerPadre.options["nombre"].includes('Nacional')) {
-                                                if(data[0] == current) {
+                                            if (layerPadre.options["nombre"].includes('Nacional')) {
+                                                if (data[0] == current) {
                                                     props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
                                                         feature.properties[column[1]] = data[column[3]];
                                                     })
@@ -1335,12 +1335,12 @@ function ContenedorMapaAnalisis(props) {
             }//termina opcion valores unicos
             if (valorEstilos == 5) {
                 //opcion para rupturas Naturales
-               
+
                 let colores = [];
                 let au1;
                 let sim = new Sim();
                 let aux22 = jenks(valoresCampo, 5);
-             
+
                 //generamos los colores apartir del seleccionado por el usuari0
                 if (colores.length > 0) {
                     colores.splice(0, colores.length);
@@ -1348,17 +1348,17 @@ function ContenedorMapaAnalisis(props) {
                 colores = shuffle(colorB);
                 if (capaSeleccionada.features[0].geometry.type == 'Point') {
                     for (let i = 0; i < aux22.length - 1; i++) {
-                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i+1), "#000000", 1, 5, 0);
+                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i + 1), "#000000", 1, 5, 0);
                     }
                 }
                 if (capaSeleccionada.features[0].geometry.type == 'MultiLineString') {
                     for (let i = 0; i < aux22.length - 1; i++) {
-                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i+1), "#000000", 1, 5, 1);
+                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i + 1), "#000000", 1, 5, 1);
                     }
                 }
                 if (capaSeleccionada.features[0].geometry.type == 'MultiPolygon') {
                     for (let i = 0; i < aux22.length - 1; i++) {
-                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i+1), "#000000", 1, 5, 2);
+                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i + 1), "#000000", 1, 5, 2);
                     }
                 }
 
@@ -2479,16 +2479,6 @@ function ContenedorMapaAnalisis(props) {
         });
     }
 
-    //Datos
-    const [valoresSubtemasDatos, setValoresSubtemasDatos] = useState(false)
-    const [valoresTablasDatos, setValoresTablasDatos] = useState(false)
-    const temaDato = () => {
-        setValoresSubtemasDatos(true)
-    }
-    const subtemaDatos = () => {
-        setValoresTablasDatos(true)
-    }
-
     //Consultas prediseñadas
     const [valoresConsultaConsultas, setValoresConsultaConsultas] = useState(false)
     const temaConsultas = () => {
@@ -2515,7 +2505,7 @@ function ContenedorMapaAnalisis(props) {
             if (referencia != 'nacional') {
                 var entidad = { id: (referencia.capa == 2 ? referencia.entity.id_entidades : referencia.capa == 3 ? referencia.entity.cve_mun : referencia.entity.Codigo), entidad: (referencia.capa == 2 ? referencia.entity.nombre_entidad : referencia.capa == 3 ? referencia.entity.nombre_mun : referencia.entity.Nombre) };
                 capa.filtro_entidad = referencia.capa == 3 ? capa.filtro_municipio : capa.filtro_entidad;
-                layers.push({capa: capa, entidad: entidad})
+                layers.push({ capa: capa, entidad: entidad })
             } else {
                 capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
                 capa.titulo = props.informacionEspacial.nombreTabla;
@@ -2524,7 +2514,7 @@ function ContenedorMapaAnalisis(props) {
         });
         construyeEntidadCapaCB(layers)
     }
-    
+
     function construyeEntidadCapaCB(layers) {
         if (layers.length && layers[0].entidad != undefined) {
             let capaEntidad = {};
@@ -2550,7 +2540,7 @@ function ContenedorMapaAnalisis(props) {
         }
     }
 
-    function agregaCapaWFSCB(capaFiltrada){
+    function agregaCapaWFSCB(capaFiltrada) {
         setShowModalAgregarCapas(false);
         if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === capaFiltrada.titulo)) {
             setDatosModalAnalisis({
@@ -2623,13 +2613,13 @@ function ContenedorMapaAnalisis(props) {
                                             feature.properties[nuevoAlias] = keyTemp
                                         }
                                     })
-                                    if(props.informacionEspacial) {
+                                    if (props.informacionEspacial) {
                                         props.informacionEspacial.datos.map((data, index) => {
-                                                if(data[0] == current) {
-                                                    props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
-                                                        feature.properties[column[1]] = data[column[3]];
-                                                    })
-                                                }
+                                            if (data[0] == current) {
+                                                props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                                    feature.properties[column[1]] = data[column[3]];
+                                                })
+                                            }
                                         })
                                         setDataToProps();
                                     }
@@ -2721,8 +2711,8 @@ function ContenedorMapaAnalisis(props) {
         let nuevoArr = arregloLayers.filter(valor => !idArreglo.includes(valor.id))
         let arrDeleted = arregloLayers.filter(valor => idArreglo.includes(valor.id))
         arrDeleted.map(valor => {
-            if(valor.tipo == 3 || valor.tipo == 4){
-                if(valor.buffer){
+            if (valor.tipo == 3 || valor.tipo == 4) {
+                if (valor.buffer) {
                     referenciaMapa.removeLayer(valor.buffer)
                 }
             }
@@ -2750,9 +2740,15 @@ function ContenedorMapaAnalisis(props) {
                 if (valor.habilitado) {
                     valor.habilitado = false;
                     referenciaMapa.removeLayer(valor.layer);
+                    if (valor.buffer) {
+                        referenciaMapa.removeLayer(valor.buffer);
+                    }
                     return valor;
                 } else {
                     valor.habilitado = true;
+                    if (valor.buffer) {
+                        referenciaMapa.addLayer(valor.buffer);
+                    }
                     referenciaMapa.addLayer(valor.layer)
                     return valor;
                 }
@@ -2776,10 +2772,16 @@ function ContenedorMapaAnalisis(props) {
             if (e.target.checked == true) {
                 valor.habilitado = true;
                 referenciaMapa.addLayer(valor.layer);
+                if (valor.buffer) {
+                    referenciaMapa.addLayer(valor.buffer);
+                }
                 return valor;
             } else {
                 valor.habilitado = false;
                 referenciaMapa.removeLayer(valor.layer)
+                if (valor.buffer) {
+                    referenciaMapa.removeLayer(valor.buffer);
+                }
                 return valor;
             }
         });
@@ -2930,9 +2932,11 @@ function ContenedorMapaAnalisis(props) {
         var bufferedLayer = L.geoJSON(buffer, { interactive: false });
         bufferedLayer.setZIndex = 0;
         bufferedLayer.options.buffer = true
-        referenciaMapa.addLayer(bufferedLayer)
-        // bufferedLayer.addTo(grupo);
         figura.buffer = bufferedLayer;
+        // bufferedLayer.addTo(grupo);
+        if (figura.habilitado) {
+            referenciaMapa.addLayer(bufferedLayer)
+        }
 
         let capasIntersectadas = []
         referenciaMapa.eachLayer(function (layer) {
@@ -2958,12 +2962,10 @@ function ContenedorMapaAnalisis(props) {
     const handleClose = () => setShowModalEstilos(!showModalEstilos);
 
     const [mapState, setMapState] = useState();
-    const [spaceData, setSpaceData] = useState();
-    const [entityObject, setEntityObject] = useState();
 
     useEffect(() => {
-        if(mapState) {
-            if(mapState.entityObject.length > 0){
+        if (mapState) {
+            if (mapState.entityObject.length > 0) {
                 props.setInformacionEspacial(mapState.spaceData);
                 props.setReferenciaEntidad(mapState.entityObject);
             }
@@ -3281,51 +3283,9 @@ function ContenedorMapaAnalisis(props) {
                         </Tab>
                         {
                             (props.setReferenciaEntidad && props.setInformacionEspacial) &&
-                                <Tab eventKey="datos" title="Datos">
-                                    <ConsultaDinamica mapState={setMapState}/>
-                                    {/* <Form className="tw-mt-4">
-                                        <Form.Group controlId="temasDatos">
-                                            <Form.Label>Temas</Form.Label>
-                                            <Form.Control onChange={temaDato} as="select">
-                                                <option value=""></option>
-                                                <option>Tema 1</option>
-                                                <option>Tema 2</option>
-                                                <option>Tema 3</option>
-                                                <option>Tema 4</option>
-                                                <option>Tema 5</option>
-                                            </Form.Control>
-                                        </Form.Group>
-                                        {
-                                            valoresSubtemasDatos == true &&
-                                            <Form.Group controlId="subtemasDatos">
-                                                <Form.Label>Subtemas</Form.Label>
-                                                <Form.Control onChange={subtemaDatos} as="select">
-                                                    <option value=""></option>
-                                                    <option>Subtema 1</option>
-                                                    <option>Subtema 2</option>
-                                                    <option>Subtema 3</option>
-                                                    <option>Subtema 4</option>
-                                                    <option>Subtema 5</option>
-                                                </Form.Control>
-                                            </Form.Group>
-                                        }
-                                        {
-                                            valoresTablasDatos == true &&
-                                            <Form.Group controlId="tablasDatos">
-                                                <Form.Label>Tablas</Form.Label>
-                                                <Form.Control as="select">
-                                                    <option value=""></option>
-                                                    <option>Tabla 1</option>
-                                                    <option>Tabla 2</option>
-                                                    <option>Tabla 3</option>
-                                                    <option>Tabla 4</option>
-                                                    <option>Tabla 5</option>
-                                                </Form.Control>
-                                            </Form.Group>
-                                        }
-                                        <button className="btn-analisis" type="submit">CONSULTAR</button>
-                                    </Form> */}
-                                </Tab>
+                            <Tab eventKey="datos" title="Datos">
+                                <ConsultaDinamica analisis={true} mapState={setMapState} />
+                            </Tab>
                         }
                         <Tab eventKey="consultas" title={<>Consultas<br />prediseñadas</>}>
                             <Form className="tw-mt-4">
