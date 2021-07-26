@@ -3,8 +3,6 @@ import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faEdit } from '@fortawesome/free-solid-svg-icons';
 
-import 'leaflet/dist/leaflet.css';
-
 import ContenedorMapaAnalisis from '../../../components/ContenedorMapaAnalisis'
 import ConsultaDinamica from '../../../components/ConsultaDinamica'
 import ContextoMapasProvider from '../../../context/contextoMapasProvider'
@@ -36,8 +34,8 @@ export default function estadisticas() {
     }
 
     useEffect(() => {
-        if(mapState) {
-            if(mapState.entityObject.length > 0){
+        if (mapState) {
+            if (mapState.entityObject.length > 0) {
                 setMapVisible(mapState.isMapVisible);
                 setSpaceData(mapState.spaceData);
                 setEntityObject(mapState.entityObject);
@@ -45,12 +43,12 @@ export default function estadisticas() {
             }
         }
     }, [mapState]);
-    
+
     return (
         <>
             <section className="container-fluid custom-max-width custom-mx-b-1">
                 <div className="row">
-                    <ConsultaDinamica mapState={setMapState}/>
+                    <ConsultaDinamica mapState={setMapState} />
                 </div>
                 <div className={`row ${isMapVisible == false && "esconde-mapa"}`}>
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-mx-t-1 col-mapa tw-pt-6">
@@ -70,7 +68,7 @@ export default function estadisticas() {
                             <div className="col-12 tw-mt-8">
                                 <ContextoMapasProvider>
                                     <ContextoFeature>
-                                        <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} referenciaEntidad={entityObject} informacionEspacial={spaceData}/>
+                                        <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} referenciaEntidad={entityObject} informacionEspacial={spaceData} />
                                     </ContextoFeature>
                                 </ContextoMapasProvider>
                             </div>

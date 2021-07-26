@@ -7,7 +7,6 @@ import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
 import $ from 'jquery';
 import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
-import 'leaflet/dist/leaflet.css';
 
 import Loader from './Loader'
 import ModalComponent from './ModalComponent'
@@ -687,9 +686,9 @@ export default function ConsultaDinamica(props) {
                                                                 </h4> :
                                                                 columns.length > 0 &&
                                                                 <Form.Group className="row tw-mb-0">
-                                                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-xs-12 tw-mb-2 p-0">
+                                                                    <div className="col-12 tw-mb-2 p-0">
                                                                         <div className="row">
-                                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-mb-2">
+                                                                            <div className="tw-mb-2 col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">
                                                                                 <Form.Control as="select" name="aggregationType" onChange={(event) => setNacional(parseInt(event.target.value))}>
                                                                                     {
                                                                                         aggregationLevels.map((item, index) => (
@@ -702,7 +701,7 @@ export default function ConsultaDinamica(props) {
                                                                                     }
                                                                                 </Form.Control>
                                                                             </div>
-                                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-mb-2">
+                                                                            <div className="tw-mb-2 col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">
                                                                                 <Form.Control as="select" name="entities" onChange={(event) => setEntity(event.target.value)} disabled={statisticalProduct.nivel_desagregacion == 'Nacional' || isNacional == 0}>
                                                                                     <option value="" hidden>Entidad</option>
                                                                                     {
@@ -718,7 +717,7 @@ export default function ConsultaDinamica(props) {
                                                                                     }
                                                                                 </Form.Control>
                                                                             </div>
-                                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-mb-2">
+                                                                            <div className="tw-mb-2 col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">
                                                                                 <Form.Control as="select" name="tawns" onChange={(event) => setTawn(event.target.value)} disabled={statisticalProduct.nivel_desagregacion == 'Estatal' || isNacional == 0}>
                                                                                     <option value="" hidden>Municipio</option>
                                                                                     {
@@ -734,7 +733,7 @@ export default function ConsultaDinamica(props) {
                                                                                     }
                                                                                 </Form.Control>
                                                                             </div>
-                                                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12 tw-mb-2">
+                                                                            <div className="tw-mb-2 col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">
                                                                                 <Form.Control as="select" name="localities" onChange={(event) => setLocality(event.target.value)} disabled={statisticalProduct.nivel_desagregacion != 'Localidad' || isNacional == 0}>
                                                                                     <option value="" hidden>Localidad</option>
                                                                                     {
@@ -752,7 +751,7 @@ export default function ConsultaDinamica(props) {
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-xs-12 tw-mb-2 p-0 table-responsive" style={{maxHeight: '90px'}}>
+                                                                    <div className="col-12 tw-mb-2 p-0 table-responsive" style={{maxHeight: '90px'}}>
                                                                         {
                                                                             agregationFilters && agregationFilters.length > 0 &&
                                                                                 <Table striped hover>
@@ -865,19 +864,19 @@ export default function ConsultaDinamica(props) {
                                                         {
                                                             columns.length > 0 &&
                                                             <div className="row">
-                                                                <div className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12 tw-p-0 tw-my-2 text-center">
+                                                                <div className={`tw-p-0 tw-my-2 text-center ${props.analisis ? "col-12" : "col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12"}`}>
                                                                     <OverlayTrigger overlay={<Tooltip>Agregar filtros avanzados</Tooltip>}>
                                                                         <button className="btn-analisis"
                                                                             onClick={() => setShowAdvancedFilters(!isShowAdvancedFilters)}
                                                                             >Filtros</button>
                                                                     </OverlayTrigger>
                                                                 </div>
-                                                                <div className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12 tw-p-0 tw-my-2 text-center">
+                                                                <div className={`tw-p-0 tw-my-2 text-center ${props.analisis ? "col-12" : "col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12"}`}>
                                                                     <OverlayTrigger overlay={<Tooltip>Agregar tabular</Tooltip>}>
                                                                         <button className="btn-analisis" onClick={() => getStatiticalProductInformation()}>Agregar</button>
                                                                     </OverlayTrigger>
                                                                 </div>
-                                                                <div className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12 tw-p-0 tw-my-2 text-center">
+                                                                <div className={`tw-p-0 tw-my-2 text-center ${props.analisis ? "col-12" : "col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12"}`}>
                                                                     <OverlayTrigger overlay={<Tooltip>Mostrar tabulares</Tooltip>}>
                                                                         <button className="btn-analisis" disabled={tableData.length == 0} onClick={() => handleShowTablesModal()}>Tabulares</button>
                                                                     </OverlayTrigger>
