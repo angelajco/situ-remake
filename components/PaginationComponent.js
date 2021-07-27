@@ -68,8 +68,25 @@ function PaginationComponent(props) {
       doc.setFontSize(10);
       //doc.setFontType("normal");
       doc.text(20, 60, "Total de documentos: " + items.length);
+      doc.setFontSize(9);
     };
-    if (usuarioCookie != null) {
+
+    doc.autoTable(columns, result, {
+      margin: { top: 65 }, theme: 'grid', beforePageContent: header,
+      columnStyles: {
+        0: { columnWidth: 30 },
+        1: { columnWidth: 20 },
+        2: { columnWidth: 20 },
+        3: { columnWidth: 14 },
+        4: { columnWidth: 25 },
+        5: { columnWidth: 24 },
+        6: { columnWidth: 23 },
+        7: { columnWidth: 28 },
+      }
+    });
+
+
+  /*  if (usuarioCookie != null) {
       doc.autoTable(columns, result, {
         margin: { top: 65 }, theme: 'grid', beforePageContent: header,
         columnStyles: {
@@ -83,7 +100,7 @@ function PaginationComponent(props) {
           7: { columnWidth: 28 },
         }
       });
-    }else{
+    } else {
       doc.autoTable(columns, result, {
         margin: { top: 65 }, theme: 'grid', beforePageContent: header,
         columnStyles: {
@@ -96,10 +113,8 @@ function PaginationComponent(props) {
           6: { columnWidth: 30 },
         }
       });
-    }
+    }*/
 
-
-   
     let string = doc.output('datauristring');
 
     if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
@@ -131,7 +146,7 @@ function PaginationComponent(props) {
       doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
       doc.setFontSize(13);
       doc.text(75, 53, "CONSULTA DOCUMENTAL");
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       //doc.text(20, 60, "Total de documentos: " + items.length);
     };
     doc.autoTable(columns, result, { margin: { top: 65 }, theme: 'grid', beforePageContent: header });
@@ -203,8 +218,9 @@ function PaginationComponent(props) {
       js.Tema2 = element.tema2;
       //js.Cobertura = element.nivel_cobertura;
       //js.Formato = element.formato;
+      js.Archivo = element.url_origen;
       if (usuarioCookie != null) {
-        js.Archivo = element.url_origen;
+        
       }
       vec.push(js);
     });
@@ -300,11 +316,11 @@ function PaginationComponent(props) {
           <div className="col-8 col-md-8 col-lg-8"></div>
           <div className="col-2 align-self-end">
             {
-              usuarioCookie != null && (
-                <a download="Archivo.pdf" href={datos[0].url_origen} target="_blank">
-                  <button type="button" className="btn btn-light" onClick={() => actBitacora(cod)}>Descargar</button>
-                </a>
-              )
+              //usuarioCookie != null && (
+              <a download="Archivo.pdf" href={datos[0].url_origen} target="_blank">
+                <button type="button" className="btn btn-light" onClick={() => actBitacora(cod)}>Descargar</button>
+              </a>
+              // )
             }
           </div>
         </div>

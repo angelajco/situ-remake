@@ -135,11 +135,44 @@ export default function construccion() {
     var hoy = new Date();
     var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
     //console.log(fecha);
-    //console.log(data);
+    console.log(data);
 
     //setFileUrl(null);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///codigo para validaciones de formulario
+
+    if (tarchivo == null) {
+      let t1 = document.getElementById('msj-tipoDoc');
+      document.getElementById('tipo').focus();
+      t1.innerHTML = "Selecciona tipo de documento a guardar";
+      return false;
+    } else {
+      let t1 = document.getElementById('msj-tipoDoc');
+      t1.innerHTML = "";
+    }
+    if (tarchivo == 2) {
+      if (data.enlace === "") {
+        let t1 = document.getElementById('msj-enlace');
+        document.getElementById('enlace').focus();
+        t1.innerHTML = "Ingresa enlace del documento";
+        return false;
+      } else {
+        let t1 = document.getElementById('msj-enlace');
+        t1.innerHTML = "";
+      }
+    }
+    if (tarchivo == 1) {
+      if (data.doc.length === 0) {
+        let t1 = document.getElementById('msj-doc');
+        document.getElementById('doc').focus();
+        t1.innerHTML = "Ingresa documento a subir";
+        return false;
+      } else {
+        let t1 = document.getElementById('msj-doc');
+        t1.innerHTML = "";
+      }
+    }
+
     if (data.titulo === "") {
       let t1 = document.getElementById('msj-titulo');
       document.getElementById('titulo').focus();
@@ -236,6 +269,16 @@ export default function construccion() {
       }
     }
 
+    if (data.fecha === "") {
+      let t1 = document.getElementById('msj-fechaP');
+      let t2 = document.getElementById('fecha').focus();
+      t1.innerHTML = "Ingresa fecha de pub;icación";
+      return false;
+    } else {
+      let t1 = document.getElementById('msj-fechaP');
+      t1.innerHTML = "";
+    }
+
     if (data.formato === "") {
       let t1 = document.getElementById('msj-formato');
       document.getElementById('formato1').focus();
@@ -295,8 +338,10 @@ export default function construccion() {
       let t1 = document.getElementById('msj-nombreOrigen');
       t1.innerHTML = " ";
     }
-    
-    
+
+
+
+
     //terminan las validaciones 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     console.log("Datos Correctos")
@@ -468,7 +513,6 @@ export default function construccion() {
     <main>
       <Container>
         <div className="container">
-          <h5>Carga de documentos</h5>
           <Form className="col-12" onSubmit={handleSubmit(onSubmitP)}>
             <div className="row">
               <div className="col-2 col-md-2 col-lg-2">
@@ -483,6 +527,7 @@ export default function construccion() {
                 <Form.Group controlId="tipo">
                   <Form.Label>Tipo de Documento *</Form.Label>
                   <Select
+                    id="tipo"
                     controlId="tipo"
                     placeholder="Selecciona..."
                     className="basic-single"
@@ -494,6 +539,7 @@ export default function construccion() {
                     ref={register()}
                     required
                   ></Select>
+                  <p id="msj-tipoDoc" className="msj"></p>
                 </Form.Group>
               </div>
               <div className="col-5 col-md-5 col-lg-5">
@@ -501,15 +547,17 @@ export default function construccion() {
                   tarchivo == 1 && tarchivo != null ? (
                     <div>
                       <Form.Group controlId="doc">
-                        <Form.Label>Documento</Form.Label>
+                        <Form.Label>Documento *</Form.Label>
                         <Form.File name="doc" ref={register()} />
+                        <p id="msj-doc" className="msj"></p>
                       </Form.Group>
                     </div>
                   ) : (
                     tarchivo == 2 && tarchivo != null ? (
                       <Form.Group controlId="enlace">
-                        <Form.Label>Enlace</Form.Label>
+                        <Form.Label>Enlace *</Form.Label>
                         <Form.Control name="enlace" type="text" ref={register()} />
+                        <p id="msj-enlace" className="msj"></p>
                       </Form.Group>
                     ) : (
                       <p></p>
@@ -523,17 +571,22 @@ export default function construccion() {
             <div className="row">
               <div className="col-6">
                 <Form.Group controlId="titulo">
-                  <Form.Label>Nombre</Form.Label>
-                  <Form.Control name="titulo" type="text" ref={register()} placeholder="Nombre del documento" />
+                  <Form.Label>Nombre *</Form.Label>
+                  <Form.Control name="titulo" type="text" ref={register()} placeholder="Nombre del documento" maxlength="249" />
                   <p id="msj-titulo" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="descripcion">
-                  <Form.Label>Descripción</Form.Label>
-                  <Form.Control name="descripcion" type="textarea" rows="10" ref={register()} placeholder="Descripción del documento" />
+                  <Form.Label>Descripción *</Form.Label>
+                  <Form.Control name="descripcion" type="textarea" rows="10" ref={register()} placeholder="Descripción del documento" maxlength="499" />
                   <p id="msj-descripcion" className="msj"></p>
                 </Form.Group>
+                <Form.Group controlId="alias">
+                  <Form.Label>Alias</Form.Label>
+                  <Form.Control name="alias" type="text" ref={register()} placeholder="Alias del documento" maxlength="39" />
+                  <p id="msj-alias" className="msj"></p>
+                </Form.Group>
                 <Form.Group controlId="tipoD">
-                  <Form.Label>Tipo</Form.Label>
+                  <Form.Label>Tipo *</Form.Label>
                   <Form.Control name="tipoD" type="hidden" ref={register()} value={tipodoc} />
                   <Select
                     required
@@ -549,8 +602,16 @@ export default function construccion() {
                   ></Select>
                   <p id="msj-tipo" className="msj"></p>
                 </Form.Group>
+                {
+                  tipodoc == 'Revista Indexada' || tipodoc == 'Libro' || tipodoc == 'Revista' ? (
+                    <Form.Group controlId="detalle">
+                      <Form.Label>Detalle de la publicación</Form.Label>
+                      <Form.Control name="detalle" type="text" ref={register()} maxLength="499" />
+                    </Form.Group>
+                  ):(<p></p>)
+                }
                 <Form.Group controlId="tema1">
-                  <Form.Label>Tema Principal</Form.Label>
+                  <Form.Label>Tema Principal*</Form.Label>
                   <Form.Control name="tema1" type="hidden" ref={register()} value={tema1} />
                   <Select
                     id="tema11"
@@ -567,7 +628,7 @@ export default function construccion() {
                   <p id="msj-tema1" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="tema2">
-                  <Form.Label>Tema Secundario</Form.Label>
+                  <Form.Label>Tema Secundario *</Form.Label>
                   <Form.Control name="tema2" type="hidden" ref={register()} value={tema2} />
                   <Select
                     id="tema22"
@@ -584,7 +645,7 @@ export default function construccion() {
                   <p id="msj-tema2" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="cobertura">
-                  <Form.Label>Nivel de Cobertura</Form.Label>
+                  <Form.Label>Nivel de Cobertura *</Form.Label>
                   <Form.Control name="cobertura" type="hidden" ref={register()} value={cobertura} />
                   <Select
                     id="coberturaG1"
@@ -668,8 +729,9 @@ export default function construccion() {
                   <Form.Control name="isbn" type="text" ref={register()} />
                 </Form.Group>
                 <Form.Group controlId="fecha">
-                  <Form.Label>Fecha de Publicación</Form.Label>
+                  <Form.Label>Fecha de Publicación *</Form.Label>
                   <Form.Control name="fecha" type="date" ref={register()} />
+                  <p id="msj-fechaP" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="vigencia">
                   <Form.Label>Vigencia</Form.Label>
@@ -763,7 +825,7 @@ export default function construccion() {
                   <Form.Label>Idioma del Documento</Form.Label>
                   <Form.Control name="idioma" type="hidden" ref={register()} value={idioma} />
                   <Select
-                    id="idioma" 
+                    id="idioma"
                     controlId="idioma"
                     placeholder="Selecciona una opción"
                     className="basic-single"
@@ -778,7 +840,7 @@ export default function construccion() {
                 </Form.Group>
                 <Form.Group controlId="paginas">
                   <Form.Label>Número de páginas</Form.Label>
-                  <Form.Control name="paginas" type="text" ref={register()}  pattern="[0-9]{1,}"/>
+                  <Form.Control name="paginas" type="text" ref={register()} pattern="[0-9]{1,}" />
                   <p id="msj-paginas" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="palabrasC">
