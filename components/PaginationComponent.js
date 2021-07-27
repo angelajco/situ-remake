@@ -69,18 +69,37 @@ function PaginationComponent(props) {
       //doc.setFontType("normal");
       doc.text(20, 60, "Total de documentos: " + items.length);
     };
+    if (usuarioCookie != null) {
+      doc.autoTable(columns, result, {
+        margin: { top: 65 }, theme: 'grid', beforePageContent: header,
+        columnStyles: {
+          0: { columnWidth: 30 },
+          1: { columnWidth: 20 },
+          2: { columnWidth: 20 },
+          3: { columnWidth: 15 },
+          4: { columnWidth: 25 },
+          5: { columnWidth: 24 },
+          6: { columnWidth: 20 },
+          7: { columnWidth: 28 },
+        }
+      });
+    }else{
+      doc.autoTable(columns, result, {
+        margin: { top: 65 }, theme: 'grid', beforePageContent: header,
+        columnStyles: {
+          0: { columnWidth: 25 },
+          1: { columnWidth: 25 },
+          2: { columnWidth: 25 },
+          3: { columnWidth: 18 },
+          4: { columnWidth: 28 },
+          5: { columnWidth: 25 },
+          6: { columnWidth: 30 },
+        }
+      });
+    }
 
-    doc.autoTable(columns, result, { margin: { top: 65 }, theme: 'grid', beforePageContent: header ,
-    columnStyles:{
-      0: { columnWidth: 25 },
-      1: { columnWidth: 20 },
-      2: { columnWidth: 20 },
-      3: { columnWidth: 15 },
-      4: { columnWidth: 25 },
-      5: { columnWidth: 24 },
-      6: { columnWidth: 24 },
-      7: { columnWidth: 28 },
-    }});
+
+   
     let string = doc.output('datauristring');
 
     if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
@@ -120,10 +139,12 @@ function PaginationComponent(props) {
   }
 
   const actBitacora = async (cod) => {
-    if (usuarioI != null) {
+    if (usuarioCookie != null) {
       //codigo para actualizar la botacora cuendo se descarge un documento
       const res = await fetch(`${process.env.ruta}/wa/publico/bitacoraDocumento?id_usuario=${usuarioI}&id_documento=${cod}`);
       const datos = await res.json();
+    } else {
+      console.log("No registra bitacora");
     }
   }
 
@@ -182,7 +203,9 @@ function PaginationComponent(props) {
       js.Tema2 = element.tema2;
       //js.Cobertura = element.nivel_cobertura;
       //js.Formato = element.formato;
-      js.Archivo = element.url_origen;
+      if (usuarioCookie != null) {
+        js.Archivo = element.url_origen;
+      }
       vec.push(js);
     });
     return vec;
@@ -205,7 +228,7 @@ function PaginationComponent(props) {
         onClick={handleClose}
       />
         {
-          <table className="table table-bordered table-responsive">
+          <table className="t1 table table-bordered table-responsive ">
             <thead className="thead-dark">
               <tr>
                 <th>Portada</th>
@@ -276,9 +299,13 @@ function PaginationComponent(props) {
         <div className="row">
           <div className="col-8 col-md-8 col-lg-8"></div>
           <div className="col-2 align-self-end">
-            <a download="Archivo.pdf" href={datos[0].url_origen} target="_blank">
-              <button type="button" className="btn btn-light" onClick={() => actBitacora(cod)}>Descargar</button>
-            </a>
+            {
+              usuarioCookie != null && (
+                <a download="Archivo.pdf" href={datos[0].url_origen} target="_blank">
+                  <button type="button" className="btn btn-light" onClick={() => actBitacora(cod)}>Descargar</button>
+                </a>
+              )
+            }
           </div>
         </div>
         <div className="row">
@@ -358,6 +385,7 @@ function PaginationComponent(props) {
   });
 
   useEffect(() => {
+    preCargaPDF();
     setData(url_bus)
   })
 
@@ -592,7 +620,7 @@ function PaginationComponent(props) {
           </li>
         </ul>
       </div>
-      <div className="col-1 text-center"></div>
+
       <div className="col-1 text-center">
         <OverlayTrigger overlay={<Tooltip>Consulta CVS</Tooltip>}>
           <a onClick={descargarCVS}><FontAwesomeIcon size="4x" icon={faFileCsv} /></a>
@@ -603,10 +631,19 @@ function PaginationComponent(props) {
           <a onClick={descargaDoc}><FontAwesomeIcon size="4x" icon={faFilePdf} /></a>
         </OverlayTrigger>
       </div>
+      <div className="col-1 text-center">
+        {
+          usuarioCookie != null && (
+            <OverlayTrigger overlay={<Tooltip>Cargar Documento</Tooltip>}>
+              <Link href="/pruebas">
+                <a><FontAwesomeIcon size="4x" icon={faUpload} /></a>
+              </Link>
+            </OverlayTrigger>
+          )
+        }
+      </div>
     </div>
     <br></br>
-
-
   </>;
 }
 

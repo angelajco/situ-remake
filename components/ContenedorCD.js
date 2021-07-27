@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form";
-import { Form, Modal, Button} from 'react-bootstrap'
+import { Form, Modal, Button } from 'react-bootstrap'
 import ModalComponent from './ModalComponent'
 import PaginationComponent from './PaginationComponent'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -10,6 +10,7 @@ import Select from 'react-select';
 import { Typeahead } from 'react-bootstrap-typeahead';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import Cookies from 'universal-cookie'
+import Loader from '../components/Loader'
 const cookies = new Cookies()
 
 
@@ -41,6 +42,7 @@ function ContenedorCD() {
     const [busq1, setBusq1] = useState([]);
     const [busq2, setBusq2] = useState([]);
     const [busq3, setBusq3] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
 
 
@@ -155,57 +157,72 @@ function ContenedorCD() {
         setTipoD();
         setTemaP();
         setTemaS();
+        setPub('');
     }
 
-    function ordenarAsc(p_array_json, p_key) {
-        p_array_json.sort(function (a, b) {
-            return a[p_key] > b[p_key];
+    function sortJSON(data, key, orden) {
+        return data.sort(function (a, b) {
+            var x = a[key],
+                y = b[key];
+
+            if (orden === 'asc') {
+                return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+            }
+
+            if (orden === 'desc') {
+                return ((x > y) ? -1 : ((x < y) ? 1 : 0));
+            }
         });
     }
 
-    function ordenarDesc(p_array_json, p_key) {
-        ordenarAsc(p_array_json, p_key); p_array_json.reverse();
-    }
-
     const ordenDatos = e => {
+        //console.log(getBrowserInfo());
         if (e != null) {
-            //console.log(e.value);
+            setIsLoading(true);
             if (e.value == '1') {
                 //se ordena por nombre a-z
-                ordenarAsc(r, 'nombre');
+                sortJSON(r, 'nombre', 'asc');
                 modificaResultado(r);
+                setIsLoading(false);
             }
             if (e.value == '2') {
-                //se ordena por nombre a-z 
-                ordenarDesc(r, 'nombre');
+                sortJSON(r, 'nombre', 'desc');
                 modificaResultado(r);
+                setIsLoading(false);
             }
             if (e.value == '3') {
-                ordenarDesc(r, 'ano_publicacion');
+                sortJSON(r, 'ano_publicacion', 'desc');
                 modificaResultado(r);
+                setIsLoading(false);
             }
             if (e.value == '4') {
-                ordenarAsc(r, 'ano_publicacion');
+                sortJSON(r, 'ano_publicacion', 'asc');
                 modificaResultado(r);
+                setIsLoading(false);
             }
             if (e.value == '5') {
-                ordenarAsc(r, 'instancia');
+                sortJSON(r, 'instancia', 'asc');
                 modificaResultado(r);
+                setIsLoading(false);
             }
             if (e.value == '6') {
-                ordenarDesc(r, 'instancia');
+                sortJSON(r, 'instancia', 'desc');
                 modificaResultado(r);
+                setIsLoading(false);
             }
         }
         setAux(!aux);
     }
 
     const filtroTipo = e => {
+        console.log("----------")
         if (e != null) {
-            setBusq1(busq1);
+            setIsLoading(true);
+            setBusq1(r);
             var datos = r;
             var filtrado = datos.filter(function (v) { return v['tipo'] == e.label });
             modificaResultado(filtrado);
+            setIsLoading(false);
         } else {
             modificaResultado(busq1);
         }
@@ -243,42 +260,29 @@ function ContenedorCD() {
         }
     }
 
-    function metadatosModal() {
-        const cuerpo =
-            <div>
-                <p>Ingresa parametros de busqueda</p>
-            </div>
-            ;
-
-        setDatosModal(
-            {
-                title: 'Datos Incorrectos',
-                body: cuerpo,
-                nombreBoton: 'Cerrar'
-            }
-        )
-        setShow(true)
-    }
-
     const busquedaP = e => {
+        //console.log(getBrowserInfo());
+        
         if (e != null) {
+            setIsLoading(true);
             if (e.value == 1) {
                 setBusquedaPR(e.value);
+                setIsLoading(false);
             }
             if (e.value == 2) {
                 //ultimas publicaciones 
                 fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
                     .then((response) => response.json())
-                    .then((json) => modificaResultado(json));
-                    setBusq1(r);
+                    .then((json) => {modificaResultado(json);setIsLoading(false); });
+                setBusq1(r);
                 setBusquedaPR();
             }
             if (e.value == 3) {
                 //mas consultados
                 fetch(`${process.env.ruta}/wa/publico/documentosMasConsultados`)
                     .then((response) => response.json())
-                    .then((json) => modificaResultado(json));
-                    setBusq1(r);
+                    .then((json) => {modificaResultado(json);setIsLoading(false); });
+                setBusq1(r);
                 setBusquedaPR();
             }
         } else {
@@ -286,10 +290,29 @@ function ContenedorCD() {
         }
     }
 
+    var getBrowserInfo = function () {
+        var ua = navigator.userAgent, tem,
+            M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+        if (/trident/i.test(M[1])) {
+            tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
+            return 'IE ' + (tem[1] || '');
+        }
+        if (M[1] === 'Chrome') {
+            tem = ua.match(/\b(OPR|Edge)\/(\d+)/);
+            if (tem != null) return tem.slice(1).join(' ').replace('OPR', 'Opera');
+        }
+        M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?'];
+        if ((tem = ua.match(/version\/(\d+)/i)) != null) M.splice(1, 1, tem[1]);
+        return M.join(' ');
+    };
+
     useEffect(() => {
+        
+        setIsLoading(true);
         fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
             .then((response) => response.json())
-            .then((json) => modificaResultado(json));
+            .then((json) => {modificaResultado(json);setIsLoading(false); });
+        setBusq1(r);
     }, []);
 
 
@@ -311,6 +334,7 @@ function ContenedorCD() {
         setTipo(data.tipo);
         setTem1(data.tem1);
         setTem1(data.tem2);
+        setPub(datos.length+" Resultados en sistema")
     };//fin del metodo onSubmit
 
     function cambioD(e) {
@@ -386,6 +410,11 @@ function ContenedorCD() {
 
     return (
         <>
+            {
+                isLoading ?
+                    <Loader /> :
+                    ''
+            }
             <ModalComponent
                 show={show}
                 datos={datosModal}
@@ -500,13 +529,6 @@ function ContenedorCD() {
                     </div>
                 </Modal.Body>
             </Modal >
-
-            {//BettyP <div className="col-8 col-sm-8"></div>
-            /*
-            <div className="col-8 col-sm-8">
-                <h4>{mensaje}</h4>
-            </div>
-            */ }
             {
                 busquedaPR != null && (
                     <div className="row">
@@ -524,14 +546,17 @@ function ContenedorCD() {
                 <div className="col-9 col-sm-9">
                     {
                         r != null && (
-                            r.length > 0 &&
-                            (
+                            r.length > 0 ? (
                                 <PaginationComponent
                                     informacion={r}
                                 />
-                            )
-                        )
-
+                            ) : (
+                                <div className="row">
+                                    <div className="col-4">
+                                        <p><b className="number-cd">{r.length}</b> Resultados en el sistema</p>
+                                    </div>
+                                </div>
+                            ))
                     }
                 </div>
                 <div className="col-3 col-sm-3">
@@ -546,6 +571,7 @@ function ContenedorCD() {
                                 options={busqueda1}
                                 isClearable={true}
                                 onChange={busquedaP}
+                                defaultValue={busqueda1[1]}
                             ></Select>
                         </div>
                     </div>
@@ -617,7 +643,11 @@ function ContenedorCD() {
                     </div>
                 </div>
             </div>
-           
+            <div className="row">
+                <div className="col-9 col-sm-9">
+                </div>
+            </div>
+
         </>
     )
 
