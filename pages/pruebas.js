@@ -6,6 +6,7 @@ import Draggable, { DraggableCore } from "react-draggable";
 import { ModalHeader, ModalBody, ModalFooter } from "reactstrap";
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import Select from 'react-select';
+import ContenedorCD1 from '../components/ContenedorCD';
 
 
 export default function construccion() {
