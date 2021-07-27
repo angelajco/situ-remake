@@ -275,14 +275,16 @@ function ContenedorCD() {
                     .then((response) => response.json())
                     .then((json) => {modificaResultado(json);setIsLoading(false); });
                 setBusq1(r);
+                
                 setBusquedaPR();
             }
             if (e.value == 3) {
                 //mas consultados
                 fetch(`${process.env.ruta}/wa/publico/documentosMasConsultados`)
                     .then((response) => response.json())
-                    .then((json) => {modificaResultado(json);setIsLoading(false); });
+                    .then((json) => { modificaResultado(json); setIsLoading(false); });
                 setBusq1(r);
+                console.log(r)
                 setBusquedaPR();
             }
         } else {
