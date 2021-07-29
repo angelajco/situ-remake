@@ -89,7 +89,7 @@ function ContenedorCD() {
         { value: '3', label: 'Energía' },
         { value: '4', label: 'Gestión' },
         { value: '5', label: 'Internacional' },
-        { value: '6', label: 'Riesgo, peligros y vulnerabilidad' },
+        { value: '6', label: 'Riesgos, peligros y vulnerabilidad' },
         { value: '7', label: 'Salud' },
         { value: '8', label: 'Socioeconómico' },
         { value: '9', label: 'Tecnológico' },
@@ -141,6 +141,7 @@ function ContenedorCD() {
         setTipoD();
         setTemaP();
         setTemaS();
+        setUnidad();
     }
 
     const cerrarM = e => {
@@ -157,6 +158,7 @@ function ContenedorCD() {
         setTipoD();
         setTemaP();
         setTemaS();
+        setUnidad();
         setPub('');
     }
 
@@ -215,7 +217,6 @@ function ContenedorCD() {
     }
 
     const filtroTipo = e => {
-        console.log("----------")
         if (e != null) {
             setIsLoading(true);
             setBusq1(r);
@@ -245,6 +246,7 @@ function ContenedorCD() {
     }
 
     const filtroTema2 = e => {
+        //console.log(r)
         if (e != null) {
             setBusq3(r);
             var datos = r;
@@ -262,7 +264,6 @@ function ContenedorCD() {
 
     const busquedaP = e => {
         //console.log(getBrowserInfo());
-        
         if (e != null) {
             setIsLoading(true);
             if (e.value == 1) {
@@ -273,9 +274,9 @@ function ContenedorCD() {
                 //ultimas publicaciones 
                 fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
                     .then((response) => response.json())
-                    .then((json) => {modificaResultado(json);setIsLoading(false); });
+                    .then((json) => { modificaResultado(json); setIsLoading(false); });
                 setBusq1(r);
-                
+
                 setBusquedaPR();
             }
             if (e.value == 3) {
@@ -284,7 +285,6 @@ function ContenedorCD() {
                     .then((response) => response.json())
                     .then((json) => { modificaResultado(json); setIsLoading(false); });
                 setBusq1(r);
-                console.log(r)
                 setBusquedaPR();
             }
         } else {
@@ -309,18 +309,17 @@ function ContenedorCD() {
     };
 
     useEffect(() => {
-        
         setIsLoading(true);
         fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
             .then((response) => response.json())
-            .then((json) => {modificaResultado(json);setIsLoading(false); });
+            .then((json) => { modificaResultado(json); setIsLoading(false); });
         setBusq1(r);
     }, []);
 
 
 
     const onSubmit = async (data) => {
-        //console.log(data);
+        console.log(data);
         //console.log(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tema}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tema}* OR instancia:*${data.unidad}*`);
         const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tem1}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tem2}* OR instancia:*${data.unidad}*`);
         const datos = await res2.json();
@@ -336,11 +335,12 @@ function ContenedorCD() {
         setTipo(data.tipo);
         setTem1(data.tem1);
         setTem1(data.tem2);
-        setPub(datos.length+" Resultados en sistema")
+        setPub(datos.length + " Resultados en sistema")
     };//fin del metodo onSubmit
 
     function cambioD(e) {
         if (e.target.name === 'dato') {
+            console.log(e.target.value);
             setTitulo();
         }
         if (e.target.name === 'descripcion') {
@@ -379,6 +379,12 @@ function ContenedorCD() {
             setCober();
             setCobertura();
         }
+        setTitulo(document.getElementById("dato").value);
+        setDesc(document.getElementById("dato1").value);
+        setAutor(document.getElementById("dato2").value);
+        setUnidad(document.getElementById("dato3").value);
+        setEdicion(document.getElementById("dato4").value);
+
     }
 
     function cambioT(e) {
@@ -389,6 +395,11 @@ function ContenedorCD() {
             setTipo();
             setTipoD();
         }
+        setTitulo(document.getElementById("dato").value);
+        setDesc(document.getElementById("dato1").value);
+        setAutor(document.getElementById("dato2").value);
+        setUnidad(document.getElementById("dato3").value);
+        setEdicion(document.getElementById("dato4").value);
     }
     function cambioTema1(e) {
         if (e[0] != undefined) {
@@ -398,6 +409,11 @@ function ContenedorCD() {
             setTemaP();
             setTem1();
         }
+        setTitulo(document.getElementById("dato").value);
+        setDesc(document.getElementById("dato1").value);
+        setAutor(document.getElementById("dato2").value);
+        setUnidad(document.getElementById("dato3").value);
+        setEdicion(document.getElementById("dato4").value);
     }
 
     function cambioTema2(e) {
@@ -408,6 +424,11 @@ function ContenedorCD() {
             setTemaS();
             setTem2();
         }
+        setTitulo(document.getElementById("dato").value);
+        setDesc(document.getElementById("dato1").value);
+        setAutor(document.getElementById("dato2").value);
+        setUnidad(document.getElementById("dato3").value);
+        setEdicion(document.getElementById("dato4").value);
     }
 
     return (
@@ -440,55 +461,55 @@ function ContenedorCD() {
                                     <Form className="col-12" onSubmit={handleSubmit(onSubmit)}>
                                         <Form.Group controlId="dato">
                                             <Form.Label>Titulo</Form.Label>
-                                            <Form.Control name="dato" type="text" ref={register()} value={titulo} onChange={(e) => cambioD(e)} />
+                                            <Form.Control name="dato" type="text" ref={register()} value={titulo} onChange={(e) => cambioD(e)} id="dato" />
                                         </Form.Group>
                                         <Form.Group controlId="descripcion">
-                                            <Form.Label>Descripción</Form.Label>
-                                            <Form.Control name="descripcion" type="text" ref={register()} value={desc} onChange={(e) => cambioD(e)} />
+                                            <Form.Label>Or Descripción</Form.Label>
+                                            <Form.Control name="descripcion" type="text" ref={register()} value={desc} onChange={(e) => cambioD(e)} id="dato1" />
                                         </Form.Group>
                                         <Form.Group controlId="autor">
-                                            <Form.Label>Autor</Form.Label>
-                                            <Form.Control name="autor" type="text" ref={register()} value={autor} onChange={(e) => cambioD(e)} />
+                                            <Form.Label>Or Autor</Form.Label>
+                                            <Form.Control name="autor" type="text" ref={register()} value={autor} onChange={(e) => cambioD(e)} id="dato2" />
                                         </Form.Group>
                                         <Form.Group controlId="cobertura">
-                                            <Form.Label>Cobertura Geográfica</Form.Label>
-                                            <Form.Control name="cobertura" type="hidden" ref={register()} value={cobertura} onChange={(e) => cambioD(e)} />
+                                            <Form.Label>Or Cobertura Geográfica</Form.Label>
+                                            <Form.Control name="cobertura" type="hidden" ref={register()} value={cobertura} />
                                             <Typeahead
                                                 id="coberturaG"
                                                 name="coberturaG"
                                                 labelKey={"label"}
                                                 options={coberturaG}
                                                 onChange={(e) => cambioC(e)}
-                                                selected={cober}
                                                 placeholder="Selecciona una opcion"
                                                 clearButton
+                                                selected={cober}
                                             />
                                         </Form.Group>
                                         <Form.Group controlId="unidad">
-                                            <Form.Label>Unidad Responsable</Form.Label>
-                                            <Form.Control name="unidad" type="text" ref={register()} value={unidad} onChange={(e) => cambioD(e)} />
+                                            <Form.Label>Or Unidad Responsable</Form.Label>
+                                            <Form.Control name="unidad" type="text" ref={register()} value={unidad} onChange={(e) => cambioD(e)} id="dato3" />
                                         </Form.Group>
                                         <Form.Group controlId="anio">
-                                            <Form.Label>Año de Publicación</Form.Label>
-                                            <Form.Control placeholder="Ej. 2001" name="anio" type="text" ref={register()} value={edicion} onChange={(e) => cambioD(e)} pattern="[0-9]{4}" title="El año debe ser en formato AAAA" />
+                                            <Form.Label>Or Año de Publicación</Form.Label>
+                                            <Form.Control placeholder="Ej. 2001" name="anio" type="text" ref={register()} value={edicion} onChange={(e) => cambioD(e)} pattern="[0-9]{4}" title="El año debe ser en formato AAAA" id="dato4" />
                                         </Form.Group>
                                         <Form.Group controlId="tipo">
-                                            <Form.Label>Tipo</Form.Label>
-                                            <Form.Control name="tipo" type="hidden" ref={register()} value={tipo} onChange={(e) => cambioD(e)} />
+                                            <Form.Label>Or Tipo</Form.Label>
+                                            <Form.Control name="tipo" type="hidden" ref={register()} value={tipo} />
                                             <Typeahead
                                                 id="tipoD"
                                                 name="tipoD"
                                                 labelKey={"label"}
                                                 options={tipoF}
                                                 onChange={(e) => cambioT(e)}
-                                                selected={tipoD}
                                                 placeholder="Selecciona una opcion"
                                                 clearButton
+                                                selected={tipoD}
                                             />
                                         </Form.Group>
                                         <Form.Group controlId="tema1">
-                                            <Form.Label>Tema Principal</Form.Label>
-                                            <Form.Control name="tema1" type="hidden" ref={register()} value={temaP} onChange={(e) => cambioD(e)} />
+                                            <Form.Label>Or Tema Principal</Form.Label>
+                                            <Form.Control name="tema1" type="hidden" ref={register()} value={temaP} />
                                             <Typeahead
                                                 id="temaP"
                                                 name="temaP"
@@ -501,8 +522,8 @@ function ContenedorCD() {
                                             />
                                         </Form.Group>
                                         <Form.Group controlId="tema2">
-                                            <Form.Label>Tema Secundario</Form.Label>
-                                            <Form.Control name="tema2" type="hidden" ref={register()} value={temaS} onChange={(e) => cambioD(e)} />
+                                            <Form.Label>Or Tema Secundario</Form.Label>
+                                            <Form.Control name="tema2" type="hidden" ref={register()} value={temaS} />
                                             <Typeahead
                                                 id="temaS"
                                                 name="temaS"
