@@ -6,9 +6,15 @@ import Draggable, { DraggableCore } from "react-draggable";
 import { ModalHeader, ModalBody, ModalFooter } from "reactstrap";
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import Select from 'react-select';
+import Cookies from 'universal-cookie'
+import Loader from '../components/Loader'
+const cookies = new Cookies()
 
 
 export default function construccion() {
+  const usuarioCookie = cookies.get('Usuario')
+  const usuarioI = cookies.get('IDU')
+  //console.log(usuarioI);
   //Datos para crear el form
   const { register, handleSubmit, control: controlJson, watch, clearErrors, setError, errors } = useForm();
   const [tarchivo, setTarchivo] = useState(null);
@@ -25,6 +31,7 @@ export default function construccion() {
   const [formato, setFormato] = useState();
   const [pais, setPais] = useState();
   const [idioma, setIdioma] = useState();
+
 
   const tarchivos = [
     { value: '1', label: 'Documento' },
@@ -131,12 +138,35 @@ export default function construccion() {
   ];
 
   const onSubmitP = async (data) => {
+    let mini = new FormData();
     //data.portada = imgportada;
-    var hoy = new Date();
-    var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
-    //console.log(fecha);
-    console.log(data);
+    //console.log(data.portada[0].name);
 
+    mini.append("miniatura", data.portada[0]);
+    fetch("http://localhost/imagenes1/carga.php", {
+      mode: 'no-cors',
+      method: "POST",
+      body: mini
+    }).then(function (res) {
+      console.log(res);
+      if (res.ok) {
+        alert("Perfect! ");
+      } else if (res.status == 401) {
+        alert("Oops! ");
+      }
+    }, function (e) {
+      alert("Error submitting form!");
+    });
+    
+
+    //console.log(formData);
+
+
+
+    var hoy = new Date();
+    var fechaC = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+    var fechaA = hoy.getFullYear() + '/' + (hoy.getMonth() + 1) + '/' + hoy.getDate();
+    //console.log(fechaA);
     //setFileUrl(null);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///codigo para validaciones de formulario
@@ -338,15 +368,42 @@ export default function construccion() {
       let t1 = document.getElementById('msj-nombreOrigen');
       t1.innerHTML = " ";
     }
+    if (data.fechaAct == "") {
+      data.fechaAct = fechaA;
+    }
+    data.idGeo = data.cveEntidad + data.cveMunicipal;
+    /*
+        if(data.alias==""){
+          data.alias="--";
+        }
+        if(data.detalle==""){
+          data.detalle="--";
+        }
+        if(data.cveEntidad==""){
+          data.alias="--";
+        }
+    */
 
 
 
-
+    const auxfech = data.fecha.split('-');
+    //console.log(auxfech);
     //terminan las validaciones 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    console.log("Datos Correctos")
+    //console.log("Datos Correctos")
+    const url = `${process.env.ruta}/wa/publico/setMetadatoDocumento?id_usuario=${usuarioI}&nombre=${data.titulo}&descripcion=${data.descripcion}&tipo=${data.tipoD}&tema1=${data.tema1}&tema2=${data.tema2}&nivel_cobertura=${data.cobertura}&ano_publicacion=${auxfech[0]}&mes_publicacion=${auxfech[1]}&dia_publicacion=${auxfech[2]}&formato=${data.formato}&pais=${data.pais}&idioma=${data.idioma}&paginas=${data.paginas}&palabras_clave=${data.palabrasC}&nombre_archivo=${data.nomArchivo}&url_origen=${data.enlace}&fecha_cap_situ=${fechaC}&actualizacion=${fechaA}&alias=${data.alias}&publicacion=${data.detalle}&cve_ent=${data.cveEntidad}&cve_mun=${data.cveMunicipal}&id_geografico=${data.idGeo}&autor=${data.autor1}&autor2=${data.autor2}&autor3=${data.autor3}&instancia=${data.dependencia}&instancia2=${data.dependencia2}&instancia3=${data.dependencia3}&tratamiento_publicacion=${data.conjDatos}&editorial=${data.editorial}&edicion=${data.edicion}&isbn=${data.isbn}&doc_vigente=${data.vigencia}&doc_actualizado=${data.actualizado}&ano_vig_inicial=${data.pvInicial}&ano_vig_final=${data.pvFinal}&armonizado_lgahotdu=${data.armonizado}&FILE=${data.portada}`;
+    console.log(url);
+    /*
+    const res = await fetch(url);
+    const datos = await res.json();
+    if(datos['message-subject']==='Datos guardados'){
+      metadatosModal('Registro exitoso');
+    }else{
+      metadatosModal('Error de Registro');
+    }
+    //console.log(datos['message-subject']);
     //return true;
-
+  */
   }
 
   const tipoA = e => {
@@ -508,6 +565,22 @@ export default function construccion() {
     }
   }
 
+  const metadatosModal = async (mensaje) => {
+    const cuerpo =
+      <div>
+        <h4>{mensaje}</h4>
+      </div>;
+
+    setDatosModal(
+      {
+        title: 'Carga Documental',
+        body: cuerpo,
+        nombreBoton: 'Cerrar'
+      }
+    )
+    setShow(true)
+  }
+
 
   return (
     <main>
@@ -556,7 +629,7 @@ export default function construccion() {
                     tarchivo == 2 && tarchivo != null ? (
                       <Form.Group controlId="enlace">
                         <Form.Label>Enlace *</Form.Label>
-                        <Form.Control name="enlace" type="text" ref={register()} />
+                        <Form.Control name="enlace" type="text" ref={register()} maxLength="119" />
                         <p id="msj-enlace" className="msj"></p>
                       </Form.Group>
                     ) : (
@@ -572,24 +645,23 @@ export default function construccion() {
               <div className="col-6">
                 <Form.Group controlId="titulo">
                   <Form.Label>Nombre *</Form.Label>
-                  <Form.Control name="titulo" type="text" ref={register()} placeholder="Nombre del documento" maxlength="249" />
+                  <Form.Control name="titulo" type="text" ref={register()} placeholder="Nombre del documento" maxLength="249" />
                   <p id="msj-titulo" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="descripcion">
                   <Form.Label>Descripción *</Form.Label>
-                  <Form.Control name="descripcion" type="textarea" rows="10" ref={register()} placeholder="Descripción del documento" maxlength="499" />
+                  <Form.Control name="descripcion" type="textarea" rows="10" ref={register()} placeholder="Descripción del documento" maxLength="499" />
                   <p id="msj-descripcion" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="alias">
                   <Form.Label>Alias</Form.Label>
-                  <Form.Control name="alias" type="text" ref={register()} placeholder="Alias del documento" maxlength="39" />
+                  <Form.Control name="alias" type="text" ref={register()} placeholder="Alias del documento" maxLength="39" />
                   <p id="msj-alias" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="tipoD">
                   <Form.Label>Tipo *</Form.Label>
                   <Form.Control name="tipoD" type="hidden" ref={register()} value={tipodoc} />
                   <Select
-                    required
                     id="tipoD1"
                     controlId="tipoD"
                     placeholder="Selecciona una opción"
@@ -608,10 +680,10 @@ export default function construccion() {
                       <Form.Label>Detalle de la publicación</Form.Label>
                       <Form.Control name="detalle" type="text" ref={register()} maxLength="499" />
                     </Form.Group>
-                  ):(<p></p>)
+                  ) : (<p></p>)
                 }
                 <Form.Group controlId="tema1">
-                  <Form.Label>Tema Principal*</Form.Label>
+                  <Form.Label>Tema Principal *</Form.Label>
                   <Form.Control name="tema1" type="hidden" ref={register()} value={tema1} />
                   <Select
                     id="tema11"
@@ -636,7 +708,7 @@ export default function construccion() {
                     placeholder="Selecciona una opción"
                     className="basic-single"
                     classNamePrefix="Select"
-                    name="tema22"
+                    name="tema2"
                     options={temaS}
                     isClearable={true}
                     onChange={(e) => cambioTemaS(e)}
@@ -669,36 +741,38 @@ export default function construccion() {
                   <Form.Label>Clave Municipal</Form.Label>
                   <Form.Control name="cveMunicipal" type="text" ref={register()} pattern="[0-9]{3}" placeholder="Ej. 000" />
                 </Form.Group>
+                { /*}
                 <Form.Group controlId="idGeo">
                   <Form.Label>ID Geográfico</Form.Label>
-                  <Form.Control name="idGeo" type="text" ref={register()} />
+                  <Form.Control name="idGeo" type="text" ref={register()} pattern="[0-9]{5}" disabled id="idGeog"/>
                 </Form.Group>
+              {*/}
                 <Form.Group controlId="autor1">
                   <Form.Label>Primer Autor(a)</Form.Label>
-                  <Form.Control name="autor1" type="text" placeholder="Primer Apellido Segundo Apellido Nombre(s)" ref={register()} />
+                  <Form.Control name="autor1" type="text" placeholder="Primer Apellido Segundo Apellido Nombre(s)" ref={register()} maxLength="249" />
                   <p id="msj-autor1" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="autor2">
                   <Form.Label> Segundo Autor(a)</Form.Label>
-                  <Form.Control name="autor2" type="text" placeholder="Primer Apellido Segundo Apellido Nombre(s)" ref={register()} />
+                  <Form.Control name="autor2" type="text" placeholder="Primer Apellido Segundo Apellido Nombre(s)" ref={register()} maxLength="249" />
                   <p id="msj-autor2" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="autor3">
                   <Form.Label>Tercer Autor(a)</Form.Label>
-                  <Form.Control name="autor3" type="text" placeholder="Primer Apellido Segundo Apellido Nombre(s)" ref={register()} />
+                  <Form.Control name="autor3" type="text" placeholder="Primer Apellido Segundo Apellido Nombre(s)" ref={register()} maxLength="249" />
                   <p id="msj-autor3" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="dependencia">
                   <Form.Label>Primera Institución</Form.Label>
-                  <Form.Control name="dependencia" type="text" placeholder="Institución autora del documento" ref={register()} />
+                  <Form.Control name="dependencia" type="text" placeholder="Institución autora del documento" ref={register()} maxLength="249" />
                 </Form.Group>
                 <Form.Group controlId="dependencia2">
                   <Form.Label>Segunda Institución</Form.Label>
-                  <Form.Control name="dependencia2" type="text" placeholder="Segunda institución autora del documento" ref={register()} />
+                  <Form.Control name="dependencia2" type="text" placeholder="Segunda institución autora del documento" ref={register()} maxLength="249" />
                 </Form.Group>
                 <Form.Group controlId="dependencia3">
                   <Form.Label>Tercera Institución</Form.Label>
-                  <Form.Control name="dependencia3" type="text" placeholder="Tercera institución autora del documento" ref={register()} />
+                  <Form.Control name="dependencia3" type="text" placeholder="Tercera institución autora del documento" ref={register()} maxLength="249" />
                 </Form.Group>
                 <Form.Group controlId="conjDatos">
                   <Form.Label>Conjunto de datos</Form.Label>
@@ -718,15 +792,15 @@ export default function construccion() {
               <div className="col-6">
                 <Form.Group controlId="editorial">
                   <Form.Label>Editorial</Form.Label>
-                  <Form.Control name="editorial" type="text" ref={register()} />
+                  <Form.Control name="editorial" type="text" ref={register()} maxLength="99" />
                 </Form.Group>
                 <Form.Group controlId="edicion">
                   <Form.Label>Edición</Form.Label>
-                  <Form.Control name="edicion" type="text" ref={register()} />
+                  <Form.Control name="edicion" type="text" ref={register()} maxLength="39" />
                 </Form.Group>
                 <Form.Group controlId="isbn">
                   <Form.Label>ISBN</Form.Label>
-                  <Form.Control name="isbn" type="text" ref={register()} />
+                  <Form.Control name="isbn" type="text" ref={register()} maxLength="19" />
                 </Form.Group>
                 <Form.Group controlId="fecha">
                   <Form.Label>Fecha de Publicación *</Form.Label>
@@ -755,7 +829,7 @@ export default function construccion() {
                     placeholder="Selecciona una opción"
                     className="basic-single"
                     classNamePrefix="Select"
-                    name="vigencia"
+                    name="actualizado"
                     options={act}
                     isClearable={true}
                     onChange={(e) => cambioActualizado(e)}
@@ -788,7 +862,7 @@ export default function construccion() {
                   ></Select>
                 </Form.Group>
                 <Form.Group controlId="formato">
-                  <Form.Label>Formato del Documento</Form.Label>
+                  <Form.Label>Formato del Documento *</Form.Label>
                   <Form.Control name="formato" type="hidden" ref={register()} value={formato} />
                   <Select
                     id="formato1"
@@ -805,7 +879,7 @@ export default function construccion() {
                   <p id="msj-formato" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="pais">
-                  <Form.Label>País del Documento</Form.Label>
+                  <Form.Label>País del Documento *</Form.Label>
                   <Form.Control name="pais" type="hidden" ref={register()} value={pais} />
                   <Select
                     id="pais"
@@ -822,7 +896,7 @@ export default function construccion() {
                   <p id="msj-pais" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="idioma">
-                  <Form.Label>Idioma del Documento</Form.Label>
+                  <Form.Label>Idioma del Documento *</Form.Label>
                   <Form.Control name="idioma" type="hidden" ref={register()} value={idioma} />
                   <Select
                     id="idioma"
@@ -839,18 +913,18 @@ export default function construccion() {
                   <p id="msj-idioma" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="paginas">
-                  <Form.Label>Número de páginas</Form.Label>
-                  <Form.Control name="paginas" type="text" ref={register()} pattern="[0-9]{1,}" />
+                  <Form.Label>Número de páginas *</Form.Label>
+                  <Form.Control name="paginas" type="text" ref={register()} pattern="[0-9]{1,4}" placeholder="Ej. 1" />
                   <p id="msj-paginas" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="palabrasC">
-                  <Form.Label>Palabras Clave</Form.Label>
-                  <Form.Control name="palabrasC" type="text" ref={register()} />
+                  <Form.Label>Palabras Clave *</Form.Label>
+                  <Form.Control name="palabrasC" type="text" ref={register()} maxLength="59" placeholder="Ej. palabra1, palabra2, palabra3..." />
                   <p id="msj-palabras" className="msj"></p>
                 </Form.Group>
                 <Form.Group controlId="nomArchivo">
-                  <Form.Label>Nombre de Origen del Archivo</Form.Label>
-                  <Form.Control name="nomArchivo" type="text" ref={register()} />
+                  <Form.Label>Nombre de Origen del Archivo *</Form.Label>
+                  <Form.Control name="nomArchivo" type="text" ref={register()} maxLength="249" />
                   <p id="msj-nombreOrigen" className="msj"></p>
                 </Form.Group>
               </div>
@@ -861,6 +935,7 @@ export default function construccion() {
                 <Button variant="outline-secondary" className="btn-admin" type="submit">Guardar</Button>
               </div>
             </div>
+            <br></br>
           </Form>
         </div>
       </Container>

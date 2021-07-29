@@ -306,7 +306,7 @@ function PaginationComponent(props) {
 
   //const onSubmit = async (data) =>
   const metadatosModal = async (cod) => {
-
+    //console.log(cod);
     const res = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=id:${cod}`);
     const datos = await res.json();
 
@@ -639,20 +639,20 @@ function PaginationComponent(props) {
 
       <div className="col-1 text-center">
         <OverlayTrigger overlay={<Tooltip>Consulta CVS</Tooltip>}>
-          <a onClick={descargarCVS}><FontAwesomeIcon size="4x" icon={faFileCsv} /></a>
+          <a onClick={descargarCVS}><FontAwesomeIcon size="3x" icon={faFileCsv} /></a>
         </OverlayTrigger>
       </div>
       <div className="col-1 text-center">
         <OverlayTrigger overlay={<Tooltip>Consulta PDF</Tooltip>}>
-          <a onClick={descargaDoc}><FontAwesomeIcon size="4x" icon={faFilePdf} /></a>
+          <a onClick={descargaDoc}><FontAwesomeIcon size="3x" icon={faFilePdf} /></a>
         </OverlayTrigger>
       </div>
       <div className="col-1 text-center">
         {
           usuarioCookie != null && (
             <OverlayTrigger overlay={<Tooltip>Cargar Documento</Tooltip>}>
-              <Link href="/pruebas">
-                <a><FontAwesomeIcon size="4x" icon={faUpload} /></a>
+              <Link href="/consulta-documental/cargaDocumental">
+                <a><FontAwesomeIcon size="3x" icon={faUpload} /></a>
               </Link>
             </OverlayTrigger>
           )
