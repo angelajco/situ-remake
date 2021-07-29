@@ -522,6 +522,8 @@ function ContenedorMapaAnalisis(props) {
                             pane: `${zIndexCapas}`,
                             style: capaFiltrada.estilos,
                             nombre: response["nom_capa"],
+                            interactive: sePuedeIdentificar ? true : false,
+                            interactiva: true,
                             onEachFeature: function (feature = {}, layerPadre) {
                                 feature["nombre_capa"] = layerPadre.options["nombre"];
                                 if (resultado !== null) {
@@ -1913,6 +1915,7 @@ function ContenedorMapaAnalisis(props) {
         }, 1000)
     }
 
+    //Para la indentificación de capas
     const [showModalIdentify, setShowModalIdentify] = useState(false);
     const handleShowModalIdentify = () => {
         setShowModalIdentify(true);
@@ -2028,9 +2031,6 @@ function ContenedorMapaAnalisis(props) {
         });
         setShowModalAnalisis(true);
     }
-
-    const [identifyOption, setIdentifyOption] = useState();
-    const [pdfContent, setPdfcontent] = useState();
 
     //Para agregar capas json al mapa cuando se sube un archivo
     const agregaFileJsonCapa = (capaFile, nombreFile) => {
@@ -2970,6 +2970,28 @@ function ContenedorMapaAnalisis(props) {
     function enfocaCapa(capa) {
         let bounds = capa.layer.getBounds()
         referenciaMapa.fitBounds(bounds);
+    }
+
+    const [mapeoMapa, setMapeoMapa] = useState(true)
+    const [mapeoMapaEspejo, setMapeoMapaEspejo] = useState(true)
+    const [sePuedeIdentificar, setSePuedeIdentificar] = useState(true)
+    //Activa paneo en el mapa
+    function paneoMapa(mapa) {
+        if (mapa) {
+            setMapeoMapa(true)
+        } else {
+            setMapeoMapaEspejo(true)
+        }
+        setSePuedeIdentificar(true)
+    }
+    //Activa seleccion en el mapa
+    function identificaMapa(mapa) {
+        if (mapa) {
+            setMapeoMapa(false)
+        } else {
+            setMapeoMapaEspejo(false)
+        }
+        setSePuedeIdentificar(false)
     }
 
     return (
@@ -4084,17 +4106,33 @@ function ContenedorMapaAnalisis(props) {
                         </button>
                     </label>
                 </OverlayTrigger>
-                {/* <OverlayTrigger rootClose overlay={<Tooltip>Identificar</Tooltip>}> */}
-                {/* <button className="botones-barra-mapa" onClick={() => setIdentify(true)}> */}
-                {/* <button className="botones-barra-mapa" onClick={handleShowModalIdentify}>
-                        <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
-                    </button>
-                </OverlayTrigger> */}
-                {/* <OverlayTrigger rootClose overlay={<Tooltip>Paneo</Tooltip>}>
-                    <button className="botones-barra-mapa" onClick={() => setIdentify(false)}>
-                        <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
-                    </button>
-                </OverlayTrigger> */}
+                <OverlayTrigger rootClose overlay={<Tooltip>Interactuar</Tooltip>}>
+                    {
+                        props.botones ? (
+                            <button className="botones-barra-mapa" onClick={() => identificaMapa(true)}>
+                                <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
+                            </button>
+                        ) : (
+                            <button className="botones-barra-mapa" onClick={() => identificaMapa(false)}>
+                                <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
+                            </button>
+                        )
+                    }
+                </OverlayTrigger>
+                <OverlayTrigger rootClose overlay={<Tooltip>Paneo</Tooltip>}>
+                    {
+                        props.botones ? (
+                            <button className="botones-barra-mapa" onClick={() => paneoMapa(true)}>
+                                <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
+                            </button>
+                        ) : (
+                            <button className="botones-barra-mapa" onClick={() => paneoMapa(false)}>
+                                <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
+                            </button>
+                        )
+                    }
+
+                </OverlayTrigger>
                 <OverlayTrigger rootClose overlay={<Tooltip>Capas dibujadas</Tooltip>}>
                     <button className="botones-barra-mapa" onClick={() => setModalCapasDibujadas(true)}>
                         <img src="/images/analisis/capas_dib.png" alt="Capas dibujadas" className="tw-w-5" />
@@ -4105,9 +4143,9 @@ function ContenedorMapaAnalisis(props) {
             {
                 props.botones == true
                     ?
-                    <Map referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} />
+                    <Map referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} mapeo={mapeoMapa} />
                     :
-                    <MapEspejo referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} />
+                    <MapEspejo referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} mapeo={mapeoMapaEspejo} />
             }
         </>
     )

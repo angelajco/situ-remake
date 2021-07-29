@@ -120,6 +120,34 @@ export default function Map(props) {
     }, [])
 
     useEffect(() => {
+        if (mapaReferencia != undefined) {
+            if (props.mapeo == true) {
+                mapaReferencia.dragging.enable();
+                mapaReferencia.eachLayer(function (layer) {
+                    if (layer instanceof L.GeoJSON) {
+                        if(layer.options.hasOwnProperty("interactiva")){
+                            mapaReferencia.removeLayer(layer)
+                            layer.setStyle({interactive: false})
+                            mapaReferencia.addLayer(layer)
+                        }
+                    }
+                });
+            } else {
+                mapaReferencia.dragging.disable();
+                mapaReferencia.eachLayer(function (layer) {
+                    if (layer instanceof L.GeoJSON) {
+                        if(layer.options.hasOwnProperty("interactiva")){
+                            mapaReferencia.removeLayer(layer)
+                            layer.setStyle({interactive: true})
+                            mapaReferencia.addLayer(layer)
+                        }
+                    }
+                });
+            }
+        }
+    }, [props.mapeo, mapaReferencia])
+
+    useEffect(() => {
         if (valoresContexto.valoresMapa.centro != null) {
             mueveOtroMapa = false
             mapaReferencia.setView(valoresContexto.valoresMapa.centro, valoresContexto.valoresMapa.zoom)
