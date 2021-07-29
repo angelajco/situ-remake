@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useContext, Fragment } from 'react';
+import React, { useState, useEffect, useContext, Fragment, createRef, useRef, useMemo } from 'react';
 import { Controller, useForm } from "react-hook-form";
 import { Form, Button, OverlayTrigger, Tooltip, Card, Accordion, Collapse, Table, AccordionContext, useAccordionToggle, Modal, Tabs, Tab } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaintBrush, faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle, faSquare, faCircle, faDrawPolygon, faGripLines, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
+import { faPaintBrush, faImages, faAngleDown, faCaretLeft, faFileCsv, faAngleRight, faTrash, faTable, faDownload, faCaretRight, faUpload, faInfoCircle, faHandPaper, faFilePdf, faCheckCircle, faDotCircle, faSquare, faCircle, faDrawPolygon, faGripLines, faMapMarkerAlt, faExpandAlt } from '@fortawesome/free-solid-svg-icons';
 import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
 import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 import { CSVLink } from "react-csv";
@@ -35,6 +35,8 @@ import TablaSimbologia from './TablaSimbologia';
 import TablaLib from './TablaLibre';
 
 import { ContextoCreadoFeature } from '../context/contextoFeatureGroupDibujadas'
+
+import ConsultaDinamica from './ConsultaDinamica'
 
 const Map = dynamic(
     () => import('./MapAnalisis'),
@@ -532,16 +534,17 @@ function ContenedorMapaAnalisis(props) {
                                             feature.properties[nuevoAlias] = keyTemp
                                         }
                                     })
-                                    if (dataToProps) {
-                                        dataToProps.datos.map((data, index) => {
+                                    // console.log('dataToProps: ', props.informacionEspacial);
+                                    if (props.informacionEspacial) {
+                                        props.informacionEspacial.datos.map((data, index) => {
                                             if (layerPadre.options["nombre"].includes('Nacional')) {
                                                 if (data[0] == current) {
-                                                    dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                                    props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
                                                         feature.properties[column[1]] = data[column[3]];
                                                     })
                                                 }
                                             } else {
-                                                dataToProps.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                                props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
                                                     feature.properties[column[1]] = data[column[3]];
                                                 })
                                             }
@@ -610,13 +613,7 @@ function ContenedorMapaAnalisis(props) {
             }
         }
         jsonSimbologia.splice(index, 1);
-
-
-
     }
-
-
-
     //////////////////////////////////////Aqui empieza el codigo para cambiar la simbologia del
 
     ///---------------------Betty1--------------------------------------
@@ -1332,12 +1329,12 @@ function ContenedorMapaAnalisis(props) {
             }//termina opcion valores unicos
             if (valorEstilos == 5) {
                 //opcion para rupturas Naturales
-               
+
                 let colores = [];
                 let au1;
                 let sim = new Sim();
                 let aux22 = jenks(valoresCampo, 5);
-             
+
                 //generamos los colores apartir del seleccionado por el usuari0
                 if (colores.length > 0) {
                     colores.splice(0, colores.length);
@@ -1345,17 +1342,17 @@ function ContenedorMapaAnalisis(props) {
                 colores = shuffle(colorB);
                 if (capaSeleccionada.features[0].geometry.type == 'Point') {
                     for (let i = 0; i < aux22.length - 1; i++) {
-                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i+1), "#000000", 1, 5, 0);
+                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i + 1), "#000000", 1, 5, 0);
                     }
                 }
                 if (capaSeleccionada.features[0].geometry.type == 'MultiLineString') {
                     for (let i = 0; i < aux22.length - 1; i++) {
-                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i+1), "#000000", 1, 5, 1);
+                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i + 1), "#000000", 1, 5, 1);
                     }
                 }
                 if (capaSeleccionada.features[0].geometry.type == 'MultiPolygon') {
                     for (let i = 0; i < aux22.length - 1; i++) {
-                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i+1), "#000000", 1, 5, 2);
+                        sim.agregaRango(0, aux22[i], aux22[i + 1], colores[i], "Clase " + (i + 1), "#000000", 1, 5, 2);
                     }
                 }
 
@@ -2476,16 +2473,6 @@ function ContenedorMapaAnalisis(props) {
         });
     }
 
-    //Datos
-    const [valoresSubtemasDatos, setValoresSubtemasDatos] = useState(false)
-    const [valoresTablasDatos, setValoresTablasDatos] = useState(false)
-    const temaDato = () => {
-        setValoresSubtemasDatos(true)
-    }
-    const subtemaDatos = () => {
-        setValoresTablasDatos(true)
-    }
-
     //Consultas prediseñadas
     const [valoresConsultaConsultas, setValoresConsultaConsultas] = useState(false)
     const temaConsultas = () => {
@@ -2499,20 +2486,155 @@ function ContenedorMapaAnalisis(props) {
     }, [rasgos]);
 
     useEffect(() => {
-        if (props.referenciaEntidad != undefined) {
+        if (props.referenciaEntidad) {
             refFunction(props.referenciaEntidad);
         }
     }, [props.referenciaEntidad]);
 
     function refFunction(referenciaEntidad) {
-        var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == referenciaEntidad.capa);
-        if (referenciaEntidad !== 'nacional') {
-            var entidad = { id: (referenciaEntidad.capa == 2 ? referenciaEntidad.entity.id_entidades : referenciaEntidad.capa == 3 ? referenciaEntidad.entity.cve_mun : referenciaEntidad.entity.Codigo), entidad: (referenciaEntidad.capa == 2 ? referenciaEntidad.entity.nombre_entidad : referenciaEntidad.capa == 3 ? referenciaEntidad.entity.nombre_mun : referenciaEntidad.entity.Nombre) };
-            capa.filtro_entidad = referenciaEntidad.capa == 3 ? capa.filtro_municipio : capa.filtro_entidad;
-            construyeEntidadCapa(capa, entidad);
-        } else {
-            capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
-            construyeNacionalCapa(capa);
+        var layers = [];
+        referenciaEntidad.map(referencia => {
+            var capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == referencia.capa);
+            setDataToProps(props.informacionEspacial);
+            if (referencia != 'nacional') {
+                var entidad = { id: (referencia.capa == 2 ? referencia.entity.id_entidades : referencia.capa == 3 ? referencia.entity.cve_mun : referencia.entity.Codigo), entidad: (referencia.capa == 2 ? referencia.entity.nombre_entidad : referencia.capa == 3 ? referencia.entity.nombre_mun : referencia.entity.Nombre) };
+                capa.filtro_entidad = referencia.capa == 3 ? capa.filtro_municipio : capa.filtro_entidad;
+                layers.push({ capa: capa, entidad: entidad })
+            } else {
+                capa = arregloCapasBackEnd.find(elemento => elemento.id_capa == '2');
+                capa.titulo = props.informacionEspacial.nombreTabla;
+                construyeNacionalCapa(capa);
+            }
+        });
+        construyeEntidadCapaCB(layers)
+    }
+
+    function construyeEntidadCapaCB(layers) {
+        if (layers.length && layers[0].entidad != undefined) {
+            let capaEntidad = {};
+            capaEntidad.valor_filtro = '(';
+            layers.map((layer, index) => {
+                capaEntidad.valor_filtro = `${capaEntidad.valor_filtro}'${layer.entidad.id}'${layers.length == index + 1 ? ')' : ','}`;
+            });
+            capaEntidad.titulo = props.informacionEspacial.nombreTabla;
+            capaEntidad.url = layers[0].capa.url;
+            capaEntidad.capa = layers[0].capa.nombre_capa;
+            capaEntidad.filtro_entidad = layers[0].capa.filtro_entidad;
+            capaEntidad.wfs = layers[0].capa.wfs;
+            capaEntidad.wms = layers[0].capa.wms;
+            capaEntidad.opcion = 5;
+            capaEntidad.estilos = {
+                color: "#3366FF",
+                fillColor: "#66CCFF",
+                opacity: "1",
+                fillOpacity: "1"
+            }
+            capaEntidad["id_capa"] = layers[0].capa.id_capa
+            agregaCapaWFSCB(capaEntidad);
+        }
+    }
+
+    function agregaCapaWFSCB(capaFiltrada) {
+        setShowModalAgregarCapas(false);
+        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === capaFiltrada.titulo)) {
+            setDatosModalAnalisis({
+                title: "Capa existente",
+                body: "La capa ya se ha agregado anteriormente"
+            })
+            setShowModalAnalisis(true);
+            return;
+        }
+        else {
+            let filtroDescarga = "";
+            let defaultParameters = {
+                service: 'WFS',
+                version: '2.0',
+                request: 'GetFeature',
+                typeName: capaFiltrada.capa,
+                outputFormat: 'text/javascript',
+                format_options: 'callback:getJson',
+            }
+            if (capaFiltrada.opcion == "0") {
+                //La agregará como nacional
+            } else if (capaFiltrada.opcion == "5") {
+                //La agregara como municipio
+                defaultParameters.cql_filter = capaFiltrada.filtro_entidad + " IN" + capaFiltrada.valor_filtro;
+                filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
+            }
+            var parameters = L.Util.extend(defaultParameters);
+            var url = capaFiltrada.url + L.Util.getParamString(parameters);
+            console.log(url, "url")
+            //Hace la petición para traer los datos de la entidad
+            $.ajax({
+                jsonpCallback: 'getJson',
+                url: url,
+                dataType: 'jsonp',
+                success: function (response) {
+                    response["nom_capa"] = capaFiltrada.titulo;
+                    response["habilitado"] = true;
+                    response['tipo'] = "wfs";
+                    response['transparencia'] = 1;
+                    response['simbologia'] = creaSVG(capaFiltrada.titulo, capaFiltrada.estilos)
+                    response["idCapaBack"] = capaFiltrada["id_capa"]
+
+                    let urlDescarga = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaFiltrada.capa}${filtroDescarga}&outputFormat=`
+
+                    response.download = [
+                        { nom_capa: response.nom_capa, link: JSON.stringify(response), tipo: 'GeoJSON' },
+                        { nom_capa: response.nom_capa, link: `${urlDescarga}KML`, tipo: 'KML' },
+                        { nom_capa: response.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaFiltrada.capa}${filtroDescarga}&bbox=-180,-90,180,90`, tipo: 'KMZ' },
+                        { nom_capa: response.nom_capa, link: `${urlDescarga}SHAPE-ZIP`, tipo: 'SHAPE' }
+                    ];
+
+                    response.isActive = false;
+                    setZIndex(zIndexCapas + 1)
+                    referenciaMapa.createPane(`${zIndexCapas}`)
+                    referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
+                    obtenAliasFuncion(capaFiltrada["id_capa"], function (resultado) {
+                        let layer = L.geoJSON(response, {
+                            pane: `${zIndexCapas}`,
+                            style: capaFiltrada.estilos,
+                            nombre: response["nom_capa"],
+                            onEachFeature: function (feature = {}, layerPadre) {
+                                feature["nombre_capa"] = layerPadre.options["nombre"];
+                                if (resultado !== null) {
+                                    var current = capaFiltrada.id_capa == "2" ? `${feature.properties['CVE_ENT']}` : capaFiltrada.id_capa == "3" ? `${feature.properties['CVE_ENT']}${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
+                                    Object.keys(feature.properties).map(key => {
+                                        let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
+                                        if (nuevoAlias !== "") {
+                                            let keyTemp = feature.properties[key]
+                                            delete feature.properties[key]
+                                            feature.properties[nuevoAlias] = keyTemp
+                                        }
+                                    })
+                                    if (props.informacionEspacial) {
+                                        props.informacionEspacial.datos.map((data, index) => {
+                                            if (data[0] == current) {
+                                                props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
+                                                    feature.properties[column[1]] = data[column[3]];
+                                                })
+                                            }
+                                        })
+                                        setDataToProps();
+                                    }
+                                }
+                                layerPadre.on('click', function () {
+                                    setRasgos([feature]);
+                                })
+                            }
+                        });
+                        response['layer'] = layer;
+
+                        setCapasVisualizadas([response, ...capasVisualizadas])
+                        referenciaMapa.addLayer(response.layer);
+                        setDatosModalAnalisis({
+                            title: "Capa agregada",
+                            body: "La capa se ha agregado con exito"
+                        });
+                        setShowModalAnalisis(true);
+                    })
+                }
+            });
         }
     }
 
@@ -2525,11 +2647,11 @@ function ContenedorMapaAnalisis(props) {
     }
     const [dataToProps, setDataToProps] = useState();
 
-    useEffect(() => {
-        if (props.informacionEspacial != undefined) {
-            setDataToProps(props.informacionEspacial);
-        }
-    }, [props.informacionEspacial]);
+    // useEffect(() => {
+    //     if (props.informacionEspacial != undefined) {
+    //         setDataToProps(props.informacionEspacial);
+    //     }
+    // }, [props.informacionEspacial]);
 
     //Para mostrar las capas dibujadas
     const [modalCapasDibujadas, setModalCapasDibujadas] = useState();
@@ -2581,6 +2703,14 @@ function ContenedorMapaAnalisis(props) {
             idArreglo.push(dibujo.layers._layers[i]._leaflet_id);
         }
         let nuevoArr = arregloLayers.filter(valor => !idArreglo.includes(valor.id))
+        let arrDeleted = arregloLayers.filter(valor => idArreglo.includes(valor.id))
+        arrDeleted.map(valor => {
+            if (valor.tipo == 3 || valor.tipo == 4) {
+                if (valor.buffer) {
+                    referenciaMapa.removeLayer(valor.buffer)
+                }
+            }
+        });
         arregloLayers = nuevoArr;
         setLayersDibujadas(arregloLayers)
     }
@@ -2604,9 +2734,15 @@ function ContenedorMapaAnalisis(props) {
                 if (valor.habilitado) {
                     valor.habilitado = false;
                     referenciaMapa.removeLayer(valor.layer);
+                    if (valor.buffer) {
+                        referenciaMapa.removeLayer(valor.buffer);
+                    }
                     return valor;
                 } else {
                     valor.habilitado = true;
+                    if (valor.buffer) {
+                        referenciaMapa.addLayer(valor.buffer);
+                    }
                     referenciaMapa.addLayer(valor.layer)
                     return valor;
                 }
@@ -2630,10 +2766,16 @@ function ContenedorMapaAnalisis(props) {
             if (e.target.checked == true) {
                 valor.habilitado = true;
                 referenciaMapa.addLayer(valor.layer);
+                if (valor.buffer) {
+                    referenciaMapa.addLayer(valor.buffer);
+                }
                 return valor;
             } else {
                 valor.habilitado = false;
                 referenciaMapa.removeLayer(valor.layer)
+                if (valor.buffer) {
+                    referenciaMapa.removeLayer(valor.buffer);
+                }
                 return valor;
             }
         });
@@ -2750,11 +2892,20 @@ function ContenedorMapaAnalisis(props) {
         setModalCapasDibujadas(false);
     }
 
+    //Para el grupo de capas donde se guardan los dibujos
     const valorContextoFeature = useContext(ContextoCreadoFeature)
 
-    function obtenerBuffer(figura) {
-        console.log(figura, "figura")
-        let grupo = valorContextoFeature.valorFeature;
+    function tamañoBuffer(e) {
+        e.preventDefault();
+        let padre = e.target
+        let idTemp = $(padre).children(".idFigura");
+        let id = idTemp[0].value;
+        let tamanoTemp = $(padre).find(".tamano");
+        let tamano = tamanoTemp[0].value;
+        let figuraPosicion = layersDibujadas.findIndex(x => x.id == id);
+        let figura = layersDibujadas[figuraPosicion]
+
+        // let grupo = valorContextoFeature.valorFeature;
         let buffer = null;
         if (figura.buffer) {
             referenciaMapa.removeLayer(figura.buffer)
@@ -2766,16 +2917,20 @@ function ContenedorMapaAnalisis(props) {
                 arrayLatLngs.push([latLngs[i].lng, latLngs[i].lat]);
             }
             let lineaString = turf.lineString(arrayLatLngs);
-            buffer = turf.buffer(lineaString, 25);
+            buffer = turf.buffer(lineaString, tamano);
         } else if (figura.layerType == "marker") {
             let point = turf.point([figura.layer._latlng.lng, figura.layer._latlng.lat]);
-            buffer = turf.buffer(point, 500);
+            buffer = turf.buffer(point, tamano);
         }
 
-        var bufferedLayer = L.geoJSON(buffer);
+        var bufferedLayer = L.geoJSON(buffer, { interactive: false });
+        bufferedLayer.setZIndex = 0;
         bufferedLayer.options.buffer = true
-        bufferedLayer.addTo(grupo);
         figura.buffer = bufferedLayer;
+        // bufferedLayer.addTo(grupo);
+        if (figura.habilitado) {
+            referenciaMapa.addLayer(bufferedLayer)
+        }
 
         let capasIntersectadas = []
         referenciaMapa.eachLayer(function (layer) {
@@ -2799,6 +2954,24 @@ function ContenedorMapaAnalisis(props) {
 
 
     const handleClose = () => setShowModalEstilos(!showModalEstilos);
+
+    const [mapState, setMapState] = useState();
+
+    useEffect(() => {
+        if (mapState) {
+            if (mapState.entityObject.length > 0) {
+                props.setInformacionEspacial(mapState.spaceData);
+                props.setReferenciaEntidad(mapState.entityObject);
+            }
+        }
+    }, [mapState]);
+
+    //Para enfocar la capa
+    function enfocaCapa(capa) {
+        let bounds = capa.layer.getBounds()
+        referenciaMapa.fitBounds(bounds);
+    }
+
     return (
         <>
             <ModalAnalisis
@@ -2828,14 +3001,11 @@ function ContenedorMapaAnalisis(props) {
                             ),
                             layersDibujadas.map((layer, index) => (
                                 <div key={index} className="tw-mb-8">
-                                    {
-                                        console.log(layer, "layer modal")
-                                    }
                                     <Form className="tw-mb-2">
                                         <Form.Check>
                                             <Form.Check.Input type="checkbox" defaultChecked={layer.habilitado} onChange={() => checkCapaDibujada(layer)} />
                                             <Form.Check.Label>
-                                                <span key="0">{layer.nombre}&nbsp;</span>
+                                                <span>{layer.nombre}&nbsp;</span>
                                                 {
                                                     layer.tipo == 0 ? (
                                                         <FontAwesomeIcon size="1x" icon={faSquare} />
@@ -2852,7 +3022,23 @@ function ContenedorMapaAnalisis(props) {
                                             </Form.Check.Label>
                                         </Form.Check>
                                     </Form>
-                                    <div className="tw-flex tw-justify-between tw-flex-wrap">
+                                    <div>
+                                        {
+                                            (layer.tipo == 3 || layer.tipo == 4) && (
+                                                <Form onSubmit={tamañoBuffer} className="tw-text-center formulario">
+                                                    <input type="hidden" value={layer.id} className="idFigura" />
+                                                    <Form.Group controlId="tamano" className="tw-mb-0">
+                                                        <Form.Control name="tamano" className="tamano" type="number" step="any" required min={0.001} max={2000} placeholder="Ingresa un número entre 0.001 y 2000" />
+                                                        <Form.Text className="text-muted">
+                                                            El valor ingresado estára en kilometros
+                                                        </Form.Text>
+                                                    </Form.Group>
+                                                    <Button type="submit" variant="light">Obtener buffer</Button>
+                                                </Form>
+                                            )
+                                        }
+                                    </div>
+                                    <div className="tw-flex tw-justify-between tw-flex-wrap tw-mt-4">
                                         {
                                             [
                                                 layer.tipo == 0 && (
@@ -2872,9 +3058,6 @@ function ContenedorMapaAnalisis(props) {
                                                 ),
                                                 layer.tipo == 1 && (
                                                     <Button onClick={() => obtenRasgosIdenCapaDib(layer)} key="6" variant="light">Identificar</Button>
-                                                ),
-                                                (layer.tipo == 3 || layer.tipo == 4) && (
-                                                    <Button onClick={() => obtenerBuffer(layer)} key="7" variant="light">Obtener buffer</Button>
                                                 )
                                             ]
                                         }
@@ -3095,50 +3278,12 @@ function ContenedorMapaAnalisis(props) {
                                 </Form>
                             }
                         </Tab>
-                        <Tab eventKey="datos" title="Datos">
-                            <Form className="tw-mt-4">
-                                <Form.Group controlId="temasDatos">
-                                    <Form.Label>Temas</Form.Label>
-                                    <Form.Control onChange={temaDato} as="select">
-                                        <option value=""></option>
-                                        <option>Tema 1</option>
-                                        <option>Tema 2</option>
-                                        <option>Tema 3</option>
-                                        <option>Tema 4</option>
-                                        <option>Tema 5</option>
-                                    </Form.Control>
-                                </Form.Group>
-                                {
-                                    valoresSubtemasDatos == true &&
-                                    <Form.Group controlId="subtemasDatos">
-                                        <Form.Label>Subtemas</Form.Label>
-                                        <Form.Control onChange={subtemaDatos} as="select">
-                                            <option value=""></option>
-                                            <option>Subtema 1</option>
-                                            <option>Subtema 2</option>
-                                            <option>Subtema 3</option>
-                                            <option>Subtema 4</option>
-                                            <option>Subtema 5</option>
-                                        </Form.Control>
-                                    </Form.Group>
-                                }
-                                {
-                                    valoresTablasDatos == true &&
-                                    <Form.Group controlId="tablasDatos">
-                                        <Form.Label>Tablas</Form.Label>
-                                        <Form.Control as="select">
-                                            <option value=""></option>
-                                            <option>Tabla 1</option>
-                                            <option>Tabla 2</option>
-                                            <option>Tabla 3</option>
-                                            <option>Tabla 4</option>
-                                            <option>Tabla 5</option>
-                                        </Form.Control>
-                                    </Form.Group>
-                                }
-                                <button className="btn-analisis" type="submit">CONSULTAR</button>
-                            </Form>
-                        </Tab>
+                        {
+                            (props.setReferenciaEntidad && props.setInformacionEspacial) &&
+                            <Tab eventKey="datos" title="Datos">
+                                <ConsultaDinamica analisis={true} mapState={setMapState} />
+                            </Tab>
+                        }
                         <Tab eventKey="consultas" title={<>Consultas<br />prediseñadas</>}>
                             <Form className="tw-mt-4">
                                 <Form.Group controlId="temasConsultas">
@@ -3789,30 +3934,19 @@ function ContenedorMapaAnalisis(props) {
                                                                     <Form.Check type="checkbox" inline defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event)} value={capa.nom_capa} />
                                                                 </Form.Group>
                                                                 {
-                                                                    [
-                                                                        capa.isActive != undefined && (
-                                                                            <OverlayTrigger key="1" overlay={<Tooltip>Establecer como activa</Tooltip>}>
-                                                                                <Button onClick={() => enableLayer(index)} variant="link">
-                                                                                    <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
-                                                                                </Button>
-                                                                            </OverlayTrigger>
-                                                                        ),
-                                                                        capa.tipo === "wfs" && (
-                                                                            <Button key="2" onClick={() => muestraAtributos(capa)} variant="link">
-                                                                                <FontAwesomeIcon icon={faTable} />
+                                                                    capa.isActive != undefined && (
+                                                                        <OverlayTrigger overlay={<Tooltip>Establecer como activa</Tooltip>}>
+                                                                            <Button onClick={() => enableLayer(index)} variant="link">
+                                                                                <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
                                                                             </Button>
-                                                                        )
-                                                                    ]
+                                                                        </OverlayTrigger>
+                                                                    )
                                                                 }
-                                                                <Button onClick={() => eliminaCapa(capa)} variant="link">
-                                                                    <FontAwesomeIcon icon={faTrash} />
-                                                                </Button>
-                                                                {
-                                                                    capa.tipo === "wfs" || capa.tipo === 'json' ? (
-                                                                        <Button onClick={() => cambioEstilos(capa)} variant="link">
-                                                                            <FontAwesomeIcon icon={faPaintBrush} />
-                                                                        </Button>) : (<div></div>)
-                                                                }
+                                                                <OverlayTrigger overlay={<Tooltip>Eliminar capa</Tooltip>}>
+                                                                    <Button onClick={() => eliminaCapa(capa)} variant="link">
+                                                                        <FontAwesomeIcon icon={faTrash} />
+                                                                    </Button>
+                                                                </OverlayTrigger>
 
                                                                 <CustomToggle eventKey={capa.nom_capa} />
                                                             </Card.Header>
@@ -3870,16 +4004,41 @@ function ContenedorMapaAnalisis(props) {
                                                                             </div>
                                                                         )}
                                                                     {
-                                                                        capa.download && (
+                                                                        (capa.download || capa.tipo === "wfs" || capa.tipo === "json") && (
                                                                             <>
                                                                                 <hr />
                                                                                 <div className="d-flex justify-content-center">
                                                                                     {
-                                                                                        <a className="tw-text-titulo tw-font-bold tw-cursor-pointer" onClick={() => renderModalDownload(capa)}>
-                                                                                            <OverlayTrigger overlay={<Tooltip>{`Descargar capas`}</Tooltip>}>
-                                                                                                <FontAwesomeIcon className="tw-px-1" size="2x" icon={faDownload} />
-                                                                                            </OverlayTrigger>
-                                                                                        </a>
+                                                                                        [
+                                                                                            capa.download && (
+                                                                                                <OverlayTrigger overlay={<Tooltip>{`Descargar capas`}</Tooltip>}>
+                                                                                                    <Button className="tw-text-titulo" onClick={() => renderModalDownload(capa)} variant="link">
+                                                                                                        <FontAwesomeIcon size="2x" icon={faDownload} />
+                                                                                                    </Button>
+                                                                                                </OverlayTrigger>
+                                                                                            ),
+                                                                                            capa.tipo === "wfs" && (
+                                                                                                <OverlayTrigger overlay={<Tooltip>{`Atributos`}</Tooltip>}>
+                                                                                                    <Button key="2" className="tw-text-titulo" onClick={() => muestraAtributos(capa)} variant="link">
+                                                                                                        <FontAwesomeIcon size="2x" icon={faTable} />
+                                                                                                    </Button>
+                                                                                                </OverlayTrigger>
+                                                                                            ),
+                                                                                            (capa.tipo === "wfs" || capa.tipo === 'json') && (
+                                                                                                <Fragment key="3">
+                                                                                                    <OverlayTrigger overlay={<Tooltip>{`Cambiar estilos`}</Tooltip>}>
+                                                                                                        <Button className="tw-text-titulo" onClick={() => cambioEstilos(capa)} variant="link">
+                                                                                                            <FontAwesomeIcon size="2x" icon={faPaintBrush} />
+                                                                                                        </Button>
+                                                                                                    </OverlayTrigger>
+                                                                                                    <OverlayTrigger overlay={<Tooltip>{`Enfocar capa`}</Tooltip>}>
+                                                                                                        <Button className="tw-text-titulo" onClick={() => enfocaCapa(capa)} variant="link">
+                                                                                                            <FontAwesomeIcon size="2x" icon={faExpandAlt} />
+                                                                                                        </Button>
+                                                                                                    </OverlayTrigger>
+                                                                                                </Fragment>
+                                                                                            )
+                                                                                        ]
                                                                                     }
                                                                                 </div>
                                                                             </>

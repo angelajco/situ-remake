@@ -40,7 +40,7 @@ export default function Home() {
                 <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-xs-12 custom-mx-b-1">
                   <a href="https://www.snieg.mx/" target="_blank" className={classes}>
                     <div className="row justify-content-center">
-                      <img src="/images/index/cuad1.jpg" className="interesting-sites-images"/>
+                      <img src="/images/index/sitios/SNIEG_2017vertical.jpg" className="interesting-sites-images"/>
                     </div>
                     <div className="row justify-content-center">
                       <h5>
@@ -57,7 +57,7 @@ export default function Home() {
                 <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-xs-12 custom-mx-b-1">
                   <a href="http://gaia.inegi.org.mx/" target="_blank" className={classes}>
                     <div className="row justify-content-center">
-                      <img src="/images/index/cuad2.jpg" className="interesting-sites-images"/>
+                      <img src="/images/index/sitios/images.jfif" className="interesting-sites-images"/>
                     </div>
                     <div className="row justify-content-center">
                       <h5>
@@ -74,7 +74,7 @@ export default function Home() {
                 <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-xs-12 custom-mx-b-1">
                   <a href="https://sig.ran.gob.mx/acceso.php" target="_blank" className={classes}>
                     <div className="row justify-content-center">
-                      <img src="/images/index/cuad3.jpg" className="interesting-sites-images"/>
+                      <img src="/images/index/sitios/sig.jpg" className="interesting-sites-images"/>
                     </div>
                     <div className="row justify-content-center">
                       <h5>
@@ -91,7 +91,7 @@ export default function Home() {
                 <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-xs-12 custom-mx-b-1">
                   <a href="https://iieg.gob.mx/" target="_blank" className={classes}>
                     <div className="row justify-content-center">
-                      <img src="/images/index/cuad4.jpg" className="interesting-sites-images"/>
+                      <img src="/images/index/sitios/sieglogo-copia.png" className="interesting-sites-images"/>
                     </div>
                     <div className="row justify-content-center">
                       <h5>

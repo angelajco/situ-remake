@@ -6,9 +6,11 @@ import Draggable, { DraggableCore } from "react-draggable";
 import { ModalHeader, ModalBody, ModalFooter } from "reactstrap";
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 import Select from 'react-select';
+
 import Cookies from 'universal-cookie'
 import Loader from '../components/Loader'
 const cookies = new Cookies()
+
 
 
 export default function construccion() {

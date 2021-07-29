@@ -49,12 +49,12 @@ export default function Map(props) {
                 }
             ));
 
-            var options = {
-                modal: true,
-                title: "Acercar a un área determinada"
-            };
-            var control = L.control.zoomBox(options);
-            mapaReferencia.addControl(control);
+            // var options = {
+            //     modal: true,
+            //     title: "Acercar a un área determinada"
+            // };
+            // var control = L.control.zoomBox(options);
+            // mapaReferencia.addControl(control);
 
             // L.easyPrint({
             //     title: 'Imprimir',
@@ -217,11 +217,6 @@ export default function Map(props) {
 
     return (
         <>
-            <Head>
-                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-                    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
-            </Head>
-
             <div className="div-herramientas-mapa">
                 <select onChange={(e) => cambiaTipoCoordenada(e)} className="tw-mr-5 select-cambia-coordenadas">
                     <option value='1'>Grados decimales</option>
@@ -229,10 +224,6 @@ export default function Map(props) {
                     <option value='3'>Grados, minutos y segundos</option>
                 </select>
             </div>
-
-            <a>
-                {/* <h1>{valoresContexto.aa}</h1> */}
-            </a>
 
             <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false}>
                 <ScaleControl maxWidth="100" />
