@@ -1861,7 +1861,7 @@ function ContenedorMapaAnalisis(props) {
         const llamaEventKey = useAccordionToggle(eventKey);
         return (
             <Button onClick={llamaEventKey} variant="link">
-                <FontAwesomeIcon icon={esActualEventKey ? faAngleRight : faAngleDown} />
+                <FontAwesomeIcon icon={esActualEventKey ? faAngleDown : faAngleRight} />
             </Button>
         )
     }
@@ -2974,7 +2974,7 @@ function ContenedorMapaAnalisis(props) {
 
     const [mapeoMapa, setMapeoMapa] = useState(true)
     const [mapeoMapaEspejo, setMapeoMapaEspejo] = useState(true)
-    const [sePuedeIdentificar, setSePuedeIdentificar] = useState(true)
+    const [sePuedeIdentificar, setSePuedeIdentificar] = useState(false)
     //Activa paneo en el mapa
     function paneoMapa(mapa) {
         if (mapa) {
@@ -2982,7 +2982,7 @@ function ContenedorMapaAnalisis(props) {
         } else {
             setMapeoMapaEspejo(true)
         }
-        setSePuedeIdentificar(true)
+        setSePuedeIdentificar(false)
     }
     //Activa seleccion en el mapa
     function identificaMapa(mapa) {
@@ -2991,7 +2991,7 @@ function ContenedorMapaAnalisis(props) {
         } else {
             setMapeoMapaEspejo(false)
         }
-        setSePuedeIdentificar(false)
+        setSePuedeIdentificar(true)
     }
 
     return (
@@ -3956,20 +3956,30 @@ function ContenedorMapaAnalisis(props) {
                                                                     <Form.Check type="checkbox" inline defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event)} value={capa.nom_capa} />
                                                                 </Form.Group>
                                                                 {
-                                                                    capa.isActive != undefined && (
-                                                                        <OverlayTrigger overlay={<Tooltip>Establecer como activa</Tooltip>}>
-                                                                            <Button onClick={() => enableLayer(index)} variant="link">
-                                                                                <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
-                                                                            </Button>
-                                                                        </OverlayTrigger>
-                                                                    )
+                                                                    [
+                                                                        capa.isActive != undefined && (
+                                                                            <OverlayTrigger key="1" overlay={<Tooltip>Establecer como capa activa</Tooltip>}>
+                                                                                <Button onClick={() => enableLayer(index)} variant="link">
+                                                                                    <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
+                                                                                </Button>
+                                                                            </OverlayTrigger>
+                                                                        ),
+                                                                        capa.tipo === "wfs" && (
+                                                                            <OverlayTrigger key="2" overlay={<Tooltip>{`Tabla de atributos`}</Tooltip>}>
+                                                                                <Button onClick={() => muestraAtributos(capa)} variant="link">
+                                                                                    <FontAwesomeIcon icon={faTable} />
+                                                                                </Button>
+                                                                            </OverlayTrigger>
+                                                                        ),
+                                                                        capa.tipo !== "wfs" && (
+                                                                            <OverlayTrigger key="3" overlay={<Tooltip>Eliminar capa</Tooltip>}>
+                                                                                <Button onClick={() => eliminaCapa(capa)} variant="link">
+                                                                                    <FontAwesomeIcon icon={faTrash} />
+                                                                                </Button>
+                                                                            </OverlayTrigger>
+                                                                        ),
+                                                                    ]
                                                                 }
-                                                                <OverlayTrigger overlay={<Tooltip>Eliminar capa</Tooltip>}>
-                                                                    <Button onClick={() => eliminaCapa(capa)} variant="link">
-                                                                        <FontAwesomeIcon icon={faTrash} />
-                                                                    </Button>
-                                                                </OverlayTrigger>
-
                                                                 <CustomToggle eventKey={capa.nom_capa} />
                                                             </Card.Header>
                                                             <Accordion.Collapse eventKey={capa.nom_capa}>
@@ -4033,33 +4043,33 @@ function ContenedorMapaAnalisis(props) {
                                                                                     {
                                                                                         [
                                                                                             capa.download && (
-                                                                                                <OverlayTrigger overlay={<Tooltip>{`Descargar capas`}</Tooltip>}>
-                                                                                                    <Button className="tw-text-titulo" onClick={() => renderModalDownload(capa)} variant="link">
+                                                                                                <OverlayTrigger key="1" overlay={<Tooltip>{`Descargar capas`}</Tooltip>}>
+                                                                                                    <Button onClick={() => renderModalDownload(capa)} variant="link">
                                                                                                         <FontAwesomeIcon size="2x" icon={faDownload} />
                                                                                                     </Button>
                                                                                                 </OverlayTrigger>
                                                                                             ),
-                                                                                            capa.tipo === "wfs" && (
-                                                                                                <OverlayTrigger overlay={<Tooltip>{`Atributos`}</Tooltip>}>
-                                                                                                    <Button key="2" className="tw-text-titulo" onClick={() => muestraAtributos(capa)} variant="link">
-                                                                                                        <FontAwesomeIcon size="2x" icon={faTable} />
-                                                                                                    </Button>
-                                                                                                </OverlayTrigger>
-                                                                                            ),
                                                                                             (capa.tipo === "wfs" || capa.tipo === 'json') && (
-                                                                                                <Fragment key="3">
+                                                                                                <Fragment key="2">
                                                                                                     <OverlayTrigger overlay={<Tooltip>{`Cambiar estilos`}</Tooltip>}>
-                                                                                                        <Button className="tw-text-titulo" onClick={() => cambioEstilos(capa)} variant="link">
+                                                                                                        <Button onClick={() => cambioEstilos(capa)} variant="link">
                                                                                                             <FontAwesomeIcon size="2x" icon={faPaintBrush} />
                                                                                                         </Button>
                                                                                                     </OverlayTrigger>
-                                                                                                    <OverlayTrigger overlay={<Tooltip>{`Enfocar capa`}</Tooltip>}>
-                                                                                                        <Button className="tw-text-titulo" onClick={() => enfocaCapa(capa)} variant="link">
+                                                                                                    <OverlayTrigger overlay={<Tooltip>{`Encuadrar capa`}</Tooltip>}>
+                                                                                                        <Button onClick={() => enfocaCapa(capa)} variant="link">
                                                                                                             <FontAwesomeIcon size="2x" icon={faExpandAlt} />
                                                                                                         </Button>
                                                                                                     </OverlayTrigger>
                                                                                                 </Fragment>
-                                                                                            )
+                                                                                            ),
+                                                                                            capa.tipo === "wfs" && (
+                                                                                                <OverlayTrigger key="3" overlay={<Tooltip>Eliminar capa</Tooltip>}>
+                                                                                                    <Button onClick={() => eliminaCapa(capa)} variant="link">
+                                                                                                        <FontAwesomeIcon size="2x" icon={faTrash} />
+                                                                                                    </Button>
+                                                                                                </OverlayTrigger>
+                                                                                            ),
                                                                                         ]
                                                                                     }
                                                                                 </div>
