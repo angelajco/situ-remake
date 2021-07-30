@@ -9,11 +9,59 @@ import Select from 'react-select';
 import Cookies from 'universal-cookie';
 import Loader from '../../components/Loader';
 import ModalComponent from '../../components/ModalComponent';
+import axios from 'axios'
+import Router from 'next/router'
 const cookies = new Cookies()
 
-export default function construccion() {
+export default function cargaDocumental() {
+
+
+  // Estado para guardar el web token que se pide a la API
+  const [tokenSesion, setTokenSesion] = useState(false)
+  // Guarda el token que viene en la cookie para verificar que la tenga
+  const tokenCookie = cookies.get('SessionToken')
+  const rolCookie = cookies.get('RolUsuario')
+  const estatusCookie = cookies.get('EstatusUsuario')
   const usuarioCookie = cookies.get('Usuario')
   const usuarioI = cookies.get('IDU')
+
+  useEffect(() => {
+    console.log(rolCookie+"  "+estatusCookie);
+    if (rolCookie === undefined) {
+      Router.push('/consulta-documental');
+    }else{
+      Router.push('/consulta-documental/cargaDocumental');
+    }
+
+    if (tokenCookie != undefined) {
+      // Configuracion para verificar el token
+      var config = {
+        method: 'get',
+        url: `${process.env.ruta}/wa/prot/acceso`,
+        headers: {
+          'Authorization': `Bearer ${tokenCookie}`
+        },
+      };
+      axios(config)
+        .then(function (response) {
+          setTokenSesion(response.data['success-boolean'])
+        })
+        .catch(function (error) {
+          console.log(error)
+          cookies.remove('SessionToken', { path: "/" })
+          Router.push("/consulta-documental")
+        })
+    }
+    else {
+      Router.push('/consulta-documental')
+    }
+  }, [tokenCookie, rolCookie, estatusCookie])
+
+
+
+
+
+
   //Datos para el modal
   const [show, setShow] = useState(false);
   const [datosModal, setDatosModal] = useState({});
@@ -36,7 +84,8 @@ export default function construccion() {
   const [armoni, setArmoni] = useState();
   const [formato, setFormato] = useState();
   const [pais, setPais] = useState();
-  const [idioma, setIdioma] = useState();
+  const [idioma, setIdioma] = useState(); //msjError
+  const [msjError, setMsjError] = useState();
 
   const tarchivos = [
     { value: '1', label: 'Documento' },
@@ -56,15 +105,15 @@ export default function construccion() {
   ];
   const temaP = [
     { value: '1', label: 'Ambiental', name: 'tema1' },
-    { value: '2', label: 'Demográfico' , name: 'tema1'},
+    { value: '2', label: 'Demográfico', name: 'tema1' },
     { value: '3', label: 'Energía', name: 'tema1' },
-    { value: '4', label: 'Gestión' , name: 'tema1'},
+    { value: '4', label: 'Gestión', name: 'tema1' },
     { value: '5', label: 'Internacional', name: 'tema1' },
     { value: '6', label: 'Riesgos, peligros y vulnerabilidad', name: 'tema1' },
     { value: '7', label: 'Salud', name: 'tema1' },
-    { value: '8', label: 'Socioeconómico', name: 'tema1'},
-    { value: '9', label: 'Tecnológico' , name: 'tema1'},
-    { value: '10', label: 'Territorial' , name: 'tema1'},
+    { value: '8', label: 'Socioeconómico', name: 'tema1' },
+    { value: '9', label: 'Tecnológico', name: 'tema1' },
+    { value: '10', label: 'Territorial', name: 'tema1' },
     { value: '11', label: 'Movilidad', name: 'tema1' },
   ];
   const temaS = [
@@ -152,20 +201,24 @@ export default function construccion() {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///codigo para validaciones de formulario
 
+
     if (tarchivo == null) {
       let t1 = document.getElementById('msj-tipoDoc');
       document.getElementById('tipo').focus();
       t1.innerHTML = "Selecciona tipo de documento a guardar";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-tipoDoc');
       t1.innerHTML = "";
+      setMsjError("");
     }
     if (tarchivo == 2) {
       if (data.enlace === "") {
         let t1 = document.getElementById('msj-enlace');
         document.getElementById('enlace').focus();
         t1.innerHTML = "Ingresa enlace del documento";
+        setMsjError("Se han encontrado errores en la información");
         return false;
       } else {
         let t1 = document.getElementById('msj-enlace');
@@ -177,6 +230,7 @@ export default function construccion() {
         let t1 = document.getElementById('msj-doc');
         document.getElementById('doc').focus();
         t1.innerHTML = "Ingresa documento a subir";
+        setMsjError("Se han encontrado errores en la información");
         return false;
       } else {
         let t1 = document.getElementById('msj-doc');
@@ -188,6 +242,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-titulo');
       document.getElementById('titulo').focus();
       t1.innerHTML = "Ingresa nombre del documento";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-titulo');
@@ -197,6 +252,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-descripcion');
       document.getElementById('descripcion').focus();
       t1.innerHTML = "Ingresa Descripción del documento";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-descripcion');
@@ -207,6 +263,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-tipo');
       let t2 = document.getElementById('tipoD1').focus();
       t1.innerHTML = "Selecciona tipo de archivo";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-tipo');
@@ -217,6 +274,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-tema1');
       document.getElementById('tema11').focus();
       t1.innerHTML = "Selecciona tema principal del documento";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-tema1');
@@ -227,6 +285,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-tema2');
       document.getElementById('tema22').focus();
       t1.innerHTML = "Selecciona tema secundario del documento";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-tema2');
@@ -237,6 +296,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-cobertura');
       document.getElementById('coberturaG1').focus();
       t1.innerHTML = "Selecciona nivel de cobertura del documento";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-cobertura');
@@ -249,6 +309,7 @@ export default function construccion() {
         let t1 = document.getElementById('msj-autor1');
         document.getElementById('autor1').focus();
         t1.innerHTML = "Ingresa un nombre válido";
+        setMsjError("Se han encontrado errores en la información");
         return false;
       } else {
         let t1 = document.getElementById('msj-autor1');
@@ -261,6 +322,7 @@ export default function construccion() {
         let t1 = document.getElementById('msj-autor2');
         document.getElementById('autor2').focus();
         t1.innerHTML = "Ingresa un nombre válido";
+        setMsjError("Se han encontrado errores en la información");
         return false;
       } else {
         let t1 = document.getElementById('msj-autor2');
@@ -273,6 +335,7 @@ export default function construccion() {
         let t1 = document.getElementById('msj-autor3');
         document.getElementById('autor3').focus();
         t1.innerHTML = "Ingresa un nombre válido";
+        setMsjError("Se han encontrado errores en la información");
         return false;
       } else {
         let t1 = document.getElementById('msj-autor3');
@@ -284,6 +347,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-fechaP');
       let t2 = document.getElementById('fecha').focus();
       t1.innerHTML = "Ingresa fecha de pub;icación";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-fechaP');
@@ -294,6 +358,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-formato');
       document.getElementById('formato1').focus();
       t1.innerHTML = "Selecciona el formato del documento";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-formato');
@@ -304,6 +369,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-pais');
       document.getElementById('pais').focus();
       t1.innerHTML = "Selecciona el pais del documento";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-pais');
@@ -314,6 +380,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-idioma');
       document.getElementById('idioma').focus();
       t1.innerHTML = "Selecciona el idioma del documento";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-idioma');
@@ -324,6 +391,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-paginas');
       document.getElementById('paginas').focus();
       t1.innerHTML = "Ingresa número de paginas del documento";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-paginas');
@@ -334,6 +402,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-palabras');
       document.getElementById('palabrasC').focus();
       t1.innerHTML = "Ingresa el nombre origen del documento";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-palabras');
@@ -344,6 +413,7 @@ export default function construccion() {
       let t1 = document.getElementById('msj-nombreOrigen');
       document.getElementById('nomArchivo').focus();
       t1.innerHTML = "Ingresa las palabras clave del documento";
+      setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-nombreOrigen');
@@ -354,7 +424,19 @@ export default function construccion() {
     } else {
       data.fechaAct.replace('-', '/')
     }
-    data.idGeo = data.cveEntidad + data.cveMunicipal;
+    if (data.cveEntidad == "" && data.cveMunicipal == "") {
+      data.idGeo = "00";
+    } else {
+      data.idGeo = data.cveEntidad + data.cveMunicipal;
+    }
+    if (data.cveEntidad == "") {
+      data.cveEntidad = "00";
+    }
+    if (data.cveMunicipal == "") {
+      data.cveMunicipal = "N/A";
+    }
+
+
 
     console.log(data);
 
@@ -363,21 +445,26 @@ export default function construccion() {
     //terminan las validaciones 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //console.log("Datos Correctos")
+
     const url = `${process.env.ruta}/wa/publico/setMetadatoDocumento?id_usuario=${usuarioI}&nombre=${data.titulo}&descripcion=${data.descripcion}&tipo=${data.tipoD}&tema1=${data.tema1}&tema2=${data.tema2}&nivel_cobertura=${data.cobertura}&ano_publicacion=${auxfech[0]}&mes_publicacion=${auxfech[1]}&dia_publicacion=${auxfech[2]}&formato=${data.formato}&pais=${data.pais}&idioma=${data.idioma}&paginas=${data.paginas}&palabras_clave=${data.palabrasC}&nombre_archivo=${data.nomArchivo}&url_origen=${data.enlace}&fecha_cap_situ=${fechaC}&actualizacion=${fechaA}&alias=${data.alias}&publicacion=${data.detalle}&cve_ent=${data.cveEntidad}&cve_mun=${data.cveMunicipal}&id_geografico=${data.idGeo}&autor=${data.autor1}&autor2=${data.autor2}&autor3=${data.autor3}&instancia=${data.dependencia}&instancia2=${data.dependencia2}&instancia3=${data.dependencia3}&tratamiento_publicacion=${data.conjDatos}&editorial=${data.editorial}&edicion=${data.edicion}&isbn=${data.isbn}&doc_vigente=${data.vigencia}&doc_actualizado=${data.actualizado}&ano_vig_inicial=${data.pvInicial}&ano_vig_final=${data.pvFinal}&armonizado_lgahotdu=${data.armonizado}`;
     console.log(url);
     const res = await fetch(url);
     const datos = await res.json();
     if (datos['message-subject'] === 'Datos guardados') {
-      metadatosModal('Registro exitoso');
+      let formData = new FormData();
+      formData.append("file", data.portada[0]);
+      fetch(`${process.env.ruta}/wa/publico/upMiniaturaDocumento`, {
+        method: 'POST',
+        body: formData
+      }).then(respuesta => respuesta.text()).then(decodificado => { console.log(decodificado); });
+      metadatosModal('Registro Exitoso');
     } else {
       metadatosModal('Error de Registro');
     }
-    console.log(show);
-    if(!show){
+    if (!show) {
       //location.reload();
     }
-    //console.log(datos['message-subject']);
-    //return true;
+
 
   }
 
@@ -568,6 +655,8 @@ export default function construccion() {
       <main>
         <Container>
           <div className="container">
+            <h5 className="text-center"> Carga Documental</h5>
+            <br></br>
             <Form className="col-12" onSubmit={handleSubmit(onSubmitP)}>
               <div className="row">
                 <div className="col-2 col-md-2 col-lg-2">
@@ -919,6 +1008,11 @@ export default function construccion() {
               </div>
               <br></br>
             </Form>
+            <div className="row text-center">
+              <div className="col-12">
+                <h5 className="msj">{msjError}</h5>
+              </div>
+            </div>
           </div>
         </Container>
       </main>

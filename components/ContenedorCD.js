@@ -11,6 +11,7 @@ import { Typeahead } from 'react-bootstrap-typeahead';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import Cookies from 'universal-cookie'
 import Loader from '../components/Loader'
+import { useRouter } from 'next/router'
 const cookies = new Cookies()
 
 
@@ -43,6 +44,7 @@ function ContenedorCD() {
     const [busq2, setBusq2] = useState([]);
     const [busq3, setBusq3] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    
 
 
 
@@ -117,7 +119,7 @@ function ContenedorCD() {
         { value: '7', label: 'Localidad', name: 'cobertura' },
         { value: '8', label: 'General', name: 'cobertura' }
     ];
-
+    const [busq,setBusq]=useState(busqueda1[1]);
     //Para agregar la funcionalidad de mover modal
     function DraggableModalDialog(props) {
         return (
@@ -268,7 +270,13 @@ function ContenedorCD() {
             setIsLoading(true);
             if (e.value == 1) {
                 setBusquedaPR(e.value);
-                setIsLoading(false);
+                //setIsLoading(false);
+                fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
+                    .then((response) => response.json())
+                    .then((json) => { modificaResultado(json); setIsLoading(false); });
+                setBusq1(r);
+
+                //setBusquedaPR();
             }
             if (e.value == 2) {
                 //ultimas publicaciones 
@@ -288,6 +296,11 @@ function ContenedorCD() {
                 setBusquedaPR();
             }
         } else {
+            fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
+                .then((response) => response.json())
+                .then((json) => { modificaResultado(json); setIsLoading(false); });
+            setBusq(busqueda1[1]);
+            setBusq1(r);
             setBusquedaPR();
         }
     }
@@ -319,9 +332,12 @@ function ContenedorCD() {
 
 
     const onSubmit = async (data) => {
-        console.log(data);
+
+        let str = data.dato;
+        str = str.replace(str[0], "*");
+        //data.dato=str;
         //console.log(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tema}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tema}* OR instancia:*${data.unidad}*`);
-        const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tem1}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tem2}* OR instancia:*${data.unidad}*`);
+        const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tem1}* OR tipo:*${data.tipo}* OR nombre:${str}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tem2}* OR instancia:*${data.unidad}*`);
         const datos = await res2.json();
         modificaResultado(datos);
         setBusq1(datos);
@@ -340,7 +356,7 @@ function ContenedorCD() {
 
     function cambioD(e) {
         if (e.target.name === 'dato') {
-            console.log(e.target.value);
+            ///console.log(e.target.value);
             setTitulo();
         }
         if (e.target.name === 'descripcion') {
@@ -594,7 +610,7 @@ function ContenedorCD() {
                                 options={busqueda1}
                                 isClearable={true}
                                 onChange={busquedaP}
-                                defaultValue={busqueda1[1]}
+                                defaultValue={busq}
                             ></Select>
                         </div>
                     </div>

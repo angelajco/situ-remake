@@ -316,7 +316,7 @@ function PaginationComponent(props) {
           <div className="col-8 col-md-8 col-lg-8"></div>
           <div className="col-2 align-self-end">
             {
-              //usuarioCookie != null && (
+              //usuarioCookie != null && ( 'images/consulta/publicacion-situ.png' datos[0].miniatura
               <a download="Archivo.pdf" href={datos[0].url_origen} target="_blank">
                 <button type="button" className="btn btn-light" onClick={() => actBitacora(cod)}>Descargar</button>
               </a>
