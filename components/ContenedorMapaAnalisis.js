@@ -54,6 +54,8 @@ const MapEspejo = dynamic(
     }
 )
 
+var featureSeleccion = null;
+
 var referenciaMapa = null;
 //son algunas variables para Simbologia
 var jsonSimbologia = [];
@@ -524,8 +526,8 @@ function ContenedorMapaAnalisis(props) {
                             nombre: response["nom_capa"],
                             interactive: sePuedeIdentificar ? true : false,
                             interactiva: true,
-                            onEachFeature: function (feature = {}, layerPadre) {
-                                feature["nombre_capa"] = layerPadre.options["nombre"];
+                            onEachFeature: function (feature = {}, subLayer) {
+                                feature["nombre_capa"] = subLayer.options["nombre"];
                                 if (resultado !== null) {
                                     var current = capaFiltrada.valor_filtro == 2 ? `${feature.properties['CVE_ENT']}` : capaFiltrada.valor_filtro == 3 ? `${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
                                     Object.keys(feature.properties).map(key => {
@@ -539,7 +541,7 @@ function ContenedorMapaAnalisis(props) {
                                     // console.log('dataToProps: ', props.informacionEspacial);
                                     if (props.informacionEspacial) {
                                         props.informacionEspacial.datos.map((data, index) => {
-                                            if (layerPadre.options["nombre"].includes('Nacional')) {
+                                            if (subLayer.options["nombre"].includes('Nacional')) {
                                                 if (data[0] == current) {
                                                     props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
                                                         feature.properties[column[1]] = data[column[3]];
@@ -554,8 +556,18 @@ function ContenedorMapaAnalisis(props) {
                                         setDataToProps();
                                     }
                                 }
-                                layerPadre.on('click', function () {
+                                subLayer.on('click', function () {
                                     setRasgos([feature]);
+                                })
+                                subLayer.on('dblclick', function () {
+                                    if (featureSeleccion != null) {
+                                        featureSeleccion.setStyle({...capaFiltrada.estilos})
+                                        featureSeleccion.feature["seleccionada"] = false;
+                                    }
+                                    subLayer.setStyle({ fillColor: 'green' })
+                                    subLayer.feature["seleccionada"] = true;
+                                    featureSeleccion = subLayer;
+                                    setSublayerSeleccionada(subLayer)
                                 })
                             }
                         });
@@ -589,6 +601,7 @@ function ContenedorMapaAnalisis(props) {
     const [showModalAtributos, setShowModalAtributos] = useState(false)
     //Para asignar atributos
     function muestraAtributos(capa) {
+        console.log(capa, "tabla de atributos")
         setAtributos(capa.features)
         setShowModalAtributos(true)
     }
@@ -2994,6 +3007,39 @@ function ContenedorMapaAnalisis(props) {
         setSePuedeIdentificar(true)
     }
 
+    //Para obtener feature seleccionado
+    const [sublayerSeleccionada, setSublayerSeleccionada] = useState(null)
+    const [modalSublayerSeleccionada, setModalSublayerSeleccionada] = useState(false)
+
+    const sublayerSelect = () => {
+        let capaIntersectadaSublayer = [];
+        referenciaMapa.eachLayer(function (layer) {
+            if (layer instanceof L.GeoJSON) {
+                if (!layer.options.hasOwnProperty("buffer")) {
+                    let subCapasCapaPadre = []
+                    layer.eachLayer(function (layerConFeatures) {
+                        if (sublayerSeleccionada.feature.nombre_capa !== layerConFeatures.feature.nombre_capa) {
+                            let seIntersectan;
+                            seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), sublayerSeleccionada.toGeoJSON())
+                            if (seIntersectan != null) {
+                                subCapasCapaPadre.push(layerConFeatures.feature)
+                            }
+                        }
+                    })
+                    if (subCapasCapaPadre.length != 0) {
+                        capaIntersectadaSublayer.push(subCapasCapaPadre)
+                    }
+                }
+            }
+        });
+
+        if (capaIntersectadaSublayer.length != 0) {
+            console.log(capaIntersectadaSublayer, "capaIntersectadaSublayer")
+            // setSavedToIdentify(capaIntersectadaSublayer)
+        }
+
+    }
+
     return (
         <>
             <ModalAnalisis
@@ -3002,8 +3048,18 @@ function ContenedorMapaAnalisis(props) {
                 onHide={handleCloseModalAnalisis}
             />
 
+            <Modal dialogAs={DraggableModalDialog} show={modalSublayerSeleccionada} onHide={() => setModalSublayerSeleccionada(!modalSublayerSeleccionada)}
+                keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
+                <Modal.Header className="tw-cursor-pointer" closeButton>
+                    <Modal.Title>
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                </Modal.Body>
+            </Modal>
+
             {/* <Modal dialogAs={DraggableModalDialog} show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
-                keyboard={false} backdrop="static" className="modal-analisis" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis"> */}
+                keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis"> */}
             <Modal show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
                 keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
                 <Modal.Header className="tw-cursor-pointer" closeButton>
@@ -3763,7 +3819,7 @@ function ContenedorMapaAnalisis(props) {
                                                 {
                                                     Object.keys(value.properties).map((valueKey, indexKey) => {
                                                         return (
-                                                            <td key={indexKey}>{value.properties[valueKey]}</td>
+                                                            <td key={indexKey} className={value.seleccionada == true ? "tw-text-yellow-900" : ""}>{value.properties[valueKey]}</td>
                                                         )
                                                     })
                                                 }
@@ -4146,6 +4202,11 @@ function ContenedorMapaAnalisis(props) {
                 <OverlayTrigger rootClose overlay={<Tooltip>Capas dibujadas</Tooltip>}>
                     <button className="botones-barra-mapa" onClick={() => setModalCapasDibujadas(true)}>
                         <img src="/images/analisis/capas_dib.png" alt="Capas dibujadas" className="tw-w-5" />
+                    </button>
+                </OverlayTrigger>
+                <OverlayTrigger rootClose overlay={<Tooltip>Capa seleccionada</Tooltip>}>
+                    <button className="botones-barra-mapa" onClick={sublayerSelect}>
+                        <img src="/images/analisis/capas_dib.png" alt="Capa seleccionada" className="tw-w-5" />
                     </button>
                 </OverlayTrigger>
             </div>
