@@ -332,7 +332,6 @@ function ContenedorCD() {
 
 
     const onSubmit = async (data) => {
-
         let str = data.dato;
         str = str.replace(str[0], "*");
         //data.dato=str;

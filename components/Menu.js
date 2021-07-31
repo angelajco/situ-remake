@@ -62,7 +62,7 @@ export default function Menu() {
         deshabilitarSesion = true
     } else if (ruta.includes('/estadisticas-indicadores')) {
         deshabilitarEstadisticas = true
-    }else if (ruta.includes('/consulta-documental')) {
+    }else if (ruta ==='/consulta-documental') {
         deshabilitarConsulta = true
     }
 
@@ -129,7 +129,7 @@ export default function Menu() {
                         {/* <Link href="/construccion"> */}
                             <a className={deshabilitarEstadisticas ? active : noActive}>ESTAD&Iacute;STICAS E<br></br>INDICADORES</a>
                         </Link>
-                        <Link href="/consulta-documental">
+                        <Link href="/consulta-documental/consulta">
                             <a className={noActive}>CONSULTA<br></br>DOCUMENTAL</a>
                         </Link>
                         {

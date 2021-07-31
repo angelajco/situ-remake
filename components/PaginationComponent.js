@@ -10,8 +10,6 @@ import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
 import Select from 'react-select';
 import dataPub from '../shared/jsons/publicaciones.json';
-//import { Button, Form, OverlayTrigger, Tooltip, Tab, Row, Col, Nav } from 'react-bootstrap'
-//import datosP from '../shared/jsons/Datos.json';
 import jsPDF from 'jspdf';
 import jpt from 'jspdf-autotable';
 import Cookies from 'universal-cookie'
@@ -261,7 +259,7 @@ function PaginationComponent(props) {
                       <td>
                         <OverlayTrigger overlay={<Tooltip>Detalle</Tooltip>}>
                           <a target='_blank' onClick={() => metadatosModal(todo.id_metadato_documento)}>
-                            <img src='images/consulta/PUBLICACION_SITU.png' alt='Miniatura' className='card-img-top' />
+                            <img src='/images/consultaD/miniaturaD.png' alt='Miniatura' className='card-img-top' />
                           </a>
                         </OverlayTrigger>
                       </td>
@@ -307,6 +305,7 @@ function PaginationComponent(props) {
   //const onSubmit = async (data) =>
   const metadatosModal = async (cod) => {
     //console.log(cod);
+    cookies.set('prod', cod);
     const res = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=id:${cod}`);
     const datos = await res.json();
 
@@ -326,7 +325,7 @@ function PaginationComponent(props) {
         </div>
         <div className="row">
           <div className="col-3">
-            <img src='images/consulta/publicacion-situ.png' alt='Miniatura' className="img-responsive" />
+            <img src='/images/consultaD/miniaturaD.png' alt='Miniatura' className="img-responsive" />
           </div>
           <div className="col-7">
             <p><b>{datos[0].nombre}</b><br></br>{datos[0].autor}</p>
@@ -349,6 +348,13 @@ function PaginationComponent(props) {
             <p>Tema 1:&nbsp;<b>{datos[0].tema1}</b></p>
             <p>Tema 2:&nbsp;<b>{datos[0].tema2}</b></p>
           </div>
+        </div>
+        <div className="row">
+        <div className="col-12 col-md-12 col-lg-12">
+            <Link href="/consulta-documental/consulta-metadatos">
+              <a target="_blank"><p>Metadatos Completos</p></a>
+            </Link>
+        </div>
         </div>
 
       </div >
@@ -651,7 +657,7 @@ function PaginationComponent(props) {
         {
           usuarioCookie != null && (
             <OverlayTrigger overlay={<Tooltip>Cargar Documento</Tooltip>}>
-              <Link href="/consulta-documental/cargaDocumental">
+              <Link href="/consulta-documental/carga-documental">
                 <a><FontAwesomeIcon size="3x" icon={faUpload} /></a>
               </Link>
             </OverlayTrigger>
