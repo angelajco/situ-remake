@@ -227,7 +227,6 @@ function ContenedorMapaAnalisis(props) {
 
     //Para cuando se requiere que sea nacional
     const construyeNacionalCapa = (capaFusion) => {
-        console.log('capaFusion: ', capaFusion);
         let capaNacional = {};
         capaNacional.titulo = capaFusion.titulo + " - Nacional";
         capaNacional.url = capaFusion.url;
@@ -247,30 +246,50 @@ function ContenedorMapaAnalisis(props) {
         agregaCapaWFS(capaNacional)
     }
 
-    function testRef() {
-        console.log('testRef');
-    }
-
     //Para cuando se agrega una entidad
     const construyeEntidadCapa = (capaFusion, entidad) => {
-        if (entidad != undefined) {
+        if (entidad != undefined || (capaFusion.length && capaFusion[0].entidad != undefined)) {
             let capaEntidad = {};
-            capaEntidad.titulo = capaFusion.titulo + " - " + entidad.entidad;
-            capaEntidad.url = capaFusion.url;
-            capaEntidad.capa = capaFusion.nombre_capa;
-            capaEntidad.filtro_entidad = capaFusion.filtro_entidad;
-            capaEntidad.valor_filtro = entidad.id;
-            capaEntidad.wfs = capaFusion.wfs;
-            capaEntidad.wms = capaFusion.wms;
-            capaEntidad.opcion = 5;
-            capaEntidad.estilos = {
-                color: "#FF0000",
-                fillColor: "#FF7777",
-                opacity: "1",
-                fillOpacity: "1"
+            if(props.referenciaEntidad && entidad === null) {
+                capaEntidad.titulo = props.informacionEspacial.nombreTabla;
+                capaEntidad.url = capaFusion[0].capa.url;
+                capaEntidad.capa = capaFusion[0].capa.nombre_capa;
+                capaEntidad.filtro_entidad = capaFusion[0].capa.filtro_entidad;
+                capaEntidad.wfs = capaFusion[0].capa.wfs;
+                capaEntidad.wms = capaFusion[0].capa.wms;
+                // capaEntidad.valor_filtro = '(';
+                // capaFusion.map((layer, index) => {
+                //     capaEntidad.valor_filtro = `${capaEntidad.valor_filtro}'${layer.entidad.id}'${capaFusion.length == index + 1 ? ')' : ','}`;
+                // });
+                capaEntidad.valor_filtro = '';
+                capaFusion.map((layer, index) => {
+                    capaEntidad.valor_filtro = `${capaEntidad.valor_filtro}'${layer.entidad.id}'${capaFusion.length == index + 1 ? '' : ','}`;
+                });
+                capaEntidad["id_capa"] = capaFusion[0].capa.id_capa
+                capaEntidad.estilos = {
+                    color: "#3366FF",
+                    fillColor: "#66CCFF",
+                    opacity: "1",
+                    fillOpacity: "1"
+                }
+            } else {
+                capaEntidad.titulo = capaFusion.titulo + " - " + entidad.entidad;
+                capaEntidad.url = capaFusion.url;
+                capaEntidad.capa = capaFusion.nombre_capa;
+                capaEntidad.filtro_entidad = capaFusion.filtro_entidad;
+                capaEntidad.wfs = capaFusion.wfs;
+                capaEntidad.wms = capaFusion.wms;
+                capaEntidad.valor_filtro = `'${entidad.id}'`;
+                capaEntidad["id_capa"] = capaFusion.id_capa
+                capaEntidad.estilos = {
+                    color: "#FF0000",
+                    fillColor: "#FF7777",
+                    opacity: "1",
+                    fillOpacity: "1"
+                }
             }
+            capaEntidad.opcion = 5;
             //Para los alias de los atributos
-            capaEntidad["id_capa"] = capaFusion.id_capa
             agregaCapaWFS(capaEntidad)
         }
     }
@@ -486,8 +505,13 @@ function ContenedorMapaAnalisis(props) {
                 //La agregará como nacional
             } else if (capaFiltrada.opcion == "5") {
                 //La agregara como municipio
-                defaultParameters.cql_filter = capaFiltrada.filtro_entidad + "=" + "'" + capaFiltrada.valor_filtro + "'";
-                filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
+                // if(capaFiltrada.valor_filtro.startsWith('(') && capaFiltrada.valor_filtro.endsWith(')')) {
+                //     defaultParameters.cql_filter = capaFiltrada.filtro_entidad + " IN" + capaFiltrada.valor_filtro;
+                //     filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
+                // } else {
+                    defaultParameters.cql_filter = capaFiltrada.filtro_entidad + " IN(" + capaFiltrada.valor_filtro + ")";
+                    filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
+                // }
             }
             var parameters = L.Util.extend(defaultParameters);
             var url = capaFiltrada.url + L.Util.getParamString(parameters);
@@ -527,7 +551,7 @@ function ContenedorMapaAnalisis(props) {
                             onEachFeature: function (feature = {}, layerPadre) {
                                 feature["nombre_capa"] = layerPadre.options["nombre"];
                                 if (resultado !== null) {
-                                    var current = capaFiltrada.valor_filtro == 2 ? `${feature.properties['CVE_ENT']}` : capaFiltrada.valor_filtro == 3 ? `${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
+                                    var current = capaFiltrada.id_capa == "2" ? `${feature.properties['CVE_ENT']}` : capaFiltrada.id_capa == "3" ? `${feature.properties['CVE_ENT']}${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
                                     Object.keys(feature.properties).map(key => {
                                         let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
                                         if (nuevoAlias !== "") {
@@ -536,16 +560,9 @@ function ContenedorMapaAnalisis(props) {
                                             feature.properties[nuevoAlias] = keyTemp
                                         }
                                     })
-                                    // console.log('dataToProps: ', props.informacionEspacial);
                                     if (props.informacionEspacial) {
                                         props.informacionEspacial.datos.map((data, index) => {
-                                            if (layerPadre.options["nombre"].includes('Nacional')) {
-                                                if (data[0] == current) {
-                                                    props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
-                                                        feature.properties[column[1]] = data[column[3]];
-                                                    })
-                                                }
-                                            } else {
+                                            if (data[0] == current) {
                                                 props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
                                                     feature.properties[column[1]] = data[column[3]];
                                                 })
@@ -2506,136 +2523,7 @@ function ContenedorMapaAnalisis(props) {
                 construyeNacionalCapa(capa);
             }
         });
-        construyeEntidadCapaCB(layers)
-    }
-
-    function construyeEntidadCapaCB(layers) {
-        if (layers.length && layers[0].entidad != undefined) {
-            let capaEntidad = {};
-            capaEntidad.valor_filtro = '(';
-            layers.map((layer, index) => {
-                capaEntidad.valor_filtro = `${capaEntidad.valor_filtro}'${layer.entidad.id}'${layers.length == index + 1 ? ')' : ','}`;
-            });
-            capaEntidad.titulo = props.informacionEspacial.nombreTabla;
-            capaEntidad.url = layers[0].capa.url;
-            capaEntidad.capa = layers[0].capa.nombre_capa;
-            capaEntidad.filtro_entidad = layers[0].capa.filtro_entidad;
-            capaEntidad.wfs = layers[0].capa.wfs;
-            capaEntidad.wms = layers[0].capa.wms;
-            capaEntidad.opcion = 5;
-            capaEntidad.estilos = {
-                color: "#3366FF",
-                fillColor: "#66CCFF",
-                opacity: "1",
-                fillOpacity: "1"
-            }
-            capaEntidad["id_capa"] = layers[0].capa.id_capa
-            agregaCapaWFSCB(capaEntidad);
-        }
-    }
-
-    function agregaCapaWFSCB(capaFiltrada) {
-        setShowModalAgregarCapas(false);
-        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === capaFiltrada.titulo)) {
-            setDatosModalAnalisis({
-                title: "Capa existente",
-                body: "La capa ya se ha agregado anteriormente"
-            })
-            setShowModalAnalisis(true);
-            return;
-        }
-        else {
-            let filtroDescarga = "";
-            let defaultParameters = {
-                service: 'WFS',
-                version: '2.0',
-                request: 'GetFeature',
-                typeName: capaFiltrada.capa,
-                outputFormat: 'text/javascript',
-                format_options: 'callback:getJson',
-            }
-            if (capaFiltrada.opcion == "0") {
-                //La agregará como nacional
-            } else if (capaFiltrada.opcion == "5") {
-                //La agregara como municipio
-                defaultParameters.cql_filter = capaFiltrada.filtro_entidad + " IN" + capaFiltrada.valor_filtro;
-                filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
-            }
-            var parameters = L.Util.extend(defaultParameters);
-            var url = capaFiltrada.url + L.Util.getParamString(parameters);
-            console.log(url, "url")
-            //Hace la petición para traer los datos de la entidad
-            $.ajax({
-                jsonpCallback: 'getJson',
-                url: url,
-                dataType: 'jsonp',
-                success: function (response) {
-                    response["nom_capa"] = capaFiltrada.titulo;
-                    response["habilitado"] = true;
-                    response['tipo'] = "wfs";
-                    response['transparencia'] = 1;
-                    response['simbologia'] = creaSVG(capaFiltrada.titulo, capaFiltrada.estilos)
-                    response["idCapaBack"] = capaFiltrada["id_capa"]
-
-                    let urlDescarga = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaFiltrada.capa}${filtroDescarga}&outputFormat=`
-
-                    response.download = [
-                        { nom_capa: response.nom_capa, link: JSON.stringify(response), tipo: 'GeoJSON' },
-                        { nom_capa: response.nom_capa, link: `${urlDescarga}KML`, tipo: 'KML' },
-                        { nom_capa: response.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaFiltrada.capa}${filtroDescarga}&bbox=-180,-90,180,90`, tipo: 'KMZ' },
-                        { nom_capa: response.nom_capa, link: `${urlDescarga}SHAPE-ZIP`, tipo: 'SHAPE' }
-                    ];
-
-                    response.isActive = false;
-                    setZIndex(zIndexCapas + 1)
-                    referenciaMapa.createPane(`${zIndexCapas}`)
-                    referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
-                    obtenAliasFuncion(capaFiltrada["id_capa"], function (resultado) {
-                        let layer = L.geoJSON(response, {
-                            pane: `${zIndexCapas}`,
-                            style: capaFiltrada.estilos,
-                            nombre: response["nom_capa"],
-                            onEachFeature: function (feature = {}, layerPadre) {
-                                feature["nombre_capa"] = layerPadre.options["nombre"];
-                                if (resultado !== null) {
-                                    var current = capaFiltrada.id_capa == "2" ? `${feature.properties['CVE_ENT']}` : capaFiltrada.id_capa == "3" ? `${feature.properties['CVE_ENT']}${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
-                                    Object.keys(feature.properties).map(key => {
-                                        let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
-                                        if (nuevoAlias !== "") {
-                                            let keyTemp = feature.properties[key]
-                                            delete feature.properties[key]
-                                            feature.properties[nuevoAlias] = keyTemp
-                                        }
-                                    })
-                                    if (props.informacionEspacial) {
-                                        props.informacionEspacial.datos.map((data, index) => {
-                                            if (data[0] == current) {
-                                                props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
-                                                    feature.properties[column[1]] = data[column[3]];
-                                                })
-                                            }
-                                        })
-                                        setDataToProps();
-                                    }
-                                }
-                                layerPadre.on('click', function () {
-                                    setRasgos([feature]);
-                                })
-                            }
-                        });
-                        response['layer'] = layer;
-
-                        setCapasVisualizadas([response, ...capasVisualizadas])
-                        referenciaMapa.addLayer(response.layer);
-                        setDatosModalAnalisis({
-                            title: "Capa agregada",
-                            body: "La capa se ha agregado con exito"
-                        });
-                        setShowModalAnalisis(true);
-                    })
-                }
-            });
-        }
+        construyeEntidadCapa(layers, null)
     }
 
     function buscarCapa(nombre) {

@@ -21,13 +21,6 @@ export default function estadisticas() {
         setMapName(e.target.value)
     }
 
-    function changeMapState(visible, data) {
-        setSpaceData(data)
-        setMapVisible(visible);
-        setLayesAdded(layesAdded + 1);
-        referenciaMapa._onResize();
-    }
-
     var referenciaMapa = null;
     function capturaReferenciaMapa(mapa) {
         referenciaMapa = mapa;
