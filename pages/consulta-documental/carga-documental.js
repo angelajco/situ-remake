@@ -15,7 +15,6 @@ const cookies = new Cookies()
 
 export default function cargaDocumental() {
 
-
   // Estado para guardar el web token que se pide a la API
   const [tokenSesion, setTokenSesion] = useState(false)
   // Guarda el token que viene en la cookie para verificar que la tenga
@@ -25,6 +24,7 @@ export default function cargaDocumental() {
   const usuarioCookie = cookies.get('Usuario')
   const usuarioI = cookies.get('IDU')
 
+/*
   useEffect(() => {
     console.log(rolCookie+"  "+estatusCookie);
     if (rolCookie === undefined) {
@@ -57,9 +57,7 @@ export default function cargaDocumental() {
     }
   }, [tokenCookie, rolCookie, estatusCookie])
 
-
-
-
+  */
 
 
   //Datos para el modal
@@ -72,7 +70,7 @@ export default function cargaDocumental() {
   //Datos para crear el form
   const { register, handleSubmit, control: controlJson, watch, clearErrors, setError, errors } = useForm();
   const [tarchivo, setTarchivo] = useState(null);
-  const [fileUrl, setFileUrl] = useState('/images/consulta/publicacion-situ.png');
+  const [fileUrl, setFileUrl] = useState('/images/consultaD/miniaturaD.png');
   const [imgportada, setImgPortada] = useState(null);
   const [tipodoc, setTipoDoc] = useState();
   const [tema1, setTema1] = useState();
@@ -438,7 +436,7 @@ export default function cargaDocumental() {
 
 
 
-    console.log(data);
+    //console.log(data);
 
     const auxfech = data.fecha.split('-');
     //console.log(auxfech);
@@ -709,7 +707,6 @@ export default function cargaDocumental() {
                     )
                   }
                 </div>
-
               </div>{/*termian la primer fila del formulario*/}
               <hr></hr>
               <div className="row">
