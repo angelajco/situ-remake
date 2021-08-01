@@ -10,8 +10,6 @@ const cookies = new Cookies()
 
 export default function cargaDocumental() {
 
-  // Estado para guardar el web token que se pide a la API
-  const [tokenSesion, setTokenSesion] = useState(false)
   // Guarda el token que viene en la cookie para verificar que la tenga
   const tokenCookie = cookies.get('SessionToken')
   const rolCookie = cookies.get('RolUsuario')
@@ -27,7 +25,7 @@ export default function cargaDocumental() {
   const handleClose = () => setShow(false);
   //console.log(usuarioI);
   //Datos para crear el form
-  const { register, handleSubmit, control: controlJson, watch, clearErrors, setError, errors } = useForm();
+  const { register, handleSubmit} = useForm();
   const [tarchivo, setTarchivo] = useState(null);
   const [fileUrl, setFileUrl] = useState('/images/consultaD/miniaturaD.png');
   const [imgportada, setImgPortada] = useState(null);
@@ -153,8 +151,6 @@ export default function cargaDocumental() {
     var hoy = new Date();
     var fechaC = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
     var fechaA = hoy.getFullYear() + '/' + (hoy.getMonth() + 1) + '/' + hoy.getDate();
-    //console.log(fechaA);
-    //setFileUrl(null);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///codigo para validaciones de formulario
 
@@ -393,15 +389,10 @@ export default function cargaDocumental() {
       data.cveMunicipal = "N/A";
     }
 
-
-
-    //console.log(data);
-
     const auxfech = data.fecha.split('-');
-    //console.log(auxfech);
     //terminan las validaciones 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //console.log("Datos Correctos")
+  
 
     const url = `${process.env.ruta}/wa/publico/setMetadatoDocumento?id_usuario=${usuarioI}&nombre=${data.titulo}&descripcion=${data.descripcion}&tipo=${data.tipoD}&tema1=${data.tema1}&tema2=${data.tema2}&nivel_cobertura=${data.cobertura}&ano_publicacion=${auxfech[0]}&mes_publicacion=${auxfech[1]}&dia_publicacion=${auxfech[2]}&formato=${data.formato}&pais=${data.pais}&idioma=${data.idioma}&paginas=${data.paginas}&palabras_clave=${data.palabrasC}&nombre_archivo=${data.nomArchivo}&url_origen=${data.enlace}&fecha_cap_situ=${fechaC}&actualizacion=${fechaA}&alias=${data.alias}&publicacion=${data.detalle}&cve_ent=${data.cveEntidad}&cve_mun=${data.cveMunicipal}&id_geografico=${data.idGeo}&autor=${data.autor1}&autor2=${data.autor2}&autor3=${data.autor3}&instancia=${data.dependencia}&instancia2=${data.dependencia2}&instancia3=${data.dependencia3}&tratamiento_publicacion=${data.conjDatos}&editorial=${data.editorial}&edicion=${data.edicion}&isbn=${data.isbn}&doc_vigente=${data.vigencia}&doc_actualizado=${data.actualizado}&ano_vig_inicial=${data.pvInicial}&ano_vig_final=${data.pvFinal}&armonizado_lgahotdu=${data.armonizado}`;
     console.log(url);
@@ -418,11 +409,6 @@ export default function cargaDocumental() {
     } else {
       metadatosModal('Error de Registro');
     }
-    if (!show) {
-      //location.reload();
-    }
-
-
   }
 
   const tipoA = e => {
@@ -768,12 +754,6 @@ export default function cargaDocumental() {
                     <Form.Label>Clave Municipal</Form.Label>
                     <Form.Control name="cveMunicipal" type="text" ref={register()} pattern="[0-9]{3}" placeholder="Ej. 000" />
                   </Form.Group>
-                  { /*}
-                <Form.Group controlId="idGeo">
-                  <Form.Label>ID Geográfico</Form.Label>
-                  <Form.Control name="idGeo" type="text" ref={register()} pattern="[0-9]{5}" disabled id="idGeog"/>
-                </Form.Group>
-              {*/}
                   <Form.Group controlId="autor1">
                     <Form.Label>Primer Autor(a)</Form.Label>
                     <Form.Control name="autor1" type="text" placeholder="Primer Apellido Segundo Apellido Nombre(s)" ref={register()} maxLength="249" />
