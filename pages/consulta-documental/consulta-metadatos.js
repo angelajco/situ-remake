@@ -86,7 +86,7 @@ export default function consultaMetadatos() {
         const res = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=id:${prod}`);
         const datos1 = await res.json();
         var index = buscarCampo(datos1[0].tipo, tipoF);
-        console.log(index);
+        //console.log(index);
         setVIni(datos1[0].ano_vig_inicial);
         setVFin(datos1[0].ano_vig_final);
         setPaginas(datos1[0].paginas);

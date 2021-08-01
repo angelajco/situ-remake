@@ -20,7 +20,7 @@ export default function construccion() {
   //Datos para crear el form
   const { register, handleSubmit, control: controlJson, watch, clearErrors, setError, errors } = useForm();
   const [tarchivo, setTarchivo] = useState(null);
-  const [fileUrl, setFileUrl] = useState('images/consulta/publicacion-situ.png');
+  const [fileUrl, setFileUrl] = useState('images/consultaD/publicacion-situ.png');
   const [imgportada, setImgPortada] = useState(null);
   const [tipodoc, setTipoDoc] = useState();
   const [tema1, setTema1] = useState();
