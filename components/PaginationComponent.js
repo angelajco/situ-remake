@@ -46,7 +46,7 @@ function PaginationComponent(props) {
       var dataURI = getBase64Image(img);
       return dataURI;
     }
-    img.src = "images/consulta/encabezado.jpg";
+    img.src = "/images/consultaD/encabezado.jpg";
     /// codigo para generar pdf 
     const columns = Object.keys(items[0]);
     var result = [];
@@ -132,7 +132,7 @@ function PaginationComponent(props) {
       var dataURI = getBase64Image(img);
       return dataURI;
     }
-    img.src = "images/consulta/encabezado.jpg";
+    img.src = "/images/consultaD/encabezado.jpg";
     /// codigo para generar pdf 
     const columns = []
     var result = [];
