@@ -8,7 +8,7 @@ import Loader from '../../components/Loader';
 import ModalComponent from '../../components/ModalComponent';
 const cookies = new Cookies()
 
-
+//se hicieron algunas modificaciones al archivo
 export default function consultaMetadatos() {
 
   // Guarda el token que viene en la cookie para verificar que la tenga
