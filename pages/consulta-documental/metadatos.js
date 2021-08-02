@@ -9,7 +9,7 @@ import ModalComponent from '../../components/ModalComponent';
 const cookies = new Cookies()
 
 //se hicieron algunas modificaciones al archivo
-export default function consultaMetadatos() {
+export default function metadatos() {
 
   // Guarda el token que viene en la cookie para verificar que la tenga
   const usuarioI = cookies.get('IDU')
@@ -611,8 +611,8 @@ export default function consultaMetadatos() {
                   <Form.Group controlId="tipo">
                     <Form.Label>Tipo de Documento *</Form.Label>
                     <Select
-                      id="tipo"
-                      controlId="tipo"
+                      id="tipo1"
+                      controlId="tipo1"
                       placeholder="Selecciona..."
                       className="basic-single"
                       classNamePrefix="Select"
@@ -620,7 +620,6 @@ export default function consultaMetadatos() {
                       options={tarchivos}
                       isClearable={true}
                       onChange={tipoA}
-                      ref={register()}
                       required
                     ></Select>
                     <p id="msj-tipoDoc" className="msj"></p>
@@ -673,11 +672,11 @@ export default function consultaMetadatos() {
                     <Form.Control name="tipoD" type="hidden" ref={register()} value={tipodoc} />
                     <Select
                       id="tipoD1"
-                      controlId="tipoD"
+                      controlId="tipoD1"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="tipoD"
+                      name="tipoD1"
                       options={tipoF}
                       isClearable={true}
                       onChange={(e) => cambioTipo(e)}
@@ -697,11 +696,11 @@ export default function consultaMetadatos() {
                     <Form.Control name="tema1" type="hidden" ref={register()} value={tema1} />
                     <Select
                       id="tema11"
-                      controlId="tema1"
+                      controlId="tema11"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="tema1"
+                      name="tema11"
                       options={temaP}
                       isClearable={true}
                       onChange={(e) => cambioTemaP(e)}
@@ -714,11 +713,11 @@ export default function consultaMetadatos() {
                     <Form.Control name="tema2" type="hidden" ref={register()} value={tema2} />
                     <Select
                       id="tema22"
-                      controlId="tema2"
+                      controlId="tema22"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="tema2"
+                      name="tema22"
                       options={temaS}
                       isClearable={true}
                       onChange={(e) => cambioTemaS(e)}
@@ -731,11 +730,11 @@ export default function consultaMetadatos() {
                     <Form.Control name="cobertura" type="hidden" ref={register()} value={cobertura} />
                     <Select
                       id="coberturaG1"
-                      controlId="cobertura"
+                      controlId="coberturaG1"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="cobertura"
+                      name="coberturaG1"
                       options={coberturaG}
                       isClearable={true}
                       onChange={(e) => cambioCobertura(e)}
@@ -782,11 +781,11 @@ export default function consultaMetadatos() {
                     <Form.Label>Conjunto de datos</Form.Label>
                     <Form.Control name="conjDatos" type="hidden" ref={register()} value={cdatos} />
                     <Select
-                      controlId="conjDatos"
+                      controlId="conjDatos1"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="conjDatos"
+                      name="conjDatos1"
                       options={cDatos}
                       isClearable={true}
                       onChange={(e) => cambioCDatos(e)}
@@ -815,11 +814,11 @@ export default function consultaMetadatos() {
                     <Form.Label>Vigencia</Form.Label>
                     <Form.Control name="vigencia" type="hidden" ref={register()} value={vigencia} />
                     <Select
-                      controlId="vigencia"
+                      controlId="vigencia1"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="vigencia"
+                      name="vigencia1"
                       options={vig}
                       isClearable={true}
                       onChange={(e) => cambioVigencia(e)}
@@ -829,11 +828,11 @@ export default function consultaMetadatos() {
                     <Form.Label>Documento Actualizado</Form.Label>
                     <Form.Control name="actualizado" type="hidden" ref={register()} value={actual} />
                     <Select
-                      controlId="actualizado"
+                      controlId="actualizado1"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="actualizado"
+                      name="actualizado1"
                       options={act}
                       isClearable={true}
                       onChange={(e) => cambioActualizado(e)}
@@ -855,11 +854,11 @@ export default function consultaMetadatos() {
                     <Form.Label>Armonizado a la LGAHOTDU</Form.Label>
                     <Form.Control name="armonizado" type="hidden" ref={register()} value={armoni} />
                     <Select
-                      controlId="armonizado"
+                      controlId="armonizado1"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="armonizado"
+                      name="armonizado1"
                       options={armon}
                       isClearable={true}
                       onChange={(e) => cambioArmonizado(e)}
@@ -870,11 +869,11 @@ export default function consultaMetadatos() {
                     <Form.Control name="formato" type="hidden" ref={register()} value={formato} />
                     <Select
                       id="formato1"
-                      controlId="formato"
+                      controlId="formato1"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="formato"
+                      name="formato1"
                       options={formatoD}
                       isClearable={true}
                       onChange={(e) => cambioFormato(e)}
@@ -886,12 +885,12 @@ export default function consultaMetadatos() {
                     <Form.Label>País del Documento *</Form.Label>
                     <Form.Control name="pais" type="hidden" ref={register()} value={pais} />
                     <Select
-                      id="pais"
-                      controlId="pais"
+                      id="pais1"
+                      controlId="pais1"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="pais"
+                      name="pais1"
                       options={paisD}
                       isClearable={true}
                       onChange={(e) => cambioPais(e)}
@@ -903,12 +902,12 @@ export default function consultaMetadatos() {
                     <Form.Label>Idioma del Documento *</Form.Label>
                     <Form.Control name="idioma" type="hidden" ref={register()} value={idioma} />
                     <Select
-                      id="idioma"
-                      controlId="idioma"
+                      id="idioma1"
+                      controlId="idioma1"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="idioma"
+                      name="idioma1"
                       options={idiomaD}
                       isClearable={true}
                       onChange={(e) => cambioIdioma(e)}

@@ -52,6 +52,7 @@ export default function consultaMetadatos() {
     const usuarioCookie = cookies.get('Usuario')
     const usuarioI = cookies.get('IDU')
     const prod = cookies.get('prod');
+    //console.log(prod);
     const [nombre, setNombre] = useState();
     const [urlo, setUrlo] = useState();
     const [descrip, setDescrip] = useState();
@@ -114,7 +115,7 @@ export default function consultaMetadatos() {
         setEditorial(datos1[0].editorial);
         setEdicion(datos1[0].editorial);
         setISBN(datos1[0].isbn);
-        setFPublicacion(datos1[0].ano_publicacion + "-" + datos1[0].mes_publicacion + "-" + datos1[0].dia_publicacion);
+        setFPublicacion(datos1[0].ano_publicacion + "/" + datos1[0].mes_publicacion + "/" + datos1[0].dia_publicacion);
         setVigencia(datos1[0].doc_vigente);
         setActual(datos1[0].doc_actualizado);
         setFActualizacion(datos1[0].actualizacion);
@@ -901,7 +902,7 @@ export default function consultaMetadatos() {
                                     </Form.Group>
                                     <Form.Group controlId="fecha">
                                         <Form.Label>Fecha de Publicación *</Form.Label>
-                                        <Form.Control name="fecha" type="date" ref={register()} value={fpublicacion} disabled />
+                                        <Form.Control name="fecha" type="text" ref={register()} value={fpublicacion} disabled />
                                         <p id="msj-fechaP" className="msj"></p>
                                     </Form.Group>
                                     <Form.Group controlId="vigencia">
@@ -936,7 +937,7 @@ export default function consultaMetadatos() {
                                     </Form.Group>
                                     <Form.Group controlId="fechaAct">
                                         <Form.Label>Fecha de Actualización</Form.Label>
-                                        <Form.Control name="fechaAct" type="date" ref={register()} velue={factualizacion} disabled />
+                                        <Form.Control name="fechaAct" type="text" ref={register()} velue={factualizacion} disabled />
                                     </Form.Group>
                                     <Form.Group controlId="pvInicial">
                                         <Form.Label>Periodo de Vigencia Inicial</Form.Label>
