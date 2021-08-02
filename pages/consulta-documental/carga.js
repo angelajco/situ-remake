@@ -8,7 +8,7 @@ import Loader from '../../components/Loader';
 import ModalComponent from '../../components/ModalComponent';
 const cookies = new Cookies()
 
-export default function cargaDocumental() {
+export default function Carga() {
 
   // Guarda el token que viene en la cookie para verificar que la tenga
   const tokenCookie = cookies.get('SessionToken')

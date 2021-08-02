@@ -153,7 +153,7 @@ function PaginationComponent(props) {
 
   const actBitacora = async (cod) => {
     if (usuarioCookie != null) {
-      //codigo para actualizar la botacora cuendo se descarge un documento
+      //codigo para actualizar la botacora cuendo se descarge un documento 
       const res = await fetch(`${process.env.ruta}/wa/publico/bitacoraDocumento?id_usuario=${usuarioI}&id_documento=${cod}`);
       const datos = await res.json();
     } else {
@@ -657,7 +657,7 @@ function PaginationComponent(props) {
         {
           usuarioCookie != null && (
             <OverlayTrigger overlay={<Tooltip>Cargar Documento</Tooltip>}>
-              <Link href="/consulta-documental/carga">
+              <Link href="/consulta-documental/metadatos">
                 <a><FontAwesomeIcon size="3x" icon={faUpload} /></a>
               </Link>
             </OverlayTrigger>
