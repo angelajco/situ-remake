@@ -1,3 +1,4 @@
+//archivo de respaldo de carga documental
 import React, { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { Container } from 'react-bootstrap'
@@ -12,10 +13,6 @@ const cookies = new Cookies()
 export default function consultaMetadatos() {
 
   // Guarda el token que viene en la cookie para verificar que la tenga
-  const tokenCookie = cookies.get('SessionToken')
-  const rolCookie = cookies.get('RolUsuario')
-  const estatusCookie = cookies.get('EstatusUsuario')
-  const usuarioCookie = cookies.get('Usuario')
   const usuarioI = cookies.get('IDU')
 
   //Datos para el modal
