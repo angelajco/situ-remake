@@ -658,7 +658,7 @@ function PaginationComponent(props) {
           usuarioCookie != null && (
             <OverlayTrigger overlay={<Tooltip>Cargar Documento</Tooltip>}>
               <Link href="/consulta-documental/metadatos">
-                <a><FontAwesomeIcon size="3x" icon={faUpload} /></a>
+                <a href="/consulta-documental/metadatos"><FontAwesomeIcon size="3x" icon={faUpload} /></a>
               </Link>
             </OverlayTrigger>
           )
