@@ -129,8 +129,9 @@ export default function consultaMetadatos() {
 
     useEffect(() => {
         setIsLoading(true);
-        buscar(prod);
-        
+        if(isLoading){
+            buscar(prod);
+        }
       })
 
     const tarchivos = [
