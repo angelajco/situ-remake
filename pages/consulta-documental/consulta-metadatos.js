@@ -132,7 +132,10 @@ export default function consultaMetadatos() {
         if(isLoading){
             buscar(prod);
         }
+<<<<<<< HEAD
         
+=======
+>>>>>>> francoo
       })
 
     const tarchivos = [
