@@ -58,6 +58,7 @@ export default function ConsultaDinamica(props) {
     const [layesAdded, setLayesAdded] = useState(0);
     const [isMapVisible, setMapVisible] = useState(false);
     const [spaceData, setSpaceData] = useState();
+    const [finalTables, setFinalTables] = useState([]);
     const [datosModal, setDatosModal] = useState(
         {
             title: '',
@@ -233,9 +234,9 @@ export default function ConsultaDinamica(props) {
 
     useEffect(() => {
         if(isMapVisible == true) {
-            if(isNacional == 1) {
+            if(spaceData.filters && spaceData.filters.length > 0) {
                 var tmpArray = [];
-                agregationFilters.map(filter => {
+                spaceData.filters.map(filter => {
                     var entity_ = entities.find(ent => ent.id_entidades == filter.id);
                     var tawn_ = tawns.find(taw => taw.cve_mun == filter.id);
                     var locality_ = localities.find(loc => loc.Codigo == filter.id);
@@ -257,8 +258,8 @@ export default function ConsultaDinamica(props) {
     }, [layesAdded]);
 
     useEffect(() => {
-        if(agregationFilters.length > 5) {
-            renderModal('Solo se pueden agregar 5 elementos');
+        if(agregationFilters.length > 15) {
+            renderModal('Solo se pueden agregar 15 elementos');
             var tmpArray = [];
             agregationFilters.map((filter, index) => {
                 if(index <= 4)
@@ -412,7 +413,8 @@ export default function ConsultaDinamica(props) {
         args = `${args}${filters.length > 0 ? `&cadenaFiltros=${filters}`: ``}`;
         getTableData(args, function(data, error) {
             if(data && data.mensaje != 'Error') {
-                setTableData([...tableData, {title: `${statisticalProduct.nombre} (${statisticalProduct.descripcion})`, type: 'table', data: data}]);
+                data.nombreTabla = `Consulta Dínamica ${tableData.length + 1} - ${statisticalProduct.nombre} (${statisticalProduct.descripcion})`;
+                setTableData([...tableData, {title: data.nombreTabla, type: 'table', data: data, level: isNacional == 0 ? 'Nacional' : statisticalProduct.nivel_desagregacion,  index: tableData.length, checked: false, filters: agregationFilters}]);
                 setIsLoading(false);
             } else {
                 renderModal('La información no está disponible.')
@@ -569,6 +571,40 @@ export default function ConsultaDinamica(props) {
         // referenciaMapa._onResize();
     }
 
+    function createTable(indexes) {
+        var tmpObject;
+        indexes.map(index => {
+            if(index == 0) {
+                tmpObject = {
+                    checked: tableData[index].checked,
+                    data: tableData[index].data,
+                    index: tableData.length,
+                    level: tableData[index].level,
+                    title: `Consulta dinámica - ${tableData.length + 1} - Unión`,
+                    type: tableData[index].type,
+                    filters: tableData[index].filters
+                };
+                tmpObject.data.nombreTabla = tmpObject.title;
+            } else {
+                tableData[index].data.columnas.map(column => {
+                    column[1] = `${column[1]}-${index}`
+                    tmpObject.data.columnas.push(column);
+                });
+                tmpObject.data.datos.map((tmpData, index_) => {
+                    tableData[index].data.datos.map(data => {
+                        if(tmpData[0] == data[0]) {
+                            data.map(mapped => {
+                                tmpObject.data.datos[index_].push(mapped);
+                            });
+                        }
+                    });
+                });
+                setTableData([...tableData, tmpObject]);
+            }
+        });
+        console.log('tmpObject:', tmpObject);
+    }
+
     return (
         <>
             {
@@ -597,7 +633,7 @@ export default function ConsultaDinamica(props) {
                                 {
                                     tableData &&
                                         tableData.map((table, index) => (
-                                            <GenericTable key={index} table={table} index={index} showMap={changeMapState}/>
+                                            <GenericTable key={index} table={table} index={index} showMap={changeMapState} allTables={tableData} createTable={createTable}/>
                                         ))
                                 }
                             </div>

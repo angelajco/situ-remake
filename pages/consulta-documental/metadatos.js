@@ -9,7 +9,9 @@ import ModalComponent from '../../components/ModalComponent';
 const cookies = new Cookies()
 
 //se hicieron algunas modificaciones al archivo
+
 export default function metadatos() {
+
 
   // Guarda el token que viene en la cookie para verificar que la tenga
   const usuarioI = cookies.get('IDU')

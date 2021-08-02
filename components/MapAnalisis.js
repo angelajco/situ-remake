@@ -202,6 +202,34 @@ export default function Map(props) {
         ]);
     }, [])
 
+    useEffect(() => {
+        if (mapaReferencia != undefined) {
+            if (props.mapeo == true) {
+                mapaReferencia.dragging.enable();
+                mapaReferencia.eachLayer(function (layer) {
+                    if (layer instanceof L.GeoJSON) {
+                        if(layer.options.hasOwnProperty("interactiva")){
+                            mapaReferencia.removeLayer(layer)
+                            layer.setStyle({interactive: false})
+                            mapaReferencia.addLayer(layer)
+                        }
+                    }
+                });
+            } else {
+                mapaReferencia.dragging.disable();
+                mapaReferencia.eachLayer(function (layer) {
+                    if (layer instanceof L.GeoJSON) {
+                        if(layer.options.hasOwnProperty("interactiva")){
+                            mapaReferencia.removeLayer(layer)
+                            layer.setStyle({interactive: true})
+                            mapaReferencia.addLayer(layer)
+                        }
+                    }
+                });
+            }
+        }
+    }, [props.mapeo, mapaReferencia])
+
     const [todos, { canUndo, canRedo, update, undo, redo }] = useTimeline();
     function MapaMovimientoUndoRedo({ target }) {
         registraMovimiento = false;
@@ -346,7 +374,7 @@ export default function Map(props) {
                 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
                     integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
             </Head>
-            
+
             <div className="div-herramientas-mapa">
                 <select onChange={(e) => cambiaTipoCoordenada(e)} className="tw-mr-5 select-cambia-coordenadas">
                     <option value='1'>Grados decimales</option>
@@ -365,7 +393,7 @@ export default function Map(props) {
                 </OverlayTrigger>
             </div>
 
-            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false}>
+            <MapContainer id="id-export-Map" whenCreated={setmapaReferencia} center={centroInicial} zoom={acercamientoInicial} scrollWheelZoom={true} style={{ height: 500, width: "100%" }} minZoom={5} zoomControl={false} doubleClickZoom={false}>
                 <ScaleControl maxWidth="100" />
                 <ZoomControl position="bottomright" zoomInTitle="Acercar" zoomOutTitle="Alejar" />
 
