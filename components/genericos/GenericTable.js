@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCogs, faAlignJustify, faAlignLeft, faFileCsv, faFilePdf } from '@fortawesome/free-solid-svg-icons';
-import { Form, OverlayTrigger, Tooltip, Tab, Row, Col, Nav } from 'react-bootstrap'
+import { faCogs, faFileCsv, faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { Form, FormControl, OverlayTrigger, Tooltip, Tab, Row, Col, Nav } from 'react-bootstrap'
 import { CSVLink } from "react-csv";
 import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 
 import jsPDF from 'jspdf';
 import jpt from 'jspdf-autotable';
 import Cookies from 'universal-cookie'
+import randomColor from 'randomcolor';
 
 import Loader from '../Loader'
+import ModalComponent from '../ModalComponent'
+import GenericChart from './GenericChart';
 
 const cookies = new Cookies()
 
@@ -23,8 +26,22 @@ export default function GenericTable(props) {
     const [pdfData, setPdfData] = useState();
     const [isHiddenTools, setHiddenTools] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
+    const [finalTables, setFinalTables] = useState([]);
+    const [show, setShow] = useState(false);
+    const [dataToChart, setDataToChart] = useState();
+    const [chartContent, setChartContent] = useState();
+    const [chartType, setChartType] = useState();
+    const [datosModal, setDatosModal] = useState(
+        {
+            title: '',
+            body: ''
+        }
+    );
 
-    const usuarioCookie = cookies.get('Usuario')
+    const usuarioCookie = cookies.get('Usuario');
+
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
 
     resetServerContext();
     
@@ -146,6 +163,8 @@ export default function GenericTable(props) {
             tmparray.push(column);
         });
         tmpObject.columnas = tmparray;
+        tmpObject.index = props.totalTables;
+        tmpObject.checked = false;
         setSpaceData(tmpObject);
     }
 
@@ -176,6 +195,8 @@ export default function GenericTable(props) {
             tmparray.push(column);
         });
         tmpObject.columnas = tmparray;
+        tmpObject.index = props.totalTables;
+        tmpObject.checked = false;
         setSpaceData(tmpObject);
     }
 
@@ -232,6 +253,114 @@ export default function GenericTable(props) {
     function downloadPdf() {
         pdfData.save(`${csvFileName}.pdf`);
     }
+
+    function selectedTables(index) {
+        var tmpArray = [];
+        finalTables.map(table => {
+            tmpArray.push({
+                    checked: table.index == index ? !table.checked : table.checked,
+                    data: table.data,
+                    index: table.index,
+                    level: table.level,
+                    title: table.title,
+                    type: table.type
+                }
+            );
+        });
+        if(tmpArray.filter(filtered => filtered.checked == true).length < 15) {
+            setFinalTables(tmpArray);
+        } else {
+            renderModal('Solo se pueden unir 15 elementos');
+        }
+    }
+
+    function applyUnion() {
+        var indexes = [tabular.table.index];
+        finalTables.filter(filtered => filtered.checked == true).map(mapped => {
+            indexes.push(mapped.index);
+        });
+        props.createTable(indexes);
+    }
+
+    function renderModal(error) {
+        if(error) {
+            setDatosModal({
+                title: 'Ocurrió un error al obtener la información',
+                body: `${error}`,
+                redireccion: null,
+                nombreBoton: 'Cerrar'
+            });
+        } else {
+            setDatosModal({
+                title: 'Ocurrión un error al obtener la información',
+                body: 'Favor de comunicarlo al área correspondiente.',
+                redireccion: null,
+                nombreBoton: 'Cerrar'
+            });
+        }
+        handleShow();
+    }
+
+    function columnToChartSelected(index) {
+        var tmpArray = [];
+        var data = dataToChart.datos;
+        var name = dataToChart.nombreTabla;
+        dataToChart.columnas.map((data, index_) => {
+            data[2] = index == index_;
+            tmpArray.push(data);
+        });
+        setDataToChart({nombreTabla: name, columnas: tmpArray, datos: data});
+    }
+
+    function generateChart() {
+        var column = dataToChart.columnas.find(findded => findded[2] == true);
+        if(column && column != null) {
+            var data = [];
+            dataToChart.datos.map((data_, index) => {
+                // {
+                //   subject: 'Math',
+                //   A: 120,
+                //   B: 110,
+                //   fullMark: 150,
+                // },
+                if(chartType != 'radar') {
+                    data.push({
+                        name: `${column[1]}_${index}`,
+                        value: data_[column[3]],
+                        representation: chartType == 'pay' ? "percentage" : "number"
+                    });
+                } else {
+                    data.push({
+                        subject: `${column[1]}_${index}`,
+                        A: data_[column[3]],
+                        representation: "number"
+                    });
+                }
+            });
+            setChartContent({
+                name: dataToChart.nombreTabla, 
+                type: chartType,
+                color: chartType == 'pay' ? randomColor({ count: data.length }) : ["#276C6F"],
+                heigth: 100,
+                width: 100,
+                angle: 0,
+                margin: {
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 5
+                },
+                data: data
+            });
+            console.log('column: ', column[1]);
+        }
+    }
+
+    useEffect(() => {
+        if(props.allTables && props.allTables.length > 0){
+            setFinalTables(props.allTables);
+        }
+    }, [props.allTables]);
     
     useEffect(() => {
         var tmpObject = {
@@ -253,13 +382,20 @@ export default function GenericTable(props) {
 
     useEffect(() => {
         if(dinamicData && dinamicData.datos && dinamicData.columnas) {
+            console.log('dinamicData: ', dinamicData);
             generateFiles(function() {
                 var headers = [];
+                var headers_ = [];
                 var row = [];
                 var data_ = [];
                 dinamicData.columnas.filter(columna => columna[2] == true).map((header) => {
                     header[2] = true;
                     headers.push(header);
+                    var internal = [];
+                    header.map((element, index) => {
+                        internal.push(index == 2 ? false : element);
+                    });
+                    headers_.push(internal);
                 });
                 dinamicData.datos.map(data => {
                     row = [];
@@ -268,10 +404,16 @@ export default function GenericTable(props) {
                     });
                     data_.push(row);
                 });
-                setSpaceData({nombreTabla: dinamicData.nombreTabla, columnas: headers, datos: data_})
+                setSpaceData({nombreTabla: dinamicData.nombreTabla, columnas: headers, datos: data_, checked: false, filters: 
+                    tabular.table.filters});
+                setDataToChart({nombreTabla: dinamicData.nombreTabla, columnas: headers_, datos: data_});
             });
         }
     }, [dinamicData]);
+
+    useEffect(() => {
+        console.log('chartContent: ', chartContent);
+    }, [chartContent])
 
     return (
         <>
@@ -280,6 +422,12 @@ export default function GenericTable(props) {
                     <Loader/> :
                     ''
             }
+            <ModalComponent
+                show={show}
+                datos={datosModal}
+                onHide={handleClose}
+                onClick={handleClose}
+            />
             {
                 dinamicData && dinamicData.datos && dinamicData.datos.length > 0 &&
                     <div className="row mx-0 mb-2">
@@ -289,26 +437,12 @@ export default function GenericTable(props) {
                                     {tabular.table.title}
                                 </b>
                             </div>
-                            <div className="col-9"/>
+                            <div className="col-11"/>
                             <div className="col-1">
                                 <OverlayTrigger overlay={<Tooltip>Herramientas de tabular</Tooltip>}>
                                     <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer"
                                         onClick={() => renderTools()}
                                         icon={faCogs} />
-                                </OverlayTrigger>
-                            </div>
-                            <div className="col-1">
-                                <OverlayTrigger overlay={<Tooltip>Opción 1</Tooltip>}>
-                                    <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer"
-                                        // onClick={() => setEditMapName(false)}
-                                        icon={faAlignJustify} />
-                                </OverlayTrigger>
-                            </div>
-                            <div className="col-1">
-                                <OverlayTrigger overlay={<Tooltip>Opción 2</Tooltip>}>
-                                    <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer"
-                                        // onClick={() => setEditMapName(false)}
-                                        icon={faAlignLeft} />
                                 </OverlayTrigger>
                             </div>
                             <div className="col-12" hidden={isHiddenTools}>
@@ -324,6 +458,12 @@ export default function GenericTable(props) {
                                                 </Nav.Item>
                                                 <Nav.Item>
                                                     <Nav.Link eventKey="3">Presentaci&oacute;n espacial</Nav.Link>
+                                                </Nav.Item>
+                                                <Nav.Item>
+                                                    <Nav.Link eventKey="4">Uni&oacute;n tabular</Nav.Link>
+                                                </Nav.Item>
+                                                <Nav.Item>
+                                                    <Nav.Link eventKey="5">Graficar</Nav.Link>
                                                 </Nav.Item>
                                             </Nav>
                                         </Col>
@@ -432,11 +572,77 @@ export default function GenericTable(props) {
                                                         </div>
                                                     </div>
                                                 </Tab.Pane>
+                                                <Tab.Pane eventKey="4">
+                                                    <div className="row">
+                                                        <div className="row mx-auto my-2">
+                                                            <div className="col-12 tw-p-0 text-center">
+                                                                <button className="btn-analisis"
+                                                                    onClick={() => applyUnion()}
+                                                                    >Aplicar</button>
+                                                            </div>
+                                                            <div className="col-10 mx-auto mt-1 columns-container">
+                                                                {
+                                                                    finalTables &&
+                                                                    finalTables.filter(filtered => filtered.level == tabular.table.level).filter(filtered => filtered.index != tabular.table.index).map((table, index) => (
+                                                                        <div key={index} className="row mx-3">
+                                                                            <Form.Check key={index} custom type="checkbox" className="mb-12"  onChange={(event) => selectedTables(event.target.value)}
+                                                                                checked={table.checked} value={table.index} label={table.title} id={`space-table-${table.index}`}/>
+                                                                        </div>
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </Tab.Pane>
+                                                <Tab.Pane eventKey="5">
+                                                    <div className="row m-0 px-3">
+                                                        <div className="col-12 tw-p-0">
+                                                            <p className="text-center m-0">Columna a graficar:</p>
+                                                        </div>
+                                                        <div className="col-12 mx-auto columns-container">
+                                                            {
+                                                                dataToChart &&
+                                                                dataToChart.columnas.map((column, index) => (
+                                                                    <div key={index} className="row mx-3">
+                                                                        <Form.Check key={index} type="radio" custom className="mb-12" onChange={(event) => columnToChartSelected(event.target.value)}
+                                                                            checked={column[2]} value={column[3]} label={column[1]} id={`chart-column-${column[3]}`}/>
+                                                                    </div>
+                                                                ))
+                                                            }
+                                                        </div>
+                                                        <div className="col-8 mt-2">
+                                                            <Form.Control as="select" name="chartType" onChange={(event) => setChartType(event.target.value)}>
+                                                                <option value='' hidden>Tipo de gráfica</option>
+                                                                <option value='barra'>Barras</option>
+                                                                <option value='pay'>Pay</option>
+                                                                <option value='radar'>Radar</option>
+                                                            </Form.Control>
+                                                        </div>
+                                                        <div className="col-4 tw-p-0 text-center mt-2">
+                                                            <button className="btn-analisis" onClick={() => generateChart()}>Aplicar</button>
+                                                        </div>
+                                                    </div>
+                                                </Tab.Pane>
                                             </Tab.Content>
                                         </Col>
                                     </Row>
                                 </Tab.Container>
                             </div>
+                            {
+                                chartContent &&
+                                <div className="row">
+                                    <div className="col-12 mt-3">
+                                        <h5>
+                                            {dataToChart.nombreTabla}
+                                        </h5>
+                                    </div>
+                                    <div className="col-12 custom-mx-t-1">
+                                        <div className="row justify-content-center tw-mx-1">
+                                            <GenericChart chart={chartContent} />
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                         </div>
                         <div className="row table-responsive mx-0 mb-5" style={{maxHeight: 250}}>
                             <table id={`table-estatitistics-${tabular.index}`} className="tw-w-full table-hover">

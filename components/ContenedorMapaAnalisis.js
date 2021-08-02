@@ -54,6 +54,8 @@ const MapEspejo = dynamic(
     }
 )
 
+var featureSeleccion = null;
+
 var referenciaMapa = null;
 //son algunas variables para Simbologia
 var jsonSimbologia = [];
@@ -227,7 +229,6 @@ function ContenedorMapaAnalisis(props) {
 
     //Para cuando se requiere que sea nacional
     const construyeNacionalCapa = (capaFusion) => {
-        console.log('capaFusion: ', capaFusion);
         let capaNacional = {};
         capaNacional.titulo = capaFusion.titulo + " - Nacional";
         capaNacional.url = capaFusion.url;
@@ -247,30 +248,50 @@ function ContenedorMapaAnalisis(props) {
         agregaCapaWFS(capaNacional)
     }
 
-    function testRef() {
-        console.log('testRef');
-    }
-
     //Para cuando se agrega una entidad
     const construyeEntidadCapa = (capaFusion, entidad) => {
-        if (entidad != undefined) {
+        if (entidad != undefined || (capaFusion.length && capaFusion[0].entidad != undefined)) {
             let capaEntidad = {};
-            capaEntidad.titulo = capaFusion.titulo + " - " + entidad.entidad;
-            capaEntidad.url = capaFusion.url;
-            capaEntidad.capa = capaFusion.nombre_capa;
-            capaEntidad.filtro_entidad = capaFusion.filtro_entidad;
-            capaEntidad.valor_filtro = entidad.id;
-            capaEntidad.wfs = capaFusion.wfs;
-            capaEntidad.wms = capaFusion.wms;
-            capaEntidad.opcion = 5;
-            capaEntidad.estilos = {
-                color: "#FF0000",
-                fillColor: "#FF7777",
-                opacity: "1",
-                fillOpacity: "1"
+            if(props.referenciaEntidad && entidad === null) {
+                capaEntidad.titulo = props.informacionEspacial.nombreTabla;
+                capaEntidad.url = capaFusion[0].capa.url;
+                capaEntidad.capa = capaFusion[0].capa.nombre_capa;
+                capaEntidad.filtro_entidad = capaFusion[0].capa.filtro_entidad;
+                capaEntidad.wfs = capaFusion[0].capa.wfs;
+                capaEntidad.wms = capaFusion[0].capa.wms;
+                // capaEntidad.valor_filtro = '(';
+                // capaFusion.map((layer, index) => {
+                //     capaEntidad.valor_filtro = `${capaEntidad.valor_filtro}'${layer.entidad.id}'${capaFusion.length == index + 1 ? ')' : ','}`;
+                // });
+                capaEntidad.valor_filtro = '';
+                capaFusion.map((layer, index) => {
+                    capaEntidad.valor_filtro = `${capaEntidad.valor_filtro}'${layer.entidad.id}'${capaFusion.length == index + 1 ? '' : ','}`;
+                });
+                capaEntidad["id_capa"] = capaFusion[0].capa.id_capa
+                capaEntidad.estilos = {
+                    color: "#3366FF",
+                    fillColor: "#66CCFF",
+                    opacity: "1",
+                    fillOpacity: "1"
+                }
+            } else {
+                capaEntidad.titulo = capaFusion.titulo + " - " + entidad.entidad;
+                capaEntidad.url = capaFusion.url;
+                capaEntidad.capa = capaFusion.nombre_capa;
+                capaEntidad.filtro_entidad = capaFusion.filtro_entidad;
+                capaEntidad.wfs = capaFusion.wfs;
+                capaEntidad.wms = capaFusion.wms;
+                capaEntidad.valor_filtro = `'${entidad.id}'`;
+                capaEntidad["id_capa"] = capaFusion.id_capa
+                capaEntidad.estilos = {
+                    color: "#FF0000",
+                    fillColor: "#FF7777",
+                    opacity: "1",
+                    fillOpacity: "1"
+                }
             }
+            capaEntidad.opcion = 5;
             //Para los alias de los atributos
-            capaEntidad["id_capa"] = capaFusion.id_capa
             agregaCapaWFS(capaEntidad)
         }
     }
@@ -486,8 +507,13 @@ function ContenedorMapaAnalisis(props) {
                 //La agregará como nacional
             } else if (capaFiltrada.opcion == "5") {
                 //La agregara como municipio
-                defaultParameters.cql_filter = capaFiltrada.filtro_entidad + "=" + "'" + capaFiltrada.valor_filtro + "'";
-                filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
+                // if(capaFiltrada.valor_filtro.startsWith('(') && capaFiltrada.valor_filtro.endsWith(')')) {
+                //     defaultParameters.cql_filter = capaFiltrada.filtro_entidad + " IN" + capaFiltrada.valor_filtro;
+                //     filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
+                // } else {
+                    defaultParameters.cql_filter = capaFiltrada.filtro_entidad + " IN(" + capaFiltrada.valor_filtro + ")";
+                    filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
+                // }
             }
             var parameters = L.Util.extend(defaultParameters);
             var url = capaFiltrada.url + L.Util.getParamString(parameters);
@@ -522,10 +548,12 @@ function ContenedorMapaAnalisis(props) {
                             pane: `${zIndexCapas}`,
                             style: capaFiltrada.estilos,
                             nombre: response["nom_capa"],
-                            onEachFeature: function (feature = {}, layerPadre) {
-                                feature["nombre_capa"] = layerPadre.options["nombre"];
+                            interactive: sePuedeIdentificar ? true : false,
+                            interactiva: true,
+                            onEachFeature: function (feature = {}, subLayer) {
+                                feature["nombre_capa"] = subLayer.options["nombre"];
                                 if (resultado !== null) {
-                                    var current = capaFiltrada.valor_filtro == 2 ? `${feature.properties['CVE_ENT']}` : capaFiltrada.valor_filtro == 3 ? `${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
+                                    var current = capaFiltrada.id_capa == "2" ? `${feature.properties['CVE_ENT']}` : capaFiltrada.id_capa == "3" ? `${feature.properties['CVE_ENT']}${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
                                     Object.keys(feature.properties).map(key => {
                                         let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
                                         if (nuevoAlias !== "") {
@@ -534,16 +562,9 @@ function ContenedorMapaAnalisis(props) {
                                             feature.properties[nuevoAlias] = keyTemp
                                         }
                                     })
-                                    // console.log('dataToProps: ', props.informacionEspacial);
                                     if (props.informacionEspacial) {
                                         props.informacionEspacial.datos.map((data, index) => {
-                                            if (layerPadre.options["nombre"].includes('Nacional')) {
-                                                if (data[0] == current) {
-                                                    props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
-                                                        feature.properties[column[1]] = data[column[3]];
-                                                    })
-                                                }
-                                            } else {
+                                            if (data[0] == current) {
                                                 props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
                                                     feature.properties[column[1]] = data[column[3]];
                                                 })
@@ -552,8 +573,18 @@ function ContenedorMapaAnalisis(props) {
                                         setDataToProps();
                                     }
                                 }
-                                layerPadre.on('click', function () {
+                                subLayer.on('click', function () {
                                     setRasgos([feature]);
+                                })
+                                subLayer.on('dblclick', function () {
+                                    if (featureSeleccion != null) {
+                                        featureSeleccion.setStyle({...capaFiltrada.estilos})
+                                        featureSeleccion.feature["seleccionada"] = false;
+                                    }
+                                    subLayer.setStyle({ fillColor: 'green' })
+                                    subLayer.feature["seleccionada"] = true;
+                                    featureSeleccion = subLayer;
+                                    setSublayerSeleccionada(subLayer)
                                 })
                             }
                         });
@@ -587,6 +618,7 @@ function ContenedorMapaAnalisis(props) {
     const [showModalAtributos, setShowModalAtributos] = useState(false)
     //Para asignar atributos
     function muestraAtributos(capa) {
+        console.log(capa, "tabla de atributos")
         setAtributos(capa.features)
         setShowModalAtributos(true)
     }
@@ -1859,7 +1891,7 @@ function ContenedorMapaAnalisis(props) {
         const llamaEventKey = useAccordionToggle(eventKey);
         return (
             <Button onClick={llamaEventKey} variant="link">
-                <FontAwesomeIcon icon={esActualEventKey ? faAngleRight : faAngleDown} />
+                <FontAwesomeIcon icon={esActualEventKey ? faAngleDown : faAngleRight} />
             </Button>
         )
     }
@@ -1913,6 +1945,7 @@ function ContenedorMapaAnalisis(props) {
         }, 1000)
     }
 
+    //Para la indentificación de capas
     const [showModalIdentify, setShowModalIdentify] = useState(false);
     const handleShowModalIdentify = () => {
         setShowModalIdentify(true);
@@ -2028,9 +2061,6 @@ function ContenedorMapaAnalisis(props) {
         });
         setShowModalAnalisis(true);
     }
-
-    const [identifyOption, setIdentifyOption] = useState();
-    const [pdfContent, setPdfcontent] = useState();
 
     //Para agregar capas json al mapa cuando se sube un archivo
     const agregaFileJsonCapa = (capaFile, nombreFile) => {
@@ -2506,136 +2536,7 @@ function ContenedorMapaAnalisis(props) {
                 construyeNacionalCapa(capa);
             }
         });
-        construyeEntidadCapaCB(layers)
-    }
-
-    function construyeEntidadCapaCB(layers) {
-        if (layers.length && layers[0].entidad != undefined) {
-            let capaEntidad = {};
-            capaEntidad.valor_filtro = '(';
-            layers.map((layer, index) => {
-                capaEntidad.valor_filtro = `${capaEntidad.valor_filtro}'${layer.entidad.id}'${layers.length == index + 1 ? ')' : ','}`;
-            });
-            capaEntidad.titulo = props.informacionEspacial.nombreTabla;
-            capaEntidad.url = layers[0].capa.url;
-            capaEntidad.capa = layers[0].capa.nombre_capa;
-            capaEntidad.filtro_entidad = layers[0].capa.filtro_entidad;
-            capaEntidad.wfs = layers[0].capa.wfs;
-            capaEntidad.wms = layers[0].capa.wms;
-            capaEntidad.opcion = 5;
-            capaEntidad.estilos = {
-                color: "#3366FF",
-                fillColor: "#66CCFF",
-                opacity: "1",
-                fillOpacity: "1"
-            }
-            capaEntidad["id_capa"] = layers[0].capa.id_capa
-            agregaCapaWFSCB(capaEntidad);
-        }
-    }
-
-    function agregaCapaWFSCB(capaFiltrada) {
-        setShowModalAgregarCapas(false);
-        if (capasVisualizadas.some(capaVisual => capaVisual.nom_capa === capaFiltrada.titulo)) {
-            setDatosModalAnalisis({
-                title: "Capa existente",
-                body: "La capa ya se ha agregado anteriormente"
-            })
-            setShowModalAnalisis(true);
-            return;
-        }
-        else {
-            let filtroDescarga = "";
-            let defaultParameters = {
-                service: 'WFS',
-                version: '2.0',
-                request: 'GetFeature',
-                typeName: capaFiltrada.capa,
-                outputFormat: 'text/javascript',
-                format_options: 'callback:getJson',
-            }
-            if (capaFiltrada.opcion == "0") {
-                //La agregará como nacional
-            } else if (capaFiltrada.opcion == "5") {
-                //La agregara como municipio
-                defaultParameters.cql_filter = capaFiltrada.filtro_entidad + " IN" + capaFiltrada.valor_filtro;
-                filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
-            }
-            var parameters = L.Util.extend(defaultParameters);
-            var url = capaFiltrada.url + L.Util.getParamString(parameters);
-            console.log(url, "url")
-            //Hace la petición para traer los datos de la entidad
-            $.ajax({
-                jsonpCallback: 'getJson',
-                url: url,
-                dataType: 'jsonp',
-                success: function (response) {
-                    response["nom_capa"] = capaFiltrada.titulo;
-                    response["habilitado"] = true;
-                    response['tipo'] = "wfs";
-                    response['transparencia'] = 1;
-                    response['simbologia'] = creaSVG(capaFiltrada.titulo, capaFiltrada.estilos)
-                    response["idCapaBack"] = capaFiltrada["id_capa"]
-
-                    let urlDescarga = `https://ide.sedatu.gob.mx:8080/wfs?request=GetFeature&service=WFS&version=1.0.0&typeName=${capaFiltrada.capa}${filtroDescarga}&outputFormat=`
-
-                    response.download = [
-                        { nom_capa: response.nom_capa, link: JSON.stringify(response), tipo: 'GeoJSON' },
-                        { nom_capa: response.nom_capa, link: `${urlDescarga}KML`, tipo: 'KML' },
-                        { nom_capa: response.nom_capa, link: `https://ide.sedatu.gob.mx:8080/ows?service=WMS&request=GetMap&version=1.1.1&format=application/vnd.google-earth.kmz+XML&width=1024&height=1024&layers=${capaFiltrada.capa}${filtroDescarga}&bbox=-180,-90,180,90`, tipo: 'KMZ' },
-                        { nom_capa: response.nom_capa, link: `${urlDescarga}SHAPE-ZIP`, tipo: 'SHAPE' }
-                    ];
-
-                    response.isActive = false;
-                    setZIndex(zIndexCapas + 1)
-                    referenciaMapa.createPane(`${zIndexCapas}`)
-                    referenciaMapa.getPane(`${zIndexCapas}`).style.zIndex = numeroIndex + capasVisualizadas.length;
-                    obtenAliasFuncion(capaFiltrada["id_capa"], function (resultado) {
-                        let layer = L.geoJSON(response, {
-                            pane: `${zIndexCapas}`,
-                            style: capaFiltrada.estilos,
-                            nombre: response["nom_capa"],
-                            onEachFeature: function (feature = {}, layerPadre) {
-                                feature["nombre_capa"] = layerPadre.options["nombre"];
-                                if (resultado !== null) {
-                                    var current = capaFiltrada.id_capa == "2" ? `${feature.properties['CVE_ENT']}` : capaFiltrada.id_capa == "3" ? `${feature.properties['CVE_ENT']}${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
-                                    Object.keys(feature.properties).map(key => {
-                                        let nuevoAlias = resultado.columnas.find(columna => columna.columna == key).alias
-                                        if (nuevoAlias !== "") {
-                                            let keyTemp = feature.properties[key]
-                                            delete feature.properties[key]
-                                            feature.properties[nuevoAlias] = keyTemp
-                                        }
-                                    })
-                                    if (props.informacionEspacial) {
-                                        props.informacionEspacial.datos.map((data, index) => {
-                                            if (data[0] == current) {
-                                                props.informacionEspacial.columnas.filter(columna => columna[2] == true).map((column, index_) => {
-                                                    feature.properties[column[1]] = data[column[3]];
-                                                })
-                                            }
-                                        })
-                                        setDataToProps();
-                                    }
-                                }
-                                layerPadre.on('click', function () {
-                                    setRasgos([feature]);
-                                })
-                            }
-                        });
-                        response['layer'] = layer;
-
-                        setCapasVisualizadas([response, ...capasVisualizadas])
-                        referenciaMapa.addLayer(response.layer);
-                        setDatosModalAnalisis({
-                            title: "Capa agregada",
-                            body: "La capa se ha agregado con exito"
-                        });
-                        setShowModalAnalisis(true);
-                    })
-                }
-            });
-        }
+        construyeEntidadCapa(layers, null)
     }
 
     function buscarCapa(nombre) {
@@ -2972,6 +2873,61 @@ function ContenedorMapaAnalisis(props) {
         referenciaMapa.fitBounds(bounds);
     }
 
+    const [mapeoMapa, setMapeoMapa] = useState(true)
+    const [mapeoMapaEspejo, setMapeoMapaEspejo] = useState(true)
+    const [sePuedeIdentificar, setSePuedeIdentificar] = useState(false)
+    //Activa paneo en el mapa
+    function paneoMapa(mapa) {
+        if (mapa) {
+            setMapeoMapa(true)
+        } else {
+            setMapeoMapaEspejo(true)
+        }
+        setSePuedeIdentificar(false)
+    }
+    //Activa seleccion en el mapa
+    function identificaMapa(mapa) {
+        if (mapa) {
+            setMapeoMapa(false)
+        } else {
+            setMapeoMapaEspejo(false)
+        }
+        setSePuedeIdentificar(true)
+    }
+
+    //Para obtener feature seleccionado
+    const [sublayerSeleccionada, setSublayerSeleccionada] = useState(null)
+    const [modalSublayerSeleccionada, setModalSublayerSeleccionada] = useState(false)
+
+    const sublayerSelect = () => {
+        let capaIntersectadaSublayer = [];
+        referenciaMapa.eachLayer(function (layer) {
+            if (layer instanceof L.GeoJSON) {
+                if (!layer.options.hasOwnProperty("buffer")) {
+                    let subCapasCapaPadre = []
+                    layer.eachLayer(function (layerConFeatures) {
+                        if (sublayerSeleccionada.feature.nombre_capa !== layerConFeatures.feature.nombre_capa) {
+                            let seIntersectan;
+                            seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), sublayerSeleccionada.toGeoJSON())
+                            if (seIntersectan != null) {
+                                subCapasCapaPadre.push(layerConFeatures.feature)
+                            }
+                        }
+                    })
+                    if (subCapasCapaPadre.length != 0) {
+                        capaIntersectadaSublayer.push(subCapasCapaPadre)
+                    }
+                }
+            }
+        });
+
+        if (capaIntersectadaSublayer.length != 0) {
+            console.log(capaIntersectadaSublayer, "capaIntersectadaSublayer")
+            // setSavedToIdentify(capaIntersectadaSublayer)
+        }
+
+    }
+
     return (
         <>
             <ModalAnalisis
@@ -2980,8 +2936,18 @@ function ContenedorMapaAnalisis(props) {
                 onHide={handleCloseModalAnalisis}
             />
 
+            <Modal dialogAs={DraggableModalDialog} show={modalSublayerSeleccionada} onHide={() => setModalSublayerSeleccionada(!modalSublayerSeleccionada)}
+                keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
+                <Modal.Header className="tw-cursor-pointer" closeButton>
+                    <Modal.Title>
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                </Modal.Body>
+            </Modal>
+
             {/* <Modal dialogAs={DraggableModalDialog} show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
-                keyboard={false} backdrop="static" className="modal-analisis" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis"> */}
+                keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis"> */}
             <Modal show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
                 keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
                 <Modal.Header className="tw-cursor-pointer" closeButton>
@@ -3741,7 +3707,7 @@ function ContenedorMapaAnalisis(props) {
                                                 {
                                                     Object.keys(value.properties).map((valueKey, indexKey) => {
                                                         return (
-                                                            <td key={indexKey}>{value.properties[valueKey]}</td>
+                                                            <td key={indexKey} className={value.seleccionada == true ? "tw-text-yellow-900" : ""}>{value.properties[valueKey]}</td>
                                                         )
                                                     })
                                                 }
@@ -3934,20 +3900,30 @@ function ContenedorMapaAnalisis(props) {
                                                                     <Form.Check type="checkbox" inline defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event)} value={capa.nom_capa} />
                                                                 </Form.Group>
                                                                 {
-                                                                    capa.isActive != undefined && (
-                                                                        <OverlayTrigger overlay={<Tooltip>Establecer como activa</Tooltip>}>
-                                                                            <Button onClick={() => enableLayer(index)} variant="link">
-                                                                                <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
-                                                                            </Button>
-                                                                        </OverlayTrigger>
-                                                                    )
+                                                                    [
+                                                                        capa.isActive != undefined && (
+                                                                            <OverlayTrigger key="1" overlay={<Tooltip>Establecer como capa activa</Tooltip>}>
+                                                                                <Button onClick={() => enableLayer(index)} variant="link">
+                                                                                    <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
+                                                                                </Button>
+                                                                            </OverlayTrigger>
+                                                                        ),
+                                                                        capa.tipo === "wfs" && (
+                                                                            <OverlayTrigger key="2" overlay={<Tooltip>{`Tabla de atributos`}</Tooltip>}>
+                                                                                <Button onClick={() => muestraAtributos(capa)} variant="link">
+                                                                                    <FontAwesomeIcon icon={faTable} />
+                                                                                </Button>
+                                                                            </OverlayTrigger>
+                                                                        ),
+                                                                        capa.tipo !== "wfs" && (
+                                                                            <OverlayTrigger key="3" overlay={<Tooltip>Eliminar capa</Tooltip>}>
+                                                                                <Button onClick={() => eliminaCapa(capa)} variant="link">
+                                                                                    <FontAwesomeIcon icon={faTrash} />
+                                                                                </Button>
+                                                                            </OverlayTrigger>
+                                                                        ),
+                                                                    ]
                                                                 }
-                                                                <OverlayTrigger overlay={<Tooltip>Eliminar capa</Tooltip>}>
-                                                                    <Button onClick={() => eliminaCapa(capa)} variant="link">
-                                                                        <FontAwesomeIcon icon={faTrash} />
-                                                                    </Button>
-                                                                </OverlayTrigger>
-
                                                                 <CustomToggle eventKey={capa.nom_capa} />
                                                             </Card.Header>
                                                             <Accordion.Collapse eventKey={capa.nom_capa}>
@@ -4011,33 +3987,33 @@ function ContenedorMapaAnalisis(props) {
                                                                                     {
                                                                                         [
                                                                                             capa.download && (
-                                                                                                <OverlayTrigger overlay={<Tooltip>{`Descargar capas`}</Tooltip>}>
-                                                                                                    <Button className="tw-text-titulo" onClick={() => renderModalDownload(capa)} variant="link">
+                                                                                                <OverlayTrigger key="1" overlay={<Tooltip>{`Descargar capas`}</Tooltip>}>
+                                                                                                    <Button onClick={() => renderModalDownload(capa)} variant="link">
                                                                                                         <FontAwesomeIcon size="2x" icon={faDownload} />
                                                                                                     </Button>
                                                                                                 </OverlayTrigger>
                                                                                             ),
-                                                                                            capa.tipo === "wfs" && (
-                                                                                                <OverlayTrigger overlay={<Tooltip>{`Atributos`}</Tooltip>}>
-                                                                                                    <Button key="2" className="tw-text-titulo" onClick={() => muestraAtributos(capa)} variant="link">
-                                                                                                        <FontAwesomeIcon size="2x" icon={faTable} />
-                                                                                                    </Button>
-                                                                                                </OverlayTrigger>
-                                                                                            ),
                                                                                             (capa.tipo === "wfs" || capa.tipo === 'json') && (
-                                                                                                <Fragment key="3">
+                                                                                                <Fragment key="2">
                                                                                                     <OverlayTrigger overlay={<Tooltip>{`Cambiar estilos`}</Tooltip>}>
-                                                                                                        <Button className="tw-text-titulo" onClick={() => cambioEstilos(capa)} variant="link">
+                                                                                                        <Button onClick={() => cambioEstilos(capa)} variant="link">
                                                                                                             <FontAwesomeIcon size="2x" icon={faPaintBrush} />
                                                                                                         </Button>
                                                                                                     </OverlayTrigger>
-                                                                                                    <OverlayTrigger overlay={<Tooltip>{`Enfocar capa`}</Tooltip>}>
-                                                                                                        <Button className="tw-text-titulo" onClick={() => enfocaCapa(capa)} variant="link">
+                                                                                                    <OverlayTrigger overlay={<Tooltip>{`Encuadrar capa`}</Tooltip>}>
+                                                                                                        <Button onClick={() => enfocaCapa(capa)} variant="link">
                                                                                                             <FontAwesomeIcon size="2x" icon={faExpandAlt} />
                                                                                                         </Button>
                                                                                                     </OverlayTrigger>
                                                                                                 </Fragment>
-                                                                                            )
+                                                                                            ),
+                                                                                            capa.tipo === "wfs" && (
+                                                                                                <OverlayTrigger key="3" overlay={<Tooltip>Eliminar capa</Tooltip>}>
+                                                                                                    <Button onClick={() => eliminaCapa(capa)} variant="link">
+                                                                                                        <FontAwesomeIcon size="2x" icon={faTrash} />
+                                                                                                    </Button>
+                                                                                                </OverlayTrigger>
+                                                                                            ),
                                                                                         ]
                                                                                     }
                                                                                 </div>
@@ -4084,20 +4060,41 @@ function ContenedorMapaAnalisis(props) {
                         </button>
                     </label>
                 </OverlayTrigger>
-                {/* <OverlayTrigger rootClose overlay={<Tooltip>Identificar</Tooltip>}> */}
-                {/* <button className="botones-barra-mapa" onClick={() => setIdentify(true)}> */}
-                {/* <button className="botones-barra-mapa" onClick={handleShowModalIdentify}>
-                        <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
-                    </button>
-                </OverlayTrigger> */}
-                {/* <OverlayTrigger rootClose overlay={<Tooltip>Paneo</Tooltip>}>
-                    <button className="botones-barra-mapa" onClick={() => setIdentify(false)}>
-                        <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
-                    </button>
-                </OverlayTrigger> */}
+                <OverlayTrigger rootClose overlay={<Tooltip>Interactuar</Tooltip>}>
+                    {
+                        props.botones ? (
+                            <button className="botones-barra-mapa" onClick={() => identificaMapa(true)}>
+                                <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
+                            </button>
+                        ) : (
+                            <button className="botones-barra-mapa" onClick={() => identificaMapa(false)}>
+                                <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
+                            </button>
+                        )
+                    }
+                </OverlayTrigger>
+                <OverlayTrigger rootClose overlay={<Tooltip>Paneo</Tooltip>}>
+                    {
+                        props.botones ? (
+                            <button className="botones-barra-mapa" onClick={() => paneoMapa(true)}>
+                                <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
+                            </button>
+                        ) : (
+                            <button className="botones-barra-mapa" onClick={() => paneoMapa(false)}>
+                                <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
+                            </button>
+                        )
+                    }
+
+                </OverlayTrigger>
                 <OverlayTrigger rootClose overlay={<Tooltip>Capas dibujadas</Tooltip>}>
                     <button className="botones-barra-mapa" onClick={() => setModalCapasDibujadas(true)}>
                         <img src="/images/analisis/capas_dib.png" alt="Capas dibujadas" className="tw-w-5" />
+                    </button>
+                </OverlayTrigger>
+                <OverlayTrigger rootClose overlay={<Tooltip>Capa seleccionada</Tooltip>}>
+                    <button className="botones-barra-mapa" onClick={sublayerSelect}>
+                        <img src="/images/analisis/capas_dib.png" alt="Capa seleccionada" className="tw-w-5" />
                     </button>
                 </OverlayTrigger>
             </div>
@@ -4105,9 +4102,9 @@ function ContenedorMapaAnalisis(props) {
             {
                 props.botones == true
                     ?
-                    <Map referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} />
+                    <Map referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} mapeo={mapeoMapa} />
                     :
-                    <MapEspejo referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} />
+                    <MapEspejo referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} mapeo={mapeoMapaEspejo} />
             }
         </>
     )
