@@ -358,6 +358,7 @@ export default function GenericTable(props) {
 
     useEffect(() => {
         if(props.allTables && props.allTables.length > 0){
+            console.log('props.allTables: ', props.allTables);
             setFinalTables(props.allTables);
         }
     }, [props.allTables]);
@@ -370,8 +371,13 @@ export default function GenericTable(props) {
         };
         if(tabular.table.data.columnas) {
             tabular.table.data.columnas.map((column, index) => {
-                column.push(true);
-                column.push(index);
+                if(column.length == 4) {
+                    column[2] = true;
+                    column[3] = index;
+                } else {
+                    column.push(true);
+                    column.push(index);
+                }
                 tmpObject.columnas.push(column);
             });
         }
@@ -382,7 +388,7 @@ export default function GenericTable(props) {
 
     useEffect(() => {
         if(dinamicData && dinamicData.datos && dinamicData.columnas) {
-            console.log('dinamicData: ', dinamicData);
+            // console.log('dinamicData: ', dinamicData);
             generateFiles(function() {
                 var headers = [];
                 var headers_ = [];
@@ -411,9 +417,9 @@ export default function GenericTable(props) {
         }
     }, [dinamicData]);
 
-    useEffect(() => {
-        console.log('chartContent: ', chartContent);
-    }, [chartContent])
+    // useEffect(() => {
+    //     console.log('chartContent: ', chartContent);
+    // }, [chartContent])
 
     return (
         <>
@@ -524,7 +530,7 @@ export default function GenericTable(props) {
                                                                                     {(provided) => (
                                                                                         <div className="row mx-3" {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
                                                                                             <Form.Check key={index} custom type="checkbox" className="mb-12" onChange={(event) => columnsSelected(event.target.value)}
-                                                                                                checked={column[2]} value={column[3]} label={column[1]} id={`dinamic-column-${column[3]}`}/>
+                                                                                                checked={column[2]} value={column[3]} label={column[1]} id={`dinamic-column-${tabular.table.title}-${column[3]}`}/>
                                                                                         </div>
                                                                                     )}
                                                                                 </DraggableDnd>
@@ -565,7 +571,7 @@ export default function GenericTable(props) {
                                                                 spaceData.columnas.map((column, index) => (
                                                                     <div key={index} className="row mx-3">
                                                                         <Form.Check key={index} custom type="checkbox" className="mb-12" onChange={(event) => columnsSelectedTospacePresentation(event.target.value)}
-                                                                            checked={column[2]} value={column[3]} label={column[1]} id={`space-column-${column[3]}`}/>
+                                                                            checked={column[2]} value={column[3]} label={column[1]} id={`space-column-${tabular.table.title}-${column[3]}`}/>
                                                                     </div>
                                                                 ))
                                                             }
@@ -586,7 +592,7 @@ export default function GenericTable(props) {
                                                                     finalTables.filter(filtered => filtered.level == tabular.table.level).filter(filtered => filtered.index != tabular.table.index).map((table, index) => (
                                                                         <div key={index} className="row mx-3">
                                                                             <Form.Check key={index} custom type="checkbox" className="mb-12"  onChange={(event) => selectedTables(event.target.value)}
-                                                                                checked={table.checked} value={table.index} label={table.title} id={`space-table-${table.index}`}/>
+                                                                                checked={table.checked} value={table.index} label={table.title} id={`space-table-${tabular.table.title}-${table.index}`}/>
                                                                         </div>
                                                                     ))
                                                                 }
@@ -605,7 +611,7 @@ export default function GenericTable(props) {
                                                                 dataToChart.columnas.map((column, index) => (
                                                                     <div key={index} className="row mx-3">
                                                                         <Form.Check key={index} type="radio" custom className="mb-12" onChange={(event) => columnToChartSelected(event.target.value)}
-                                                                            checked={column[2]} value={column[3]} label={column[1]} id={`chart-column-${column[3]}`}/>
+                                                                            checked={column[2]} value={column[3]} label={column[1]} id={`chart-column-${tabular.table.title}-${column[3]}`}/>
                                                                     </div>
                                                                 ))
                                                             }
@@ -666,10 +672,10 @@ export default function GenericTable(props) {
                                                 {
                                                     dinamicData.columnas.filter(columna => columna[2] == true).map((column, index_) => (
                                                         <td className={
-                                                            (data[column[3]] !== null ? data[column[3]].constructor.name === "String" : true) ?
+                                                            (data[column[3]] && data[column[3]] !== null ? data[column[3]].constructor.name === "String" : true) ?
                                                             "border-bottom border-green-600" :
                                                             "border-bottom border-green-600 text-right"
-                                                        } key={index_}>{(data[column[3]] !== null ? data[column[3]].constructor.name === "String" : true) ?
+                                                        } key={index_}>{(data[column[3]] && data[column[3]] !== null ? data[column[3]].constructor.name === "String" : true) ?
                                                             data[column[3]] :
                                                             new Intl.NumberFormat('en-US').format(data[column[3]])}
                                                         </td>
