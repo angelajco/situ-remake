@@ -38,6 +38,23 @@
     color: white;
     @apply tw-bg-menu;
 }
+
+.nav.nav-vertical-tab .nav-link.active {
+    color: white !important;
+    @apply tw-bg-titulo !important;
+}
+.nav.nav-vertical-tab a{
+    width: 33.33%;
+    text-align: center;
+    color: white;
+    @apply tw-bg-menu;
+}
+
+
+/*.nav.nav-tabs .nav-link.active {
+    background-color: red
+}*/
+
 .tab-tabla .table{
     margin-bottom: 0;
 }

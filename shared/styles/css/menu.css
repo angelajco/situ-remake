@@ -1,0 +1,13 @@
+.dropdown-toggle  {
+    white-space: unset;
+}
+
+.nav-link {
+  padding-top: unset;
+  padding-bottom: unset;
+}
+
+.navbar-light .navbar-nav .nav-link {
+  --tw-text-opacity: 1 !important;
+  color: rgba(39, 108, 111, var(--tw-text-opacity)) !important;
+}
