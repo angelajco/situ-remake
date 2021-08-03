@@ -414,7 +414,7 @@ export default function ConsultaDinamica(props) {
         getTableData(args, function(data, error) {
             if(data && data.mensaje != 'Error') {
                 data.nombreTabla = `Consulta Dínamica ${tableData.length + 1} - ${statisticalProduct.nombre} (${statisticalProduct.descripcion})`;
-                setTableData([...tableData, {title: data.nombreTabla, type: 'table', data: data, level: isNacional == 0 ? 'Nacional' : statisticalProduct.nivel_desagregacion,  index: tableData.length, checked: false, filters: agregationFilters}]);
+                setTableData([...tableData, {title: data.nombreTabla, type: 'table', data: data, level: statisticalProduct.nivel_desagregacion,  index: tableData.length, checked: false, filters: agregationFilters}]);
                 setIsLoading(false);
             } else {
                 renderModal('La información no está disponible.')
@@ -586,9 +586,9 @@ export default function ConsultaDinamica(props) {
                 };
                 tmpObject.data.nombreTabla = tmpObject.title;
             } else {
-                tableData[index].data.columnas.map(column => {
-                    column[1] = `${column[1]}-${index}`
-                    tmpObject.data.columnas.push(column);
+                tableData[index].data.columnas.map((column, index__) => {
+                    var column_ = [column[0], column[1], column[2], index];
+                    tmpObject.data.columnas.push(column_);
                 });
                 tmpObject.data.datos.map((tmpData, index_) => {
                     tableData[index].data.datos.map(data => {
