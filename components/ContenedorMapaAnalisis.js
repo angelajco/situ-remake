@@ -252,7 +252,7 @@ function ContenedorMapaAnalisis(props) {
     const construyeEntidadCapa = (capaFusion, entidad) => {
         if (entidad != undefined || (capaFusion.length && capaFusion[0].entidad != undefined)) {
             let capaEntidad = {};
-            if(props.referenciaEntidad && entidad === null) {
+            if (props.referenciaEntidad && entidad === null) {
                 capaEntidad.titulo = props.informacionEspacial.nombreTabla;
                 capaEntidad.url = capaFusion[0].capa.url;
                 capaEntidad.capa = capaFusion[0].capa.nombre_capa;
@@ -511,8 +511,8 @@ function ContenedorMapaAnalisis(props) {
                 //     defaultParameters.cql_filter = capaFiltrada.filtro_entidad + " IN" + capaFiltrada.valor_filtro;
                 //     filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
                 // } else {
-                    defaultParameters.cql_filter = capaFiltrada.filtro_entidad + " IN(" + capaFiltrada.valor_filtro + ")";
-                    filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
+                defaultParameters.cql_filter = capaFiltrada.filtro_entidad + " IN(" + capaFiltrada.valor_filtro + ")";
+                filtroDescarga = '&cql_filter=' + defaultParameters.cql_filter;
                 // }
             }
             var parameters = L.Util.extend(defaultParameters);
@@ -578,7 +578,7 @@ function ContenedorMapaAnalisis(props) {
                                 })
                                 subLayer.on('dblclick', function () {
                                     if (featureSeleccion != null) {
-                                        featureSeleccion.setStyle({...capaFiltrada.estilos})
+                                        featureSeleccion.setStyle({ ...capaFiltrada.estilos })
                                         featureSeleccion.feature["seleccionada"] = false;
                                     }
                                     subLayer.setStyle({ fillColor: 'green' })
@@ -2898,7 +2898,9 @@ function ContenedorMapaAnalisis(props) {
     //Para obtener feature seleccionado
     const [sublayerSeleccionada, setSublayerSeleccionada] = useState(null)
     const [modalSublayerSeleccionada, setModalSublayerSeleccionada] = useState(false)
+    const [inteserccionSublayerSeleccionada, setInteserccionSublayerSeleccionada] = useState([])
 
+    //Para obtener la interseccion con la capa seleccionada
     const sublayerSelect = () => {
         let capaIntersectadaSublayer = [];
         referenciaMapa.eachLayer(function (layer) {
@@ -2923,7 +2925,8 @@ function ContenedorMapaAnalisis(props) {
 
         if (capaIntersectadaSublayer.length != 0) {
             console.log(capaIntersectadaSublayer, "capaIntersectadaSublayer")
-            // setSavedToIdentify(capaIntersectadaSublayer)
+            setInteserccionSublayerSeleccionada(capaIntersectadaSublayer)
+            setModalSublayerSeleccionada(true)
         }
 
     }
@@ -2937,12 +2940,48 @@ function ContenedorMapaAnalisis(props) {
             />
 
             <Modal dialogAs={DraggableModalDialog} show={modalSublayerSeleccionada} onHide={() => setModalSublayerSeleccionada(!modalSublayerSeleccionada)}
-                keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
+                keyboard={false} backdrop={false} contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
                 <Modal.Header className="tw-cursor-pointer" closeButton>
                     <Modal.Title>
+                        Intersección capa seleccionada
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
+                    {
+                        inteserccionSublayerSeleccionada.length != 0 ? (
+                            inteserccionSublayerSeleccionada.map((selected, index) => (
+                                <Table striped bordered hover key={index}>
+                                    <thead>
+                                        <tr className="tw-text-center">
+                                            <th colSpan={Object.keys(selected[0].properties).length}>{selected[0].nombre_capa}</th>
+                                        </tr>
+                                        <tr>
+                                            {
+                                                Object.keys(selected[0].properties).map((header, index1) => (
+                                                    <th key={index1}>{header}</th>
+                                                ))
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {
+                                            selected.map((valorFeature, index2) => (
+                                                <tr key={index2}>
+                                                    {
+                                                        Object.keys(valorFeature.properties).map((header_, index3) => (
+                                                            <td key={index3}>{valorFeature.properties[header_]}</td>
+                                                        ))
+                                                    }
+                                                </tr>
+                                            ))
+                                        }
+                                    </tbody>
+                                </Table>
+                            ))
+                        ) : (
+                            <div>No hay interesección con la capa seleccionada</div>
+                        )
+                    }
                 </Modal.Body>
             </Modal>
 
