@@ -54,7 +54,7 @@ const MapEspejo = dynamic(
     }
 )
 
-var featureSeleccion = null;
+var featureSeleccion = [];
 
 var referenciaMapa = null;
 //son algunas variables para Simbologia
@@ -577,14 +577,20 @@ function ContenedorMapaAnalisis(props) {
                                     setRasgos([feature]);
                                 })
                                 subLayer.on('dblclick', function () {
-                                    if (featureSeleccion != null) {
-                                        featureSeleccion.setStyle({ ...capaFiltrada.estilos })
-                                        featureSeleccion.feature["seleccionada"] = false;
+                                    if (feature["seleccionada"] == true) {
+                                        feature["seleccionada"] = false
+                                        subLayer.setStyle({ ...capaFiltrada.estilos })
+                                        for (var i = 0; i < featureSeleccion.length; i++) {
+                                            if (featureSeleccion[i].feature.id === feature.id) {
+                                                featureSeleccion.splice(i, 1);
+                                            }
+                                        }
+                                    } else {
+                                        feature["seleccionada"] = true
+                                        subLayer.setStyle({ fillColor: '#008000', color: '#778077' })
+                                        featureSeleccion.push(subLayer)
                                     }
-                                    subLayer.setStyle({ fillColor: 'green' })
-                                    subLayer.feature["seleccionada"] = true;
-                                    featureSeleccion = subLayer;
-                                    setSublayerSeleccionada(subLayer)
+                                    setSublayerSeleccionada(featureSeleccion)
                                 })
                             }
                         });
@@ -2896,35 +2902,40 @@ function ContenedorMapaAnalisis(props) {
     }
 
     //Para obtener feature seleccionado
-    const [sublayerSeleccionada, setSublayerSeleccionada] = useState(null)
+    const [sublayerSeleccionada, setSublayerSeleccionada] = useState([])
     const [modalSublayerSeleccionada, setModalSublayerSeleccionada] = useState(false)
     const [inteserccionSublayerSeleccionada, setInteserccionSublayerSeleccionada] = useState([])
 
     //Para obtener la interseccion con la capa seleccionada
     const sublayerSelect = () => {
         let capaIntersectadaSublayer = [];
-        referenciaMapa.eachLayer(function (layer) {
-            if (layer instanceof L.GeoJSON) {
-                if (!layer.options.hasOwnProperty("buffer")) {
-                    let subCapasCapaPadre = []
-                    layer.eachLayer(function (layerConFeatures) {
-                        if (sublayerSeleccionada.feature.nombre_capa !== layerConFeatures.feature.nombre_capa) {
-                            let seIntersectan;
-                            seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), sublayerSeleccionada.toGeoJSON())
-                            if (seIntersectan != null) {
-                                subCapasCapaPadre.push(layerConFeatures.feature)
+        if (sublayerSeleccionada.length !== 0) {
+            sublayerSeleccionada.map(valorSublayer => {
+                referenciaMapa.eachLayer(function (layer) {
+                    if (layer instanceof L.GeoJSON) {
+                        if (!layer.options.hasOwnProperty("buffer")) {
+                            let subCapasCapaPadre = []
+                            layer.eachLayer(function (layerConFeatures) {
+                                if (valorSublayer.feature.nombre_capa !== layerConFeatures.feature.nombre_capa) {
+                                    let seIntersectan;
+                                    seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), valorSublayer.toGeoJSON())
+                                    if (seIntersectan != null) {
+                                        layerConFeatures.setStyle({fillColor: "#FFFF00", color: "#FFFF77"})
+                                        layerConFeatures.feature["seleccionada"] = true;
+                                        subCapasCapaPadre.push(layerConFeatures.feature)
+                                    }
+                                }
+                            })
+                            if (subCapasCapaPadre.length != 0) {
+                                capaIntersectadaSublayer.push(subCapasCapaPadre)
                             }
                         }
-                    })
-                    if (subCapasCapaPadre.length != 0) {
-                        capaIntersectadaSublayer.push(subCapasCapaPadre)
                     }
-                }
-            }
-        });
+                });
+            });
+        }
 
         if (capaIntersectadaSublayer.length != 0) {
-            console.log(capaIntersectadaSublayer, "capaIntersectadaSublayer")
             setInteserccionSublayerSeleccionada(capaIntersectadaSublayer)
             setModalSublayerSeleccionada(true)
         }
@@ -3746,7 +3757,7 @@ function ContenedorMapaAnalisis(props) {
                                                 {
                                                     Object.keys(value.properties).map((valueKey, indexKey) => {
                                                         return (
-                                                            <td key={indexKey} className={value.seleccionada == true ? "tw-text-yellow-900" : ""}>{value.properties[valueKey]}</td>
+                                                            <td key={indexKey} className={value.seleccionada == true && "tw-bg-green-100"}>{value.properties[valueKey]}</td>
                                                         )
                                                     })
                                                 }
