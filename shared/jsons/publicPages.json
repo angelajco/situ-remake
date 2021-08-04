@@ -1,0 +1,52 @@
+[
+    {
+        "idFuncion": "inicio",
+        "pagina": "/",
+        "titulo":"INICIO"
+    },
+    {
+        "idFuncion": "planeacion6",
+        "pagina": "/planeacion6",
+        "titulo":"PLANEACIÓN MUNICIPAL"
+    },
+    {
+        "idFuncion": "analisis-geografico",
+        "pagina": "/analisis/analisis-geografico",
+        "titulo":"ANÁLISIS GEOGRÁFICO"
+    },
+    {
+        "idFuncion": "estadisticas-indicadores",
+        "pagina": "/estadisticas-indicadores/estadisticas",
+        "titulo":"ESTADÍSTICAS E INDICADORES"
+    },
+    {
+        "idFuncion": "consulta-documental",
+        "pagina": "/construccion",
+        "titulo":"CONSULTA DOCUMENTAL"
+    },
+	{
+        "idFuncion": "metadatos",
+        "pagina": "/consulta-documental/CargaMetadatos",
+        "titulo":"CARGA METADATOS"
+    },
+    {
+        "idFuncion": "inicio-sesion",
+        "pagina": "/administracion/inicio-sesion"
+    },
+    {
+        "idFuncion": "registro-usuario",
+        "pagina": "/administracion/registro-usuario"
+    },
+    {
+        "idFuncion": "verificacion-usuario",
+        "pagina": "/administracion/verificacion"
+    },
+    {
+        "idFuncion": "olvide-contrasena-usuario",
+        "pagina": "/administracion/olvide-contrasena"
+    },
+    {
+        "idFuncion": "restablecer-contrasena-usuario",
+        "pagina": "/administracion/restablecer-contrasena"
+    }
+]
