@@ -81,13 +81,18 @@ export default function consultaMetadatos() {
     const [archivo, setArchivo] = useState();
     const [claves, setClaves] = useState();
     const [isLoading, setIsLoading] = useState(true);
+    const [datos1, setDatos1] = useState([]);
 
 
-    const buscar = async () => {
-        const res = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=id:${prod}`);
-        const datos1 = await res.json();
+    function buscar(datos1){
+       // console.log(datos1);
         var index = buscarCampo(datos1[0].tipo, tipoF);
         //console.log(index);
+        if (datos1[0].miniatura != "") {
+            setFileUrl(`${process.env.ruta}/recursos/docs/miniaturas/${datos1[0].miniatura}`);
+        } else {
+            //setFileUrl(`${process.env.ruta}/recursos/docs/miniaturas/${datos1[0].miniatura}`);
+        }
         setVIni(datos1[0].ano_vig_inicial);
         setVFin(datos1[0].ano_vig_final);
         setPaginas(datos1[0].paginas);
@@ -128,11 +133,10 @@ export default function consultaMetadatos() {
 
 
     useEffect(() => {
+        //console.log(prod);
         setIsLoading(true);
-        if(isLoading){
-            buscar(prod);
-        }
-      })
+        buscar(prod);
+    }, []);
 
     const tarchivos = [
         { value: '1', label: 'Documento' },
@@ -701,7 +705,7 @@ export default function consultaMetadatos() {
 
     return (
         <>
-            
+
             <ModalComponent
                 show={show}
                 datos={datosModal}
@@ -709,7 +713,7 @@ export default function consultaMetadatos() {
                 onClick={handleClose}
             />
             <main>
-            
+
                 <Container>
                     <div className="container">
                         <h5 className="text-center"> Detalle de Metadatos </h5>
