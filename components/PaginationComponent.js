@@ -268,6 +268,7 @@ function PaginationComponent(props) {
             <tbody>
               {
                 data.map((todo) => {
+                  console.log(todo);
                   return (
                     <tr key={todo.id_metadato_documento}>
                       <td>
@@ -287,7 +288,15 @@ function PaginationComponent(props) {
                         {todo.nombre}
                       </td>
                       <td>
-                        <p>{todo.ano_publicacion}-{todo.mes_publicacion}-{todo.dia_publicacion}</p>
+                        {todo.mes_publicacion == null ?(
+                          <p>{todo.ano_publicacion}</p>
+                        ):(
+                          todo.dia_publicacion == snull?(
+                            <p>{todo.ano_publicacion}-{todo.mes_publicacion}</p>
+                          ):(
+                            <p>{todo.ano_publicacion}-{todo.mes_publicacion}-{todo.dia_publicacion}</p>
+                          )
+                        )}
                       </td>
                       <td>
                         <p>{todo.instancia}</p>
