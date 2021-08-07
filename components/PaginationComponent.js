@@ -290,7 +290,7 @@ function PaginationComponent(props) {
                         {todo.mes_publicacion == null ?(
                           <p>{todo.ano_publicacion}</p>
                         ):(
-                          todo.dia_publicacion == snull?(
+                          todo.dia_publicacion == null?(
                             <p>{todo.ano_publicacion}-{todo.mes_publicacion}</p>
                           ):(
                             <p>{todo.ano_publicacion}-{todo.mes_publicacion}-{todo.dia_publicacion}</p>
