@@ -44,6 +44,7 @@ function ContenedorCD() {
     const [busq2, setBusq2] = useState([]);
     const [busq3, setBusq3] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [consulta, setConsulta] = useState(true);
     
 
 
@@ -66,8 +67,8 @@ function ContenedorCD() {
         { value: '3', label: 'Más consultados' },
     ];
     const orden = [
-        { value: '1', label: 'Nombre A-Z' },
-        { value: '2', label: 'Nombre Z-A' },
+        { value: '1', label: 'Nombre/Titulo A-Z' },
+        { value: '2', label: 'Nombre/Titulo Z-A' },
         { value: '3', label: 'Año de Publicación Mayor a Menor' },
         { value: '4', label: 'Año de Publicación Menor a Mayor' },
         { value: '5', label: 'Fuente A-Z' },
@@ -270,6 +271,7 @@ function ContenedorCD() {
             setIsLoading(true);
             if (e.value == 1) {
                 setBusquedaPR(e.value);
+                setConsulta("Acervo");
                 //setIsLoading(false);
                 fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
                     .then((response) => response.json())
@@ -280,6 +282,7 @@ function ContenedorCD() {
             }
             if (e.value == 2) {
                 //ultimas publicaciones 
+                setConsulta("ÚLTIMOS DOCUMENTOS PUBLICADOS");
                 fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
                     .then((response) => response.json())
                     .then((json) => { modificaResultado(json); setIsLoading(false); });
@@ -289,6 +292,7 @@ function ContenedorCD() {
             }
             if (e.value == 3) {
                 //mas consultados
+                setConsulta("DOCUMENTOS MÁS CONSULTADOS");
                 fetch(`${process.env.ruta}/wa/publico/documentosMasConsultados`)
                     .then((response) => response.json())
                     .then((json) => { modificaResultado(json); setIsLoading(false); });
@@ -323,6 +327,7 @@ function ContenedorCD() {
 
     useEffect(() => {
         setIsLoading(true);
+        setConsulta("ÚLTIMOS DOCUMENTOS PUBLICADOS");
         fetch(`${process.env.ruta}/wa/publico/ultimos30publicados`)
             .then((response) => response.json())
             .then((json) => { modificaResultado(json); setIsLoading(false); });
@@ -333,8 +338,37 @@ function ContenedorCD() {
 
     const onSubmit = async (data) => {
         let str = data.dato;
+        let str2="";
         str = str.replace(str[0], "*");
         //data.dato=str;
+        if(data.dato!=""){
+            str2+="Titulo: "+data.dato +" ";
+        }
+        if(data.descripcion!=""){
+            str2+="Descripcion: "+data.descripcion+" ";
+        }
+        if(data.cobertura!=""){
+            str2+="Cobertura: "+data.cobertura +" ";
+        }
+        if(data.unidad!=""){
+            str2+="Unidad: "+data.unidad +" ";
+        }
+        if(data.anio!=""){
+            str2+="Edición: "+data.anio +" ";
+        }
+        if(data.tipo!=""){
+            str2+="Tipo: "+data.tipo +" ";
+        }
+        if(data.tema1!=""){
+            str2+="Tema 1: "+data.tema1 +" ";
+        }
+        if(data.tema2!=""){
+            str2+="Tema 2: "+data.tema2 +" ";
+        }
+        console.log(str2);
+        let st= "ACERVO DOCUMENTAL POR,"+str2;
+        setConsulta(st);
+
         //console.log(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tema}* OR tipo:*${data.tipo}* OR nombre:*${data.dato}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tema}* OR instancia:*${data.unidad}*`);
         const res2 = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=tema1:*${data.tem1}* OR tipo:*${data.tipo}* OR nombre:${str}* OR autor:*${data.autor}* OR nivelCobertura:*${data.cobertura}* OR descripcion:*${data.descripcion}* OR anoPublicacion:*${data.anio}* OR tema2:*${data.tem2}* OR instancia:*${data.unidad}*`);
         const datos = await res2.json();
@@ -350,7 +384,9 @@ function ContenedorCD() {
         setTipo(data.tipo);
         setTem1(data.tem1);
         setTem1(data.tem2);
-        setPub(datos.length + " Resultados en sistema")
+        setPub(datos.length + " Resultados en sistema");
+       
+        //setConsulta("ACERVO DOCUMENTAL POR "); //ACERVO DOCUMENTAL POR {}
     };//fin del metodo onSubmit
 
     function cambioD(e) {
@@ -587,6 +623,7 @@ function ContenedorCD() {
                             r.length > 0 ? (
                                 <PaginationComponent
                                     informacion={r}
+                                    consulta={consulta}
                                 />
                             ) : (
                                 <div className="row">
