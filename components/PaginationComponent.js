@@ -268,6 +268,7 @@ function PaginationComponent(props) {
             <tbody>
               {
                 data.map((todo) => {
+                  console.log(todo);
                   return (
                     <tr key={todo.id_metadato_documento}>
                       <td>
