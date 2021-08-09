@@ -19,6 +19,8 @@ const cookies = new Cookies()
 function PaginationComponent(props) {
 
   const url_bus = props.informacion;
+  const leyenda = props.consulta;
+
 
   const usuarioCookie = cookies.get('Usuario')
   const usuarioI = cookies.get('IDU')
@@ -26,7 +28,7 @@ function PaginationComponent(props) {
   //Datos para crear el form
   const { register, handleSubmit, watch, clearErrors, setError, errors } = useForm();
   const [tarchivo, setTarchivo] = useState(null);
-  const [fileUrl, setFileUrl] = useState('images/consulta/publicacion-situ.png');
+  const [fileUrl, setFileUrl] = useState('images/consultaD/publicacion-situ.png');
   const [imgportada, setImgPortada] = useState(null);
 
   const tarchivos = [
@@ -49,11 +51,16 @@ function PaginationComponent(props) {
     img.src = "/images/consultaD/encabezado.jpg";
     /// codigo para generar pdf 
     const columns = Object.keys(items[0]);
+    columns[4]="Tipo";
+    columns[5]="Tema 1";
+    columns[6]="Tema 2";
     var result = [];
     items.forEach(element => {
       result.push(Object.values(element));
     });
     var doc = new jsPDF(); jpt;
+
+    var con1 = leyenda.split(',');
 
     var header = function (data) {
       doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
@@ -62,10 +69,14 @@ function PaginationComponent(props) {
       doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
       //doc.setFontType("bold");
       doc.setFontSize(13);
-      doc.text(75, 53, "CONSULTA DOCUMENTAL");
+      doc.text(65, 53, con1[0]);
+      if(con1.length > 1){
+        doc.setFontSize(8);
+        doc.text(20, 57, con1[1]);
+      }
       doc.setFontSize(10);
       //doc.setFontType("normal");
-      doc.text(20, 60, "Total de documentos: " + items.length);
+      doc.text(20, 62, "Total de documentos: " + items.length);
       doc.setFontSize(9);
     };
 
@@ -84,34 +95,34 @@ function PaginationComponent(props) {
     });
 
 
-  /*  if (usuarioCookie != null) {
-      doc.autoTable(columns, result, {
-        margin: { top: 65 }, theme: 'grid', beforePageContent: header,
-        columnStyles: {
-          0: { columnWidth: 30 },
-          1: { columnWidth: 20 },
-          2: { columnWidth: 20 },
-          3: { columnWidth: 15 },
-          4: { columnWidth: 25 },
-          5: { columnWidth: 24 },
-          6: { columnWidth: 20 },
-          7: { columnWidth: 28 },
-        }
-      });
-    } else {
-      doc.autoTable(columns, result, {
-        margin: { top: 65 }, theme: 'grid', beforePageContent: header,
-        columnStyles: {
-          0: { columnWidth: 25 },
-          1: { columnWidth: 25 },
-          2: { columnWidth: 25 },
-          3: { columnWidth: 18 },
-          4: { columnWidth: 28 },
-          5: { columnWidth: 25 },
-          6: { columnWidth: 30 },
-        }
-      });
-    }*/
+    /*  if (usuarioCookie != null) {
+        doc.autoTable(columns, result, {
+          margin: { top: 65 }, theme: 'grid', beforePageContent: header,
+          columnStyles: {
+            0: { columnWidth: 30 },
+            1: { columnWidth: 20 },
+            2: { columnWidth: 20 },
+            3: { columnWidth: 15 },
+            4: { columnWidth: 25 },
+            5: { columnWidth: 24 },
+            6: { columnWidth: 20 },
+            7: { columnWidth: 28 },
+          }
+        });
+      } else {
+        doc.autoTable(columns, result, {
+          margin: { top: 65 }, theme: 'grid', beforePageContent: header,
+          columnStyles: {
+            0: { columnWidth: 25 },
+            1: { columnWidth: 25 },
+            2: { columnWidth: 25 },
+            3: { columnWidth: 18 },
+            4: { columnWidth: 28 },
+            5: { columnWidth: 25 },
+            6: { columnWidth: 30 },
+          }
+        });
+      }*/
 
     let string = doc.output('datauristring');
 
@@ -148,7 +159,7 @@ function PaginationComponent(props) {
       //doc.text(20, 60, "Total de documentos: " + items.length);
     };
     doc.autoTable(columns, result, { margin: { top: 65 }, theme: 'grid', beforePageContent: header });
-    let string = doc.output('datauristring');
+    doc.output('datauristring');
   }
 
   const actBitacora = async (cod) => {
@@ -169,10 +180,13 @@ function PaginationComponent(props) {
     var items = filtrarJson(data);
     const replacer = (key, value) => value === null ? '' : value; // specify how you want to handle null values here
     const header = Object.keys(items[0]);
+    header[4]="Tipo";
+    header[5]="Tema 1";
+    header[6]="Tema 2";
     let csv = items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','));
     csv.unshift(header.join(','));
     csv.unshift("Total de Documentos: " + items.length);
-    csv.unshift("CONSULTA DOCUMENTAL");
+    csv.unshift(leyenda);
     csv.unshift("FECHA:  " + fecha + "    HORA: " + hora);
     csv.unshift("Nombre Usuario: " + usuarioCookie);
     csv = csv.join('\r\n');
@@ -218,7 +232,7 @@ function PaginationComponent(props) {
       //js.Formato = element.formato;
       js.Archivo = element.url_origen;
       if (usuarioCookie != null) {
-        
+
       }
       vec.push(js);
     });
@@ -246,20 +260,27 @@ function PaginationComponent(props) {
             <thead className="thead-dark">
               <tr>
                 <th>Portada</th>
-                <th>Titulo</th>
-                <th>Fecha de Publicación</th>
+                <th>Titulo/Nombre</th>
+                <th>Fecha/Año  de Publicación</th>
                 <th>Fuente</th>
               </tr>
             </thead>
             <tbody>
               {
                 data.map((todo) => {
+                  console.log(todo);
                   return (
                     <tr key={todo.id_metadato_documento}>
                       <td>
                         <OverlayTrigger overlay={<Tooltip>Detalle</Tooltip>}>
                           <a target='_blank' onClick={() => metadatosModal(todo.id_metadato_documento)}>
-                            <img src='/images/consultaD/miniaturaD.png' alt='Miniatura' className='card-img-top' />
+                            {
+                              todo.miniatura!=null ?(
+                                <img src={`${process.env.ruta}/recursos/docs/miniaturas/${datos[0].miniatura}`} alt='Miniatura' className='card-img-top' />
+                              ):(
+                                <img src='/images/consultaD/miniaturaD.png' alt='Miniatura' className='card-img-top' />
+                              )
+                            }
                           </a>
                         </OverlayTrigger>
                       </td>
@@ -267,7 +288,15 @@ function PaginationComponent(props) {
                         {todo.nombre}
                       </td>
                       <td>
-                        <p>{todo.ano_publicacion}-{todo.mes_publicacion}-{todo.dia_publicacion}</p>
+                        {todo.mes_publicacion == null ?(
+                          <p>{todo.ano_publicacion}</p>
+                        ):(
+                          todo.dia_publicacion == null?(
+                            <p>{todo.ano_publicacion}-{todo.mes_publicacion}</p>
+                          ):(
+                            <p>{todo.ano_publicacion}-{todo.mes_publicacion}-{todo.dia_publicacion}</p>
+                          )
+                        )}
                       </td>
                       <td>
                         <p>{todo.instancia}</p>
@@ -305,9 +334,12 @@ function PaginationComponent(props) {
   //const onSubmit = async (data) =>
   const metadatosModal = async (cod) => {
     //console.log(cod);
-    cookies.set('prod', cod);
+    
     const res = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=id:${cod}`);
     const datos = await res.json();
+    cookies.set('prod', datos);
+    let imga = `${process.env.ruta}/recursos/docs/miniaturas/${datos[0].miniatura}`;
+    //console.log(imga);
 
     const cuerpo =
       <div>
@@ -324,9 +356,17 @@ function PaginationComponent(props) {
           </div>
         </div>
         <div className="row">
-          <div className="col-3">
-            <img src='/images/consultaD/miniaturaD.png' alt='Miniatura' className="img-responsive" />
-          </div>
+          {
+          datos[0].miniatura != null ? (
+            ///recursos/docs/miniaturas/
+            <div className="col-3">
+              <img src={imga} alt='Miniatura' className="img-responsive" width="115px" height="158px" />
+            </div>
+          ) : (
+            <div className="col-3">
+              <img src='/images/consultaD/miniaturaD.png' alt='Miniatura' className="img-responsive" />
+            </div>
+          )}
           <div className="col-7">
             <p><b>{datos[0].nombre}</b><br></br>{datos[0].autor}</p>
           </div>
@@ -350,11 +390,11 @@ function PaginationComponent(props) {
           </div>
         </div>
         <div className="row">
-        <div className="col-12 col-md-12 col-lg-12">
+          <div className="col-12 col-md-12 col-lg-12">
             <Link href="/consulta-documental/consulta-metadatos">
               <a target="_blank"><p>Metadatos Completos</p></a>
             </Link>
-        </div>
+          </div>
         </div>
 
       </div >

@@ -3490,9 +3490,15 @@ function ContenedorMapaAnalisis(props) {
                                                         <TablaSimbologia info={simbologiaF} />
 
                                                     </div>
-                                                    <div className="row align-items-center">
-                                                        <Button className="btn btn-primary" onClick={aplicarEstilo}>Aplicar Estilo </Button>
-                                                    </div>
+                                                    {varutil != null && intervalo!= null ? (
+                                                        <div className="row align-items-center">
+                                                            <Button className="btn btn-primary" onClick={aplicarEstilo}>Aplicar Estilo </Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="row align-items-center">
+                                                            <Button className="btn btn-primary" onClick={aplicarEstilo} disabled >Aplicar Estilo </Button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 valorEstilos == 4 ? (
@@ -3559,14 +3565,29 @@ function ContenedorMapaAnalisis(props) {
                                                         <div className="row" id="contenedorT">
                                                             <TablaSimbologia info={simbologiaF} />
                                                         </div>
-                                                        <div className="row text-center">
-                                                            <div className="col-6">
-                                                                <Button className="btn btn-primary" onClick={generarT}>Previsualizar </Button>
+                                                        {varutil != null ? (
+                                                            <div className="row text-center">
+                                                                <div className="col-6">
+                                                                    <Button className="btn btn-primary" onClick={generarT}>Previsualizar</Button>
+                                                                </div>
+                                                                <div className="col-6">
+                                                                    <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                                </div>
                                                             </div>
-                                                            <div className="col-6">
-                                                                <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                        ) : (
+                                                            <div className="row text-center">
+                                                                <div className="col-6">
+                                                                    <Button className="btn btn-primary" onClick={generarT} disabled>Previsualizar</Button>
+                                                                </div>
+                                                                <div className="col-6">
+                                                                    <Button className="btn btn-primary" onClick={aplicaEstiloF} disabled>Aplicar Estilo </Button>
+                                                                </div>
                                                             </div>
-                                                        </div>
+                                                        )}
+
+
+
+
                                                     </div>
                                                 ) : (
                                                     valorEstilos == 3 ? (
@@ -3625,14 +3646,25 @@ function ContenedorMapaAnalisis(props) {
                                                             <div className="row" id="contenedorT">
                                                                 <TablaSimbologia info={simbologiaF} />
                                                             </div>
-                                                            <div className="row text-center">
-                                                                <div className="col-6">
-                                                                    <Button className="btn btn-primary" onClick={generarT}>Previsualizar </Button>
+                                                            {varutil != null ? (
+                                                                <div className="row text-center">
+                                                                    <div className="col-6">
+                                                                        <Button className="btn btn-primary" onClick={generarT}>Previsualizar</Button>
+                                                                    </div>
+                                                                    <div className="col-6">
+                                                                        <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="col-6">
-                                                                    <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                            ) : (
+                                                                <div className="row text-center">
+                                                                    <div className="col-6">
+                                                                        <Button className="btn btn-primary" onClick={generarT} disabled>Previsualizar</Button>
+                                                                    </div>
+                                                                    <div className="col-6">
+                                                                        <Button className="btn btn-primary" onClick={aplicaEstiloF} disabled>Aplicar Estilo </Button>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
+                                                            )}
                                                         </div>
                                                     ) : (
                                                         valorEstilos == 2 ? (
@@ -3674,14 +3706,25 @@ function ContenedorMapaAnalisis(props) {
                                                                     <TablaSimbologia info={simbologiaF} />
                                                                     <div id="tablaR"></div>
                                                                 </div>
-                                                                <div className="row text-center">
-                                                                    <div className="col-6">
-                                                                        <Button className="btn btn-primary" onClick={generarT}>Previsualizar </Button>
+                                                                {varutil != null ? (
+                                                                    <div className="row text-center">
+                                                                        <div className="col-6">
+                                                                            <Button className="btn btn-primary" onClick={generarT}>Previsualizar</Button>
+                                                                        </div>
+                                                                        <div className="col-6">
+                                                                            <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="col-6">
-                                                                        <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                                ) : (
+                                                                    <div className="row text-center">
+                                                                        <div className="col-6">
+                                                                            <Button className="btn btn-primary" onClick={generarT} disabled>Previsualizar</Button>
+                                                                        </div>
+                                                                        <div className="col-6">
+                                                                            <Button className="btn btn-primary" onClick={aplicaEstiloF} disabled>Aplicar Estilo </Button>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
+                                                                )}
                                                             </div>
                                                         ) : (
                                                             valorEstilos == 5 ? (
@@ -3727,14 +3770,25 @@ function ContenedorMapaAnalisis(props) {
                                                                         <TablaSimbologia info={simbologiaF} />
                                                                         <div id="tablaR"></div>
                                                                     </div>
-                                                                    <div className="row text-center">
-                                                                        <div className="col-6">
-                                                                            <Button className="btn btn-primary" onClick={generarT}>Previsualizar </Button>
+                                                                    {varutil != null ? (
+                                                                        <div className="row text-center">
+                                                                            <div className="col-6">
+                                                                                <Button className="btn btn-primary" onClick={generarT}>Previsualizar</Button>
+                                                                            </div>
+                                                                            <div className="col-6">
+                                                                                <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                                            </div>
                                                                         </div>
-                                                                        <div className="col-6">
-                                                                            <Button className="btn btn-primary" onClick={aplicaEstiloF}>Aplicar Estilo </Button>
+                                                                    ) : (
+                                                                        <div className="row text-center">
+                                                                            <div className="col-6">
+                                                                                <Button className="btn btn-primary" onClick={generarT} disabled>Previsualizar</Button>
+                                                                            </div>
+                                                                            <div className="col-6">
+                                                                                <Button className="btn btn-primary" onClick={aplicaEstiloF} disabled>Aplicar Estilo </Button>
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
+                                                                    )}
                                                                 </div>
                                                             ) : (
                                                                 <p></p>
