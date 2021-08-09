@@ -552,6 +552,8 @@ function ContenedorMapaAnalisis(props) {
                             interactiva: true,
                             onEachFeature: function (feature = {}, subLayer) {
                                 feature["nombre_capa"] = subLayer.options["nombre"];
+                                feature["seleccionada"] = false
+                                feature["intersecada"] = false
                                 if (resultado !== null) {
                                     var current = capaFiltrada.id_capa == "2" ? `${feature.properties['CVE_ENT']}` : capaFiltrada.id_capa == "3" ? `${feature.properties['CVE_ENT']}${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
                                     Object.keys(feature.properties).map(key => {
@@ -624,7 +626,6 @@ function ContenedorMapaAnalisis(props) {
     const [showModalAtributos, setShowModalAtributos] = useState(false)
     //Para asignar atributos
     function muestraAtributos(capa) {
-        console.log(capa, "tabla de atributos")
         setAtributos(capa.features)
         setShowModalAtributos(true)
     }
@@ -2907,39 +2908,65 @@ function ContenedorMapaAnalisis(props) {
     const [inteserccionSublayerSeleccionada, setInteserccionSublayerSeleccionada] = useState([])
 
     //Para obtener la interseccion con la capa seleccionada
-    const sublayerSelect = () => {
-        let capaIntersectadaSublayer = [];
-        if (sublayerSeleccionada.length !== 0) {
-            sublayerSeleccionada.map(valorSublayer => {
-                referenciaMapa.eachLayer(function (layer) {
-                    if (layer instanceof L.GeoJSON) {
-                        if (!layer.options.hasOwnProperty("buffer")) {
-                            let subCapasCapaPadre = []
-                            layer.eachLayer(function (layerConFeatures) {
-                                if (valorSublayer.feature.nombre_capa !== layerConFeatures.feature.nombre_capa) {
-                                    let seIntersectan;
-                                    seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), valorSublayer.toGeoJSON())
-                                    if (seIntersectan != null) {
-                                        layerConFeatures.setStyle({fillColor: "#FFFF00", color: "#FFFF77"})
-                                        layerConFeatures.feature["seleccionada"] = true;
-                                        subCapasCapaPadre.push(layerConFeatures.feature)
+    const sublayerSelect = (e) => {
+        e.preventDefault();
+        let estaCheckeado = 0;
+        if (e.target["0"].checked == true) {
+            estaCheckeado = 1;
+        } else if (e.target["1"].checked == true) {
+            estaCheckeado = 2;
+        }
+
+        if (estaCheckeado !== 0) {
+            let capaIntersectadaSublayer = [];
+            if (sublayerSeleccionada.length !== 0) {
+                sublayerSeleccionada.map(valorSublayer => {
+                    referenciaMapa.eachLayer(function (layer) {
+                        if (layer instanceof L.GeoJSON) {
+                            if (!layer.options.hasOwnProperty("buffer")) {
+                                let subCapasCapaPadre = []
+                                layer.eachLayer(function (layerConFeatures) {
+                                    if (valorSublayer.feature.nombre_capa !== layerConFeatures.feature.nombre_capa) {
+                                        if (layerConFeatures.feature["intersecada"] == true) {
+                                            layerConFeatures.feature["intersecada"] = false;
+                                        }
+                                        layerConFeatures.setStyle({ fillColor: "#FF7777", color: "#FF0000" })
+                                        let seIntersectan;
+                                        seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), valorSublayer.toGeoJSON())
+                                        if (seIntersectan != null) {
+                                            if (estaCheckeado == 1) {
+                                                let poligonoFeatures = turf.polygon(layerConFeatures.feature.geometry.coordinates[0]);
+                                                let poligonoSeleccionada = turf.polygon(valorSublayer.feature.geometry.coordinates[0]);
+                                                let contenida = turf.booleanContains(poligonoSeleccionada, poligonoFeatures);
+                                                if (contenida == true) {
+                                                    layerConFeatures.setStyle({ fillColor: "#FFFF77", color: "#FFFF00" })
+                                                    layerConFeatures.feature["intersecada"] = true;
+                                                    subCapasCapaPadre.push(layerConFeatures.feature)
+                                                }
+                                            } else {
+                                                layerConFeatures.setStyle({ fillColor: "#FFFF77", color: "#FFFF00" })
+                                                layerConFeatures.feature["intersecada"] = true;
+                                                subCapasCapaPadre.push(layerConFeatures.feature)
+                                            }
+                                        }
                                     }
+                                })
+                                if (subCapasCapaPadre.length != 0) {
+                                    capaIntersectadaSublayer.push(subCapasCapaPadre)
                                 }
-                            })
-                            if (subCapasCapaPadre.length != 0) {
-                                capaIntersectadaSublayer.push(subCapasCapaPadre)
                             }
                         }
-                    }
+                    });
                 });
-            });
-        }
+            }
 
-        if (capaIntersectadaSublayer.length != 0) {
-            setInteserccionSublayerSeleccionada(capaIntersectadaSublayer)
-            setModalSublayerSeleccionada(true)
+            if (capaIntersectadaSublayer.length != 0) {
+                setInteserccionSublayerSeleccionada(capaIntersectadaSublayer)
+                setModalSublayerSeleccionada(true)
+            }
+        } else {
+            console.log("Necesitas hacer una selección")
         }
-
     }
 
     return (
@@ -2958,6 +2985,11 @@ function ContenedorMapaAnalisis(props) {
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
+                    <Form onSubmit={sublayerSelect}>
+                        <Form.Check value="1" inline label="Completamente contenida" name="group1" type="radio" />
+                        <Form.Check value="2" inline label="Parcialmente contenida" name="group1" type="radio" />
+                        <Button type="submit" variant="light">Intersectar</Button>
+                    </Form>
                     {
                         inteserccionSublayerSeleccionada.length != 0 ? (
                             inteserccionSublayerSeleccionada.map((selected, index) => (
@@ -3757,7 +3789,7 @@ function ContenedorMapaAnalisis(props) {
                                                 {
                                                     Object.keys(value.properties).map((valueKey, indexKey) => {
                                                         return (
-                                                            <td key={indexKey} className={value.seleccionada == true && "tw-bg-green-100"}>{value.properties[valueKey]}</td>
+                                                            <td key={indexKey} className={`${value.seleccionada == true ? "tw-bg-green-100" : ""} ${value.intersecada == true ? "tw-bg-yellow-200" : ""}`}>{value.properties[valueKey]}</td>
                                                         )
                                                     })
                                                 }
@@ -4143,7 +4175,7 @@ function ContenedorMapaAnalisis(props) {
                     </button>
                 </OverlayTrigger>
                 <OverlayTrigger rootClose overlay={<Tooltip>Capa seleccionada</Tooltip>}>
-                    <button className="botones-barra-mapa" onClick={sublayerSelect}>
+                    <button className="botones-barra-mapa" onClick={() => setModalSublayerSeleccionada(true)}>
                         <img src="/images/analisis/capas_dib.png" alt="Capa seleccionada" className="tw-w-5" />
                     </button>
                 </OverlayTrigger>
