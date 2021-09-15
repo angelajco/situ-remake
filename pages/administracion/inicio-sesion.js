@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Form, InputGroup, Button } from 'react-bootstrap'
 import { useForm } from "react-hook-form";
-import axios from 'axios'
 
 import Link from 'next/link'
 import Head from 'next/head'
@@ -11,10 +10,7 @@ import ModalComponent from '../../components/ModalComponent';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 
-// Para guardar valiables de estado (token, nombre, apellido)
-import Cookies from 'universal-cookie'
-const cookies = new Cookies()
-
+import { loginUser, useAuthState, useAuthDispatch } from '../../context';
 
 export default function InicioSesion() {
     //Datos para el modal
@@ -38,57 +34,21 @@ export default function InicioSesion() {
     //Para construir el formulario
     const { register, handleSubmit } = useForm();
 
+	const dispatch = useAuthDispatch();
+	const { loading } = useAuthState();
+
     //Funcion a ejecutar al darle el boton de iniciar sesion
     const onSubmit = async (data) => {
-        //Conexion con la api, donde verifica que los campos existan
-        var config = {
-            method: 'post',
-            url: `${process.env.ruta}/wa/publico/login`,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            data: data
+        let response = await loginUser(dispatch, { username:data.username, password:data.password });
+        if (!response.username) {
+            handleShow();
+            setDatosModal({
+                    title: response.data['message-subject'],
+                    body: response.data['message']
+                });
+        } else{
+            Router.push("/");
         };
-
-        axios(config)
-            //Si se logro la conexion
-            .then(function (response) {
-                //Usuario encontrado
-                if (response.data.jwtResponse == undefined) {
-                    handleShow();
-                    setDatosModal({
-                        title: response.data['message-subject'],
-                        body: response.data['message']
-                    })
-                }
-                else {
-                    // Se agrega la cookie
-                    cookies.set('SessionToken', response.data.jwtResponse['token'], { path: "/" })
-                    cookies.set('RolUsuario', response.data.messager, { path: "/" })
-                    cookies.set('EstatusUsuario', response.data.messagee, { path: "/" })
-                    cookies.set('Usuario', response.data.nameUser, { path: "/" })
-                    cookies.set('IDU', response.data.messagei, { path: "/" })
-                    //Se redirecciona
-                    Router.push("/")
-                }
-            })
-            .catch(function (error) {
-                console.log(error);
-                if (error.response) {
-                    setDatosModal({
-                        title: error.response.data['message-subject'],
-                        body: error.response.data['message']
-                    })
-                    handleShow();
-                }
-                else {
-                    setDatosModal({
-                        title: "Conexión no establecida",
-                        body: "El tiempo de respuesta se ha agotado, favor de intentar más tarde."
-                    })
-                    handleShow();
-                }
-            })
     }
 
     return (
@@ -118,13 +78,13 @@ export default function InicioSesion() {
 
                             <Form onSubmit={handleSubmit(onSubmit)}>
                                 <Form.Group controlId="email">
-                                    <Form.Control name="email" type="email" required ref={register} placeholder="Correo electrónico" />
+                                    <Form.Control name="username" type="email" required ref={register} placeholder="Correo electrónico" />
                                 </Form.Group>
                                 <Form.Group>
                                     <InputGroup>
-                                        <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} placeholder="Contraseña" required ref={register} autoComplete="on" />
+                                        <Form.Control name="password" id="password" className="pass-form-registro" type={passwordShown ? "text" : "password"} placeholder="Contraseña" required ref={register} autoComplete="on" disabled={loading} />
                                         <InputGroup.Append onClick={handleClickPass} className="tw-cursor-pointer">
-                                            <InputGroup.Text>
+                                            <InputGroup.Text disabled={loading}>
                                                 {passwordShown ? <FontAwesomeIcon icon={faEyeSlash} /> : <FontAwesomeIcon icon={faEye} />}
                                             </InputGroup.Text>
                                         </InputGroup.Append>
@@ -138,7 +98,7 @@ export default function InicioSesion() {
                                     <a className="tw-block tw-text-inst-verdec hover:tw-text-inst-verdef">Olvide mi contraseña</a>
                                 </Link>
                                 <div className="tw-text-center tw-pt-6">
-                                    <Button variant="outline-secondary" className="btn-admin" type="submit">INICIAR SESIÓN</Button>
+                                    <Button variant="outline-secondary" className="btn-admin" type="submit" disabled={loading}>INICIAR SESIÓN</Button>
                                 </div>
                             </Form>
                         </div>

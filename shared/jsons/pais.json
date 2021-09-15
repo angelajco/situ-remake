@@ -1,0 +1,9 @@
+ [
+    { "value": "1", "label": "México", "name": "pais" },
+    { "value": "2", "label": "Estados Unidos", "name": "pais" },
+    { "value": "3", "label": "Canada", "name": "pais" },
+    { "value": "4", "label": "Colombia", "name": "pais" },
+    { "value": "5", "label": "Argentina", "name": "pais" },
+    { "value": "6", "label": "Costa Rica", "name": "pais" },
+    { "value": "7", "label": "Brazil", "name": "pais" }
+  ]

@@ -8,6 +8,7 @@ import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerConte
 import { CSVLink } from "react-csv";
 import { Typeahead } from 'react-bootstrap-typeahead';
 
+
 import * as toPdf from '@react-pdf/renderer';
 import * as htmlToImage from 'html-to-image';
 import * as turf from '@turf/turf';
@@ -33,10 +34,14 @@ import coloresPaletta from "../shared/jsons/colores.json";
 import coloresJ from "../shared/jsons/ColoresSelect.json";
 import TablaSimbologia from './TablaSimbologia';
 import TablaLib from './TablaLibre';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable'
+import { useAuthState } from '../context';
 
 import { ContextoCreadoFeature } from '../context/contextoFeatureGroupDibujadas'
 
 import ConsultaDinamica from './ConsultaDinamica'
+import GenericTable from './genericos/GenericTable';
 
 const Map = dynamic(
     () => import('./MapAnalisis'),
@@ -55,6 +60,7 @@ const MapEspejo = dynamic(
 )
 
 var featureSeleccion = [];
+var MapaImpresion=null;
 
 var referenciaMapa = null;
 //son algunas variables para Simbologia
@@ -62,8 +68,11 @@ var jsonSimbologia = [];
 var simbologiaF = {};
 var colorB = [];
 var omisionColor;
+var csrfToken;
 
 function ContenedorMapaAnalisis(props) {
+    const userDetails = useAuthState().user;
+    csrfToken = userDetails.csrfToken;
     //------------------Betty-------------------------------
     //variables utilizadas para simbologia 
     //Funciones y variables para cambios de estilos
@@ -552,8 +561,6 @@ function ContenedorMapaAnalisis(props) {
                             interactiva: true,
                             onEachFeature: function (feature = {}, subLayer) {
                                 feature["nombre_capa"] = subLayer.options["nombre"];
-                                feature["seleccionada"] = false
-                                feature["intersecada"] = false
                                 if (resultado !== null) {
                                     var current = capaFiltrada.id_capa == "2" ? `${feature.properties['CVE_ENT']}` : capaFiltrada.id_capa == "3" ? `${feature.properties['CVE_ENT']}${feature.properties['CVE_MUN']}` : `${feature.properties['CVE_ENT']}`;
                                     Object.keys(feature.properties).map(key => {
@@ -577,23 +584,23 @@ function ContenedorMapaAnalisis(props) {
                                 }
                                 subLayer.on('click', function () {
                                     setRasgos([feature]);
-                                })
-                                subLayer.on('dblclick', function () {
-                                    if (feature["seleccionada"] == true) {
-                                        feature["seleccionada"] = false
-                                        subLayer.setStyle({ ...capaFiltrada.estilos })
-                                        for (var i = 0; i < featureSeleccion.length; i++) {
-                                            if (featureSeleccion[i].feature.id === feature.id) {
-                                                featureSeleccion.splice(i, 1);
+                                }),
+                                    subLayer.on('dblclick', function () {
+                                        if (feature["seleccionada"] == true) {
+                                            feature["seleccionada"] = false
+                                            subLayer.setStyle({ ...capaFiltrada.estilos })
+                                            for (var i = 0; i < featureSeleccion.length; i++) {
+                                                if (featureSeleccion[i].feature.id === feature.id) {
+                                                    featureSeleccion.splice(i, 1);
+                                                }
                                             }
+                                        } else {
+                                            feature["seleccionada"] = true
+                                            subLayer.setStyle({ fillColor: '#008000', color: '#778077' })
+                                            featureSeleccion.push(subLayer)
                                         }
-                                    } else {
-                                        feature["seleccionada"] = true
-                                        subLayer.setStyle({ fillColor: '#008000', color: '#778077' })
-                                        featureSeleccion.push(subLayer)
-                                    }
-                                    setSublayerSeleccionada(featureSeleccion)
-                                })
+                                        setSublayerSeleccionada(featureSeleccion)
+                                    })
                             }
                         });
                         response['layer'] = layer;
@@ -708,6 +715,7 @@ function ContenedorMapaAnalisis(props) {
                 setNomAtributos([]);
                 setVarUtil(null);
                 setTipoColor(null);
+                setLeyendaS();
             }
             setShowModalEstilos(true)
         } else {
@@ -1225,6 +1233,7 @@ function ContenedorMapaAnalisis(props) {
                             jsonSimbologia[i].intervalo = intervalo;
                             jsonSimbologia[i].cuantil = cuantil;
                             jsonSimbologia[i].nomAtributos = nomAtributos;
+                            jsonSimbologia[i].leyenda = leyendaS;
                         } else {
                             bnd = true;
                             //quiere decir que es una capa nueva
@@ -1243,6 +1252,7 @@ function ContenedorMapaAnalisis(props) {
                     json1.intervalo = intervalo;
                     json1.cuantil = cuantil;
                     json1.nomAtributos = nomAtributos;
+                    json1.leyenda = leyendaS;
                     jsonSimbologia.push(json1);
                 }
 
@@ -1259,6 +1269,7 @@ function ContenedorMapaAnalisis(props) {
                     json1.intervalo = intervalo;
                     json1.cuantil = cuantil;
                     json1.nomAtributos = nomAtributos;
+                    json1.leyenda = leyendaS;
                     jsonSimbologia.push(json1);
                 }
                 //valores.push(aux[nomAtributos[aux2].label]);
@@ -1463,6 +1474,15 @@ function ContenedorMapaAnalisis(props) {
 
     }
 
+    const [leyendaS, setLeyendaS] = useState();
+    const onBlur = (e) => {
+        //console.log(e.target.value);
+        setLeyendaS(e.target.value.toUpperCase());
+    }
+    function cambioL(e) {
+        setLeyendaS();
+    }
+
     function aplicaEstiloF() {
 
         leerTabla();
@@ -1567,6 +1587,7 @@ function ContenedorMapaAnalisis(props) {
                     jsonSimbologia[i].intervalo = intervalo;
                     jsonSimbologia[i].cuantil = cuantil;
                     jsonSimbologia[i].nomAtributos = nomAtributos;
+                    jsonSimbologia[i].leyenda = leyendaS;
 
                 } else {
                     bnd = true;
@@ -1586,6 +1607,7 @@ function ContenedorMapaAnalisis(props) {
             json1.intervalo = intervalo;
             json1.cuantil = cuantil;
             json1.nomAtributos = nomAtributos;
+            json1.leyenda = leyendaS;
             jsonSimbologia.push(json1);
         }
 
@@ -1602,6 +1624,7 @@ function ContenedorMapaAnalisis(props) {
             json1.intervalo = intervalo;
             json1.cuantil = cuantil;
             json1.nomAtributos = nomAtributos;
+            json1.leyenda = leyendaS;
             jsonSimbologia.push(json1);
         }
 
@@ -1736,8 +1759,260 @@ function ContenedorMapaAnalisis(props) {
 
         return kclass;
     }
-
     ///////////////////////////////////Termina el codigo para cambiar la simbologia
+    ///////////////////codigo para la exportacion del mapa
+    const [fecha, setFecha] = useState();
+    const [hora, setHora] = useState();
+    const [titulo, setTitulo] = useState();
+    const [showModalFile, setShowModalFile] = useState(false)
+    function handleShowModalFile() {
+        
+        MapaImpresion = dynamic(
+            () => import('./MapaImpresion'),
+            {
+                loading: () => <p>El mapa está cargando</p>,
+                ssr: false
+            }
+        )
+
+        var fecha, hora;
+        var hoy = new Date();
+        if (hoy.getMonth() < 10) {
+            fecha = hoy.getDate() + '-0' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+        } else {
+            fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+        }
+        if (hoy.getMinutes() < 10) {
+            hora = hoy.getHours() + ':0' + hoy.getMinutes();
+        } else {
+            hora = hoy.getHours() + ':' + hoy.getMinutes();
+        }
+        setFecha(fecha);
+        setHora(hora);
+        setTitulo(document.getElementById('nombremapa').value.toUpperCase())
+        setShowModalFile(!showModalFile);
+
+    }
+    const [orientacion, setOrientacion] = useState();
+    function forma(e) {
+        if (e == 'horizontal') {
+            setOrientacion('Horizontal');
+        } else {
+            setOrientacion('Vertical');
+        }
+    }
+
+    function exportarPDF() {
+        if (orientacion == 'Horizontal') {
+            //se imprime el mapa en forma horizontal  
+            let node = document.getElementById('mapaExportacion');
+            let node1 = document.getElementById('mapaExportacion');
+            //node1.setAttribute('style','transform: scale(1.5);');
+
+            htmlToImage.toJpeg(node1, { quality: 0.95 })
+                .then(function (dataUrl) {
+                    var link = document.createElement('a');
+                    link.download = 'Mapa.jpeg';
+                    link.href = dataUrl;
+                    link.click();
+                    //node1.setAttribute('style','transform: scale(0.8);');
+                });
+
+            htmlToImage.toPng(node)
+                .then(function (dataUrl) {
+                    var pdf = new jsPDF('l', 'px', [node.clientWidth * 1.15, node.clientHeight * 1.1], 'true'); //new jsPDF('p', 'mm', [297, 210]);
+                    var img = new Image();
+                    var canvas = document.createElement("canvas");
+                    img.width = node.clientWidth * 1.3
+                    img.height = node.clientHeight * 1.3
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
+                    var dataURL = canvas.toDataURL("image/jpeg");
+                    dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+                    img.src = dataUrl;
+                    pdf.addImage(img, "JPEG", 50, 50, node.clientWidth * 1.0, node.clientHeight * 1.0);
+                    pdf.save('Mapa.pdf');
+
+                })
+                .catch(function (error) {
+                    console.error('oops, something went wrong!', error);
+                });
+        } else {
+            //se imprime en forma vertical
+            let node = document.getElementById('mapaExportacion1');
+
+            htmlToImage.toJpeg(node, { quality: 0.98 })
+                .then(function (dataUrl) {
+                    var link = document.createElement('a');
+                    link.download = 'Mapa.jpeg';
+                    link.href = dataUrl;
+                    link.click();
+                });
+
+            htmlToImage.toPng(node)
+                .then(function (dataUrl) {
+                    var pdf = new jsPDF('p', 'px', [node.clientWidth * 1.1, node.clientHeight * 1.1], 'true'); //new jsPDF('p', 'mm', [297, 210]);
+                    var img = new Image();
+                    var canvas = document.createElement("canvas");
+                    img.width = node.clientWidth * 1.3
+                    img.height = node.clientHeight * 1.3
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
+                    var dataURL = canvas.toDataURL("image/jpeg");
+                    dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+                    img.src = dataUrl;
+                    pdf.addImage(img, "JPEG", 50, 50, node.clientWidth * 1.0, node.clientHeight * 1.0);
+                    pdf.save('Mapa.pdf');
+
+                })
+                .catch(function (error) {
+                    console.error('oops, something went wrong!', error);
+                });
+        }
+
+    }
+
+    function buscarTitulo(nombre) {
+        console.log(nombre);
+        let bandera = 0;
+        let index;
+        if (jsonSimbologia.length > 0) {
+            for (let i = 0; i < jsonSimbologia.length; i++) {
+                if (jsonSimbologia[i].name == nombre) {
+                    bandera = 1;
+                    index = i;
+                    break;
+                    // return jsonSimbologia[i].leyenda;
+                } else {
+                    //return nombre;
+                    bandera = 0;
+                }
+            }
+        } else {
+            //return nombre;
+            bandera = 0;
+        }
+        if (bandera == 1) {
+            return jsonSimbologia[index].leyenda;
+        } else {
+            return nombre;
+        }
+
+    }
+
+
+
+
+
+    //////////////////////////////////////////Codigo para generar el pdf
+    //Codigo para generar el PDF
+
+    function descargarDoc() {
+        preCargaPDF()
+        setTimeout(() => {
+            let datos = generarJson(csvData);
+            //console.log(datos);
+            var fecha, hora;
+            var hoy = new Date();
+            if (hoy.getMonth() < 10) {
+                fecha = hoy.getDate() + '-0' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+            } else {
+                fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+            }
+            if (hoy.getMinutes() < 10) {
+                hora = hoy.getHours() + ':0' + hoy.getMinutes();
+            } else {
+                hora = hoy.getHours() + ':' + hoy.getMinutes();
+            }
+            var img = new Image();
+            img.onload = function () {
+                var dataURI = getBase64Image(img);
+                setTimeout(() => {
+                    //console.log("4 Segundo esperado")
+                }, 4000);
+                return dataURI;
+            }
+            img.src = "/images/consulta/encabezado.jpg";
+            var doc = new jsPDF();
+            let columns = csvData[0];
+            var result = [];
+            datos.forEach(element => {
+                result.push(Object.values(element));
+            });
+
+            autoTable(doc, {
+                columns,
+                body: result,
+                margin: { top: 55 }, theme: 'grid',
+                styles: { fontSize: 9 },
+                didDrawPage: function (data) {
+                    //header
+                    doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
+                    //doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
+                    doc.setFontSize(10);
+                    if (userDetails.nombre != null) {
+                        doc.text(20, 43, "Nombre Usuario: " + userDetails.nombre);
+                    } else {
+                        doc.text(20, 43, "Nombre Usuario: INVITADO");
+                    }
+                    doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
+
+                }
+        });
+        doc.save(csvFileName + ".pdf");
+        },1500);
+    }
+
+    function preCargaPDF() {
+        var hoy = new Date();
+        var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+        var hora = hoy.getHours() + ':' + hoy.getMinutes();
+        var img = new Image();
+        img.onload = function () {
+            var dataURI = getBase64Image(img);
+            return dataURI;
+        }
+        img.src = "/images/consulta/encabezado.jpg";
+        /// codigo para generar pdf 
+        var doc = new jsPDF();
+        var header = function (data) {
+            doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
+            doc.setFontSize(10);
+            if (userDetails.nombre != null) {
+                doc.text(20, 43, "Nombre Usuario: " + userDetails.nombre);
+            } else {
+                doc.text(20, 43, "Nombre Usuario: INVITADO");
+            }
+            doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
+        };
+        doc.output('datauristring');
+    }
+
+    function generarJson(data) {
+        let vec = [];
+        for (let index = 1; index < data.length; index++) {
+            let js = {};
+            js.fid = data[index][0];
+            js.IdMunicipal = data[index][1];
+            js.IdEntidad = data[index][2];
+            js.CveMunicipal = data[index][3];
+            js.NombreMun = data[index][4];
+            js.nombreCapa = data[index][5];
+            vec.push(js);
+        }
+        return vec;
+    }
+
+    //funcion para convertir la imgen en jpeg
+    function getBase64Image(img) {
+        var canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        var dataURL = canvas.toDataURL("image/jpeg");
+        return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+    }
 
 
     //Funcion para cambiar el estado del checkbox
@@ -1922,7 +2197,7 @@ function ContenedorMapaAnalisis(props) {
     //Para agregar la funcionalidad de mover modal
     function DraggableModalDialog(props) {
         return (
-            <Draggable handle=".modal-header"><ModalDialog  {...props} /></Draggable>
+            <Draggable handle=".modal-movible"><ModalDialog  {...props} /></Draggable>
         )
     }
 
@@ -2253,10 +2528,6 @@ function ContenedorMapaAnalisis(props) {
                 setMuestraTablasCapasIdentificadas(savedToIdentify)
                 prepareDataToExport(savedToIdentify, function (data) {
                     addToExportWithPivot(data, 1);
-                    // generatePdf(savedToIdentify.length, function() {
-                    //     console.log('pdfOk!!!');
-                    //     console.log('pdfDocument!!!', pdfDocument);
-                    // });
                 });
             } else if (data.seleccion == "2") {
                 getTopLayer(function (arrayFeatures) {
@@ -2264,10 +2535,6 @@ function ContenedorMapaAnalisis(props) {
                         setMuestraTablasCapasIdentificadas([arrayFeatures])
                         prepareDataToExport([arrayFeatures], function (data) {
                             addToExportWithPivot(data, 1);
-                            // generatePdf(1, function() {
-                            //     console.log('pdfOk!!!');
-                            //     console.log('pdfDocument!!!', pdfDocument);
-                            // });
                         });
                     }
                 });
@@ -2277,10 +2544,6 @@ function ContenedorMapaAnalisis(props) {
                         setMuestraTablasCapasIdentificadas([arrayFeatures])
                         prepareDataToExport([arrayFeatures], function (data) {
                             addToExportWithPivot(data, 1);
-                            // generatePdf(1, function() {
-                            //     console.log('pdfOk!!!');
-                            //     console.log('pdfDocument!!!', pdfDocument);
-                            // });
                         });
                     }
                 });
@@ -2368,147 +2631,27 @@ function ContenedorMapaAnalisis(props) {
         }
     });
 
-    function generatePdf(length, success) {
-        var nodeMap = document.getElementById('id-export-Map');
-        htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
-            setTimeout(() => {
-                generateTables(length, function (tables) {
-                    setPdfDocument(//TODO revisar los errores del catch
-                        <toPdf.Document>
-                            <toPdf.Page size="A4" style={styles.page} wrap>
-                                <toPdf.View style={styles.section}>
-                                    <toPdf.Text>MAPA</toPdf.Text>
-                                    <toPdf.Image src={dataUrlMap} />
-                                </toPdf.View>
-                                <toPdf.View style={styles.section}>
-                                    <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
-                                    {
-                                        tables.map((table) => {
-                                            <toPdf.Image src={table} />
-                                        })
-                                    }
-                                </toPdf.View>
-                            </toPdf.Page>
-                        </toPdf.Document>
-                    );
-                    success();
-                });
-            }, 3000);
-        }).catch(function (error) {
-            console.log('errorMap: ', error);
-            setDatosModalAnalisis({
-                title: '¡Error!',
-                body: 'No se pudó generar el contenido del PDF (mapa)',
-            });
-            setShowModalAnalisis(true)
-        });
-    }
-
-    function generateTables(length, success) {
-        var tables = [];
-        for (var index = 0; index < length; index++) {
-            var nodeTables = document.getElementById(`identify-table-${index}`);
-            htmlToImage.toPng(nodeTables).then(function (dataUrlTables) {
-                var img = new Image();
-                img.src = dataUrlTables;
-                document.body.appendChild(img);
-                tables.push(dataUrlTables)
-            }).catch(function (error) {
-                console.log('errorTables: ', error);
-                setDatosModalAnalisis({
-                    title: '¡Error!',
-                    body: 'No se pudó generar el contenido del PDF (tablas)',
-                });
-                setShowModalAnalisis(true)
-            });
-        }
-        success(tables);
-    }
-
-    // useEffect(() => {
-    //     if(selectedToIdentify.length > 0) {
-    //         var nodeMap = document.getElementById('id-export-Map');
-    //         htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
-    //             setTimeout(() => {
-    //                 generateTables(selectedToIdentify.length, function(tables) {
-    //                     setPdfDocument(//TODO revisar los errores del catch
-    //                         <toPdf.Document> 
-    //                             <toPdf.Page size="A4" style={styles.page} wrap>
-    //                                 <toPdf.View style={styles.section}>
-    //                                     <toPdf.Text>MAPA</toPdf.Text>
-    //                                     <toPdf.Image src={dataUrlMap}/>
-    //                                 </toPdf.View>
-    //                                 <toPdf.View style={styles.section}>
-    //                                     <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
-    //                                     {
-    //                                         tables.map((table) => {
-    //                                             <toPdf.Image src={table}/>
-    //                                         })
-    //                                     }
-    //                                 </toPdf.View>
-    //                             </toPdf.Page>
-    //                         </toPdf.Document>
-    //                     );
-    //                 });
-    //                 console.log('pdfOk!!!');
-    //             }, 3000);
+    // function generateTables(length, success) {
+    //     var tables = [];
+    //     for (var index = 0; index < length; index++) {
+    //         var nodeTables = document.getElementById(`identify-table-${index}`);
+    //         htmlToImage.toPng(nodeTables).then(function (dataUrlTables) {
+    //             var img = new Image();
+    //             img.src = dataUrlTables;
+    //             document.body.appendChild(img);
+    //             tables.push(dataUrlTables)
     //         }).catch(function (error) {
-    //             console.log('errorMap: ', error);
+    //             console.log('errorTables: ', error);
     //             setDatosModalAnalisis({
     //                 title: '¡Error!',
-    //                 body: 'No se pudó generar el contenido del PDF (mapa)',
+    //                 body: 'No se pudó generar el contenido del PDF (tablas)',
     //             });
     //             setShowModalAnalisis(true)
     //         });
     //     }
-    // }, [selectedToIdentify]);
+    //     success(tables);
+    // }
 
-    function generatePdf(items, success) {
-        var nodeMap = document.getElementById('id-export-Map');
-        var content;
-        htmlToImage.toPng(nodeMap).then(function (dataUrlMap) {
-            content =
-                <toPdf.View style={styles.section}>
-                    <toPdf.Text>MAPA</toPdf.Text>
-                    <toPdf.Image src={dataUrlMap} />
-                </toPdf.View>;
-            console.log('items: ', items)
-            items.map((item, index) => {
-                var nodeTable = document.getElementById(`identify-table-${index}`);
-                htmlToImage.toPng(nodeTable).then(function (dataUrlTables) {
-                    var img = new Image();
-                    img.src = dataUrlTables;
-                    document.body.appendChild(img);
-                    // content = content + 
-                    //     <toPdf.View style={styles.section}>
-                    //         <toPdf.Text>INFORMACIÓN DE RASGOS</toPdf.Text>
-                    //         <toPdf.Image src={dataUrlTables}/>
-                    //     </toPdf.View>;
-                }).catch(function (error) {
-                    console.log('errorTables: ', error);
-                    setDatosModalAnalisis({
-                        title: '¡Error!',
-                        body: 'No se pudó generar el contenido del PDF',
-                    });
-                    setShowModalAnalisis(true)
-                });
-            });
-            setPdfDocument(//TODO revisar los errores del catch
-                <toPdf.Document>
-                    <toPdf.Page size="A4" style={styles.page} wrap>
-                        {content}
-                    </toPdf.Page>
-                </toPdf.Document>
-            );
-            success();
-        }).catch(function (error) {
-            setDatosModalAnalisis({
-                title: '¡Error!',
-                body: 'No se pudó generar el contenido del PDF',
-            });
-            setShowModalAnalisis(true)
-        });
-    }
 
     //Consultas prediseñadas
     const [valoresConsultaConsultas, setValoresConsultaConsultas] = useState(false)
@@ -2520,6 +2663,7 @@ function ContenedorMapaAnalisis(props) {
         if (rasgos.length != 0) {
             addToExportWithPivot(rasgos, 0)
         }
+        preCargaPDF();
     }, [rasgos]);
 
     useEffect(() => {
@@ -2555,12 +2699,6 @@ function ContenedorMapaAnalisis(props) {
     }
     const [dataToProps, setDataToProps] = useState();
 
-    // useEffect(() => {
-    //     if (props.informacionEspacial != undefined) {
-    //         setDataToProps(props.informacionEspacial);
-    //     }
-    // }, [props.informacionEspacial]);
-
     //Para mostrar las capas dibujadas
     const [modalCapasDibujadas, setModalCapasDibujadas] = useState();
     const [layersDibujadas, setLayersDibujadas] = useState([]);
@@ -2573,6 +2711,26 @@ function ContenedorMapaAnalisis(props) {
     var iMarcador = 0;
     var iOtro = 0;
 
+    const obtenerCentroide = (figura) => {
+        if (figura.centro) {
+            referenciaMapa.removeLayer(figura.centro)
+        }
+        let redIcon = new L.Icon({
+            iconUrl: '/images/leaflet/marker-icon-2x-red.png',
+            shadowUrl: '/images/leaflet/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+        let centro = figura.layer.getLatLng()
+        let marcador = L.marker([centro.lat, centro.lng], { icon: redIcon });
+        figura.centro = marcador;
+        referenciaMapa.addLayer(figura.centro)
+        setModalCapasDibujadas(false)
+    }
+
+    //Cuando se dibuja una geometria.
     const procesaDibujo = (dibujo) => {
         if (dibujo.layerType == "rectangle") {
             iRectangulo = iRectangulo + 1;
@@ -2605,6 +2763,7 @@ function ContenedorMapaAnalisis(props) {
         setLayersDibujadas(arregloLayers)
     }
 
+    //Cuando se elimina un dibujo
     const eliminaDibujo = (dibujo) => {
         let idArreglo = []
         for (var i in dibujo.layers._layers) {
@@ -2613,10 +2772,11 @@ function ContenedorMapaAnalisis(props) {
         let nuevoArr = arregloLayers.filter(valor => !idArreglo.includes(valor.id))
         let arrDeleted = arregloLayers.filter(valor => idArreglo.includes(valor.id))
         arrDeleted.map(valor => {
-            if (valor.tipo == 3 || valor.tipo == 4) {
-                if (valor.buffer) {
-                    referenciaMapa.removeLayer(valor.buffer)
-                }
+            if (valor.buffer) {
+                referenciaMapa.removeLayer(valor.buffer)
+            }
+            if (valor.centro) {
+                referenciaMapa.removeLayer(valor.centro)
             }
         });
         arregloLayers = nuevoArr;
@@ -2677,12 +2837,18 @@ function ContenedorMapaAnalisis(props) {
                 if (valor.buffer) {
                     referenciaMapa.addLayer(valor.buffer);
                 }
+                if (valor.centro) {
+                    referenciaMapa.addLayer(valor.centro);
+                }
                 return valor;
             } else {
                 valor.habilitado = false;
                 referenciaMapa.removeLayer(valor.layer)
                 if (valor.buffer) {
                     referenciaMapa.removeLayer(valor.buffer);
+                }
+                if (valor.centro) {
+                    referenciaMapa.removeLayer(valor.centro);
                 }
                 return valor;
             }
@@ -2756,13 +2922,29 @@ function ContenedorMapaAnalisis(props) {
         setModalCapasDibujadas(false);
     }
 
+    //Para hacer zoom in o zoom out de las capas
     function acercarAlejarCapaDib(figura, tipo) {
         let layer = figura.layer;
         if (tipo == 0) {
-            referenciaMapa.fitBounds(layer.getBounds())
+            if (figura.tipo === 4) {
+                //Si es un marcador
+                let latLngsMarcador = [layer.getLatLng()];
+                referenciaMapa.fitBounds(L.latLngBounds(latLngsMarcador))
+            } else {
+                //Si es un cuadrado
+                referenciaMapa.fitBounds(layer.getBounds())
+            }
         } else if (tipo == 1) {
             let zoom = referenciaMapa.getZoom();
-            let centro = layer.getBounds().getCenter();
+            let centro;
+            if (figura.tipo === 4) {
+                //Si es un marcador
+                centro = layer.getLatLng()
+            }
+            else {
+                //Si es un cuadrado
+                centro = layer.getBounds().getCenter();
+            }
             if (zoom == 5) {
                 referenciaMapa.setView([centro.lat, centro.lng], 5)
             } else if (zoom == 6) {
@@ -2803,6 +2985,7 @@ function ContenedorMapaAnalisis(props) {
     //Para el grupo de capas donde se guardan los dibujos
     const valorContextoFeature = useContext(ContextoCreadoFeature)
 
+    //Para obtener un buffer de capas dibujadas
     function tamañoBuffer(e) {
         e.preventDefault();
         let padre = e.target
@@ -2825,37 +3008,49 @@ function ContenedorMapaAnalisis(props) {
                 arrayLatLngs.push([latLngs[i].lng, latLngs[i].lat]);
             }
             let lineaString = turf.lineString(arrayLatLngs);
-            buffer = turf.buffer(lineaString, tamano);
+            buffer = turf.buffer(lineaString, tamano / 1000);
         } else if (figura.layerType == "marker") {
             let point = turf.point([figura.layer._latlng.lng, figura.layer._latlng.lat]);
-            buffer = turf.buffer(point, tamano);
-        }
-
-        var bufferedLayer = L.geoJSON(buffer, { interactive: false });
-        bufferedLayer.setZIndex = 0;
-        bufferedLayer.options.buffer = true
-        figura.buffer = bufferedLayer;
-        // bufferedLayer.addTo(grupo);
-        if (figura.habilitado) {
-            referenciaMapa.addLayer(bufferedLayer)
-        }
-
-        let capasIntersectadas = []
-        referenciaMapa.eachLayer(function (layer) {
-            if (layer instanceof L.GeoJSON) {
-                if (!layer.options.hasOwnProperty("buffer")) {
-                    layer.eachLayer(function (layerConFeatures) {
-                        let seIntersectan;
-                        seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), buffer)
-                        if (seIntersectan != null) {
-                            capasIntersectadas.push(layerConFeatures.feature)
-                        }
-                    })
-                }
+            buffer = turf.buffer(point, tamano / 1000);
+        } else if (figura.layerType == "polygon") {
+            let latLngsArray = figura.layer.getLatLngs();
+            let latLngs = latLngsArray[0]
+            let arrayLatLngs = []
+            for (var i in latLngs) {
+                arrayLatLngs.push([latLngs[i].lng, latLngs[i].lat]);
             }
-        });
-        if (capasIntersectadas.length != 0) {
-            setRasgos(capasIntersectadas);
+            arrayLatLngs.push([latLngs[0].lng, latLngs[0].lat]);
+            let polygon = turf.polygon([arrayLatLngs]);
+            buffer = turf.buffer(polygon, tamano / 1000);
+        }
+
+        if (buffer !== null) {
+            var bufferedLayer = L.geoJSON(buffer, { interactive: false });
+            bufferedLayer.setZIndex = 0;
+            bufferedLayer.options.buffer = true
+            figura.buffer = bufferedLayer;
+            // bufferedLayer.addTo(grupo);
+            if (figura.habilitado) {
+                referenciaMapa.addLayer(bufferedLayer)
+            }
+
+            let capasIntersectadas = []
+            referenciaMapa.eachLayer(function (layer) {
+                if (layer instanceof L.GeoJSON) {
+                    if (!layer.options.hasOwnProperty("buffer")) {
+                        layer.eachLayer(function (layerConFeatures) {
+                            let seIntersectan;
+                            seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), buffer)
+                            if (seIntersectan != null) {
+                                capasIntersectadas.push(layerConFeatures.feature)
+                            }
+                        })
+                    }
+                }
+            });
+            if (capasIntersectadas.length != 0) {
+                setRasgos(capasIntersectadas);
+            }
         }
         setModalCapasDibujadas(false);
     }
@@ -2864,7 +3059,6 @@ function ContenedorMapaAnalisis(props) {
     const handleClose = () => setShowModalEstilos(!showModalEstilos);
 
     const [mapState, setMapState] = useState();
-
     useEffect(() => {
         if (mapState) {
             if (mapState.entityObject.length > 0) {
@@ -2913,60 +3107,209 @@ function ContenedorMapaAnalisis(props) {
         let estaCheckeado = 0;
         if (e.target["0"].checked == true) {
             estaCheckeado = 1;
-        } else if (e.target["1"].checked == true) {
-            estaCheckeado = 2;
         }
 
-        if (estaCheckeado !== 0) {
-            let capaIntersectadaSublayer = [];
-            if (sublayerSeleccionada.length !== 0) {
-                sublayerSeleccionada.map(valorSublayer => {
-                    referenciaMapa.eachLayer(function (layer) {
-                        if (layer instanceof L.GeoJSON) {
-                            if (!layer.options.hasOwnProperty("buffer")) {
-                                let subCapasCapaPadre = []
-                                layer.eachLayer(function (layerConFeatures) {
-                                    if (valorSublayer.feature.nombre_capa !== layerConFeatures.feature.nombre_capa) {
-                                        if (layerConFeatures.feature["intersecada"] == true) {
-                                            layerConFeatures.feature["intersecada"] = false;
-                                        }
-                                        layerConFeatures.setStyle({ fillColor: "#FF7777", color: "#FF0000" })
-                                        let seIntersectan;
-                                        seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), valorSublayer.toGeoJSON())
-                                        if (seIntersectan != null) {
-                                            if (estaCheckeado == 1) {
-                                                let poligonoFeatures = turf.polygon(layerConFeatures.feature.geometry.coordinates[0]);
-                                                let poligonoSeleccionada = turf.polygon(valorSublayer.feature.geometry.coordinates[0]);
-                                                let contenida = turf.booleanContains(poligonoSeleccionada, poligonoFeatures);
-                                                if (contenida == true) {
-                                                    layerConFeatures.setStyle({ fillColor: "#FFFF77", color: "#FFFF00" })
-                                                    layerConFeatures.feature["intersecada"] = true;
-                                                    subCapasCapaPadre.push(layerConFeatures.feature)
-                                                }
-                                            } else {
+        let capaIntersectadaSublayer = [];
+        if (sublayerSeleccionada.length !== 0) {
+            sublayerSeleccionada.map(valorSublayer => {
+                referenciaMapa.eachLayer(function (layer) {
+                    if (layer instanceof L.GeoJSON) {
+                        if (!layer.options.hasOwnProperty("buffer")) {
+                            let subCapasCapaPadre = []
+                            layer.eachLayer(function (layerConFeatures) {
+                                if (valorSublayer.feature.nombre_capa !== layerConFeatures.feature.nombre_capa) {
+                                    if (layerConFeatures.feature["intersecada"] == true) {
+                                        layerConFeatures.feature["intersecada"] = false;
+                                    }
+                                    layerConFeatures.setStyle({ fillColor: "#FF7777", color: "#FF0000" })
+                                    let seIntersectan;
+                                    seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), valorSublayer.toGeoJSON())
+                                    if (seIntersectan != null) {
+                                        if (estaCheckeado == 1) {
+                                            let poligonoFeatures = turf.polygon(layerConFeatures.feature.geometry.coordinates[0]);
+                                            let poligonoSeleccionada = turf.polygon(valorSublayer.feature.geometry.coordinates[0]);
+                                            let contenida = turf.booleanContains(poligonoSeleccionada, poligonoFeatures);
+                                            if (contenida == true) {
                                                 layerConFeatures.setStyle({ fillColor: "#FFFF77", color: "#FFFF00" })
                                                 layerConFeatures.feature["intersecada"] = true;
                                                 subCapasCapaPadre.push(layerConFeatures.feature)
                                             }
+                                        } else {
+                                            layerConFeatures.setStyle({ fillColor: "#FFFF77", color: "#FFFF00" })
+                                            layerConFeatures.feature["intersecada"] = true;
+                                            subCapasCapaPadre.push(layerConFeatures.feature)
                                         }
                                     }
-                                })
-                                if (subCapasCapaPadre.length != 0) {
-                                    capaIntersectadaSublayer.push(subCapasCapaPadre)
                                 }
+                            })
+                            if (subCapasCapaPadre.length != 0) {
+                                capaIntersectadaSublayer.push(subCapasCapaPadre)
+                            }
+                        }
+                    }
+                });
+            });
+        }
+        if (capaIntersectadaSublayer.length != 0) {
+            setInteserccionSublayerSeleccionada(capaIntersectadaSublayer)
+            setModalSublayerSeleccionada(true)
+        }
+    }
+
+    const [modalCapasSeleccionadas, setModalCapasSeleccionadas] = useState(false)
+
+    const bufferCapaSeleccionada = (e) => {
+        e.preventDefault();
+        let padre = e.target
+
+        let idTemp = $(padre).children(".idCapa");
+        let id = idTemp[0].value;
+        let capaTemp = sublayerSeleccionada.findIndex(x => x.feature.id === id)
+        let capa = sublayerSeleccionada[capaTemp];
+
+        let tamanoTemp = $(padre).find(".tamanoCapaSeleccionada");
+        let tamano = tamanoTemp[0].value;
+
+        if (capa.buffer) {
+            referenciaMapa.removeLayer(capa.buffer)
+        }
+
+        let buffer = turf.buffer(capa.feature, tamano / 1000);
+        let bufferedLayer = L.geoJSON(buffer, { interactive: false });
+        bufferedLayer.setZIndex = 0;
+        bufferedLayer.options.buffer = true
+        capa.buffer = bufferedLayer;
+        referenciaMapa.addLayer(bufferedLayer)
+
+        let capasIntersectadas = []
+        referenciaMapa.eachLayer(function (layer) {
+            if (layer instanceof L.GeoJSON) {
+                if (!layer.options.hasOwnProperty("buffer")) {
+                    layer.eachLayer(function (layerConFeatures) {
+                        if (capa.feature.id !== layerConFeatures.feature.id) {
+                            let seIntersectan;
+                            seIntersectan = turf.intersect(layerConFeatures.toGeoJSON(), buffer)
+                            if (seIntersectan != null) {
+                                capasIntersectadas.push(layerConFeatures.feature)
+                            }
+                        }
+                    })
+                }
+            }
+        });
+        if (capasIntersectadas.length != 0) {
+            setRasgos(capasIntersectadas);
+        }
+        setModalCapasSeleccionadas(false);
+    }
+
+    const [chartState, setChartState] = useState();
+    const [tables, setTables] = useState([]);
+    const [spaceData, setSpaceData] = useState();
+    const [entityObject, setEntityObject] = useState();
+
+    const borraCapasSeleccionadas = () => {
+        referenciaMapa.eachLayer(function (layer) {
+            if (layer instanceof L.GeoJSON) {
+                if (!layer.options.hasOwnProperty("buffer")) {
+                    layer.eachLayer(function (layerConFeatures) {
+                        if (layerConFeatures.feature["seleccionada"] == true) {
+                            layerConFeatures.feature["seleccionada"] = false;
+                            layerConFeatures.setStyle({ fillColor: "#FF7777", color: "#FF0000" })
+                            if (layerConFeatures.buffer) {
+                                referenciaMapa.removeLayer(layerConFeatures.buffer)
                             }
                         }
                     });
-                });
+                }
             }
+        });
+        featureSeleccion = [];
+        setSublayerSeleccionada([])
+        setModalCapasSeleccionadas(false);
+    }
 
-            if (capaIntersectadaSublayer.length != 0) {
-                setInteserccionSublayerSeleccionada(capaIntersectadaSublayer)
-                setModalSublayerSeleccionada(true)
+    function changeMapState(visible, data, entityObject_) {
+        props.setInformacionEspacial(data);
+        props.setReferenciaEntidad(entityObject_);
+        referenciaMapa._onResize();
+    }
+
+    function createTable(indexes) {
+        var tmpObject;
+        indexes.map((index, index___) => {
+            if (index___ == 0) {
+                tmpObject = {
+                    checked: tables[index].checked,
+                    // data: tables[index].data,
+                    data: {
+                        nombreTabla: '',
+                        columnas: [],
+                        datos: []
+                    },
+                    index: tables.length,
+                    level: tables[index].level,
+                    title: `Consulta dinámica - ${tables.length + 1} - Unión`,
+                    type: tables[index].type,
+                    filters: tables[index].filters
+                };
+                tmpObject.data.nombreTabla = tmpObject.title;
+                tables[index].data.columnas.map(column => {
+                    tmpObject.data.columnas.push(column);
+                })
+                tables[index].data.datos.map(data => {
+                    tmpObject.data.datos.push(data);
+                })
+            } else {
+                tables[index].data.columnas.map((column, index__) => {
+                    var column_ = [column[0], column[1], column[2], index];
+                    tmpObject.data.columnas.push(column_);
+                });
+                tmpObject.data.datos.map((tmpData, index_) => {
+                    tables[index].data.datos.map(data => {
+                        if (tmpData[0] == data[0]) {
+                            data.map(mapped => {
+                                tmpObject.data.datos[index_].push(mapped);
+                            });
+                        }
+                    });
+                });
+                console.log('tmpObject: ', tmpObject);
+                setTables([...tables, tmpObject]);
             }
-        } else {
-            console.log("Necesitas hacer una selección")
+        });
+    }
+
+    //Valores para guardar el valor de capa vectorial
+    const [indexCapaVectorial, setIndexCapaVectorial] = useState(1)
+
+    const creaCapaVectorial = () => {
+        let capasVectoriales = [];
+        sublayerSeleccionada.forEach(valor => {
+            capasVectoriales.push(valor.feature)
+        })
+        setDatosModalAnalisis({
+            title: "Descarga de capa vectorial",
+            body:
+                <a className="tw-font-bold tw-text-black" href={
+                    `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(capasVectoriales))}`
+                } download={
+                    `capa_vectorial_${indexCapaVectorial}.json`
+                }>Haz clic aquí para descargar la capa vectorial</a>
+        });
+        setShowModalAnalisis(true)
+        setIndexCapaVectorial(indexCapaVectorial + 1)
+        setModalCapasSeleccionadas(false)
+    }
+
+    useEffect(() => {
+        if (chartState) {
+            setTables([...tables, chartState]);
         }
+    }, [chartState]);
+
+    const borraRasgos = () => {
+        setRasgos([])
     }
 
     return (
@@ -2977,142 +3320,206 @@ function ContenedorMapaAnalisis(props) {
                 onHide={handleCloseModalAnalisis}
             />
 
+            <Modal dialogAs={DraggableModalDialog} show={modalCapasSeleccionadas} onHide={() => setModalCapasSeleccionadas(!modalCapasSeleccionadas)}
+                backdrop={false} keyboard={false} contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
+                <Modal.Header className="tw-cursor-pointer modal-movible" closeButton>
+                    <Modal.Title>
+                        Capas seleccionadas
+                    </Modal.Title>
+                    <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
+                        <FontAwesomeIcon icon={faWindowRestore} />
+                    </button>
+                </Modal.Header>
+                <Modal.Body className="modal-movible">
+                    {
+                        sublayerSeleccionada.length !== 0 ? (
+                            <>
+                                <Button variant="light" onClick={borraCapasSeleccionadas} className="tw-mb-6 tw-block">Borrar capas seleccionadas</Button>
+                                <Button variant="light" onClick={creaCapaVectorial} className="tw-mb-6 tw-block">Crear capa vectorial</Button>
+                                {
+                                    sublayerSeleccionada.map((layer, index) => (
+                                        <div key={index} className="tw-mb-8">
+                                            <div>
+                                                <p>{layer.feature.nombre_capa}</p>
+                                                <p>
+                                                    {(layer.feature.properties["Nombre entidad"] || layer.feature.properties["Nombre municipio"]) ? (layer.feature.properties["Nombre entidad"] || layer.feature.properties["Nombre municipio"]) : layer.feature.id}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                {
+                                                    <Form onSubmit={bufferCapaSeleccionada} className="tw-text-center formulario">
+                                                        <input type="hidden" value={layer.feature.id} className="idCapa" />
+                                                        <Form.Group controlId={`tamanoCapaSeleccionada-${index}`} className="tw-mb-0">
+                                                            <Form.Control name={`tamanoCapaSeleccionada-{${index}`} className="tamanoCapaSeleccionada" type="number" step="any" required min={1} max={200000} placeholder="Ingresa un número entre 1 y 200,000" />
+                                                            <Form.Text className="text-muted">
+                                                                El valor ingresado estára en metros
+                                                            </Form.Text>
+                                                        </Form.Group>
+                                                        <Button type="submit" variant="light">Obtener buffer</Button>
+                                                    </Form>
+                                                }
+                                            </div>
+                                        </div>
+                                    ))
+                                }
+                            </>
+                        ) : (
+                            <p>No se ha seleccionado alguna capa</p>
+                        )
+                    }
+                </Modal.Body >
+            </Modal >
+
             <Modal dialogAs={DraggableModalDialog} show={modalSublayerSeleccionada} onHide={() => setModalSublayerSeleccionada(!modalSublayerSeleccionada)}
                 keyboard={false} backdrop={false} contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
-                <Modal.Header className="tw-cursor-pointer" closeButton>
+                <Modal.Header className="tw-cursor-pointer modal-movible" closeButton>
                     <Modal.Title>
-                        Intersección capa seleccionada
+                        Intersección capa(s) seleccionada(s)
                     </Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
-                    <Form onSubmit={sublayerSelect}>
-                        <Form.Check value="1" inline label="Completamente contenida" name="group1" type="radio" />
-                        <Form.Check value="2" inline label="Parcialmente contenida" name="group1" type="radio" />
-                        <Button type="submit" variant="light">Intersectar</Button>
-                    </Form>
+                <Modal.Body className="modal-movible">
                     {
-                        inteserccionSublayerSeleccionada.length != 0 ? (
-                            inteserccionSublayerSeleccionada.map((selected, index) => (
-                                <Table striped bordered hover key={index}>
-                                    <thead>
-                                        <tr className="tw-text-center">
-                                            <th colSpan={Object.keys(selected[0].properties).length}>{selected[0].nombre_capa}</th>
-                                        </tr>
-                                        <tr>
-                                            {
-                                                Object.keys(selected[0].properties).map((header, index1) => (
-                                                    <th key={index1}>{header}</th>
-                                                ))
-                                            }
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {
-                                            selected.map((valorFeature, index2) => (
-                                                <tr key={index2}>
+                        sublayerSeleccionada.length !== 0 ? (
+                            <>
+                                <Form onSubmit={sublayerSelect}>
+                                    <Form.Check value="1" inline label="Completamente contenida" name="group1" type="radio" required />
+                                    <Form.Check value="2" inline label="Parcialmente contenida" name="group1" type="radio" />
+                                    <Button type="submit" variant="light" className="tw-block tw-mb-6">Intersectar</Button>
+                                </Form>
+                                {
+
+                                    inteserccionSublayerSeleccionada.length !== 0 ? (
+                                        inteserccionSublayerSeleccionada.map((selected, index) => (
+                                            <Table striped bordered hover key={index}>
+                                                <thead>
+                                                    <tr className="tw-text-center">
+                                                        <th colSpan={Object.keys(selected[0].properties).length}>{selected[0].nombre_capa}</th>
+                                                    </tr>
+                                                    <tr>
+                                                        {
+                                                            Object.keys(selected[0].properties).map((header, index1) => (
+                                                                <th key={index1}>{header}</th>
+                                                            ))
+                                                        }
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
                                                     {
-                                                        Object.keys(valorFeature.properties).map((header_, index3) => (
-                                                            <td key={index3}>{valorFeature.properties[header_]}</td>
+                                                        selected.map((valorFeature, index2) => (
+                                                            <tr key={index2}>
+                                                                {
+                                                                    Object.keys(valorFeature.properties).map((header_, index3) => (
+                                                                        <td key={index3}>{valorFeature.properties[header_]}</td>
+                                                                    ))
+                                                                }
+                                                            </tr>
                                                         ))
                                                     }
-                                                </tr>
-                                            ))
-                                        }
-                                    </tbody>
-                                </Table>
-                            ))
+                                                </tbody>
+                                            </Table>
+                                        ))
+                                    ) : (
+                                        <div>No se ha hecho una interesección con la capa seleccionada</div>
+                                    )
+                                }
+                            </>
                         ) : (
-                            <div>No hay interesección con la capa seleccionada</div>
+                            <p>Selecciona una capa para hacer una intersección</p>
                         )
                     }
                 </Modal.Body>
             </Modal>
 
-            {/* <Modal dialogAs={DraggableModalDialog} show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
-                keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis"> */}
-            <Modal show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
-                keyboard={false} backdrop="static" contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
-                <Modal.Header className="tw-cursor-pointer" closeButton>
+            <Modal dialogAs={DraggableModalDialog} show={modalCapasDibujadas} onHide={() => setModalCapasDibujadas(!modalCapasDibujadas)}
+                keyboard={false} backdrop={false} contentClassName="modal-redimensionable" className="tw-pointer-events-none modal-analisis">
+                <Modal.Header className="tw-cursor-pointer modal-movible" closeButton>
                     <Modal.Title>
-                        Capas dibujadas
+                        Geometrías dibujadas
                     </Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body className="modal-movible">
                     {
-                        [
-                            layersDibujadas.length != 0 && (
+                        layersDibujadas.length != 0 ? (
+                            <>
                                 <Form key="0">
                                     <Form.Group controlId="checkAll">
                                         <Form.Check type="checkbox" label="Seleccionar todos" defaultChecked={checkedAll} onChange={(e) => checkAllCapasDibujadas(e)} />
                                     </Form.Group>
                                 </Form>
-                            ),
-                            layersDibujadas.map((layer, index) => (
-                                <div key={index} className="tw-mb-8">
-                                    <Form className="tw-mb-2">
-                                        <Form.Check>
-                                            <Form.Check.Input type="checkbox" defaultChecked={layer.habilitado} onChange={() => checkCapaDibujada(layer)} />
-                                            <Form.Check.Label>
-                                                <span>{layer.nombre}&nbsp;</span>
+                                {
+                                    layersDibujadas.map((layer, index) => (
+                                        <div key={index} className="tw-mb-8">
+                                            <Form className="tw-mb-2">
+                                                <Form.Check>
+                                                    <Form.Check.Input type="checkbox" defaultChecked={layer.habilitado} onChange={() => checkCapaDibujada(layer)} />
+                                                    <Form.Check.Label>
+                                                        <span>{layer.nombre}&nbsp;</span>
+                                                        {
+                                                            layer.tipo == 0 ? (
+                                                                <FontAwesomeIcon size="1x" icon={faSquare} />
+                                                            ) : layer.tipo == 1 ? (
+                                                                <FontAwesomeIcon size="1x" icon={faCircle} />
+                                                            ) : layer.tipo == 2 ? (
+                                                                <FontAwesomeIcon size="1x" icon={faDrawPolygon} />
+                                                            ) : layer.tipo == 3 ? (
+                                                                <FontAwesomeIcon size="1x" icon={faGripLines} />
+                                                            ) : layer.tipo == 4 && (
+                                                                <FontAwesomeIcon size="1x" icon={faMapMarkerAlt} />
+                                                            )
+                                                        }
+                                                    </Form.Check.Label>
+                                                </Form.Check>
+                                            </Form>
+                                            <div>
                                                 {
-                                                    layer.tipo == 0 ? (
-                                                        <FontAwesomeIcon size="1x" icon={faSquare} />
-                                                    ) : layer.tipo == 1 ? (
-                                                        <FontAwesomeIcon size="1x" icon={faCircle} />
-                                                    ) : layer.tipo == 2 ? (
-                                                        <FontAwesomeIcon size="1x" icon={faDrawPolygon} />
-                                                    ) : layer.tipo == 3 ? (
-                                                        <FontAwesomeIcon size="1x" icon={faGripLines} />
-                                                    ) : layer.tipo == 4 && (
-                                                        <FontAwesomeIcon size="1x" icon={faMapMarkerAlt} />
+                                                    (layer.tipo === 2 || layer.tipo == 3 || layer.tipo == 4) && (
+                                                        <Form onSubmit={tamañoBuffer} className="tw-text-center formulario">
+                                                            <input type="hidden" value={layer.id} className="idFigura" />
+                                                            <Form.Group controlId={`tamano-${index}`} className="tw-mb-0">
+                                                                <Form.Control name={`tamano-${index}`} className="tamano" type="number" step="any" required min={1} max={200000} placeholder="Ingresa un número entre 1 y 200,000" />
+                                                                <Form.Text className="text-muted">
+                                                                    El valor ingresado estára en metros
+                                                                </Form.Text>
+                                                            </Form.Group>
+                                                            <Button type="submit" variant="light">Obtener buffer</Button>
+                                                        </Form>
                                                     )
                                                 }
-                                            </Form.Check.Label>
-                                        </Form.Check>
-                                    </Form>
-                                    <div>
-                                        {
-                                            (layer.tipo == 3 || layer.tipo == 4) && (
-                                                <Form onSubmit={tamañoBuffer} className="tw-text-center formulario">
-                                                    <input type="hidden" value={layer.id} className="idFigura" />
-                                                    <Form.Group controlId="tamano" className="tw-mb-0">
-                                                        <Form.Control name="tamano" className="tamano" type="number" step="any" required min={0.001} max={2000} placeholder="Ingresa un número entre 0.001 y 2000" />
-                                                        <Form.Text className="text-muted">
-                                                            El valor ingresado estára en kilometros
-                                                        </Form.Text>
-                                                    </Form.Group>
-                                                    <Button type="submit" variant="light">Obtener buffer</Button>
-                                                </Form>
-                                            )
-                                        }
-                                    </div>
-                                    <div className="tw-flex tw-justify-between tw-flex-wrap tw-mt-4">
-                                        {
-                                            [
-                                                layer.tipo == 0 && (
-                                                    <Button onClick={() => acercarAlejarCapaDib(layer, 0)} key="1" variant="light">Acercar</Button>
-                                                ),
-                                                layer.tipo == 0 && (
-                                                    <Button onClick={() => acercarAlejarCapaDib(layer, 1)} key="2" variant="light">Alejar</Button>
-                                                ),
-                                                (layer.tipo == 0 || layer.tipo == 2) && (
-                                                    <Button onClick={() => obtenRasgosIdenCapaDib(layer)} key="3" variant="light">Obtener rasgos</Button>
-                                                ),
-                                                (layer.tipo == 0 || layer.tipo == 2) && (
-                                                    <Button onClick={() => obtenAreaCapaDib(layer)} key="4" variant="light">Obtener área</Button>
-                                                ),
-                                                layer.tipo == 3 && (
-                                                    <Button onClick={() => obtenDistanciaCapaDib(layer)} key="5" variant="light">Obtener distancia</Button>
-                                                ),
-                                                layer.tipo == 1 && (
-                                                    <Button onClick={() => obtenRasgosIdenCapaDib(layer)} key="6" variant="light">Identificar</Button>
-                                                )
-                                            ]
-                                        }
-                                    </div>
-                                </div>
-                            ))
-                        ]
+                                            </div>
+                                            <div className="tw-flex tw-justify-between tw-flex-wrap tw-mt-4">
+                                                {
+                                                    [
+                                                        (layer.tipo == 0 || layer.tipo === 4) && (
+                                                            <Fragment key="1">
+                                                                <Button onClick={() => acercarAlejarCapaDib(layer, 0)} variant="light">Acercar</Button>
+                                                                <Button onClick={() => acercarAlejarCapaDib(layer, 1)} variant="light">Alejar</Button>
+                                                            </Fragment>
+                                                        ),
+                                                        (layer.tipo == 0 || layer.tipo == 2) && (
+                                                            <Button onClick={() => obtenRasgosIdenCapaDib(layer)} key="2" variant="light">Obtener rasgos</Button>
+                                                        ),
+                                                        (layer.tipo == 0 || layer.tipo == 2) && (
+                                                            <Button onClick={() => obtenAreaCapaDib(layer)} key="3" variant="light">Obtener área</Button>
+                                                        ),
+                                                        layer.tipo == 3 && (
+                                                            <Button onClick={() => obtenDistanciaCapaDib(layer)} key="4" variant="light">Obtener distancia</Button>
+                                                        ),
+                                                        layer.tipo == 1 && (
+                                                            <Fragment key="5">
+                                                                <Button onClick={() => obtenRasgosIdenCapaDib(layer)} variant="light">Identificar</Button>
+                                                                <Button onClick={() => obtenerCentroide(layer)} variant="light">Obtener centroide</Button>
+                                                            </Fragment>
+                                                        )
+                                                    ]
+                                                }
+                                            </div>
+                                        </div>
+                                    ))
+                                }
+                            </>
+                        ) : (
+                            <p>No has dibujado ninguna capa</p>
+                        )
                     }
                 </Modal.Body>
             </Modal>
@@ -3166,12 +3573,14 @@ function ContenedorMapaAnalisis(props) {
                 }
             </Modal>
 
-            <Modal show={showModalAgregarCapas} onHide={() => setShowModalAgregarCapas(!showModalAgregarCapas)}
-                keyboard={false} className="modal-analisis" contentClassName="modal-redimensionable">
-                <Modal.Header closeButton >
+            {/* <Modal show={showModalAgregarCapas} onHide={() => setShowModalAgregarCapas(!showModalAgregarCapas)}
+                keyboard={false} className="modal-analisis" contentClassName="modal-redimensionable"> */}
+            <Modal dialogAs={DraggableModalDialog} show={showModalAgregarCapas} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
+                onHide={() => setShowModalAgregarCapas(!showModalAgregarCapas)} className="tw-pointer-events-none modal-analisis">
+                <Modal.Header className="tw-cursor-pointer modal-movible" closeButton >
                     <Modal.Title><b>Agregar</b></Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body className="modal-movible">
                     <Tabs defaultActiveKey="sedatu">
                         <Tab eventKey="sedatu" title="Capa">
                             {
@@ -3329,7 +3738,7 @@ function ContenedorMapaAnalisis(props) {
                         {
                             (props.setReferenciaEntidad && props.setInformacionEspacial) &&
                             <Tab eventKey="datos" title="Datos">
-                                <ConsultaDinamica analisis={true} mapState={setMapState} />
+                                <ConsultaDinamica chartState={setChartState} />
                             </Tab>
                         }
                         <Tab eventKey="consultas" title={<>Consultas<br />prediseñadas</>}>
@@ -3367,14 +3776,13 @@ function ContenedorMapaAnalisis(props) {
 
             <Modal dialogAs={DraggableModalDialog} show={showModalSimbologia} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
                 onHide={() => setShowModalSimbologia(!showModalSimbologia)} className="tw-pointer-events-none modal-analisis">
-                <Modal.Header className="tw-cursor-pointer" closeButton>
+                <Modal.Header className="tw-cursor-pointer modal-movible" closeButton>
                     <Modal.Title><b>Simbología</b></Modal.Title>
                     <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
-                        {/* <img className="icono-minimizar tw-w-4" src="/images/analisis/window-minimize-regular.svg" /> */}
                         <FontAwesomeIcon icon={faWindowRestore} />
                     </button>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body className="modal-movible">
                     {
                         capasVisualizadas.map((capa, index) => (
                             capa.habilitado && (
@@ -3404,9 +3812,224 @@ function ContenedorMapaAnalisis(props) {
                 </Modal.Body>
             </Modal>
 
+            <Modal dialogAs={DraggableModalDialog} show={showModalFile} backdrop={false} keyboard={false} contentClassName="modal-redimensionableImpresion"
+                onHide={() => setShowModalFile(!showModalFile)} className="tw-pointer-events-none modal-analisis" >
+                <Modal.Header className="tw-cursor-pointer" closeButton>
+                    <Modal.Title><b>Exportación</b></Modal.Title>
+                    <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
+                        {/* <img className="icono-minimizar tw-w-4" src="/images/analisis/window-minimize-regular.svg" /> */}
+                        <FontAwesomeIcon icon={faWindowRestore} />
+                    </button>
+                </Modal.Header>
+                <Modal.Body>
+                    {// composicion 
+
+                    }
+                    <div className="Contenedor">
+                        <div className="row">
+                            <div className="col-4 col-md-4 col-lg-4 text-center">
+                                <button type="button" name="horizontal" onClick={(e) => forma('horizontal')} className="btn btn-primary">
+                                    Horizontal
+                                </button>
+                            </div>
+                            <div className="col-4 col-md-4 col-lg-4 text-center">
+                                <button type="button" name="vertical" onClick={(e) => forma('vertical')} className="btn btn-primary">
+                                    Vertical
+                                </button>
+                            </div>
+                            <div className="col-4 col-md-4 col-lg-4 text-center">
+                                <button onClick={exportarPDF} className="btn btn-primary">Imprimir</button>
+                            </div>
+                        </div>
+                        <br />
+                        <div className="row">
+                            {
+                                orientacion == 'Horizontal' && (
+                                    <div id="mapaExportacion" className="mapaF1">
+                                        <div className="row General scaled" >
+                                            <div className="col-8 col-md-8 col-lg-8 frame" id="mapaI">
+                                                <MapaImpresion capas={capasVisualizadas} estilos={jsonSimbologia} forma={orientacion} className="frame" />
+                                            </div>
+                                            <div className="col-3 col-md-3 col-lg-3" id="simbolo">
+                                                <div className="row filaG">
+                                                    <div className="col-12 frame">
+                                                        <img src="/images/analisis/Sedatu.svg" alt="Desarrollo territorial" className="img-fluid" />
+                                                    </div>
+                                                </div>
+                                                <div className="row filaG">
+                                                    <div className="col-6 frame">
+                                                        <img src="/images/analisis/datos.svg" alt="Datos en Territorio" className="img-fluid" />
+                                                    </div>
+                                                    <div className="col-6 frame">
+                                                        <img src="/images/analisis/quetzalcoatl.svg" alt="Quetzal" className="img-fluid" />
+                                                    </div>
+                                                </div>
+                                                <div className="row fila2 justify-content-center text-center">
+                                                    <h6>{titulo}</h6>
+                                                </div>
+                                                <div className="row fuente filaG">
+                                                    <div className="col-12 col-md-12 col-lg-12 frame">
+                                                        {
+                                                            jsonSimbologia.length != 0 ? (
+                                                                capasVisualizadas.map((capa, index) => (
+                                                                    capa.habilitado && (
+                                                                        <div key={index}>
+
+                                                                            <b>{buscarTitulo(capa.nom_capa)}</b>
+                                                                            {
+                                                                                //jsonSimbologia[buscarCapa(capa.nom_capa)].leyenda
+                                                                                capa.tipo == "wms" ? (
+                                                                                    <img src={capa.simbologia}></img>
+                                                                                ) : (
+                                                                                    buscarCapa(capa.nom_capa) != undefined ? (
+                                                                                        <div dangerouslySetInnerHTML={{ __html: jsonSimbologia[buscarCapa(capa.nom_capa)].simbologia.tablaSimbologia() }}></div>
+                                                                                    ) : (
+                                                                                        <img className="w-100" src={capa.simbologia}></img>
+                                                                                    )
+                                                                                )
+                                                                            }
+                                                                            <br></br>
+                                                                        </div>
+                                                                    )
+                                                                ))
+                                                            ) : (
+                                                                capasVisualizadas.map((capa, index) => (
+                                                                    capa.habilitado && (
+                                                                        <div key={index}>
+                                                                            <b>{capa.nom_capa}</b>
+                                                                            {
+                                                                                capa.tipo == "wms" ? (
+                                                                                    <img src={capa.simbologia}></img>
+                                                                                ) : (
+                                                                                    buscarCapa(capa.nom_capa) != undefined ? (
+                                                                                        <div dangerouslySetInnerHTML={{ __html: jsonSimbologia[buscarCapa(capa.nom_capa)].simbologia.tablaSimbologia() }}></div>
+                                                                                    ) : (
+                                                                                        <img className="w-100" src={capa.simbologia}></img>
+                                                                                    )
+                                                                                )
+                                                                            }
+                                                                            <br></br>
+                                                                        </div>
+                                                                    )
+                                                                ))
+                                                            )
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <br />
+                                                <div className="row filaG">
+                                                    <div className="col-12 col-md-12 col-lg-12 frame fuente">
+                                                        <b>Usuario: </b>{userDetails.nombre}<br />
+                                                        <b>Fecha de Creación: </b>{fecha}<br />
+                                                        <b>Hora: </b> {hora}<br />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            }{
+                                //frame filaV
+                                orientacion == 'Vertical' && (
+                                    <div id="mapaExportacion1" className="mapaF2">
+                                        <div className="row General1 scaled" >
+                                            <div className="row justify-content-center fila00">
+                                                <div className="col-12 col-md-12 col-lg-12 filaV">
+                                                    <MapaImpresion capas={capasVisualizadas} estilos={jsonSimbologia} forma={orientacion} />
+                                                </div>
+                                            </div>
+                                            <div className="row fila01 filaG">
+                                                <div className="col-8 col-md-8 col-lg-8">
+                                                    <div className="row fuente filaG">
+                                                        {
+                                                            jsonSimbologia.length != 0 ? (
+                                                                capasVisualizadas.map((capa, index) => (
+                                                                    capa.habilitado && (
+                                                                        <div key={index}>
+                                                                            <b>{buscarTitulo(capa.nom_capa)}</b>
+                                                                            {
+                                                                                capa.tipo == "wms" ? (
+                                                                                    <img src={capa.simbologia}></img>
+                                                                                ) : (
+                                                                                    buscarCapa(capa.nom_capa) != undefined ? (
+                                                                                        <div dangerouslySetInnerHTML={{ __html: jsonSimbologia[buscarCapa(capa.nom_capa)].simbologia.tablaSimbologia() }}></div>
+                                                                                    ) : (
+                                                                                        <img className="w-100" src={capa.simbologia}></img>
+                                                                                    )
+                                                                                )
+                                                                            }
+                                                                            <br></br>
+                                                                        </div>
+                                                                    )
+                                                                ))
+                                                            ) : (
+                                                                capasVisualizadas.map((capa, index) => (
+                                                                    capa.habilitado && (
+                                                                        <div key={index}>
+                                                                            <b>{capa.nom_capa}</b>
+                                                                            {
+                                                                                capa.tipo == "wms" ? (
+                                                                                    <img src={capa.simbologia}></img>
+                                                                                ) : (
+                                                                                    buscarCapa(capa.nom_capa) != undefined ? (
+                                                                                        <div dangerouslySetInnerHTML={{ __html: jsonSimbologia[buscarCapa(capa.nom_capa)].simbologia.tablaSimbologia() }}></div>
+                                                                                    ) : (
+                                                                                        <img className="w-100" src={capa.simbologia}></img>
+                                                                                    )
+                                                                                )
+                                                                            }
+                                                                            <br></br>
+                                                                        </div>
+                                                                    )
+                                                                ))
+                                                            )
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <div className="col-4 col-md-4 col-lg-4">
+                                                    <div className="row fila2 justify-content-center text-center">
+                                                        <h6>{titulo}</h6>
+                                                    </div>
+                                                    <div className="row filaG fuente">
+                                                        <div className="col-12">
+                                                            <b>Usuario: </b>{userDetails.nombre}
+                                                        </div>
+                                                        <div className="col-12">
+                                                            <b>Fecha de Creación: </b>{fecha}
+                                                        </div>
+                                                        <div className="col-12">
+                                                            <b>Hora: </b> {hora}
+                                                        </div>
+                                                    </div>
+                                                    <div className="row filaG">
+                                                        <div className="col-6 frame">
+                                                            <img src="/images/analisis/datos.svg" alt="Datos en Territorio" className="img-fluid" />
+                                                        </div>
+                                                        <div className="col-6 frame">
+                                                            <img src="/images/analisis/quetzalcoatl.svg" alt="Quetzal" className="img-fluid" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="row filaG">
+                                                        <div className="col-12 frame">
+                                                            <img src="/images/analisis/Sedatu.svg" alt="Desarrollo territorial" className="img-fluid" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            }
+                        </div>
+                        <br />
+                    </div>
+                </Modal.Body>
+            </Modal>
+
+
             <Modal dialogAs={DraggableModalDialog} show={showModalEstilos} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
                 onHide={handleClose} className="tw-pointer-events-none modal-analisis">
-                <Modal.Header className="tw-cursor-pointer" closeButton >
+                <Modal.Header className="tw-cursor-pointer modal-movible" closeButton >
                     <Modal.Title><b>Simbología</b></Modal.Title>
                     <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
                         <FontAwesomeIcon icon={faWindowRestore} />
@@ -3444,15 +4067,6 @@ function ContenedorMapaAnalisis(props) {
                                                     <div className="row">
                                                         <Form.Group controlId="variable1" className="col-10">
                                                             <Form.Label>Variable a Utilizar</Form.Label>
-                                                            {/*
-                                                            <Form.Control as="select" htmlSize={nomAtributos.length + 1} custom onChange={(e) => campoUtilizado(e.target.value)}>
-                                                                {
-                                                                    nomAtributos.map((valor, index) => (
-                                                                        <option key={index} value={valor}>{valor}</option>
-                                                                    ))
-                                                                }
-                                                            </Form.Control>
-                                                            */}
                                                             <Typeahead
                                                                 id="variableUtil1"
                                                                 labelKey={'label'}
@@ -3462,12 +4076,6 @@ function ContenedorMapaAnalisis(props) {
                                                                 selected={varutil}
                                                                 clearButton
                                                             />
-                                                            {/*
-                                                                    <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
-                                                                        <option value="">Selecciona una opción</option>
-                                                                    nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
-                                                                    </Form.Control>
-                                                                */  }
                                                         </Form.Group>
                                                         <br></br>
                                                         <Form.Group controlId="intervalos1" className="col-10">
@@ -3475,6 +4083,12 @@ function ContenedorMapaAnalisis(props) {
                                                             <Form.Control type="number" value={intervalo} onChange={(e) => cambioRango1(e)} min="0" />
                                                         </Form.Group>
                                                         <br></br>
+                                                        <div className="row">
+                                                            <Form.Group controlId="leyenda" className="col-10">
+                                                                <Form.Label>Leyenda de Simbología</Form.Label>
+                                                                <Form.Control type="text" value={leyendaS} onBlur={onBlur} onChange={(e) => cambioL(e)} />
+                                                            </Form.Group>
+                                                        </div>
                                                         <div className="col-9">
                                                             <p><b>Simbologia por Omisión</b></p>
                                                         </div>
@@ -3490,7 +4104,7 @@ function ContenedorMapaAnalisis(props) {
                                                         <TablaSimbologia info={simbologiaF} />
 
                                                     </div>
-                                                    {varutil != null && intervalo!= null ? (
+                                                    {varutil != null && intervalo != null ? (
                                                         <div className="row align-items-center">
                                                             <Button className="btn btn-primary" onClick={aplicarEstilo}>Aplicar Estilo </Button>
                                                         </div>
@@ -3529,14 +4143,6 @@ function ContenedorMapaAnalisis(props) {
                                                                     selected={varutil}
                                                                     clearButton
                                                                 />
-                                                                {/*
-                                                                <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
-                                                                    <option value="">Selecciona una opción</option>
-                                                                    {
-                                                                        nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
-                                                                    }
-                                                                </Form.Control>
-                                                                */}
                                                             </Form.Group>
                                                             <br></br>
                                                             <Form.Group controlId="coloresB" className="col-10">
@@ -3553,6 +4159,12 @@ function ContenedorMapaAnalisis(props) {
                                                             </Form.Group>
                                                             <br></br>
                                                             <br></br>
+                                                        </div>
+                                                        <div className="row">
+                                                            <Form.Group controlId="leyenda" className="col-10">
+                                                                <Form.Label>Leyenda de Simbología</Form.Label>
+                                                                <Form.Control type="text" value={leyendaS} onBlur={onBlur} onChange={(e) => cambioL(e)} />
+                                                            </Form.Group>
                                                         </div>
                                                         <div className="row">
                                                             <div className="col-8">
@@ -3584,10 +4196,6 @@ function ContenedorMapaAnalisis(props) {
                                                                 </div>
                                                             </div>
                                                         )}
-
-
-
-
                                                     </div>
                                                 ) : (
                                                     valorEstilos == 3 ? (
@@ -3610,14 +4218,6 @@ function ContenedorMapaAnalisis(props) {
                                                                         selected={varutil}
                                                                         clearButton
                                                                     />
-                                                                    {/*
-                                                                    <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
-                                                                        <option value="">Selecciona una opción</option>
-                                                                        {
-                                                                            nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
-                                                                        }
-                                                                    </Form.Control>
-                                                                    */}
                                                                 </Form.Group>
                                                                 <br></br>
                                                                 <Form.Group controlId="coloresB" className="col-10">
@@ -3634,6 +4234,12 @@ function ContenedorMapaAnalisis(props) {
                                                                 </Form.Group>
                                                                 <br></br>
                                                                 <br></br>
+                                                            </div>
+                                                            <div className="row">
+                                                                <Form.Group controlId="leyenda" className="col-10">
+                                                                    <Form.Label>Leyenda de Simbología</Form.Label>
+                                                                    <Form.Control type="text" value={leyendaS} onBlur={onBlur} onChange={(e) => cambioL(e)} />
+                                                                </Form.Group>
                                                             </div>
                                                             <div className="row">
                                                                 <div className="col-8">
@@ -3682,17 +4288,15 @@ function ContenedorMapaAnalisis(props) {
                                                                             selected={varutil}
                                                                             clearButton
                                                                         />
-                                                                        {/*
-                                                                        <Form.Control onChange={(e) => campoUtilizado(e.target.value)} as="select">
-                                                                            <option value="">Selecciona una opción</option>
-                                                                            {
-                                                                                nomAtributos.map((aux, index) => <option key={aux} value={index}>{aux}</option>)
-                                                                            }
-                                                                        </Form.Control>
-                                                                        */}
                                                                     </Form.Group>
                                                                     <br></br>
                                                                     <br></br>
+                                                                </div>
+                                                                <div className="row">
+                                                                    <Form.Group controlId="leyenda" className="col-10">
+                                                                        <Form.Label>Leyenda de Simbología</Form.Label>
+                                                                        <Form.Control type="text" value={leyendaS} onBlur={onBlur} onChange={(e) => cambioL(e)} />
+                                                                    </Form.Group>
                                                                 </div>
                                                                 <div className="row">
                                                                     <div className="col-8">
@@ -3759,6 +4363,12 @@ function ContenedorMapaAnalisis(props) {
                                                                         </Form.Group>
                                                                     </div>
                                                                     <div className="row">
+                                                                        <Form.Group controlId="leyenda" className="col-10">
+                                                                            <Form.Label>Leyenda de Simbología</Form.Label>
+                                                                            <Form.Control type="text" value={leyendaS} onBlur={onBlur} onChange={(e) => cambioL(e)} />
+                                                                        </Form.Group>
+                                                                    </div>
+                                                                    <div className="row">
                                                                         <div className="col-8">
                                                                             <p><b>Simbologia por Omisión</b></p>
                                                                         </div>
@@ -3811,13 +4421,13 @@ function ContenedorMapaAnalisis(props) {
 
             <Modal dialogAs={DraggableModalDialog} show={showModalAtributos} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
                 onHide={() => setShowModalAtributos(!showModalAtributos)} className="tw-pointer-events-none modal-analisis">
-                <Modal.Header className="tw-cursor-pointer" closeButton >
+                <Modal.Header className="tw-cursor-pointer modal-movible" closeButton >
                     <Modal.Title><b>Atributos</b></Modal.Title>
                     <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
                         <FontAwesomeIcon icon={faWindowRestore} />
                     </button>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body className="modal-movible">
                     {
                         atributos.length != 0 && (
 
@@ -3843,7 +4453,7 @@ function ContenedorMapaAnalisis(props) {
                                                 {
                                                     Object.keys(value.properties).map((valueKey, indexKey) => {
                                                         return (
-                                                            <td key={indexKey} className={`${value.seleccionada == true ? "tw-bg-green-100" : ""} ${value.intersecada == true ? "tw-bg-yellow-200" : ""}`}>{value.properties[valueKey]}</td>
+                                                            <td key={indexKey} className={value.seleccionada == true ? "tw-text-yellow-900" : ""}>{value.properties[valueKey]}</td>
                                                         )
                                                     })
                                                 }
@@ -3859,13 +4469,13 @@ function ContenedorMapaAnalisis(props) {
 
             <Modal dialogAs={DraggableModalDialog} show={showModalIdentify} backdrop={false} keyboard={false} contentClassName="modal-redimensionable"
                 onHide={() => setShowModalIdentify(false)} className="tw-pointer-events-none modal-analisis">
-                <Modal.Header className="tw-cursor-pointer" closeButton>
+                <Modal.Header className="tw-cursor-pointer modal-movible" closeButton>
                     <Modal.Title><b>Identificar</b></Modal.Title>
                     <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
                         <FontAwesomeIcon icon={faWindowRestore} />
                     </button>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body className="modal-movible">
                     <Form onSubmit={handleSubmitIdentify(identificaCapa)} className="row">
                         <Form.Group className="col-6">
                             <Form.Control as="select" name="seleccion" required ref={registraIdentify}>
@@ -3950,298 +4560,341 @@ function ContenedorMapaAnalisis(props) {
                 </Modal.Body>
             </Modal>
 
-            <div className="contenedor-menu-lateral">
-                <div className={menuLateral ? "tw-w-96 menu-lateral" : "tw-w-0 menu-lateral"}>
-                    <Card>
-                        <Card.Header>
-                            <div className="row">
-                                <div className="col-9">
-                                    <b>Información de rasgos</b>
-                                    <Button onClick={() => setOpenRasgosCollapse(!openRasgosCollapse)} variant="link">
-                                        <FontAwesomeIcon icon={openRasgosCollapse ? faAngleDown : faAngleRight} />
-                                    </Button>
-                                </div>
-                                {
-                                    rasgos.length != 0 &&
-                                    <div className="col-3">
-                                        <CSVLink data={csvData} filename={`${csvFileName}.csv`}>
-                                            <FontAwesomeIcon size="2x" icon={faFileCsv} />
-                                        </CSVLink>
-                                    </div>
-                                }
-                            </div>
-                        </Card.Header>
-                    </Card>
-                    <Collapse in={openRasgosCollapse}>
-                        <div>
-                            {
-                                rasgos.map((valor, index) => (
-                                    <Accordion key={index}>
-                                        <Card>
-                                            <Card.Header className="tw-flex tw-justify-between tw-items-baseline">
-                                                {valor["nombre_capa"]}
-                                                <CustomToggle eventKey={index.toString()} />
-                                            </Card.Header>
-                                            <Accordion.Collapse eventKey={index.toString()}>
-                                                <Table striped bordered hover>
-                                                    <thead>
-                                                        <tr>
-                                                            <th key={index} colSpan="2" className="tw-text-center">{valor["id"]}</th>
-                                                        </tr>
-                                                        <tr>
-                                                            <th>Valor</th>
-                                                            <th>Descripción</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {
-                                                            Object.keys(valor.properties).map((key, indexKey) => (
-                                                                <tr key={indexKey}>
-                                                                    <td>{key}</td>
-                                                                    <td>{valor.properties[key]}</td>
-                                                                </tr>
-                                                            ))
-                                                        }
-                                                    </tbody>
-                                                </Table>
-                                            </Accordion.Collapse>
-                                        </Card>
-                                    </Accordion>
-                                ))
-                            }
-                        </div>
-                    </Collapse>
-                    <Card>
-                        <Card.Header>
-                            <b>Capas</b>
-                            <Button onClick={() => setOpenCapasCollapse(!openCapasCollapse)} variant="link">
-                                <FontAwesomeIcon icon={openCapasCollapse ? faAngleDown : faAngleRight} />
-                            </Button>
-                        </Card.Header>
-                    </Card>
-                    <Collapse in={openCapasCollapse}>
-                        <Accordion>
-                            {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
-                            <DragDropContext onDragEnd={handleOnDragEnd}>
-                                <Droppable droppableId="capas">
-                                    {(provided) => (
-                                        // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
-                                        <div {...provided.droppableProps} ref={provided.innerRef}> {
-                                            capasVisualizadas.map((capa, index) => (
-                                                <DraggableDnd key={capa.nom_capa} draggableId={capa.nom_capa} index={index}>
-                                                    {(provided) => (
-                                                        <Card {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
-                                                            <Card.Header className="tw-flex tw-justify-between tw-items-baseline">
-                                                                <Form.Group>
-                                                                    <Form.Check type="checkbox" inline defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event)} value={capa.nom_capa} />
-                                                                </Form.Group>
-                                                                {
-                                                                    [
-                                                                        capa.isActive != undefined && (
-                                                                            <OverlayTrigger key="1" overlay={<Tooltip>Establecer como capa activa</Tooltip>}>
-                                                                                <Button onClick={() => enableLayer(index)} variant="link">
-                                                                                    <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
-                                                                                </Button>
-                                                                            </OverlayTrigger>
-                                                                        ),
-                                                                        capa.tipo === "wfs" && (
-                                                                            <OverlayTrigger key="2" overlay={<Tooltip>{`Tabla de atributos`}</Tooltip>}>
-                                                                                <Button onClick={() => muestraAtributos(capa)} variant="link">
-                                                                                    <FontAwesomeIcon icon={faTable} />
-                                                                                </Button>
-                                                                            </OverlayTrigger>
-                                                                        ),
-                                                                        capa.tipo !== "wfs" && (
-                                                                            <OverlayTrigger key="3" overlay={<Tooltip>Eliminar capa</Tooltip>}>
-                                                                                <Button onClick={() => eliminaCapa(capa)} variant="link">
-                                                                                    <FontAwesomeIcon icon={faTrash} />
-                                                                                </Button>
-                                                                            </OverlayTrigger>
-                                                                        ),
-                                                                    ]
-                                                                }
-                                                                <CustomToggle eventKey={capa.nom_capa} />
-                                                            </Card.Header>
-                                                            <Accordion.Collapse eventKey={capa.nom_capa}>
-                                                                <Card.Body>
-                                                                    <Form.Group>
-                                                                        <Form.Label>Transparencia</Form.Label>
-                                                                        <div className="tw-flex">
-                                                                            <span className="tw-mr-6">+</span>
-                                                                            <Form.Control custom type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.nom_capa} onChange={(event) => transparenciaCapas(event)} />
-                                                                            <span className="tw-ml-6">-</span>
-                                                                        </div>
-                                                                    </Form.Group>
-                                                                    {capa.tipo == "wms" &&
-                                                                        (
-                                                                            <div className="row">
-                                                                                <Form.Group className="col-6">
-                                                                                    <Form.Label>Zoom mínimo</Form.Label>
-                                                                                    <Form.Control defaultValue="0" as="select" onChange={(event) => zoomMinMax(event)} name={capa.nom_capa} data-zoom="min">
-                                                                                        <option value="5">5</option>
-                                                                                        <option value="6">6</option>
-                                                                                        <option value="7">7</option>
-                                                                                        <option value="8">8</option>
-                                                                                        <option value="9">9</option>
-                                                                                        <option value="10">10</option>
-                                                                                        <option value="11">11</option>
-                                                                                        <option value="12">12</option>
-                                                                                        <option value="13">13</option>
-                                                                                        <option value="14">14</option>
-                                                                                        <option value="15">15</option>
-                                                                                        <option value="16">16</option>
-                                                                                        <option value="17">17</option>
-                                                                                        <option value="18">18</option>
-                                                                                    </Form.Control>
-                                                                                </Form.Group>
-                                                                                <Form.Group className="col-6">
-                                                                                    <Form.Label>Zoom máximo</Form.Label>
-                                                                                    <Form.Control defaultValue="18" as="select" onChange={(event) => zoomMinMax(event)} name={capa.nom_capa} data-zoom="max">
-                                                                                        <option value="5">5</option>
-                                                                                        <option value="6">6</option>
-                                                                                        <option value="7">7</option>
-                                                                                        <option value="8">8</option>
-                                                                                        <option value="9">9</option>
-                                                                                        <option value="10">10</option>
-                                                                                        <option value="11">11</option>
-                                                                                        <option value="12">12</option>
-                                                                                        <option value="13">13</option>
-                                                                                        <option value="14">14</option>
-                                                                                        <option value="15">15</option>
-                                                                                        <option value="16">16</option>
-                                                                                        <option value="17">17</option>
-                                                                                        <option value="18">18</option>
-                                                                                    </Form.Control>
-                                                                                </Form.Group>
-                                                                            </div>
-                                                                        )}
-                                                                    {
-                                                                        (capa.download || capa.tipo === "wfs" || capa.tipo === "json") && (
-                                                                            <>
-                                                                                <hr />
-                                                                                <div className="d-flex justify-content-center">
-                                                                                    {
-                                                                                        [
-                                                                                            capa.download && (
-                                                                                                <OverlayTrigger key="1" overlay={<Tooltip>{`Descargar capas`}</Tooltip>}>
-                                                                                                    <Button onClick={() => renderModalDownload(capa)} variant="link">
-                                                                                                        <FontAwesomeIcon size="2x" icon={faDownload} />
-                                                                                                    </Button>
-                                                                                                </OverlayTrigger>
-                                                                                            ),
-                                                                                            (capa.tipo === "wfs" || capa.tipo === 'json') && (
-                                                                                                <Fragment key="2">
-                                                                                                    <OverlayTrigger overlay={<Tooltip>{`Cambiar estilos`}</Tooltip>}>
-                                                                                                        <Button onClick={() => cambioEstilos(capa)} variant="link">
-                                                                                                            <FontAwesomeIcon size="2x" icon={faPaintBrush} />
-                                                                                                        </Button>
-                                                                                                    </OverlayTrigger>
-                                                                                                    <OverlayTrigger overlay={<Tooltip>{`Encuadrar capa`}</Tooltip>}>
-                                                                                                        <Button onClick={() => enfocaCapa(capa)} variant="link">
-                                                                                                            <FontAwesomeIcon size="2x" icon={faExpandAlt} />
-                                                                                                        </Button>
-                                                                                                    </OverlayTrigger>
-                                                                                                </Fragment>
-                                                                                            ),
-                                                                                            capa.tipo === "wfs" && (
-                                                                                                <OverlayTrigger key="3" overlay={<Tooltip>Eliminar capa</Tooltip>}>
-                                                                                                    <Button onClick={() => eliminaCapa(capa)} variant="link">
-                                                                                                        <FontAwesomeIcon size="2x" icon={faTrash} />
-                                                                                                    </Button>
-                                                                                                </OverlayTrigger>
-                                                                                            ),
-                                                                                        ]
-                                                                                    }
-                                                                                </div>
-                                                                            </>
-                                                                        )
-                                                                    }
-                                                                </Card.Body>
-                                                            </Accordion.Collapse>
-                                                        </Card>
-                                                    )}
-                                                </DraggableDnd>
-                                            ))
-                                        }
-                                            {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
-                                            {provided.placeholder}
+            <div className="row">
+                <div className="col-12">
+                    <div className="contenedor-menu-lateral">
+                        <div className={menuLateral ? "menu-lateral-abierto menu-lateral" : "tw-w-0 menu-lateral"}>
+                            <Card>
+                                <Card.Header>
+                                    <div className="row">
+                                        <div className="col-7">
+                                            <b>Información de rasgos</b>
+                                            <Button onClick={() => setOpenRasgosCollapse(!openRasgosCollapse)} variant="link">
+                                                <FontAwesomeIcon icon={openRasgosCollapse ? faAngleDown : faAngleRight} />
+                                            </Button>
                                         </div>
-                                    )}
-                                </Droppable>
-                            </DragDropContext>
-                        </Accordion>
-                    </Collapse>
-                </div>
-                <button className="btn btn-light boton-menu-lateral" onClick={() => setMenuLateral(!menuLateral)}>
-                    <FontAwesomeIcon className="tw-cursor-pointer" icon={menuLateral ? faCaretLeft : faCaretRight} />
-                </button>
-            </div>
-
-            <div className="div-herramientas-contenedor">
-                <OverlayTrigger rootClose overlay={<Tooltip>Simbología</Tooltip>}>
-                    <button className="botones-barra-mapa" onClick={handleShowModalSimbologia}>
-                        <FontAwesomeIcon icon={faImages}></FontAwesomeIcon>
-                    </button>
-                </OverlayTrigger>
-                <OverlayTrigger rootClose overlay={<Tooltip>Agregar capas</Tooltip>}>
-                    <button className="botones-barra-mapa" onClick={handleShowModalAgregarCapas}>
-                        <img src="/images/analisis/agregar-capas.png" alt="Agregar capas" className="tw-w-5" />
-                    </button>
-                </OverlayTrigger>
-                <OverlayTrigger rootClose overlay={<Tooltip>Agregar archivo</Tooltip>}>
-                    <label htmlFor={`uploadFIleButton${props.botones == false && `Espejo`}`} className="tw-mb-0 tw-cursor-pointer">
-                        <button className="botones-barra-mapa tw-pointer-events-none">
-                            <input type="file" name="file" onChange={(e) => processInputFile(e)} onClick={(e) => e.target.value = null} id={`uploadFIleButton${props.botones == false && `Espejo`}`} hidden />
-                            <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
+                                        {
+                                            rasgos.length != 0 &&
+                                            (
+                                                <div className="col-5">
+                                                    <OverlayTrigger rootClose overlay={<Tooltip>Descargar CSV</Tooltip>}>
+                                                        <CSVLink className="btn btn-link" type="button" data={csvData} filename={`${csvFileName}.csv`}>
+                                                            <FontAwesomeIcon size="2x" icon={faFileCsv} />
+                                                        </CSVLink>
+                                                    </OverlayTrigger>
+                                                    <OverlayTrigger rootClose overlay={<Tooltip>Descargar PDF</Tooltip>}>
+                                                        <Button onClick={descargarDoc} variant="link">
+                                                            <FontAwesomeIcon size="2x" icon={faFilePdf} />
+                                                        </Button>
+                                                    </OverlayTrigger>
+                                                    <OverlayTrigger rootClose overlay={<Tooltip>Borrar rasgos</Tooltip>}>
+                                                        <Button onClick={borraRasgos} variant="link">
+                                                            <FontAwesomeIcon size="2x" icon={faTrash} />
+                                                        </Button>
+                                                    </OverlayTrigger>
+                                                </div>
+                                            )
+                                        }
+                                    </div>
+                                </Card.Header>
+                            </Card>
+                            <Collapse in={openRasgosCollapse}>
+                                <div>
+                                    {
+                                        rasgos.map((valor, index) => (
+                                            <Accordion key={index}>
+                                                <Card>
+                                                    <Card.Header className="tw-flex tw-justify-between tw-items-baseline">
+                                                        {valor["nombre_capa"]}
+                                                        <CustomToggle eventKey={index.toString()} />
+                                                    </Card.Header>
+                                                    <Accordion.Collapse eventKey={index.toString()}>
+                                                        <Table striped bordered hover>
+                                                            <thead>
+                                                                <tr>
+                                                                    <th key={index} colSpan="2" className="tw-text-center">{valor["id"]}</th>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th>Valor</th>
+                                                                    <th>Descripción</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {
+                                                                    Object.keys(valor.properties).map((key, indexKey) => (
+                                                                        <tr key={indexKey}>
+                                                                            <td>{key}</td>
+                                                                            <td>{valor.properties[key]}</td>
+                                                                        </tr>
+                                                                    ))
+                                                                }
+                                                            </tbody>
+                                                        </Table>
+                                                    </Accordion.Collapse>
+                                                </Card>
+                                            </Accordion>
+                                        ))
+                                    }
+                                </div>
+                            </Collapse>
+                            <Card>
+                                <Card.Header>
+                                    <b>Capas</b>
+                                    <Button onClick={() => setOpenCapasCollapse(!openCapasCollapse)} variant="link">
+                                        <FontAwesomeIcon icon={openCapasCollapse ? faAngleDown : faAngleRight} />
+                                    </Button>
+                                </Card.Header>
+                            </Card>
+                            <Collapse in={openCapasCollapse}>
+                                <Accordion>
+                                    {/* onDragEnd se ejecuta cuando alguien deje de arrastrar un elemento */}
+                                    <DragDropContext onDragEnd={handleOnDragEnd}>
+                                        <Droppable droppableId="capas">
+                                            {(provided) => (
+                                                // La referencia es para acceder al elemento html, droppableProps permite realizar un seguimiento de los cambios
+                                                <div {...provided.droppableProps} ref={provided.innerRef}> {
+                                                    capasVisualizadas.map((capa, index) => (
+                                                        <DraggableDnd key={capa.nom_capa} draggableId={capa.nom_capa} index={index}>
+                                                            {(provided) => (
+                                                                <Card {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                                                                    <Card.Header className="tw-flex tw-justify-between tw-items-baseline">
+                                                                        <Form.Group>
+                                                                            <Form.Check type="checkbox" inline defaultChecked={capa.habilitado} label={capa.nom_capa} onChange={(event) => cambiaCheckbox(event)} value={capa.nom_capa} />
+                                                                        </Form.Group>
+                                                                        {
+                                                                            [
+                                                                                capa.isActive != undefined && (
+                                                                                    <OverlayTrigger key="1" overlay={<Tooltip>Establecer como capa activa</Tooltip>}>
+                                                                                        <Button onClick={() => enableLayer(index)} variant="link">
+                                                                                            <FontAwesomeIcon icon={capa.isActive ? faCheckCircle : faDotCircle} />
+                                                                                        </Button>
+                                                                                    </OverlayTrigger>
+                                                                                ),
+                                                                                capa.tipo === "wfs" && (
+                                                                                    <OverlayTrigger key="2" overlay={<Tooltip>{`Tabla de atributos`}</Tooltip>}>
+                                                                                        <Button onClick={() => muestraAtributos(capa)} variant="link">
+                                                                                            <FontAwesomeIcon icon={faTable} />
+                                                                                        </Button>
+                                                                                    </OverlayTrigger>
+                                                                                ),
+                                                                                capa.tipo !== "wfs" && (
+                                                                                    <OverlayTrigger key="3" overlay={<Tooltip>Eliminar capa</Tooltip>}>
+                                                                                        <Button onClick={() => eliminaCapa(capa)} variant="link">
+                                                                                            <FontAwesomeIcon icon={faTrash} />
+                                                                                        </Button>
+                                                                                    </OverlayTrigger>
+                                                                                ),
+                                                                            ]
+                                                                        }
+                                                                        <CustomToggle eventKey={capa.nom_capa} />
+                                                                    </Card.Header>
+                                                                    <Accordion.Collapse eventKey={capa.nom_capa}>
+                                                                        <Card.Body>
+                                                                            <Form.Group>
+                                                                                <Form.Label>Transparencia</Form.Label>
+                                                                                <div className="tw-flex">
+                                                                                    <span className="tw-mr-6">+</span>
+                                                                                    <Form.Control custom type="range" min="0" step="0.1" max="1" defaultValue="1" name={capa.nom_capa} onChange={(event) => transparenciaCapas(event)} />
+                                                                                    <span className="tw-ml-6">-</span>
+                                                                                </div>
+                                                                            </Form.Group>
+                                                                            {capa.tipo == "wms" &&
+                                                                                (
+                                                                                    <div className="row">
+                                                                                        <Form.Group className="col-6">
+                                                                                            <Form.Label>Zoom mínimo</Form.Label>
+                                                                                            <Form.Control defaultValue="0" as="select" onChange={(event) => zoomMinMax(event)} name={capa.nom_capa} data-zoom="min">
+                                                                                                <option value="5">5</option>
+                                                                                                <option value="6">6</option>
+                                                                                                <option value="7">7</option>
+                                                                                                <option value="8">8</option>
+                                                                                                <option value="9">9</option>
+                                                                                                <option value="10">10</option>
+                                                                                                <option value="11">11</option>
+                                                                                                <option value="12">12</option>
+                                                                                                <option value="13">13</option>
+                                                                                                <option value="14">14</option>
+                                                                                                <option value="15">15</option>
+                                                                                                <option value="16">16</option>
+                                                                                                <option value="17">17</option>
+                                                                                                <option value="18">18</option>
+                                                                                            </Form.Control>
+                                                                                        </Form.Group>
+                                                                                        <Form.Group className="col-6">
+                                                                                            <Form.Label>Zoom máximo</Form.Label>
+                                                                                            <Form.Control defaultValue="18" as="select" onChange={(event) => zoomMinMax(event)} name={capa.nom_capa} data-zoom="max">
+                                                                                                <option value="5">5</option>
+                                                                                                <option value="6">6</option>
+                                                                                                <option value="7">7</option>
+                                                                                                <option value="8">8</option>
+                                                                                                <option value="9">9</option>
+                                                                                                <option value="10">10</option>
+                                                                                                <option value="11">11</option>
+                                                                                                <option value="12">12</option>
+                                                                                                <option value="13">13</option>
+                                                                                                <option value="14">14</option>
+                                                                                                <option value="15">15</option>
+                                                                                                <option value="16">16</option>
+                                                                                                <option value="17">17</option>
+                                                                                                <option value="18">18</option>
+                                                                                            </Form.Control>
+                                                                                        </Form.Group>
+                                                                                    </div>
+                                                                                )}
+                                                                            {
+                                                                                (capa.download || capa.tipo === "wfs" || capa.tipo === "json") && (
+                                                                                    <>
+                                                                                        <hr />
+                                                                                        <div className="d-flex justify-content-center">
+                                                                                            {
+                                                                                                [
+                                                                                                    capa.download && (
+                                                                                                        <OverlayTrigger key="1" overlay={<Tooltip>{`Descargar capas`}</Tooltip>}>
+                                                                                                            <Button onClick={() => renderModalDownload(capa)} variant="link">
+                                                                                                                <FontAwesomeIcon size="2x" icon={faDownload} />
+                                                                                                            </Button>
+                                                                                                        </OverlayTrigger>
+                                                                                                    ),
+                                                                                                    (capa.tipo === "wfs" || capa.tipo === 'json') && (
+                                                                                                        <Fragment key="2">
+                                                                                                            <OverlayTrigger overlay={<Tooltip>{`Cambiar estilos`}</Tooltip>}>
+                                                                                                                <Button onClick={() => cambioEstilos(capa)} variant="link">
+                                                                                                                    <FontAwesomeIcon size="2x" icon={faPaintBrush} />
+                                                                                                                </Button>
+                                                                                                            </OverlayTrigger>
+                                                                                                            <OverlayTrigger overlay={<Tooltip>{`Encuadrar capa`}</Tooltip>}>
+                                                                                                                <Button onClick={() => enfocaCapa(capa)} variant="link">
+                                                                                                                    <FontAwesomeIcon size="2x" icon={faExpandAlt} />
+                                                                                                                </Button>
+                                                                                                            </OverlayTrigger>
+                                                                                                        </Fragment>
+                                                                                                    ),
+                                                                                                    capa.tipo === "wfs" && (
+                                                                                                        <OverlayTrigger key="3" overlay={<Tooltip>Eliminar capa</Tooltip>}>
+                                                                                                            <Button onClick={() => eliminaCapa(capa)} variant="link">
+                                                                                                                <FontAwesomeIcon size="2x" icon={faTrash} />
+                                                                                                            </Button>
+                                                                                                        </OverlayTrigger>
+                                                                                                    ),
+                                                                                                ]
+                                                                                            }
+                                                                                        </div>
+                                                                                    </>
+                                                                                )
+                                                                            }
+                                                                        </Card.Body>
+                                                                    </Accordion.Collapse>
+                                                                </Card>
+                                                            )}
+                                                        </DraggableDnd>
+                                                    ))
+                                                }
+                                                    {/* Se usa para llenar el espacio que ocupaba el elemento que estamos arrastrando */}
+                                                    {provided.placeholder}
+                                                </div>
+                                            )}
+                                        </Droppable>
+                                    </DragDropContext>
+                                </Accordion>
+                            </Collapse>
+                        </div>
+                        <button className="btn btn-light boton-menu-lateral" onClick={() => setMenuLateral(!menuLateral)}>
+                            <FontAwesomeIcon className="tw-cursor-pointer" icon={menuLateral ? faCaretLeft : faCaretRight} />
                         </button>
-                    </label>
-                </OverlayTrigger>
-                <OverlayTrigger rootClose overlay={<Tooltip>Interactuar</Tooltip>}>
-                    {
-                        props.botones ? (
-                            <button className="botones-barra-mapa" onClick={() => identificaMapa(true)}>
-                                <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
-                            </button>
-                        ) : (
-                            <button className="botones-barra-mapa" onClick={() => identificaMapa(false)}>
-                                <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
-                            </button>
-                        )
-                    }
-                </OverlayTrigger>
-                <OverlayTrigger rootClose overlay={<Tooltip>Paneo</Tooltip>}>
-                    {
-                        props.botones ? (
-                            <button className="botones-barra-mapa" onClick={() => paneoMapa(true)}>
-                                <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
-                            </button>
-                        ) : (
-                            <button className="botones-barra-mapa" onClick={() => paneoMapa(false)}>
-                                <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
-                            </button>
-                        )
-                    }
+                    </div>
 
-                </OverlayTrigger>
-                <OverlayTrigger rootClose overlay={<Tooltip>Capas dibujadas</Tooltip>}>
-                    <button className="botones-barra-mapa" onClick={() => setModalCapasDibujadas(true)}>
-                        <img src="/images/analisis/capas_dib.png" alt="Capas dibujadas" className="tw-w-5" />
-                    </button>
-                </OverlayTrigger>
-                <OverlayTrigger rootClose overlay={<Tooltip>Capa seleccionada</Tooltip>}>
-                    <button className="botones-barra-mapa" onClick={() => setModalSublayerSeleccionada(true)}>
-                        <img src="/images/analisis/capas_dib.png" alt="Capa seleccionada" className="tw-w-5" />
-                    </button>
-                </OverlayTrigger>
+                    <div className="div-herramientas-contenedor">
+                        <OverlayTrigger rootClose overlay={<Tooltip>Simbología</Tooltip>}>
+                            <button className="botones-barra-mapa" onClick={handleShowModalSimbologia}>
+                                <FontAwesomeIcon icon={faImages}></FontAwesomeIcon>
+                            </button>
+                        </OverlayTrigger>
+                        <OverlayTrigger rootClose overlay={<Tooltip>Agregar capas</Tooltip>}>
+                            <button className="botones-barra-mapa" onClick={handleShowModalAgregarCapas}>
+                                <img src="/images/analisis/agregar-capas.png" alt="Agregar capas" className="tw-w-5" />
+                            </button>
+                        </OverlayTrigger>
+                        <OverlayTrigger rootClose overlay={<Tooltip>Agregar archivo</Tooltip>}>
+                            <label htmlFor={`uploadFIleButton${props.botones == false && `Espejo`}`} className="tw-mb-0 tw-cursor-pointer">
+                                <button className="botones-barra-mapa tw-pointer-events-none">
+                                    <input type="file" name="file" onChange={(e) => processInputFile(e)} onClick={(e) => e.target.value = null} id={`uploadFIleButton${props.botones == false && `Espejo`}`} hidden />
+                                    <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
+                                </button>
+                            </label>
+                        </OverlayTrigger>
+                        <OverlayTrigger rootClose overlay={<Tooltip>Interactuar</Tooltip>}>
+                            {
+                                props.botones ? (
+                                    <button className="botones-barra-mapa" onClick={() => identificaMapa(true)}>
+                                        <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
+                                    </button>
+                                ) : (
+                                    <button className="botones-barra-mapa" onClick={() => identificaMapa(false)}>
+                                        <FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>
+                                    </button>
+                                )
+                            }
+                        </OverlayTrigger>
+                        <OverlayTrigger rootClose overlay={<Tooltip>Paneo</Tooltip>}>
+                            {
+                                props.botones ? (
+                                    <button className="botones-barra-mapa" onClick={() => paneoMapa(true)}>
+                                        <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
+                                    </button>
+                                ) : (
+                                    <button className="botones-barra-mapa" onClick={() => paneoMapa(false)}>
+                                        <FontAwesomeIcon icon={faHandPaper}></FontAwesomeIcon>
+                                    </button>
+                                )
+                            }
+
+                        </OverlayTrigger>
+                        <OverlayTrigger rootClose overlay={<Tooltip>Geometrías dibujadas</Tooltip>}>
+                            <button className="botones-barra-mapa" onClick={() => setModalCapasDibujadas(true)}>
+                                <img src="/images/analisis/capas_dib.png" alt="Capas dibujadas" className="tw-w-5" />
+                            </button>
+                        </OverlayTrigger>
+                        <OverlayTrigger rootClose overlay={<Tooltip>Intersección capas seleccionadas</Tooltip>}>
+                            <button className="botones-barra-mapa" onClick={() => setModalSublayerSeleccionada(true)}>
+                                <img src="/images/analisis/capas_dib.png" alt="Capa seleccionada" className="tw-w-5" />
+                            </button>
+                        </OverlayTrigger>
+                        <OverlayTrigger rootClose overlay={<Tooltip>Capas seleccionadas</Tooltip>}>
+                            <button className="botones-barra-mapa" onClick={() => setModalCapasSeleccionadas(true)}>
+                                <img src="/images/analisis/capas_dib.png" alt="Capa seleccionada" className="tw-w-5" />
+                            </button>
+                        </OverlayTrigger>
+						<OverlayTrigger rootClose overlay={<Tooltip>Pantalla dividida</Tooltip>}>
+		                    <button className="botones-barra-mapa" style={{display:props.btnDividirPantallaDisplay}} onClick={()=> props.btnDividirPantallaOnClick()} >
+	    	                    <img src="/images/analisis/pantalla-dividida.png" alt="Pantalla dividida" className="tw-w-5" />
+		                    </button>
+		                </OverlayTrigger>
+                        {/* Codigo para la  imagen */}
+                        <OverlayTrigger rootClose overlay={<Tooltip>Exportar Mapa</Tooltip>}>
+                            <button className="botones-barra-mapa" onClick={handleShowModalFile}>
+                                <img src="/images/analisis/exportar.png" alt="Exportar" className="tw-w-5" />
+                            </button>
+                        </OverlayTrigger>
+                    </div>
+
+                    {
+                        props.botones == true
+                            ?
+                            <Map referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} mapeo={mapeoMapa} />
+                            :
+                            <MapEspejo referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} mapeo={mapeoMapaEspejo} />
+                    }
+                </div>
             </div>
 
-            {
-                props.botones == true
-                    ?
-                    <Map referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} mapeo={mapeoMapa} />
-                    :
-                    <MapEspejo referencia={capturaReferenciaMapa} referenciaAnalisis={props.referenciaAnalisis} mapeo={mapeoMapaEspejo} />
-            }
+            <div className="row pt-5" style={{ backgroundColor: 'white' }}>
+                {
+                    (tables && tables.length > 0) &&
+                    tables.map((table, index) => (
+                        <GenericTable key={index} table={table} index={index} showMap={changeMapState} allTables={tables} createTable={createTable} />
+                    ))
+                }
+            </div>
         </>
     )
 }

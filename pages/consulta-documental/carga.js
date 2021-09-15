@@ -6,16 +6,21 @@ import Select from 'react-select';
 import Cookies from 'universal-cookie';
 import Loader from '../../components/Loader';
 import ModalComponent from '../../components/ModalComponent';
-const cookies = new Cookies()
+const cookies = new Cookies();
+import { useAuthState  } from '../../context';
+var csrfToken;
 
-export default function carga() {
-  //se modificio el archivo
+export default function cargaDocumental() {
+  const userDetails = useAuthState().user;
+  csrfToken = userDetails.csrfToken;
+  //console.log(userDetails.id);
+
   // Guarda el token que viene en la cookie para verificar que la tenga
   const tokenCookie = cookies.get('SessionToken')
   const rolCookie = cookies.get('RolUsuario')
   const estatusCookie = cookies.get('EstatusUsuario')
   const usuarioCookie = cookies.get('Usuario')
-  const usuarioI = cookies.get('IDU')
+  
 
   //Datos para el modal
   const [show, setShow] = useState(false);
@@ -392,11 +397,12 @@ export default function carga() {
     const auxfech = data.fecha.split('-');
     //terminan las validaciones 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  
+    const usuarioI = userDetails.id;
 
     const url = `${process.env.ruta}/wa/publico/setMetadatoDocumento?id_usuario=${usuarioI}&nombre=${data.titulo}&descripcion=${data.descripcion}&tipo=${data.tipoD}&tema1=${data.tema1}&tema2=${data.tema2}&nivel_cobertura=${data.cobertura}&ano_publicacion=${auxfech[0]}&mes_publicacion=${auxfech[1]}&dia_publicacion=${auxfech[2]}&formato=${data.formato}&pais=${data.pais}&idioma=${data.idioma}&paginas=${data.paginas}&palabras_clave=${data.palabrasC}&nombre_archivo=${data.nomArchivo}&url_origen=${data.enlace}&fecha_cap_situ=${fechaC}&actualizacion=${fechaA}&alias=${data.alias}&publicacion=${data.detalle}&cve_ent=${data.cveEntidad}&cve_mun=${data.cveMunicipal}&id_geografico=${data.idGeo}&autor=${data.autor1}&autor2=${data.autor2}&autor3=${data.autor3}&instancia=${data.dependencia}&instancia2=${data.dependencia2}&instancia3=${data.dependencia3}&tratamiento_publicacion=${data.conjDatos}&editorial=${data.editorial}&edicion=${data.edicion}&isbn=${data.isbn}&doc_vigente=${data.vigencia}&doc_actualizado=${data.actualizado}&ano_vig_inicial=${data.pvInicial}&ano_vig_final=${data.pvFinal}&armonizado_lgahotdu=${data.armonizado}`;
-    console.log(url);
+    //console.log(url);
     const res = await fetch(url);
+    //console.log(res);
     const datos = await res.json();
     if (datos['message-subject'] === 'Datos guardados') {
       let formData = new FormData();

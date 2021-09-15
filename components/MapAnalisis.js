@@ -14,8 +14,6 @@ import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import 'leaflet-zoombox'
 import 'leaflet-zoombox/L.Control.ZoomBox.css'
-import 'leaflet-easybutton/src/easy-button.css'
-import 'leaflet-easybutton/src/easy-button.js'
 import 'leaflet-kml'
 import 'leaflet-easyprint'
 
@@ -125,12 +123,12 @@ export default function Map(props) {
             };
             north.addTo(mapaReferencia);
 
-            // var options = {
-            //     modal: true,
-            //     title: "Acercar a un área determinada"
-            // };
-            // var control = L.control.zoomBox(options);
-            // mapaReferencia.addControl(control);
+            var options = {
+                modal: true,
+                title: "Acercar a un área determinada"
+            };
+            var control = L.control.zoomBox(options);
+            mapaReferencia.addControl(control);
 
             // L.easyPrint({
             //     title: 'Imprimir',
@@ -139,18 +137,6 @@ export default function Map(props) {
             // }).addTo(mapaReferencia);
         }
     }, [mapaReferencia])
-
-    function generatePolygon(bounds, result) {
-        var polyBounds = [];
-        bounds.map((item) => (
-            item.map((subitem) => (
-                // polyBounds.push([subitem.lat, subitem.lng])
-                polyBounds.push([Math.floor(subitem.lat), Math.floor(subitem.lng)])
-            ))
-        ));
-        polyBounds[polyBounds.length - 1] = [Math.floor(bounds[0][0].lat), Math.floor(bounds[0][0].lng)]
-        result(polyBounds);
-    }
 
     //Centro y zoom del mapa
     var centroInicial = [24.26825996870948, -102.88361673036671];

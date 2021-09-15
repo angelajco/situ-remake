@@ -21,7 +21,7 @@
     },
     {
         "idFuncion": "consulta-documental",
-        "pagina": "/construccion",
+        "pagina": "/consulta-documental/consulta",
         "titulo":"CONSULTA DOCUMENTAL"
     },
 	{
@@ -48,5 +48,21 @@
     {
         "idFuncion": "restablecer-contrasena-usuario",
         "pagina": "/administracion/restablecer-contrasena"
+    },
+    {
+        "idFuncion": "consulta-metadatos",
+        "pagina": "/consulta-documental/consulta-metadatos"
+    },
+    {
+        "idFuncion": "cargar-documentos",
+        "pagina": "/consulta-documental/registro-documentos"
+    },
+    {
+        "idFuncion": "registro",
+        "pagina": "/consulta-documental/registro"
+    },
+    {
+        "idFuncion": "cargar-documentos",
+        "pagina": "/consulta-documental/carga-documentos"
     }
 ]

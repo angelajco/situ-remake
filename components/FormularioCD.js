@@ -1,32 +1,37 @@
-import React, { useState } from 'react';
+import React, { useEffect,useState } from 'react';
 import { useForm } from "react-hook-form";
 import { Container } from 'react-bootstrap'
 import { Form, Button } from 'react-bootstrap';
 import Select from 'react-select';
 import Cookies from 'universal-cookie';
-import Loader from '../../components/Loader';
-import ModalComponent from '../../components/ModalComponent';
-const cookies = new Cookies()
+import ModalComponent from './ModalComponent';
+import { useAuthState } from '../context';
+//import tipoF from '../shared/jsons/tipo.json';
+//import temaP from '../shared/jsons/temaPrinicpal.json';
+//import temaS from '../shared/jsons/temaSecundario.json';
+//import coberturaG from '../shared/jsons/cobertura.json';
+import cDatos from '../shared/jsons/conjuntoDatos.json';
+import paisD from '../shared/jsons/pais.json';
+import idiomaD from '../shared/jsons/idioma.json';
+import formatoD from '../shared/jsons/formato.json';
+//import Loader from './Loader';
 
-//se hicieron algunas modificaciones al archivo
+var csrfToken;
 
-export default function metadatos() {
-
-
-  // Guarda el token que viene en la cookie para verificar que la tenga
-  const usuarioI = cookies.get('IDU')
+function FormularioCD() {
+  const userDetails = useAuthState().user;
+  csrfToken = userDetails.csrfToken;
 
   //Datos para el modal
   const [show, setShow] = useState(false);
   const [datosModal, setDatosModal] = useState({});
   //Estados para mostrar el modal
-  const handleShow = () => setShow(true);
+  // const handleShow = () => setShow(true);
   const handleClose = () => setShow(false);
-  //console.log(usuarioI);
   //Datos para crear el form
-  const { register, handleSubmit} = useForm();
+  const { register, handleSubmit } = useForm();
   const [tarchivo, setTarchivo] = useState(null);
-  const [fileUrl, setFileUrl] = useState('/images/consultaD/miniaturaD.png');
+  const [fileUrl, setFileUrl] = useState('/images/consulta/miniaturaD.png');
   const [imgportada, setImgPortada] = useState(null);
   const [tipodoc, setTipoDoc] = useState();
   const [tema1, setTema1] = useState();
@@ -40,70 +45,16 @@ export default function metadatos() {
   const [pais, setPais] = useState();
   const [idioma, setIdioma] = useState(); //msjError
   const [msjError, setMsjError] = useState();
+  const [tipoF, setTipoF] = useState();
+  const [temaP, setTemaP] = useState();
+  const [temaS, setTemaS] = useState();
+  const [coberturaG, setCoberturaG] = useState();
 
   const tarchivos = [
     { value: '1', label: 'Documento' },
     { value: '2', label: 'Enlace' }
   ];
-  const tipoF = [
-    { value: '1', label: 'Normativo', name: 'tipo' },
-    { value: '2', label: 'Instrumento de planeación', name: 'tipo' },
-    { value: '3', label: 'Artículo de Revista', name: 'tipo' },
-    { value: '4', label: 'Revista', name: 'tipo' },
-    { value: '5', label: 'Artículo en revista Indexada', name: 'tipo' },
-    { value: '6', label: 'Revista Indexada', name: 'tipo' },
-    { value: '7', label: 'Libro', name: 'tipo' },
-    { value: '8', label: 'Tésis', name: 'tipo' },
-    { value: '9', label: 'Investigación', name: 'tipo' },
-    { value: '10', label: 'Otro', name: 'tipo' }
-  ];
-  const temaP = [
-    { value: '1', label: 'Ambiental', name: 'tema1' },
-    { value: '2', label: 'Demográfico', name: 'tema1' },
-    { value: '3', label: 'Energía', name: 'tema1' },
-    { value: '4', label: 'Gestión', name: 'tema1' },
-    { value: '5', label: 'Internacional', name: 'tema1' },
-    { value: '6', label: 'Riesgos, peligros y vulnerabilidad', name: 'tema1' },
-    { value: '7', label: 'Salud', name: 'tema1' },
-    { value: '8', label: 'Socioeconómico', name: 'tema1' },
-    { value: '9', label: 'Tecnológico', name: 'tema1' },
-    { value: '10', label: 'Territorial', name: 'tema1' },
-    { value: '11', label: 'Movilidad', name: 'tema1' },
-  ];
-  const temaS = [
-    { value: '1', label: 'Planeación', name: 'tema2' },
-    { value: '2', label: 'Ordenamiento Territorial y Urbano', name: 'tema2' },
-    { value: '3', label: 'Ordenamiento Ecológico', name: 'tema2' },
-    { value: '4', label: 'Vivienda', name: 'tema2' },
-    { value: '5', label: 'Desarrollo Agrario', name: 'tema2' },
-    { value: '6', label: 'Desarrollo Rural', name: 'tema2' },
-    { value: '7', label: 'Riesgos', name: 'tema2' },
-    { value: '8', label: 'Catastro', name: 'tema2' },
-    { value: '9', label: 'Gobernanza', name: 'tema2' }
-  ];
-  const coberturaG = [
-    { value: '1', label: 'Nacional', name: 'cobertura' },
-    { value: '2', label: 'Regional', name: 'cobertura' },
-    { value: '3', label: 'Metropolitano', name: 'cobertura' },
-    { value: '4', label: 'Estatal', name: 'cobertura' },
-    { value: '5', label: 'Municipal', name: 'cobertura' },
-    { value: '6', label: 'Subregional', name: 'cobertura' },
-    { value: '7', label: 'Localidad', name: 'cobertura' },
-    { value: '8', label: 'General', name: 'cobertura' }
-  ];
 
-  const cDatos = [
-    { value: '1', label: 'Publicación oficial', name: 'cDatos' },
-    { value: '2', label: 'Estudio', name: 'cDatos' },
-    { value: '3', label: 'Proyecto', name: 'cDatos' },
-    { value: '4', label: 'Colección', name: 'cDatos' },
-    { value: '5', label: 'Investigación', name: 'cDatos' },
-    { value: '6', label: 'Propuesta', name: 'cDatos' },
-    { value: '7', label: 'Comunicado', name: 'cDatos' },
-    { value: '8', label: 'Manifiesto', name: 'cDatos' },
-    { value: '9', label: 'Adendum', name: 'cDatos' },
-    { value: '10', label: 'Artículos académicos', name: 'cDatos' }
-  ];
   const vig = [
     { value: '1', label: 'Vigente', name: 'vigencia' },
     { value: '2', label: 'Histórico', name: 'vigencia' }
@@ -121,39 +72,104 @@ export default function metadatos() {
     { value: '4', label: 'S/D', name: 'armonizado' }
   ];
 
-  const formatoD = [
-    { value: '1', label: 'pdf', name: 'formato' },
-    { value: '2', label: 'Procesador de textos', name: 'formato' },
-    { value: '3', label: 'Hoja de cálculo', name: 'formato' },
-    { value: '4', label: 'jpg', name: 'formato' },
-    { value: '5', label: 'png', name: 'formato' },
-    { value: '6', label: 'dwg', name: 'formato' },
-    { value: '7', label: 'Otro', name: 'formato' }
-  ];
-  const paisD = [
-    { value: '1', label: 'México', name: 'pais' },
-    { value: '2', label: 'Estados Unidos', name: 'pais' },
-    { value: '3', label: 'Canada', name: 'pais' },
-    { value: '4', label: 'Colombia', name: 'pais' },
-    { value: '5', label: 'Argentina', name: 'pais' },
-    { value: '6', label: 'Costa Rica', name: 'pais' },
-    { value: '7', label: 'Brazil', name: 'pais' }
-  ];
-  const idiomaD = [
-    { value: '1', label: 'Español', name: 'idioma' },
-    { value: '2', label: 'Ingles', name: 'idioma' },
-    { value: '3', label: 'Frances', name: 'idioma' }
-  ];
+  useEffect(() => {
+    fetch(`${process.env.ruta}/wa/publico/consultaDocumentalCatTipo`)
+      .then((response) => response.json())
+      .then(
+        (data) => {
+          construyeCatalogoTipo(data);
+        },
+        (error) => console.log(error)
+      )
+
+    fetch(`${process.env.ruta}/wa/publico/consultaDocumentalCatTema1`)
+      .then((response) => response.json())
+      .then(
+        (data) => {
+          construyeCatalogoTema1(data);
+        },
+        (error) => console.log(error)
+      )
+    fetch(`${process.env.ruta}/wa/publico/consultaDocumentalCatTema2`)
+      .then((response) => response.json())
+      .then(
+        (data) => {
+          construyeCatalogoTema2(data);
+        },
+        (error) => console.log(error)
+      )
+    fetch(`${process.env.ruta}/wa/publico/catNivelCobertura`)
+      .then((response) => response.json())
+      .then(
+        (data) => {
+          construyeCatalogoCobertura(data);
+        },
+        (error) => console.log(error)
+      )
+  }, []);
+
+  function construyeCatalogoTipo(data) {
+    //console.log(data);
+    let lista = [];
+    let i = 0;
+    data.map(value => {
+      let j = {};
+      j.value = i + 1;
+      j.label = value.tipo
+      j.name = "tipo";
+      lista.push(j)
+      //console.log(value.tipo);
+    })
+    setTipoF(lista);
+  }
+  function construyeCatalogoTema1(data) {
+    let lista = [];
+    let i = 0;
+    data.map(value => {
+      let j = {};
+      j.value = i + 1;
+      j.label = value.tema
+      j.name = "tema1";
+      lista.push(j)
+      //console.log(value.tipo);
+    })
+    setTemaP(lista);
+  }
+  function construyeCatalogoTema2(data) {
+    let lista = [];
+    let i = 0;
+    data.map(value => {
+      let j = {};
+      j.value = i + 1;
+      j.label = value.subtema
+      j.name = "tema2";
+      lista.push(j)
+      //console.log(value.tipo);
+    })
+    setTemaS(lista);
+  }
+  function construyeCatalogoCobertura(data) {
+    let lista = [];
+    let i = 0;
+    data.map(value => {
+      let j = {};
+      j.value = i + 1;
+      j.label = value.cobertura
+      j.name = "cobertura";
+      lista.push(j)
+      //console.log(value.tipo);
+    })
+
+    setCoberturaG(lista);
+  }
+
 
   const onSubmitP = async (data) => {
-    //data.portada = imgportada;
     var hoy = new Date();
     var fechaC = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
     var fechaA = hoy.getFullYear() + '/' + (hoy.getMonth() + 1) + '/' + hoy.getDate();
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///codigo para validaciones de formulario
-
-
     if (tarchivo == null) {
       let t1 = document.getElementById('msj-tipoDoc');
       document.getElementById('tipo').focus();
@@ -298,14 +314,13 @@ export default function metadatos() {
     if (data.fecha === "") {
       let t1 = document.getElementById('msj-fechaP');
       let t2 = document.getElementById('fecha').focus();
-      t1.innerHTML = "Ingresa fecha de pub;icación";
+      t1.innerHTML = "Ingresa Año de pub;icación";
       setMsjError("Se han encontrado errores en la información");
       return false;
     } else {
       let t1 = document.getElementById('msj-fechaP');
       t1.innerHTML = "";
     }
-
     if (data.formato === "") {
       let t1 = document.getElementById('msj-formato');
       document.getElementById('formato1').focus();
@@ -316,7 +331,6 @@ export default function metadatos() {
       let t1 = document.getElementById('msj-formato');
       t1.innerHTML = " ";
     }
-
     if (data.pais === "") {
       let t1 = document.getElementById('msj-pais');
       document.getElementById('pais').focus();
@@ -327,7 +341,6 @@ export default function metadatos() {
       let t1 = document.getElementById('msj-pais');
       t1.innerHTML = " ";
     }
-
     if (data.idioma === "") {
       let t1 = document.getElementById('msj-idioma');
       document.getElementById('idioma').focus();
@@ -338,7 +351,6 @@ export default function metadatos() {
       let t1 = document.getElementById('msj-idioma');
       t1.innerHTML = " ";
     }
-
     if (data.paginas === "") {
       let t1 = document.getElementById('msj-paginas');
       document.getElementById('paginas').focus();
@@ -349,7 +361,6 @@ export default function metadatos() {
       let t1 = document.getElementById('msj-paginas');
       t1.innerHTML = " ";
     }
-
     if (data.palabrasC === "") {
       let t1 = document.getElementById('msj-palabras');
       document.getElementById('palabrasC').focus();
@@ -360,7 +371,6 @@ export default function metadatos() {
       let t1 = document.getElementById('msj-palabras');
       t1.innerHTML = " ";
     }
-
     if (data.nomArchivo === "") {
       let t1 = document.getElementById('msj-nombreOrigen');
       document.getElementById('nomArchivo').focus();
@@ -388,13 +398,11 @@ export default function metadatos() {
       data.cveMunicipal = "N/A";
     }
 
-    const auxfech = data.fecha.split('-');
     //terminan las validaciones 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  
+    const usuarioI = userDetails.id;
 
-    const url = `${process.env.ruta}/wa/publico/setMetadatoDocumento?id_usuario=${usuarioI}&nombre=${data.titulo}&descripcion=${data.descripcion}&tipo=${data.tipoD}&tema1=${data.tema1}&tema2=${data.tema2}&nivel_cobertura=${data.cobertura}&ano_publicacion=${auxfech[0]}&mes_publicacion=${auxfech[1]}&dia_publicacion=${auxfech[2]}&formato=${data.formato}&pais=${data.pais}&idioma=${data.idioma}&paginas=${data.paginas}&palabras_clave=${data.palabrasC}&nombre_archivo=${data.nomArchivo}&url_origen=${data.enlace}&fecha_cap_situ=${fechaC}&actualizacion=${fechaA}&alias=${data.alias}&publicacion=${data.detalle}&cve_ent=${data.cveEntidad}&cve_mun=${data.cveMunicipal}&id_geografico=${data.idGeo}&autor=${data.autor1}&autor2=${data.autor2}&autor3=${data.autor3}&instancia=${data.dependencia}&instancia2=${data.dependencia2}&instancia3=${data.dependencia3}&tratamiento_publicacion=${data.conjDatos}&editorial=${data.editorial}&edicion=${data.edicion}&isbn=${data.isbn}&doc_vigente=${data.vigencia}&doc_actualizado=${data.actualizado}&ano_vig_inicial=${data.pvInicial}&ano_vig_final=${data.pvFinal}&armonizado_lgahotdu=${data.armonizado}`;
-    console.log(url);
+    const url = `${process.env.ruta}/wa/publico/setMetadatoDocumento?id_usuario=${usuarioI}&nombre=${data.titulo}&descripcion=${data.descripcion}&tipo=${data.tipoD}&tema1=${data.tema1}&tema2=${data.tema2}&nivel_cobertura=${data.cobertura}&ano_publicacion=${data.fecha}&mes_publicacion=${data.mes}&dia_publicacion=${data.dia}&formato=${data.formato}&pais=${data.pais}&idioma=${data.idioma}&paginas=${data.paginas}&palabras_clave=${data.palabrasC}&nombre_archivo=${data.nomArchivo}&url_origen=${data.enlace}&fecha_cap_situ=${fechaC}&actualizacion=${fechaA}&alias=${data.alias}&publicacion=${data.detalle}&cve_ent=${data.cveEntidad}&cve_mun=${data.cveMunicipal}&id_geografico=${data.idGeo}&autor=${data.autor1}&autor2=${data.autor2}&autor3=${data.autor3}&instancia=${data.dependencia}&instancia2=${data.dependencia2}&instancia3=${data.dependencia3}&tratamiento_publicacion=${data.conjDatos}&editorial=${data.editorial}&edicion=${data.edicion}&isbn=${data.isbn}&doc_vigente=${data.vigencia}&doc_actualizado=${data.actualizado}&ano_vig_inicial=${data.pvInicial}&ano_vig_final=${data.pvFinal}&armonizado_lgahotdu=${data.armonizado}`;
     const res = await fetch(url);
     const datos = await res.json();
     if (datos['message-subject'] === 'Datos guardados') {
@@ -613,8 +621,8 @@ export default function metadatos() {
                   <Form.Group controlId="tipo">
                     <Form.Label>Tipo de Documento *</Form.Label>
                     <Select
-                      id="tipo1"
-                      controlId="tipo1"
+                      //id="tipo"
+                      controlId="tipo"
                       placeholder="Selecciona..."
                       className="basic-single"
                       classNamePrefix="Select"
@@ -633,7 +641,7 @@ export default function metadatos() {
                       <div>
                         <Form.Group controlId="doc">
                           <Form.Label>Documento *</Form.Label>
-                          <Form.File name="doc" ref={register()} />
+                          <Form.File name="doc" ref={register()} accept=".doc,.docx,.txt.odt,.abw,.rtf,.jpg,.jpeg,.gif,.png,.tiff,.tif,.ppt,.pptx,.odp,.pdf,.xlsx,.xls,.ods" />
                           <p id="msj-doc" className="msj"></p>
                         </Form.Group>
                       </div>
@@ -673,12 +681,12 @@ export default function metadatos() {
                     <Form.Label>Tipo *</Form.Label>
                     <Form.Control name="tipoD" type="hidden" ref={register()} value={tipodoc} />
                     <Select
-                      id="tipoD1"
-                      controlId="tipoD1"
+                      //id="tipoD1"
+                      controlId="tipoD"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="tipoD1"
+                      name="tipoD"
                       options={tipoF}
                       isClearable={true}
                       onChange={(e) => cambioTipo(e)}
@@ -697,12 +705,12 @@ export default function metadatos() {
                     <Form.Label>Tema Principal *</Form.Label>
                     <Form.Control name="tema1" type="hidden" ref={register()} value={tema1} />
                     <Select
-                      id="tema11"
-                      controlId="tema11"
+                      //id="tema11"
+                      controlId="tema1"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="tema11"
+                      name="tema1"
                       options={temaP}
                       isClearable={true}
                       onChange={(e) => cambioTemaP(e)}
@@ -714,12 +722,12 @@ export default function metadatos() {
                     <Form.Label>Tema Secundario *</Form.Label>
                     <Form.Control name="tema2" type="hidden" ref={register()} value={tema2} />
                     <Select
-                      id="tema22"
-                      controlId="tema22"
+                      //id="tema22"
+                      controlId="tema2"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="tema22"
+                      name="tema2"
                       options={temaS}
                       isClearable={true}
                       onChange={(e) => cambioTemaS(e)}
@@ -731,12 +739,12 @@ export default function metadatos() {
                     <Form.Label>Nivel de Cobertura *</Form.Label>
                     <Form.Control name="cobertura" type="hidden" ref={register()} value={cobertura} />
                     <Select
-                      id="coberturaG1"
-                      controlId="coberturaG1"
+                      //id="coberturaG1"
+                      controlId="cobertura"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="coberturaG1"
+                      name="cobertura"
                       options={coberturaG}
                       isClearable={true}
                       onChange={(e) => cambioCobertura(e)}
@@ -783,22 +791,22 @@ export default function metadatos() {
                     <Form.Label>Conjunto de datos</Form.Label>
                     <Form.Control name="conjDatos" type="hidden" ref={register()} value={cdatos} />
                     <Select
-                      controlId="conjDatos1"
+                      controlId="conjDatos"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="conjDatos1"
+                      name="conjDatos"
                       options={cDatos}
                       isClearable={true}
                       onChange={(e) => cambioCDatos(e)}
                     ></Select>
                   </Form.Group>
-                </div>
-                <div className="col-6">
                   <Form.Group controlId="editorial">
                     <Form.Label>Editorial</Form.Label>
                     <Form.Control name="editorial" type="text" ref={register()} maxLength="99" />
                   </Form.Group>
+                </div>
+                <div className="col-6">
                   <Form.Group controlId="edicion">
                     <Form.Label>Edición</Form.Label>
                     <Form.Control name="edicion" type="text" ref={register()} maxLength="39" />
@@ -807,20 +815,33 @@ export default function metadatos() {
                     <Form.Label>ISBN</Form.Label>
                     <Form.Control name="isbn" type="text" ref={register()} maxLength="19" />
                   </Form.Group>
+
                   <Form.Group controlId="fecha">
-                    <Form.Label>Fecha de Publicación *</Form.Label>
-                    <Form.Control name="fecha" type="date" ref={register()} />
+                    <Form.Label>Año de Publicación *</Form.Label>
+                    <Form.Control name="fecha" type="text" ref={register()} pattern="[0-9]{4}" placeholder="Ej. 2000" />
                     <p id="msj-fechaP" className="msj"></p>
                   </Form.Group>
+
+                  <Form.Group controlId="mes">
+                    <Form.Label>Mes de Publicación</Form.Label>
+                    <Form.Control name="mes" type="text" ref={register()} pattern="[0-9]{2}" placeholder="Ej. 08" />
+                    <p id="msj-mes" className="msj"></p>
+                  </Form.Group>
+                  <Form.Group controlId="dia">
+                    <Form.Label>Día de Publicación</Form.Label>
+                    <Form.Control name="dia" type="text" ref={register()} pattern="[0-9]{2}" placeholder="Ej. 08" />
+                    <p id="msj-dia" className="msj"></p>
+                  </Form.Group>
+
                   <Form.Group controlId="vigencia">
                     <Form.Label>Vigencia</Form.Label>
                     <Form.Control name="vigencia" type="hidden" ref={register()} value={vigencia} />
                     <Select
-                      controlId="vigencia1"
+                      controlId="vigencia"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="vigencia1"
+                      name="vigencia"
                       options={vig}
                       isClearable={true}
                       onChange={(e) => cambioVigencia(e)}
@@ -830,11 +851,11 @@ export default function metadatos() {
                     <Form.Label>Documento Actualizado</Form.Label>
                     <Form.Control name="actualizado" type="hidden" ref={register()} value={actual} />
                     <Select
-                      controlId="actualizado1"
+                      controlId="actualizado"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="actualizado1"
+                      name="actualizado"
                       options={act}
                       isClearable={true}
                       onChange={(e) => cambioActualizado(e)}
@@ -856,11 +877,11 @@ export default function metadatos() {
                     <Form.Label>Armonizado a la LGAHOTDU</Form.Label>
                     <Form.Control name="armonizado" type="hidden" ref={register()} value={armoni} />
                     <Select
-                      controlId="armonizado1"
+                      controlId="armonizado"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="armonizado1"
+                      name="armonizado"
                       options={armon}
                       isClearable={true}
                       onChange={(e) => cambioArmonizado(e)}
@@ -870,12 +891,12 @@ export default function metadatos() {
                     <Form.Label>Formato del Documento *</Form.Label>
                     <Form.Control name="formato" type="hidden" ref={register()} value={formato} />
                     <Select
-                      id="formato1"
-                      controlId="formato1"
+                      //id="formato1"
+                      controlId="formato"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="formato1"
+                      name="formato"
                       options={formatoD}
                       isClearable={true}
                       onChange={(e) => cambioFormato(e)}
@@ -887,12 +908,12 @@ export default function metadatos() {
                     <Form.Label>País del Documento *</Form.Label>
                     <Form.Control name="pais" type="hidden" ref={register()} value={pais} />
                     <Select
-                      id="pais1"
-                      controlId="pais1"
+                      //id="pais"
+                      controlId="pais"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="pais1"
+                      name="pais"
                       options={paisD}
                       isClearable={true}
                       onChange={(e) => cambioPais(e)}
@@ -904,12 +925,12 @@ export default function metadatos() {
                     <Form.Label>Idioma del Documento *</Form.Label>
                     <Form.Control name="idioma" type="hidden" ref={register()} value={idioma} />
                     <Select
-                      id="idioma1"
-                      controlId="idioma1"
+                      //id="idioma"
+                      controlId="idioma"
                       placeholder="Selecciona una opción"
                       className="basic-single"
                       classNamePrefix="Select"
-                      name="idioma1"
+                      name="idioma"
                       options={idiomaD}
                       isClearable={true}
                       onChange={(e) => cambioIdioma(e)}
@@ -954,3 +975,5 @@ export default function metadatos() {
     </>
   )
 }
+
+export default FormularioCD;

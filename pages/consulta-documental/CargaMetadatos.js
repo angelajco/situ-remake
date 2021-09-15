@@ -26,6 +26,16 @@ export async function getCapas(){
     .catch(error => console.log(error));
 }
 
+/* función para extraer el encoding del archivo de metadatos para realizar la correcta interpretación
+   al cargarlo con la API FileReader a la pantalla
+*/
+export function leerEncoding(xml){
+    // extraer la cabecera del xml para obtener el encoding
+    let headerXML = xml.substring(0, xml.indexOf('?>'));
+    let encoding = headerXML.substring(headerXML.indexOf('encoding'), headerXML.length)    
+    return encoding.substring(encoding.indexOf('"'), encoding.length).replace('"', '').replace('"', '');
+}
+
 export default function CargaMetaDatos() {
     const userDetails = useAuthState().user;
 	let csrfToken = userDetails.csrfToken;
@@ -42,11 +52,11 @@ export default function CargaMetaDatos() {
     );   
     
     async function handleCapas () { setCapas(await getCapas())}
-
+    
     const [archivoCargado, setArchivoCargado] = useState(false);
     const [capaSeleccionada, setCapaSeleccionada] = useState(false);
-    
     let [nombreArchivo, setNombreArchivo] = useState();
+    
     let [datosTab1, setDatosTab1] = useState();
     let [datosTab2, setDatosTab2] = useState();
     let [datosTab3, setDatosTab3] = useState();
@@ -56,29 +66,66 @@ export default function CargaMetaDatos() {
     let [datosTab7, setDatosTab7] = useState();
     let [datosTab8, setDatosTab8] = useState();
     let [datosTab9, setDatosTab9] = useState();
+    let [titulo, setTitulo] = useState();
+    let [proposito, setProposito] = useState();
+    let [descripcion, setDescripcion] = useState();
+    let [categoriaDatos, setCategoriaDatos] = useState();
+    let [subCategoriaDatos, setSubCategoriaDatos] = useState();
+    let [proveedor, setProveedor] = useState();
     let [strXML, setStrXML] = useState();
     let [idCapa, setIdCapa] = useState();
+
     // ----------
     function onLoadFile(event){
+        var fileType = event.target.files[0].name;
+        fileType = fileType.substring(fileType.indexOf('.') + 1);
+        if(fileType == 'xml'){
         //console.log(event.target.files[0])
-        setNombreArchivo(event.target.files[0].name)
-        var fileReader = new FileReader();
-        fileReader.readAsText(event.target.files[0], "UTF-8");
-        fileReader.onload = loaded => {
-            setStrXML(loaded.target.result);
-            let parser = new DOMParser();
-            let contenidoXml = parser.parseFromString(loaded.target.result, 'text/xml');
-            
-            setDatosTab1(contenidoXml.getElementsByTagName("MD_DataIdentification"));
-            setDatosTab2(contenidoXml.getElementsByTagName("CI_Date"));
-            setDatosTab3(contenidoXml.getElementsByTagName("CI_ResponsibleParty"));
-            setDatosTab4(contenidoXml.getElementsByTagName("geographicElement"));
-            setDatosTab5(contenidoXml.getElementsByTagName("MD_ReferenceSystem"));
-            setDatosTab6(contenidoXml.getElementsByTagName("DQ_DataQuality"));
-            setDatosTab7(contenidoXml.getElementsByTagName("Attributes"));
-            setDatosTab8(contenidoXml.getElementsByTagName("MD_Distribution"));
-            setDatosTab9(contenidoXml.getElementsByTagName("Inf_Metadata"));
-           setArchivoCargado(true);
+        /* guardar el nombre del archivo de metadatos */
+            setNombreArchivo(event.target.files[0].name)
+            // lector temporal para conocer el enconding del archivo de metadatos
+            var tmpFileReader = new FileReader();
+            var xmlFileReader = new FileReader();
+            tmpFileReader.readAsText(event.target.files[0], "ISO-8859-1");
+
+            tmpFileReader.onload = loaded => {
+                var encoding = leerEncoding(loaded.target.result)  
+                console.log(encoding); 
+                // leer nuevamente el archivo de metadatos con el encoding indicado en el header
+                xmlFileReader.readAsText(event.target.files[0], encoding);
+                xmlFileReader.onload = loadedXML => {
+                    let parser = new DOMParser();
+                    let contenidoXml = parser.parseFromString(loadedXML.target.result, 'text/xml');
+                    // modificar las variables que se almacenan en la tabla de registro
+                    setStrXML(loadedXML.target.result);
+                    setTitulo(contenidoXml.getElementsByTagName("MD_DataIdentification")[0].getElementsByTagName("title")[0].innerHTML);
+                    setProposito(contenidoXml.getElementsByTagName("MD_DataIdentification")[0].getElementsByTagName("purpose")[0].innerHTML);    
+                    setDescripcion(contenidoXml.getElementsByTagName("MD_DataIdentification")[0].getElementsByTagName("abstract")[0].innerHTML);
+                    setCategoriaDatos(contenidoXml.getElementsByTagName("MD_DataIdentification")[0].getElementsByTagName("principalTopic")[0].innerHTML);
+                    setSubCategoriaDatos(contenidoXml.getElementsByTagName("MD_DataIdentification")[0].getElementsByTagName("groupCategory")[0].innerHTML);
+                    setProveedor(contenidoXml.getElementsByTagName("Inf_Metadata")[0].getElementsByTagName("Inf_Metadata_CI_ResponsibleParty_organisationName")[0].innerHTML);
+
+                    setDatosTab1(contenidoXml.getElementsByTagName("MD_DataIdentification"));
+                    setDatosTab2(contenidoXml.getElementsByTagName("CI_Date"));
+                    setDatosTab3(contenidoXml.getElementsByTagName("CI_ResponsibleParty"));
+                    setDatosTab4(contenidoXml.getElementsByTagName("geographicElement"));
+                    setDatosTab5(contenidoXml.getElementsByTagName("MD_ReferenceSystem"));
+                    setDatosTab6(contenidoXml.getElementsByTagName("DQ_DataQuality"));
+                    setDatosTab7(contenidoXml.getElementsByTagName("Attributes"));
+                    setDatosTab8(contenidoXml.getElementsByTagName("MD_Distribution"));
+                    setDatosTab9(contenidoXml.getElementsByTagName("Inf_Metadata"));
+                    
+                    
+                    setArchivoCargado(true);
+                }
+            }
+        }else{
+            setDatosModalAnalisis({
+                title: 'Error',
+                body: '¡Formato de archivo no soportado!',
+            });
+            setShowModalAnalisis(true);
+            event.target.value = null
         }
     }
     // ----------
@@ -112,7 +159,11 @@ export default function CargaMetaDatos() {
     // ----------
     function onClickButtonGuardar(){
         var objectMetadatos = {nombre_archivo: nombreArchivo, id_capa: idCapa
-                                ,metadatos: strXML, id_usuario:userDetails.id};
+                                , titulo:titulo, proposito:proposito, descripcion:descripcion 
+                                , categoriaDatos:categoriaDatos, subCategoriaDatos:subCategoriaDatos
+                                , proveedor: proveedor
+                                , metadatos: strXML, id_usuario:userDetails.id};
+                                 
         let jsonRequest = JSON.stringify(objectMetadatos);
         let requestHeaders = {"Content-Type": "application/json"};
         requestHeaders[`${csrfToken.headerName}`]=csrfToken.token;

@@ -7,7 +7,6 @@ import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
 import { DragDropContext, Droppable, Draggable as DraggableDnd, resetServerContext } from 'react-beautiful-dnd';
 import { CSVLink } from "react-csv";
 import { Typeahead } from 'react-bootstrap-typeahead';
-import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
 import * as toPdf from '@react-pdf/renderer';
 import * as htmlToImage from 'html-to-image';
 

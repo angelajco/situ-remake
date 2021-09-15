@@ -1,5 +1,5 @@
 import {temas, periodicidades, getAmbitos, getPeriodo, getEntidades, getMunicipios,
-	getMetasAnualesByIdTablero, getMetasMensualesByIdTablero, getLocalidadesByTablero} from './Catalogos'
+	getMetasAnualesByIdTablero, getMetasMensualesByIdTablero, getLocalidadesByTablero} from './../../../components/Catalogos'
 import Table from "./TableComponent"; 
 import { Modal, Button, Form, Col, onChange, Tabs, Tab} from 'react-bootstrap';
 import { useRef, useState, useEffect } from "react";

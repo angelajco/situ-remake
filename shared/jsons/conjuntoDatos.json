@@ -1,0 +1,12 @@
+[
+    { "value": "1", "label": "Publicación oficial", "name": "cDatos" },
+    { "value": "2", "label": "Estudio", "name": "cDatos" },
+    { "value": "3", "label": "Proyecto", "name": "cDatos" },
+    { "value": "4", "label": "Colección", "name": "cDatos" },
+    { "value": "5", "label": "Investigación", "name": "cDatos" },
+    { "value": "6", "label": "Propuesta", "name": "cDatos" },
+    { "value": "7", "label": "Comunicado", "name": "cDatos" },
+    { "value": "8", "label": "Manifiesto", "name": "cDatos" },
+    { "value": "9", "label": "Adendum", "name": "cDatos" },
+    { "value": "10", "label": "Artículos académicos", "name": "cDatos" }
+]

@@ -4,7 +4,7 @@ import { faPlusCircle, faEdit, faEye, faCog } from '@fortawesome/free-solid-svg-
 import BootstrapTable from 'react-bootstrap-table-next';
 import paginationFactory from 'react-bootstrap-table2-paginator';
 import { useState, useEffect } from "react";
-import {getByFilterTableros} from './Catalogos'
+import {getByFilterTableros} from './../../../components/Catalogos'
 import ModalTabAdd from './ModalTabAdd'
 import ModalTabEdit from './ModalTabEdit'
 import ModalTabView from './ModalTabView'

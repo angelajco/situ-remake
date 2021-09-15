@@ -7,7 +7,7 @@ import Head from 'next/head'
 import ModalComponent from '../../components/ModalComponent';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEye, faEyeSlash, faQuestionCircle } from '@fortawesome/free-solid-svg-icons'
+import { faEye, faEyeSlash, faQuestionCircle,  faUserCircle } from '@fortawesome/free-solid-svg-icons'
 
 export default function Registro() {
 
@@ -54,8 +54,8 @@ export default function Registro() {
     const validarNivel = () => {
         const refEmail = watch("email", "");
 
-        const refRol = watch("id_rol")
-        if (refRol == "1" || refRol == "2") {
+        const refRol = watch("roles")
+        if (refRol == "EQUIPO_TECNICO" || refRol == "FUNCIONARIO_SEDATU") {
             //Se crea una bandera para validar los errores
             var banderaCorreo = true;
             setBotonDesabilitar(true);
@@ -72,18 +72,18 @@ export default function Registro() {
             })
             //La bandera no cambio y se pone error
             if (banderaCorreo == true) {
-                setError("id_rol", {
+                setError("roles", {
                     message: "El correo no corresponde al nivel seleccionado"
                 });
             }
             //La bandera cambio y se quita error
             else {
-                clearErrors("id_rol");
+                clearErrors("roles");
             }
         }
         //Si existe algun error lo limpia y activa el boton en caso de que se cambie de rol
         else {
-            clearErrors("id_rol");
+            clearErrors("roles");
             setBotonDesabilitar(false);
         }
     }
@@ -96,6 +96,28 @@ export default function Registro() {
     };
     const handleClickConfPass = () => {
         setConfPasswordShown(confPasswordShown ? false : true);
+    }
+
+    const [captchaState, setCaptchaState] = useState({ source: null });
+
+    const reloadCaptcha = async(event)=>{
+        let config = {
+            method: "get",
+            url: `${process.env.ruta}/wa/publico/captcha.png`,
+            headers: {
+                "gx-cp-fn": "true"
+            },
+            responseType: 'arraybuffer',
+            withCredentials: true
+        };
+
+        axios(config)
+            .then(function (response) {
+                const base64 = btoa(
+                    new Uint8Array(response.data).reduce((data, byte) => data + String.fromCharCode(byte),'',),
+                  );
+                setCaptchaState({ source: "data:;base64," + base64 });
+            });
     }
 
     //Funcion a ejecutar al darle el boton de iniciar sesion
@@ -115,6 +137,7 @@ export default function Registro() {
         }
         else {
             //Envio de informacion
+            data["roles"] = [{idRol:data.roles}];
             let datosFormulario = JSON.stringify(data);
             let config = {
                 method: "post",
@@ -122,7 +145,8 @@ export default function Registro() {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                data: datosFormulario
+                data: datosFormulario,
+                withCredentials: true
             };
 
             axios(config)
@@ -206,7 +230,7 @@ export default function Registro() {
         fetch(`${process.env.ruta}/wa/publico/catRoles`)
             .then(res => res.json())
             .then(
-                (data) => setRoles(data),
+                (data) => setRoles(data.filter(rol => rol.publico === true)),
                 (error) => console.log(error)
             )
 
@@ -430,18 +454,18 @@ export default function Registro() {
                                     </Form.Control>
                                 </Form.Group>
 
-                                <Form.Group controlId="id_rol">
-                                    <Form.Control as="select" name="id_rol" required onChange={validarNivel} ref={register}>
+                                <Form.Group controlId="roles">
+                                    <Form.Control as="select" name="roles" required onChange={validarNivel} ref={register}>
                                         <option value="" hidden>Perfil de persona usuaria *</option>
                                         {
                                             roles.map((value, index) => (
-                                                <option key={index} value={value.id_rol}>
-                                                    {value.rol}
+                                                <option key={index} value={value.idRol}>
+                                                    {value.descripcion}
                                                 </option>
                                             ))
                                         }
                                     </Form.Control>
-                                    <p className="tw-text-red-600">{errors.id_rol && errors.id_rol.message}</p>
+                                    <p className="tw-text-red-600">{errors.roles && errors.roles.message}</p>
                                 </Form.Group>
 
                                 <Form.Group controlId="id_ambito_actuacion">
@@ -512,7 +536,20 @@ export default function Registro() {
                                     <p id="error-conf-pass" className="tw-text-red-600" hidden={true}>Las contrase&ntilde;as no coinciden</p>
                                 </Form.Group>
 
-                                {/* <div className="g-recaptcha" data-sitekey="YOURSITEKEY"></div> */}
+                                <Form.Group controlId="captcha">
+                                    <img id="captcha" src={captchaState.source? captchaState.source: (process.env.ruta + "/wa/publico/captcha.png")} />&nbsp;<Button variant="outline-secondary" type="button" onClick={reloadCaptcha}><img src="/images/reload.png" width="32" alt="Cambiar" /></Button>
+                                </Form.Group>
+                                <Form.Group controlId="captcha">
+                                    <Form.Control name="captcha" type="text" placeholder="Captcha *" ref={
+                                        register({
+                                            required: {
+                                                value: true, 
+                                                message: 'Captcha es requerido'
+                                                }
+                                            })
+                                    } />
+                                    <p className="tw-text-red-600">{errors.captcha && errors.captcha.message}</p>
+                                </Form.Group>
 
                                 <Form.Group controlId="terminos">
                                     <Form.Check type="checkbox" required feedback="Acepta los términos y condiciones" feedbackTooltip label={

@@ -1,0 +1,13 @@
+[
+    { "value": "1", "label": "Ambiental", "name": "tema1" },
+    { "value": "2", "label": "Demográfico", "name": "tema1" },
+    { "value": "3", "label": "Energía", "name": "tema1" },
+    { "value": "4", "label": "Gestión", "name": "tema1" },
+    { "value": "5", "label": "Internacional", "name": "tema1" },
+    { "value": "6", "label": "Riesgos, peligros y vulnerabilidad", "name": "tema1" },
+    { "value": "7", "label": "Salud", "name": "tema1" },
+    { "value": "8", "label": "Socioeconómico", "name": "tema1" },
+    { "value": "9", "label": "Tecnológico", "name": "tema1" },
+    { "value": "10", "label": "Territorial", "name": "tema1" },
+    { "value": "11", "label": "Movilidad", "name": "tema1" }
+  ]

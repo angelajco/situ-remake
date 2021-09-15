@@ -1,0 +1,11 @@
+[
+    { "value": "1", "label": "Planeación", "name": "tema2" },
+    { "value": "2", "label": "Ordenamiento Territorial y Urbano", "name": "tema2" },
+    { "value": "3", "label": "Ordenamiento Ecológico", "name": "tema2" },
+    { "value": "4", "label": "Vivienda", "name": "tema2" },
+    { "value": "5", "label": "Desarrollo Agrario", "name": "tema2" },
+    { "value": "6", "label": "Desarrollo Rural", "name": "tema2" },
+    { "value": "7", "label": "Riesgos", "name": "tema2" },
+    { "value": "8", "label": "Catastro", "name": "tema2" },
+    { "value": "9", "label": "Gobernanza", "name": "tema2" }
+]

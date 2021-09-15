@@ -12,7 +12,7 @@ import Loader from './Loader'
 import ModalComponent from './ModalComponent'
 import GenericTable from './genericos/GenericTable';
 
-export default function ConsultaDinamica(props) {
+function ConsultaDinamica(props) {
 
     const aggregationLevels = [
         {
@@ -41,7 +41,7 @@ export default function ConsultaDinamica(props) {
     const [tawns, setTawns] = useState([]);
     const [localities, setLocalities] = useState([]);
     const [entity, setEntity] = useState();
-    const [entityObject, setEntityObject] = useState([]);
+    // const [entityObject, setEntityObject] = useState([]);
     const [tawn, setTawn] = useState();
     const [locality, setLocality] = useState();
     const [columns, setColumns] = useState([]);
@@ -242,17 +242,17 @@ export default function ConsultaDinamica(props) {
                     var locality_ = localities.find(loc => loc.Codigo == filter.id);
                     if(locality_ != null) {
                         tmpArray.push({entity: locality_, capa: 6});
-                        setEntityObject(tmpArray);
+                        props.setEntityObject(tmpArray);
                     } else if(tawn_ != null) {
                         tawn_.cve_mun = `${entity}${tawn_.cve_mun}`;
                         tmpArray.push({entity: tawn_, capa: 3});
-                        setEntityObject(tmpArray);
+                        props.setEntityObject(tmpArray);
                     } else {
                         tmpArray.push({entity: entity_, capa: 2});
-                        setEntityObject(tmpArray);
+                        props.setEntityObject(tmpArray);
                     }});
             } else {
-                setEntityObject(['nacional']);
+                props.setEntityObject(['nacional']);
             }
         }
     }, [layesAdded]);
@@ -269,15 +269,15 @@ export default function ConsultaDinamica(props) {
         }
     }, [agregationFilters]);
 
-    useEffect(() => {
-        if(entityObject) {
-            props.mapState({
-                spaceData: spaceData,
-                isMapVisible: isMapVisible,
-                entityObject: entityObject
-            });
-        }
-    }, [entityObject]);
+    // useEffect(() => {
+    //     if(entityObject) {
+    //         props.mapState({
+    //             spaceData: spaceData,
+    //             isMapVisible: isMapVisible,
+    //             entityObject: entityObject
+    //         });
+    //     }
+    // }, [entityObject]);
 
     function getEntities(response) {
         fetch(`${process.env.ruta}/wa/publico/catEntidades`)
@@ -415,11 +415,35 @@ export default function ConsultaDinamica(props) {
             if(data && data.mensaje != 'Error') {
                 data.nombreTabla = `Consulta Dínamica ${tableData.length + 1} - ${statisticalProduct.nombre} (${statisticalProduct.descripcion})`;
                 setTableData([...tableData, {title: data.nombreTabla, type: 'table', data: data, level: statisticalProduct.nivel_desagregacion,  index: tableData.length, checked: false, filters: agregationFilters}]);
-                setIsLoading(false);
+                entityObjectFactory(agregationFilters, function(result) {
+                    props.chartState({title: data.nombreTabla, type: 'table', data: data, level: statisticalProduct.nivel_desagregacion,  index: tableData.length, checked: false, filters: agregationFilters, entityObject: result});
+                    setIsLoading(false);
+                });
             } else {
                 renderModal('La información no está disponible.')
             }
         });
+    }
+
+    function entityObjectFactory(filters, success) {
+        var tmpArray = [];
+        if(filters && filters.length > 0) {
+            filters.map(filter => {
+                var entity_ = entities.find(ent => ent.id_entidades == filter.id);
+                var tawn_ = tawns.find(taw => taw.cve_mun == filter.id);
+                var locality_ = localities.find(loc => loc.Codigo == filter.id);
+                if(locality_ != null) {
+                    tmpArray.push({entity: locality_, capa: 6});
+                } else if(tawn_ != null) {
+                    tawn_.cve_mun = `${entity}${tawn_.cve_mun}`;
+                    tmpArray.push({entity: tawn_, capa: 3});
+                } else {
+                    tmpArray.push({entity: entity_, capa: 2});
+                }});
+        } else {
+            tmpArray.push('nacional');
+        }
+        success(tmpArray);
     }
 
     function applySelectionType(event) {
@@ -600,6 +624,7 @@ export default function ConsultaDinamica(props) {
                     });
                 });
                 setTableData([...tableData, tmpObject]);
+                props.chartState(tmpObject);
             }
         });
         console.log('tmpObject:', tmpObject);
@@ -627,7 +652,7 @@ export default function ConsultaDinamica(props) {
                             <FontAwesomeIcon icon={faWindowRestore} />
                         </button>
                     </Modal.Header>
-                    <Modal.Body>
+                    {/* <Modal.Body>
                         <div className="row">
                             <div className="col-12 custom-mx-t-1 custom-h-450 table-responsive">
                                 {
@@ -638,7 +663,7 @@ export default function ConsultaDinamica(props) {
                                 }
                             </div>
                         </div>
-                    </Modal.Body>
+                    </Modal.Body> */}
                 </Modal>
                 <div className="row">
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-mx-t-1 tw-px-0">
@@ -912,7 +937,7 @@ export default function ConsultaDinamica(props) {
                                                                         <button className="btn-analisis" onClick={() => getStatiticalProductInformation()}>Agregar</button>
                                                                     </OverlayTrigger>
                                                                 </div>
-                                                                <div className={`tw-p-0 tw-my-2 text-center ${props.analisis ? "col-12" : "col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12"}`}>
+                                                                <div className={`tw-p-0 tw-my-2 text-center ${props.analisis ? "col-12" : "col-xl-4 col-lg-4 col-md-6 col-sm-12 col-xs-12"}`} hidden>
                                                                     <OverlayTrigger overlay={<Tooltip>Mostrar tabulares</Tooltip>}>
                                                                         <button className="btn-analisis" disabled={tableData.length == 0} onClick={() => handleShowTablesModal()}>Tabulares</button>
                                                                     </OverlayTrigger>
@@ -933,3 +958,5 @@ export default function ConsultaDinamica(props) {
         </>
     )
 }
+
+export default React.memo(ConsultaDinamica)

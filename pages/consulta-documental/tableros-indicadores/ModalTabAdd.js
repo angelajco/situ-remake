@@ -3,7 +3,7 @@ import { useRef, useState, useEffect, useCallback} from "react";
 import ModalComponent from '../../../components/ModalComponent';
 import { useAuthState } from '../../../context/context';
 import {temas, periodicidades, getAmbitos, getPeriodo, getEntidades, getMunicipios, getLocalidades,
-	 getLocalidadesByIdEntidadAndIdMunicipio} from './Catalogos'
+	 getLocalidadesByIdEntidadAndIdMunicipio} from './../../../components/Catalogos'
 import BootstrapTable from 'react-bootstrap-table-next';
 import axios from 'axios';
 

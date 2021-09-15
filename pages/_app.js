@@ -6,13 +6,19 @@ import '../shared/styles/css/analisis.css'
 import '../shared/styles/css/analisis-estadisticas.css'
 import '../shared/styles/css/consulta-documental.css'
 import '../shared/styles/css/pagination.css'
+import '../shared/styles/css/menu.css';
+import '../shared/styles/css/L.Control.BetterScale.css'
+import '../shared/styles/css/leaflet.scalefactor.css'
+import '../shared/styles/css/L.Grid.css'
 
-
+import { AuthProvider } from "../context";
+import LoggedUserLoader from "../components/LoggedUserLoader"
+import PageSecurityInterceptor from "../components/PageSecurityInterceptor"
 import Header from '../components/Header'
 import Menu from '../components/Menu'
 import Footer from '../components/Footer'
 
-import { useEffect } from 'react'
+import {useEffect} from 'react'
 import '../config/i18n'
 
 function MyApp({ Component, pageProps }) {
@@ -30,10 +36,15 @@ function MyApp({ Component, pageProps }) {
 
   return (
     <>
-      <Header />
-      <Menu />
-      <Component {...pageProps} />
-      <Footer />
+      <AuthProvider>
+        <LoggedUserLoader/>
+        <Header />
+        <Menu />
+        <PageSecurityInterceptor>
+          <Component {...pageProps} />
+        </PageSecurityInterceptor>
+        <Footer />
+      </AuthProvider>
     </>
   )
 }

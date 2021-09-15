@@ -1,0 +1,12 @@
+[
+    { "value": "1", "label": "Normativo", "name": "tipo" },
+    { "value": "2", "label": "Instrumento de planeación", "name": "tipo" },
+    { "value": "3", "label": "Artículo en revista", "name": "tipo" },
+    { "value": "4", "label": "Revista", "name": "tipo" },
+    { "value": "5", "label": "Artículo en revista Indexada", "name": "tipo" },
+    { "value": "6", "label": "Revista Indexada", "name": "tipo" },
+    { "value": "7", "label": "Libro", "name": "tipo" },
+    { "value": "8", "label": "Tésis", "name": "tipo" },
+    { "value": "9", "label": "Investigación", "name": "tipo" },
+    { "value": "10", "label": "Otro", "name": "tipo" }
+]

@@ -2,12 +2,12 @@ import React from 'react'
 import { Container } from 'react-bootstrap'
 import ContenedorCD from '../../components/ContenedorCD';
 
-export default function construccion() {
+export default function Consulta() {
   return (
     <main>
-      <Container>
+      <div className="contenedorCD">
         <ContenedorCD></ContenedorCD>
-      </Container>
+      </div>
     </main>
   )
 }

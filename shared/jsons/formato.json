@@ -1,0 +1,9 @@
+[
+    { "value": "1", "label": "pdf", "name": "formato" },
+    { "value": "2", "label": "Procesador de textos", "name": "formato" },
+    { "value": "3", "label": "Hoja de cálculo", "name": "formato" },
+    { "value": "4", "label": "jpg", "name": "formato" },
+    { "value": "5", "label": "png", "name": "formato" }
+    
+  ]
+  

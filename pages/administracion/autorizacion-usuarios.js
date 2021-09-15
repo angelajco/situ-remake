@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import { Tabs, Tab, Button, OverlayTrigger, Tooltip } from 'react-bootstrap'
 
 import dynamic from 'next/dynamic'
-import Router from 'next/router'
 import axios from 'axios'
 import moment from 'moment';
 
@@ -18,18 +17,10 @@ import paginationFactory from 'react-bootstrap-table2-paginator';
 
 import ModalComponent from '../../components/ModalComponent';
 import ModalFunction from '../../components/ModalFunction';
-
-import Cookies from 'universal-cookie'
-const cookies = new Cookies()
+import { useAuthState  } from '../../context';
 
 export default function AutorizacionUsuarios() {
 
-    // Estado para guardar el web token que se pide a la API
-    const [tokenSesion, setTokenSesion] = useState(false)
-    // Guarda el token que viene en la cookie para verificar que la tenga
-    const tokenCookie = cookies.get('SessionToken')
-    const rolCookie = cookies.get('RolUsuario')
-    const estatusCookie = cookies.get('EstatusUsuario')
 
     //Variable para guardar los usuarios
     const [usuarios, setUsuarios] = useState([])
@@ -67,56 +58,27 @@ export default function AutorizacionUsuarios() {
     const Loader = dynamic(() => import('../../components/Loader'));
 
     useEffect(() => {
-        if ((rolCookie != 1 && rolCookie != 2) || estatusCookie != 10) {
-            Router.push('/');
-        }
-    }, [rolCookie, estatusCookie])
+        fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=5&id_rol=1,2`)
+        .then(res => res.json())
+        .then(
+            (data) => setUsuarios(data),
+            (error) => console.log(error)
+        )
 
-    useEffect(() => {
-        if (tokenCookie != undefined) {
-            // Configuracion para verificar el token
-            var config = {
-                method: 'get',
-                url: `${process.env.ruta}/wa/prot/acceso`,
-                headers: {
-                    'Authorization': `Bearer ${tokenCookie}`
-                },
-            };
-            axios(config)
-                .then(function (response) {
-                    setTokenSesion(response.data['success-boolean'])
+    fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=10`)
+        .then(res => res.json())
+        .then(
+            (data) => setSiUsuarios(data),
+            (error) => console.log(error)
+        )
 
-                    fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=5&id_rol=1,2`)
-                        .then(res => res.json())
-                        .then(
-                            (data) => setUsuarios(data),
-                            (error) => console.log(error)
-                        )
-
-                    fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=10`)
-                        .then(res => res.json())
-                        .then(
-                            (data) => setSiUsuarios(data),
-                            (error) => console.log(error)
-                        )
-
-                    fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=93`)
-                        .then(res => res.json())
-                        .then(
-                            (data) => setNoUsuarios(data),
-                            (error) => console.log(error)
-                        )
-                })
-                .catch(function (error) {
-                    console.log(error)
-                    cookies.remove('SessionToken', { path: "/" })
-                    Router.push("/administracion/inicio-sesion")
-                })
-        }
-        else {
-            Router.push('/administracion/inicio-sesion')
-        }
-    }, [tokenCookie])
+    fetch(`${process.env.ruta}/wa/publico/showByEstRol?id_estatus=93`)
+        .then(res => res.json())
+        .then(
+            (data) => setNoUsuarios(data),
+            (error) => console.log(error)
+        )
+    }, [])
 
     const muestraInfo = (email) => {
         fetch(`${process.env.ruta}/wa/publico/showByEmail?email=${email}`)
@@ -151,14 +113,17 @@ export default function AutorizacionUsuarios() {
         }
     }
 
+    const userDetails = useAuthState().user;
+
     const autoriza = (id) => {
         handleCloseFunction();
+        let requestHeaders = {};
+        requestHeaders[`${userDetails.csrfToken.headerName}`]=userDetails.csrfToken.token;
         var config = {
             method: 'get',
             url: `${process.env.ruta}/wa/prot/authorizationUser?id=${id}`,
-            headers: {
-                'Authorization': `Bearer ${tokenCookie}`
-            },
+            headers: requestHeaders,
+            withCredentials: true
         };
         axios(config)
             .then(function (response) {
@@ -202,12 +167,13 @@ export default function AutorizacionUsuarios() {
 
     const rechaza = (id) => {
         handleCloseFunction();
+        let requestHeaders = {};
+        requestHeaders[`${userDetails.csrfToken.headerName}`]=userDetails.csrfToken.token;
         var config = {
             method: 'get',
             url: `${process.env.ruta}/wa/prot/noAuthorizationUser?id=${id}`,
-            headers: {
-                'Authorization': `Bearer ${tokenCookie}`
-            },
+            headers: requestHeaders,
+            withCredentials: true
         };
         axios(config)
             .then(function (response) {
@@ -405,174 +371,166 @@ export default function AutorizacionUsuarios() {
             />
 
             {
-                tokenSesion
-                    ?
-                    (
-                        <div className="container tw-my-6">
+(
+    <div className="container tw-my-6">
+        <div className="row">
+            <div className="col-12 col-tabs-usuarios">
+
+                <Tabs defaultActiveKey="autorizar" className="tabs-autorizacion">
+                    <Tab eventKey="autorizar" title="Autorizar Usuarios" className="tab-tabla">
+
+                        <ToolkitProvider keyField="id_usuario" data={usuarios} columns={columnsAutorizados} search={{ searchFormatted: true }}>
+                            {
+                                props => (
+                                    <>
+                                        <div className="tw-p-3 tw-bg-titulo">
+                                            <SearchBar
+                                                {...props.searchProps}
+                                                placeholder="Buscar"
+                                                tableId="autorizar"
+                                            />
+                                        </div>
+                                        <BootstrapTable
+                                            {...props.baseProps}
+                                            noDataIndication="No hay resultados de la búsqueda"
+                                            pagination={pagination}
+                                            headerClasses="tabla-usuarios-header"
+                                            wrapperClasses="table-responsive"
+                                        />
+                                    </>
+                                )
+                            }
+                        </ToolkitProvider>
+                    </Tab>
+
+                    <Tab eventKey="autorizados" title="Usuarios Autorizados" className="tab-tabla">
+                        <ToolkitProvider keyField="id_usuario" data={siUsuarios} columns={columnsSiAutorizados} search={{ searchFormatted: true }}>
+                            {
+                                props => (
+                                    <>
+                                        <div className="tw-p-3 tw-bg-titulo">
+                                            <SearchBar
+                                                {...props.searchProps}
+                                                placeholder="Buscar"
+                                                tableId="si-autorizados"
+                                            />
+                                        </div>
+                                        <BootstrapTable
+                                            {...props.baseProps}
+                                            noDataIndication="No hay resultados de la búsqueda"
+                                            pagination={pagination}
+                                            headerClasses="tabla-usuarios-header"
+                                            wrapperClasses="table-responsive"
+                                        />
+                                    </>
+                                )
+                            }
+                        </ToolkitProvider>
+                    </Tab>
+
+                    <Tab eventKey="no-autorizados" title="Usuarios No Autorizados" className="tab-tabla">
+
+                        <ToolkitProvider keyField="id_usuario" data={noUsuarios} columns={columnsNoAutorizados} search={{ searchFormatted: true }}>
+                            {
+                                props => (
+                                    <>
+                                        <div className="tw-p-3 tw-bg-titulo">
+                                            <SearchBar
+                                                {...props.searchProps}
+                                                placeholder="Buscar"
+                                                tableId="no-autorizados"
+                                            />
+                                        </div>
+                                        <BootstrapTable
+                                            {...props.baseProps}
+                                            noDataIndication="No hay resultados de la búsqueda"
+                                            pagination={pagination}
+                                            headerClasses="tabla-usuarios-header"
+                                            wrapperClasses="table-responsive"
+                                        />
+                                    </>
+                                )
+                            }
+                        </ToolkitProvider>
+
+                    </Tab>
+                </Tabs>
+
+                {
+                    infoUsuario && (
+                        <>
                             <div className="row">
-                                <div className="col-12 col-tabs-usuarios">
-
-                                    <Tabs defaultActiveKey="autorizar" className="tabs-autorizacion">
-                                        <Tab eventKey="autorizar" title="Autorizar Usuarios" className="tab-tabla">
-
-                                            <ToolkitProvider keyField="id_usuario" data={usuarios} columns={columnsAutorizados} search={{ searchFormatted: true }}>
-                                                {
-                                                    props => (
-                                                        <>
-                                                            <div className="tw-p-3 tw-bg-titulo">
-                                                                <SearchBar
-                                                                    {...props.searchProps}
-                                                                    placeholder="Buscar"
-                                                                    tableId="autorizar"
-                                                                />
-                                                            </div>
-                                                            <BootstrapTable
-                                                                {...props.baseProps}
-                                                                noDataIndication="No hay resultados de la búsqueda"
-                                                                pagination={pagination}
-                                                                headerClasses="tabla-usuarios-header"
-                                                                wrapperClasses="table-responsive"
-                                                                
-                                                            />
-                                                        </>
-                                                    )
-                                                }
-                                            </ToolkitProvider>
-                                        </Tab>
-
-                                        <Tab eventKey="autorizados" title="Usuarios Autorizados" className="tab-tabla">
-                                            <ToolkitProvider keyField="id_usuario" data={siUsuarios} columns={columnsSiAutorizados} search={{ searchFormatted: true }}>
-                                                {
-                                                    props => (
-                                                        <>
-                                                            <div className="tw-p-3 tw-bg-titulo">
-                                                                <SearchBar
-                                                                    {...props.searchProps}
-                                                                    placeholder="Buscar"
-                                                                    tableId="si-autorizados"
-                                                                />
-                                                            </div>
-                                                            <BootstrapTable
-                                                                {...props.baseProps}
-                                                                noDataIndication="No hay resultados de la búsqueda"
-                                                                pagination={pagination}
-                                                                headerClasses="tabla-usuarios-header"
-                                                                wrapperClasses="table-responsive"
-                                                            />
-                                                        </>
-                                                    )
-                                                }
-                                            </ToolkitProvider>
-                                        </Tab>
-
-                                        <Tab eventKey="no-autorizados" title="Usuarios No Autorizados" className="tab-tabla">
-
-                                            <ToolkitProvider keyField="id_usuario" data={noUsuarios} columns={columnsNoAutorizados} search={{ searchFormatted: true }}>
-                                                {
-                                                    props => (
-                                                        <>
-                                                            <div className="tw-p-3 tw-bg-titulo">
-                                                                <SearchBar
-                                                                    {...props.searchProps}
-                                                                    placeholder="Buscar"
-                                                                    tableId="no-autorizados"
-                                                                />
-                                                            </div>
-                                                            <BootstrapTable
-                                                                {...props.baseProps}
-                                                                noDataIndication="No hay resultados de la búsqueda"
-                                                                pagination={pagination}
-                                                                headerClasses="tabla-usuarios-header"
-                                                                wrapperClasses="table-responsive"
-                                                            />
-                                                        </>
-                                                    )
-                                                }
-                                            </ToolkitProvider>
-
-                                        </Tab>
-                                    </Tabs>
-
-                                    {
-                                        infoUsuario && (
-                                            <>
-                                                <div className="row">
-                                                    <div className="col-12 tw-bg-menu tw-text-white tw-py-2">
-                                                        <FontAwesomeIcon className="tw-text-inst-verdef" icon={faUser}></FontAwesomeIcon><b>&nbsp;INFORMACIÓN</b> DEL USUARIO
-                                                            </div>
-                                                    <div className="col-12 tw-border-solid tw-border tw-border-black tw-py-4 tw-px-8">
-                                                        <div className="row tw-border-solid tw-border tw-border-black tw-p-6 tw-bg-guia-grisf6">
-                                                            <div className="col-12 col-md-6">
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Nombre</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.nombre} disabled></input>
-                                                                </div>
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Apellido 1</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.apellido_paterno} disabled></input>
-                                                                </div>
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Apellido 2</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.apellido_materno} disabled></input>
-                                                                </div>
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Correo</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.email} disabled></input>
-                                                                </div>
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Número de teléfono</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.celular} disabled></input>
-                                                                </div>
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Genero con el que te identificas</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.genero} disabled></input>
-                                                                </div>
-                                                            </div>
-                                                            <div className="col-12 col-md-6">
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Fecha de nacimiento</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.fecha_nacimiento ? moment(infoUsuario.fecha_nacimiento).format("DD-MM-YYYY") : ""} disabled></input>
-                                                                </div>
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Instituto</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.instituto} disabled></input>
-                                                                </div>
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Entidad</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.nombre_entidad} disabled></input>
-                                                                </div>
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Municipio</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.nombre_municipio} disabled></input>
-                                                                </div>
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Nivel de usuario solicitado</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.rol} disabled></input>
-                                                                </div>
-                                                                <div className="row tw-mb-4">
-                                                                    <span className="col-6 tw-text-right">Ambito de actuación</span>
-                                                                    <input className="col-6 tw-bg-white" value={infoUsuario.ambito_actuacion} disabled></input>
-                                                                </div>
-                                                            </div>
-                                                            <div className="col-12 tw-text-center tw-mt-6">
-                                                                <Button variant="outline-secondary" className="btn-admin" onClick={limpiaInfo}>CERRAR</Button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )
-                                    }
-
+                                <div className="col-12 tw-bg-menu tw-text-white tw-py-2">
+                                    <FontAwesomeIcon className="tw-text-inst-verdef" icon={faUser}></FontAwesomeIcon><b>&nbsp;INFORMACIÓN</b> DEL USUARIO
+                                        </div>
+                                <div className="col-12 tw-border-solid tw-border tw-border-black tw-py-4 tw-px-8">
+                                    <div className="row tw-border-solid tw-border tw-border-black tw-p-6 tw-bg-guia-grisf6">
+                                        <div className="col-12 col-md-6">
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Nombre</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.nombre} disabled></input>
+                                            </div>
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Apellido 1</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.apellido_paterno} disabled></input>
+                                            </div>
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Apellido 2</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.apellido_materno} disabled></input>
+                                            </div>
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Correo</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.email} disabled></input>
+                                            </div>
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Número de teléfono</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.celular} disabled></input>
+                                            </div>
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Genero con el que te identificas</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.genero} disabled></input>
+                                            </div>
+                                        </div>
+                                        <div className="col-12 col-md-6">
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Fecha de nacimiento</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.fecha_nacimiento ? moment(infoUsuario.fecha_nacimiento).format("DD-MM-YYYY") : ""} disabled></input>
+                                            </div>
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Instituto</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.instituto} disabled></input>
+                                            </div>
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Entidad</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.nombre_entidad} disabled></input>
+                                            </div>
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Municipio</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.nombre_municipio} disabled></input>
+                                            </div>
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Nivel de usuario solicitado</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.rol} disabled></input>
+                                            </div>
+                                            <div className="row tw-mb-4">
+                                                <span className="col-6 tw-text-right">Ambito de actuación</span>
+                                                <input className="col-6 tw-bg-white" value={infoUsuario.ambito_actuacion} disabled></input>
+                                            </div>
+                                        </div>
+                                        <div className="col-12 tw-text-center tw-mt-6">
+                                            <Button variant="outline-secondary" className="btn-admin" onClick={limpiaInfo}>CERRAR</Button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </>
                     )
-                    :
-                    (typeof window !== 'undefined') &&
-                    (
-                        <Loader />
-                    )
+                }
+
+            </div>
+        </div>
+    </div>
+)
             }
         </>
     )

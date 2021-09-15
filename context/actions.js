@@ -33,9 +33,7 @@ export async function loginUser(dispatch, loginPayload) {
 export async function logout(dispatch, csfrToken) {
 	let requestHeaders = {};
 	requestHeaders[`${csfrToken.headerName}`]=csfrToken.token;
-	let response = await axios.get(`${process.env.ruta}/logout`,{headers: requestHeaders, withCredentials: true});
-	if(response && response.data && response.data.logout === 'ok'){
-		dispatch({ type: 'LOGOUT' });
-		localStorage.removeItem('currentUser');
-	}
+	axios.get(`${process.env.ruta}/logout`,{headers: requestHeaders, withCredentials: true}).catch(ignore=>{});
+	dispatch({ type: 'LOGOUT' });
+	localStorage.removeItem('currentUser');
 }

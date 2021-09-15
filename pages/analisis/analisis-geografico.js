@@ -66,26 +66,21 @@ export default function AnalisisGeografico() {
                             <ContextoFeature>
                                 <div className={`${dobleMapa} col-mapa tw-pt-6`}>
                                     <div className="row">
-                                        <div className="col-2">
-                                            <button className="btn-dividir-pantalla" onClick={dividirPantalla}>
-                                                <img src="/images/analisis/pantalla-dividida.png" title="Pantalla dividida"></img>
-                                            </button>
-                                        </div>
-                                        <div className="col-8 tw-text-center">
+                                        <div className="col-12 tw-text-center">
                                             <p>
                                                 {nombreMapa}
                                                 <OverlayTrigger overlay={<Tooltip>Editar nombre</Tooltip>}>
                                                     <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" onClick={() => setmuestraEditarNombreMapa(false)} icon={faEdit} />
                                                 </OverlayTrigger>
                                             </p>
-                                            <input type="text" hidden={muestraEditarNombreMapa} onChange={(event) => cambiaNombreMapa(event, 0)} value={nombreMapa}></input>
+                                            <input type="text" hidden={muestraEditarNombreMapa} onChange={(event) => cambiaNombreMapa(event, 0)} value={nombreMapa} id="nombremapa"></input>
                                             <OverlayTrigger overlay={<Tooltip>Finalizar edición</Tooltip>}>
                                                 <FontAwesomeIcon className="tw-ml-4 tw-cursor-pointer" hidden={muestraEditarNombreMapa} onClick={() => setmuestraEditarNombreMapa(true)} icon={faCheck}></FontAwesomeIcon>
                                             </OverlayTrigger>
                                         </div>
 
                                         <div className="col-12">
-                                            <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} referenciaEntidad={entityObject} informacionEspacial={spaceData} setReferenciaEntidad={setEntityObject} setInformacionEspacial={setSpaceData} />
+                                            <ContenedorMapaAnalisis botones={true} referenciaAnalisis={capturaReferenciaMapa} referenciaEntidad={entityObject} informacionEspacial={spaceData} setReferenciaEntidad={setEntityObject} setInformacionEspacial={setSpaceData} btnDividirPantallaDisplay={'normal'} btnDividirPantallaOnClick={dividirPantalla}/>
                                         </div>
                                     </div>
                                 </div>
@@ -106,7 +101,7 @@ export default function AnalisisGeografico() {
                                         </div>
 
                                         <div className="col-12">
-                                            <ContenedorMapaAnalisis botones={false} referenciaAnalisis={capturaReferenciaMapaEspejo} referenciaEntidad={entityObjectEspejo} informacionEspacial={spaceDataEspejo} setReferenciaEntidad={setEntityObjectEspejo} setInformacionEspacial={setSpaceDataEspejo} />
+                                            <ContenedorMapaAnalisis botones={false} referenciaAnalisis={capturaReferenciaMapaEspejo} referenciaEntidad={entityObjectEspejo} informacionEspacial={spaceDataEspejo} setReferenciaEntidad={setEntityObjectEspejo} setInformacionEspacial={setSpaceDataEspejo} btnDividirPantallaDisplay={'none'} btnDividirPantallaOnClick={dividirPantalla}/>
                                         </div>
                                     </div>
                                 </div>

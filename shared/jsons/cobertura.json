@@ -1,0 +1,10 @@
+[
+    { "value": "1", "label": "Nacional", "name": "cobertura" },
+    { "value": "2", "label": "Regional", "name": "cobertura" },
+    { "value": "3", "label": "Metropolitano", "name": "cobertura" },
+    { "value": "4", "label": "Estatal", "name": "cobertura" },
+    { "value": "5", "label": "Municipal", "name": "cobertura" },
+    { "value": "6", "label": "Subregional", "name": "cobertura" },
+    { "value": "7", "label": "Localidad", "name": "cobertura" },
+    { "value": "8", "label": "General", "name": "cobertura" }
+  ]

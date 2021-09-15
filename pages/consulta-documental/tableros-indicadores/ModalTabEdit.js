@@ -1,7 +1,7 @@
 import { Modal, Button, Form, Col, onChange, Tabs, Tab } from 'react-bootstrap';
 import { useRef, useState, useEffect } from "react";
 import ModalComponent from '../../../components/ModalComponent';
-import { temas, periodicidades, getAmbitos, getPeriodo } from './Catalogos'
+import { temas, periodicidades, getAmbitos, getPeriodo } from './../../../components/Catalogos'
 import { useAuthState } from '../../../context/context';
 import axios from 'axios';
 

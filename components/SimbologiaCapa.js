@@ -31,29 +31,32 @@ class RangoSimb {
 	}
 
 	filaHtmlSim(aux) {
+		
 		if (aux == 0) {
+			console.log("Aux =0");
 			//no usamos maximo
 			let fila;
 			if (this.tLinea == 0) {
-				fila = `<tr><td style="width: 25px;"><div class="circulo" style="background-color: ${this.colorFill};"></div></td><td style="width: 150px;">${this.leyenda}</td></tr>`;
+				fila = `<tr><td align="center"><div class="circulo" style="background-color: ${this.colorFill};"></div></td><td>${this.leyenda}</td></tr>`;
 			}
 			if (this.tLinea == 1) {
-				fila = `<tr><td style="width: 25px;"><div class="rectangulo" style="background-color: ${this.colorFill};"></div></td><td style="width: 150px;">${this.leyenda}</td></tr>`;
+				fila = `<tr><td align="center"><div class="rectangulo" style="background-color: ${this.colorFill};"></div></td><td>${this.leyenda}</td></tr>`;
 			}
 			if (this.tLinea == 2) {
-				fila = `<tr><td style="background-color: ${this.colorFill};width: 25px;"></td><td style="width: 150px;">${this.leyenda}</td></tr>`;
+				fila = `<tr class="filas"><td align="center"><div class="cuadrado" style="background-color: ${this.colorFill};"></div></td><td>${this.leyenda}</td></tr>`;
 			}
 			return  fila;//`<tr><td style="background-color: ${this.colorFill};width: 25px;"></td><td style="width: 150px;">${this.leyenda}</td></tr>`;
 		} else {
+			console.log("Aux =1");
 			let fila;
 			if (this.tLinea == 0) {
-				fila = `<tr><td style="width: 25px;"><div class="circulo" style="background-color: ${this.colorFill};"></div></td><td style="width: 150px;">${this.leyenda}</td><td>${Math.round(this.valorMin)}</td><td>${Math.round(this.valorMax)}</td></tr>`;
+				fila = `<tr><td align="center"><div class="circulo" style="background-color: ${this.colorFill};"></div></td><td>${this.leyenda}</td><td align="center">${Math.round(this.valorMin)}</td><td align="center">${Math.round(this.valorMax)}</td></tr>`;
 			}
 			if (this.tLinea == 1) {
-				fila = `<tr><td style="width: 25px;"><div class="rectangulo" style="background-color: ${this.colorFill};"></div></td><td style="width: 150px;">${this.leyenda}</td><td>${Math.round(this.valorMin)}</td><td>${Math.round(this.valorMax)}</td></tr>`;
+				fila = `<tr><td align="center"><div class="rectangulo" style="background-color: ${this.colorFill};"></div></td><td>${this.leyenda}</td><td align="center">${Math.round(this.valorMin)}</td><td align="center">${Math.round(this.valorMax)}</td></tr>`;
 			}
 			if (this.tLinea == 2) {
-				fila = `<tr><td style="background-color: ${this.colorFill}; width: 25px;"></td><td style="width: 150px;">${this.leyenda}</td><td>${Math.round(this.valorMin)}</td><td>${Math.round(this.valorMax)}</td></tr>`;
+				fila = `<tr><td align="center"><div class="cuadrado" style="background-color: ${this.colorFill};"></div></td><td>${this.leyenda}</td><td align="center">${Math.round(this.valorMin)}</td><td align="center">${Math.round(this.valorMax)}</td></tr>`;
 			}
 			return fila;//`<tr><td style="width: 25px;background-color: ${this.colorFill};"></td><td style="width: 150px;">${this.leyenda}</td><td>${Math.round(this.valorMin)}</td><td>${Math.round(this.valorMax)}</td></tr>`;
 		}
@@ -129,15 +132,15 @@ class simbologiaCapa {
 	tablaSimbologia() {
 		if (this.rangos[0].valorMax != 0) {
 			//manda tabla con minimo y maximo
-			let salida = `<table class="table tableT-wrapper-scroll-y myT-custom-scrollbar"><tr><th>Color</th><th>Leyenda</th><th>Valor Minimo</th><th>Valor Maximo</th><tr>`;
+			let salida = `<table><tr><th class="table" style="width: 50px;">Color</th><th>Leyenda</th><th>Valor Minimo</th><th>Valor Maximo</th><tr>`;
 			for (let i = 0; i < this.rangos.length; i++) {
 				salida += this.rangos[i].filaHtmlSim(1);
 			}
 			salida += `</table>`;
 			return salida;
 		} else {
-			//solo manda color y leyenda
-			let salida = `<table class="table tableT-wrapper-scroll-y myT-custom-scrollbar"><tr><th>Color</th><th>Leyenda</th><tr>`;
+			//solo manda color y leyenda class="table tableT-wrapper-scroll-y myT-custom-scrollbar"
+			let salida = `<table><tr><th class="table" style="width: 50px;">Color</th><th>Leyenda</th><tr>`;
 
 			for (let i = 0; i < this.rangos.length; i++) {
 				salida += this.rangos[i].filaHtmlSim(0);

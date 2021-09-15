@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Navbar, Nav, OverlayTrigger, NavDropdown, Tooltip, Tabs, Tab, Row, Col, Container } from 'react-bootstrap'
 import MiCuentaComponent from '../../components/MiCuentaComponent'
 import TablerosComponent from './tableros-indicadores/index'
-import {getByFilterTableros} from './tableros-indicadores/Catalogos'
+import {getByFilterTableros} from './../../components/Catalogos'
 import Form from 'react-bootstrap/Form'
 import { useAuthState } from '../../context/context';
 

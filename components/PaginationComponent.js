@@ -9,186 +9,219 @@ import { useForm } from "react-hook-form";
 import Draggable from 'react-draggable';
 import ModalDialog from 'react-bootstrap/ModalDialog';
 import Select from 'react-select';
-import dataPub from '../shared/jsons/publicaciones.json';
+import dataPub from '../shared/jsons/publicaciones.json'
 import jsPDF from 'jspdf';
-import jpt from 'jspdf-autotable';
+import autoTable from 'jspdf-autotable'
+import { faWindowRestore } from '@fortawesome/free-regular-svg-icons';
+import $ from 'jquery';
+
 import Cookies from 'universal-cookie'
-const cookies = new Cookies()
+import { useAuthState } from '../context';
+const cookies = new Cookies();
+var csrfToken;
+
 
 
 function PaginationComponent(props) {
+  const userDetails = useAuthState().user;
+  csrfToken = userDetails.csrfToken;
+  //console.log(userDetails.id);
 
   const url_bus = props.informacion;
   const leyenda = props.consulta;
+  const totalD = props.total;
+  let pag = props.pagina;
 
 
-  const usuarioCookie = cookies.get('Usuario')
-  const usuarioI = cookies.get('IDU')
+  //const usuarioCookie = cookies.get('Usuario')
+  const usuarioI = userDetails.id;
 
   //Datos para crear el form
   const { register, handleSubmit, watch, clearErrors, setError, errors } = useForm();
   const [tarchivo, setTarchivo] = useState(null);
-  const [fileUrl, setFileUrl] = useState('images/consultaD/publicacion-situ.png');
+  const [fileUrl, setFileUrl] = useState('images/consulta/miniaturaD.png');
   const [imgportada, setImgPortada] = useState(null);
+  const [longitud, setLongitud] = useState(0);
+  const [showModalMeta, setShowModalMeta] = useState(false);
+  const [detalles, setDetalles] = useState([]);
 
   const tarchivos = [
     { value: '1', label: 'Documento' },
     { value: '2', label: 'Enlace' }
   ];
 
+  useEffect(() => {
+    if (url_bus.length != longitud) {
+      setCurrentPage(1);
+    }
+  });
 
   const descargaDoc = async (e) => {
-    preCargaPDF();
+    var doc = new jsPDF();
+    var fecha, hora;
     var hoy = new Date();
-    var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
-    var hora = hoy.getHours() + ':' + hoy.getMinutes();
-    var items = filtrarJson(data);
-    var img = new Image();
-    img.onload = function () {
-      var dataURI = getBase64Image(img);
-      return dataURI;
-    }
-    img.src = "/images/consultaD/encabezado.jpg";
-    /// codigo para generar pdf 
-    const columns = Object.keys(items[0]);
-    columns[4]="Tipo";
-    columns[5]="Tema 1";
-    columns[6]="Tema 2";
-    var result = [];
-    items.forEach(element => {
-      result.push(Object.values(element));
-    });
-    var doc = new jsPDF(); jpt;
-
-    var con1 = leyenda.split(',');
-
-    var header = function (data) {
-      doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
-      doc.setFontSize(10);
-      doc.text(20, 43, "Nombre Usuario: " + usuarioCookie);
-      doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
-      //doc.setFontType("bold");
-      doc.setFontSize(13);
-      doc.text(65, 53, con1[0]);
-      if(con1.length > 1){
-        doc.setFontSize(8);
-        doc.text(20, 57, con1[1]);
-      }
-      doc.setFontSize(10);
-      //doc.setFontType("normal");
-      doc.text(20, 62, "Total de documentos: " + items.length);
-      doc.setFontSize(9);
-    };
-
-    doc.autoTable(columns, result, {
-      margin: { top: 65 }, theme: 'grid', beforePageContent: header,
-      columnStyles: {
-        0: { columnWidth: 30 },
-        1: { columnWidth: 20 },
-        2: { columnWidth: 20 },
-        3: { columnWidth: 14 },
-        4: { columnWidth: 25 },
-        5: { columnWidth: 24 },
-        6: { columnWidth: 23 },
-        7: { columnWidth: 28 },
-      }
-    });
-
-
-    /*  if (usuarioCookie != null) {
-        doc.autoTable(columns, result, {
-          margin: { top: 65 }, theme: 'grid', beforePageContent: header,
-          columnStyles: {
-            0: { columnWidth: 30 },
-            1: { columnWidth: 20 },
-            2: { columnWidth: 20 },
-            3: { columnWidth: 15 },
-            4: { columnWidth: 25 },
-            5: { columnWidth: 24 },
-            6: { columnWidth: 20 },
-            7: { columnWidth: 28 },
-          }
-        });
-      } else {
-        doc.autoTable(columns, result, {
-          margin: { top: 65 }, theme: 'grid', beforePageContent: header,
-          columnStyles: {
-            0: { columnWidth: 25 },
-            1: { columnWidth: 25 },
-            2: { columnWidth: 25 },
-            3: { columnWidth: 18 },
-            4: { columnWidth: 28 },
-            5: { columnWidth: 25 },
-            6: { columnWidth: 30 },
-          }
-        });
-      }*/
-
-    let string = doc.output('datauristring');
-
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-      doc.save('Consulta-Documental');
+    if (hoy.getMonth() < 10) {
+      fecha = hoy.getDate() + '-0' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
     } else {
-      doc.save('Consulta-Documental');
+      fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
     }
+    if (hoy.getMinutes() < 10) {
+      hora = hoy.getHours() + ':0' + hoy.getMinutes();
+    } else {
+      hora = hoy.getHours() + ':' + hoy.getMinutes();
+    }
+    setTimeout(() => {
+      var items = filtrarJson(data);
+      var img = new Image();
+      img.onload = function () {
+        var dataURI = getBase64Image(img);
+        return dataURI;
+      }
+      img.src = "/images/consulta/encabezado.jpg";
+      setTimeout(() => {
+        //console.log("4 Segundo esperado")
+      }, 4000);
+      /// codigo para generar pdf 
+      const columns = Object.keys(items[0]);
+      columns[0] = "Titulo/Nombre";
+      columns[1] = "Fecha de Publicación";
+      columns[2] = "Tipo";
+      columns[3] = "Tema 1";
+      columns[4] = "Tema 2";
+      var result = [];
+      items.forEach(element => {
+        result.push(Object.values(element));
+      });
+
+
+      autoTable(doc, {
+        columns,
+        body: result,
+        margin: { top: 65 }, theme: 'grid',
+        styles: { fontSize: 9 },
+        didDrawPage: function (data) {
+          //header
+          doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
+          setTimeout(() => {
+            //console.log("4 Segundo esperado")
+          }, 1000);
+          doc.setFontSize(10);
+          if (userDetails.nombre != null) {
+            doc.text(20, 43, "Nombre Usuario: " + userDetails.nombre);
+          } else {
+            doc.text(20, 43, "Nombre Usuario: INVITADO");
+          }
+          doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
+          //doc.setFontType("bold");
+          doc.setFontSize(13);
+          var con1 = leyenda.split(',');
+          doc.text(65, 53, con1[0]);
+
+          if (con1.length > 1) {
+            doc.setFontSize(8);
+            doc.text(20, 58, con1[1]);
+          }
+          doc.setFontSize(10);
+          //doc.setFontType("normal");
+          doc.text(20, 63, "Total de documentos: " + result.length);
+        }
+      });
+      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        doc.save('Consulta-Documental');
+      } else {
+        doc.save('Consulta-Documental');
+      }
+
+    }, 1000);
+
 
   }
 
   function preCargaPDF() {
-    var hoy = new Date();
-    var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
-    var hora = hoy.getHours() + ':' + hoy.getMinutes();
-    var img = new Image();
-    img.onload = function () {
-      var dataURI = getBase64Image(img);
-      return dataURI;
-    }
-    img.src = "/images/consultaD/encabezado.jpg";
-    /// codigo para generar pdf 
-    const columns = []
-    var result = [];
-    var doc = new jsPDF(); jpt;
-    var header = function (data) {
-      doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
-      doc.setFontSize(10);
-      doc.text(20, 43, "Nombre Usuario: " + usuarioCookie);
-      doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
-      doc.setFontSize(13);
-      doc.text(75, 53, "CONSULTA DOCUMENTAL");
-      doc.setFontSize(9);
-      //doc.text(20, 60, "Total de documentos: " + items.length);
-    };
-    doc.autoTable(columns, result, { margin: { top: 65 }, theme: 'grid', beforePageContent: header });
-    doc.output('datauristring');
+    setTimeout(() => {
+      var hoy = new Date();
+      var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+      var hora = hoy.getHours() + ':' + hoy.getMinutes();
+      var img = new Image();
+      img.onload = function () {
+        var dataURI = getBase64Image(img);
+        setTimeout(() => {
+          //console.log("4 Segundo esperado")
+        }, 4000);
+        return dataURI;
+      }
+      img.src = "/images/consulta/encabezado.jpg";
+      /// codigo para generar pdf 
+      const columns = []
+      var result = [];
+      var doc = new jsPDF();
+      var header = function (data) {
+        doc.addImage(img.onload(), 'JPEG', 5, 5, 195, 30);
+        doc.setFontSize(10);
+        if (userDetails.nombre != null) {
+          doc.text(20, 43, "Nombre Usuario: " + userDetails.nombre);
+        } else {
+          doc.text(20, 43, "Nombre Usuario: INVITADO");
+        }
+        doc.text(140, 43, "FECHA:  " + fecha + "    HORA: " + hora);
+        doc.setFontSize(13);
+        doc.text(75, 53, "CONSULTA DOCUMENTAL");
+        doc.setFontSize(9);
+        //doc.text(20, 60, "Total de documentos: " + items.length);
+      };
+      doc.output('datauristring');
+    }, 4000);
   }
 
   const actBitacora = async (cod) => {
-    if (usuarioCookie != null) {
+    if (userDetails.id != undefined) {
       //codigo para actualizar la botacora cuendo se descarge un documento 
       const res = await fetch(`${process.env.ruta}/wa/publico/bitacoraDocumento?id_usuario=${usuarioI}&id_documento=${cod}`);
-      const datos = await res.json();
+      const datos0 = await res.json();
     } else {
-      console.log("No registra bitacora");
+      const res = await fetch(`${process.env.ruta}/wa/publico/bitacoraDocumento?id_usuario=58&id_documento=${cod}`);
+      const datos0 = await res.json();
     }
   }
 
   const descargarCVS = async (e) => {
     //codigo para descargar el archivo csv
+    var fecha, hora;
     var hoy = new Date();
-    var fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
-    var hora = hoy.getHours() + ':' + hoy.getMinutes();
+    if (hoy.getMonth() < 10) {
+      fecha = hoy.getDate() + '-0' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+    } else {
+      fecha = hoy.getDate() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getFullYear();
+    }
+    if (hoy.getMinutes() < 10) {
+      hora = hoy.getHours() + ':0' + hoy.getMinutes();
+    } else {
+      hora = hoy.getHours() + ':' + hoy.getMinutes();
+    }
+    var con1 = leyenda.split(',');
     var items = filtrarJson(data);
     const replacer = (key, value) => value === null ? '' : value; // specify how you want to handle null values here
     const header = Object.keys(items[0]);
-    header[4]="Tipo";
-    header[5]="Tema 1";
-    header[6]="Tema 2";
     let csv = items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','));
+    header[0] = "Titulo/Nombre";
+    header[1] = "Fecha de Publicación";
+    header[2] = "Tipo";
+    header[3] = "Tema 1";
+    header[4] = "Tema 2";
     csv.unshift(header.join(','));
     csv.unshift("Total de Documentos: " + items.length);
-    csv.unshift(leyenda);
+    if (con1.length > 1) {
+      csv.unshift(con1[1]);
+    } else {
+      csv.unshift(leyenda);
+    }
+    //csv.unshift(leyenda);
     csv.unshift("FECHA:  " + fecha + "    HORA: " + hora);
-    csv.unshift("Nombre Usuario: " + usuarioCookie);
+    if (userDetails.nombre != null) {
+      csv.unshift("Nombre Usuario: " + userDetails.nombre);
+    } else {
+      csv.unshift("Nombre Usuario: INVITADO");
+    }
     csv = csv.join('\r\n');
     //Download the file as CSV
     var downloadLink = document.createElement("a");
@@ -219,21 +252,18 @@ function PaginationComponent(props) {
     //funcion para filtrar el json y generar el pdf y csv
     let vec = [];
     d.forEach(element => {
-      //console.log(element.ano_publicacion);
       let js = {};
       js.Titulo = element.nombre;
-      js.Autor = element.autor;
-      js.Pais = element.pais;
-      js.Fecha = element.ano_publicacion;
+      //js.Autor = element.autor;
+      //js.Pais = element.pais;
+      js.Fecha = element.ano_publicacion + "-" + element.mes_publicacion + "-" + element.dia_publicacion;
       js.Clasificacion = element.tipo;
       js.Tema1 = element.tema1;
       js.Tema2 = element.tema2;
+      js.Fuente = element.instancia;
       //js.Cobertura = element.nivel_cobertura;
       //js.Formato = element.formato;
-      js.Archivo = element.url_origen;
-      if (usuarioCookie != null) {
-
-      }
+      //js.Archivo = element.url_origen;
       vec.push(js);
     });
     return vec;
@@ -247,6 +277,29 @@ function PaginationComponent(props) {
     }
   }
 
+  //Funcionalidad de minimizar el modal
+  function minimizaModal(e) {
+    let modalCompleto = $(e.target).closest(".modal")
+    $(modalCompleto).toggleClass("modal-min");
+    if ($(modalCompleto).hasClass("modal-min")) {
+      $(modalCompleto).find(".modal-content").removeClass("modal-redimensionable");
+      $(modalCompleto).find(".modal-header").css("pointer-events", "none")
+    } else {
+      $(modalCompleto).find(".modal-content").addClass("modal-redimensionable");
+      $(modalCompleto).find(".modal-header").css("pointer-events", "initial")
+    }
+  }
+
+  //const actBitacora = async (cod)
+  const mostraMetadatos = async (id) => {
+    //console.log(id);
+    const res = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=id:${id}`);
+    const datos = await res.json();
+    //console.log(datos[0]);
+    setDetalles(datos[0]);
+    setShowModalMeta(!showModalMeta);
+  }
+
   const renderData = data => {
     return (
       <> <ModalComponent
@@ -255,45 +308,128 @@ function PaginationComponent(props) {
         onHide={handleClose}
         onClick={handleClose}
       />
+
+        <Modal dialogAs={DraggableModalDialog} show={showModalMeta} backdrop={false} keyboard={false} contentClassName="modal-redimensionableConsulta1"
+          onHide={() => setShowModalMeta(!showModalMeta)} className="tw-pointer-events-none modal-analisis">
+          <Modal.Header className="tw-cursor-pointer modal-movible" closeButton>
+            <Modal.Title><b>Metadatos del Documento de documento</b></Modal.Title>
+            <button className="boton-minimizar-modal" onClick={(e) => minimizaModal(e)}>
+              <FontAwesomeIcon icon={faWindowRestore} />
+            </button>
+          </Modal.Header>
+          <Modal.Body className="modal-movible">
+            <div>
+              <div className="row">
+                <div className="col-3 col-md-3 col-lg-3 text-center">
+                  {
+                    detalles.miniatura != null ? (
+                      <img src={`${process.env.ruta}/recursos/docs/miniaturas/${detalles.miniatura}`} alt='Miniatura' className='img-fluid' />
+                    ) : (
+                      <img src='/images/consulta/publicacion-situ.png' alt='Miniatura' className='img-fluid' />
+                    )
+                  }
+                </div>
+                <div className="col-9 col-md-9 col-lg-9">
+
+                  <p> <b>Nombre:</b> {detalles.nombre}</p>
+                  <p> <b>Descripción: </b>{detalles.descripcion}</p>
+                  <p> <b>Alias: </b>{detalles.alias}</p>
+                  <p> <b>Nombre de Origen del Archivo: </b>{detalles.nombre_archivo}</p>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-12 col-md-12 col-lg-12">
+
+                  <p><b>URL Origen: </b><a href={detalles.url_origen} target="_blank" onClick={() => actBitacora(detalles.id_metadato_documento)}> {detalles.url_origen} </a></p>
+
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-6 col-md-6 col-lg-6">
+                  <p> <b>Tipo/Clasificación: </b>{detalles.tipo}</p>
+                  <p> <b>Tema Principal: </b>{detalles.tema1}</p>
+                  <p> <b>Tema Secundario: </b>{detalles.tema2}</p>
+                  <p> <b>Nivel de Cobertura: </b>{detalles.nivel_cobertura}</p>
+                  <p> <b>Clave de Entidad: </b>{detalles.nivel_cobertura}</p>
+                  <p> <b>Clave Municipal: </b>{detalles.nivel_cobertura}</p>
+                  <p> <b>Primer Autor(a): </b>{detalles.autor}</p>
+                  <p> <b>Segundo Autor(a): </b>{detalles.autor2}</p>
+                  <p> <b>Tercer Autor(a): </b>{detalles.autor3}</p>
+                  <p> <b>Primera Institución: </b>{detalles.instancia1}</p>
+                  <p> <b>Segunda Institución: </b>{detalles.instancia2}</p>
+                  <p> <b>Tercera Institución: </b>{detalles.instancia3}</p>
+                  <p> <b>Conjunto de datos: </b>{detalles.tratamiento_publicacion}</p>
+                  <p> <b>Editorial: </b>{detalles.editorial}</p>
+                  <p> <b>Edición: </b>{detalles.edicion}</p>
+                </div>
+                <div className="col-6 col-md-6 col-lg-6">
+                  <p> <b>ISBN: </b>{detalles.tipo}</p>
+                  <p> <b>Año de Publicación: </b>{detalles.tema1}</p>
+                  <p> <b>Mes de Publicación: </b>{detalles.tema2}</p>
+                  <p> <b>Día de Publicacióna: </b>{detalles.nivel_cobertura}</p>
+                  <p> <b>Vigencia: </b>{detalles.nivel_cobertura}</p>
+                  <p> <b>Documento Actualizado: </b>{detalles.nivel_cobertura}</p>
+                  <p> <b>Fecha de Actualización: </b>{detalles.autor}</p>
+                  <p> <b>Periodo de Vigencia Inicial: </b>{detalles.autor2}</p>
+                  <p> <b>Periodo de Vigencia Final: </b>{detalles.autor3}</p>
+                  <p> <b>Armonizado a la LGAHOTDU: </b>{detalles.armonizado_lgahotdu}</p>
+                  <p> <b>Formato del Documento: </b>{detalles.formato}</p>
+                  <p> <b>País del Documento: </b>{detalles.pais}</p>
+                  <p> <b>Idioma del Documento: </b>{detalles.idioma}</p>
+                  <p> <b>Número de páginas : </b>{detalles.paginas}</p>
+                  <p> <b>Palabras Clave : </b>{detalles.palabrasclave}</p>
+                </div>
+              </div>
+
+
+            </div >
+          </Modal.Body>
+        </Modal>
+
         {
-          <table className="t1 table table-bordered table-responsive ">
+          <table className="t1 table table-bordered">
             <thead className="thead-dark">
               <tr>
                 <th>Portada</th>
-                <th>Titulo/Nombre</th>
+                <th className="celda">Titulo/Nombre</th>
                 <th>Fecha/Año  de Publicación</th>
-                <th>Fuente</th>
+                <th>Fuente/Instancia</th>
               </tr>
             </thead>
             <tbody>
               {
                 data.map((todo) => {
-                  console.log(todo);
+                  //console.log(todo); download="Archivo.pdf"
                   return (
                     <tr key={todo.id_metadato_documento}>
                       <td>
-                        <OverlayTrigger overlay={<Tooltip>Detalle</Tooltip>}>
-                          <a target='_blank' onClick={() => metadatosModal(todo.id_metadato_documento)}>
-                            {
-                              todo.miniatura!=null ?(
-                                <img src={`${process.env.ruta}/recursos/docs/miniaturas/${datos[0].miniatura}`} alt='Miniatura' className='card-img-top' />
-                              ):(
-                                <img src='/images/consultaD/miniaturaD.png' alt='Miniatura' className='card-img-top' />
-                              )
-                            }
-                          </a>
+                        <OverlayTrigger overlay={<Tooltip>Descargar</Tooltip>}>
+                          {
+                            todo.miniatura != null ? (
+                              <a href={todo.url_origen} target="_blank" onClick={() => actBitacora(todo.id_metadato_documento)}>
+                                <img src={`${process.env.ruta}/recursos/docs/miniaturas/${todo.miniatura}`} alt='Miniatura' className='card-img-top' width="93px" height="130px" />
+                              </a>
+                            ) : (
+                              <a href={todo.url_origen} target="_blank" onClick={() => actBitacora(todo.id_metadato_documento)}>
+                                <img src='/images/consulta/miniaturaD.png' alt='Miniatura' className='card-img-top' width="93px" height="130px" />
+                              </a>
+                            )
+                            //setShowModalMeta metadatosModal(todo.id_metadato_documento)
+                          }
                         </OverlayTrigger>
                       </td>
                       <td>
-                        {todo.nombre}
+                        <OverlayTrigger overlay={<Tooltip>Ver Detalle</Tooltip>}>
+                          <p className="enlaceD"><a onClick={() => mostraMetadatos(todo.id_metadato_documento)}>{todo.nombre}</a></p>
+                        </OverlayTrigger>
                       </td>
                       <td>
-                        {todo.mes_publicacion == null ?(
+                        {todo.mes_publicacion == null ? (
                           <p>{todo.ano_publicacion}</p>
-                        ):(
-                          todo.dia_publicacion == null?(
+                        ) : (
+                          todo.dia_publicacion == null ? (
                             <p>{todo.ano_publicacion}-{todo.mes_publicacion}</p>
-                          ):(
+                          ) : (
                             <p>{todo.ano_publicacion}-{todo.mes_publicacion}-{todo.dia_publicacion}</p>
                           )
                         )}
@@ -316,10 +452,10 @@ function PaginationComponent(props) {
 
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPages, setItemsPerPages] = useState(5);
+  const [itemsPerPages, setItemsPerPages] = useState(6);
 
-  const [pageNumberLimit, setPageNumberLimit] = useState(5);
-  const [maxPageNumberLimit, setmaxPageNumberLimit] = useState(5);
+  const [pageNumberLimit, setPageNumberLimit] = useState(7);
+  const [maxPageNumberLimit, setmaxPageNumberLimit] = useState(7);
   const [minPageNumberLimit, setminPageNumberLimit] = useState(0);
 
   const [datosModal, setDatosModal] = useState({});
@@ -334,12 +470,12 @@ function PaginationComponent(props) {
   //const onSubmit = async (data) =>
   const metadatosModal = async (cod) => {
     //console.log(cod);
-    
+    //setCodigo(cod);
     const res = await fetch(`${process.env.ruta}/wa/publico/consultaDocumento?search=id:${cod}`);
     const datos = await res.json();
-    cookies.set('prod', datos);
+    cookies.set('consulta', datos);
     let imga = `${process.env.ruta}/recursos/docs/miniaturas/${datos[0].miniatura}`;
-    //console.log(imga);
+    //console.log(imga); {`diets/${item.id}`}
 
     const cuerpo =
       <div>
@@ -357,16 +493,16 @@ function PaginationComponent(props) {
         </div>
         <div className="row">
           {
-          datos[0].miniatura != null ? (
-            ///recursos/docs/miniaturas/
-            <div className="col-3">
-              <img src={imga} alt='Miniatura' className="img-responsive" width="115px" height="158px" />
-            </div>
-          ) : (
-            <div className="col-3">
-              <img src='/images/consultaD/miniaturaD.png' alt='Miniatura' className="img-responsive" />
-            </div>
-          )}
+            datos[0].miniatura != null ? (
+              ///recursos/docs/miniaturas/
+              <div className="col-3">
+                <img src={imga} alt='Miniatura' className="img-responsive" width="115px" height="158px" />
+              </div>
+            ) : (
+              <div className="col-3">
+                <img src='/images/consulta/miniaturaD.png' alt='Miniatura' className="img-responsive" />
+              </div>
+            )}
           <div className="col-7">
             <p><b>{datos[0].nombre}</b><br></br>{datos[0].autor}</p>
           </div>
@@ -391,6 +527,7 @@ function PaginationComponent(props) {
         </div>
         <div className="row">
           <div className="col-12 col-md-12 col-lg-12">
+
             <Link href="/consulta-documental/consulta-metadatos">
               <a target="_blank"><p>Metadatos Completos</p></a>
             </Link>
@@ -448,8 +585,9 @@ function PaginationComponent(props) {
 
   useEffect(() => {
     preCargaPDF();
-    setData(url_bus)
-  })
+    setData(url_bus);
+    setLongitud(url_bus.length);
+  });
 
   const handleNextbtn = () => {
     setCurrentPage(currentPage + 1);
@@ -481,7 +619,7 @@ function PaginationComponent(props) {
 
   const MuestraCarga = e => {
     setShowCargaD(!showCargaD);
-    setFileUrl('images/consulta/publicacion-situ.png');
+    setFileUrl('/images/consulta/miniaturaD.png');
   }
 
   const MuestraDescarga = e => {
@@ -505,161 +643,18 @@ function PaginationComponent(props) {
 
 
   return <>
-    {
-      //Betty1
-    }
-    <Modal dialogAs={DraggableModalDialog} show={showCargaD} onHide={() => setShowCargaD(!showCargaD)}
-      keyboard={false} className="modal-analisis" contentClassName="modal-redimensionable tamanio">
-      <Modal.Header closeButton >
-        <Modal.Title><b>Carga de Documentos</b></Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <div className="row"></div>
-        <Tabs className="tabs-consulta" defaultActiveKey="carga" id="uncontrolled-tab-example">
-          <Tab eventKey="carga" title="Carga de Documentos">
-            <Form className="col-12" onSubmit={handleSubmit(onSubmitP)}>
-              <div className="row">
-                <Form.Group controlId="tipo" className="col-5">
-                  <Form.Label>Tipo de Documento</Form.Label>
-                  <Select
-                    placeholder="Selecciona..."
-                    className="basic-single"
-                    classNamePrefix="Select"
-                    name="tipo"
-                    options={tarchivos}
-                    isClearable={true}
-                    onChange={tipoA}
-                    ref={register()}
-                  ></Select>
-                </Form.Group>
-                <div className="col-7">
-                  {
-                    tarchivo == 1 && tarchivo != null ? (
-                      <div>
-                        <Form.Group controlId="doc">
-                          <Form.Label>Documento</Form.Label>
-                          <Form.File name="doc" ref={register()} />
-                        </Form.Group>
-                      </div>
-                    ) : (
-                      tarchivo == 2 && tarchivo != null ? (
-                        <Form.Group controlId="enlace">
-                          <Form.Label>Enlace</Form.Label>
-                          <Form.Control name="enlace" type="text" ref={register()} />
-                        </Form.Group>
-                      ) : (
-                        <p></p>
-                      )
-                    )
-                  }
-                </div>
-              </div>
-              <hr></hr>
-              <div className="row">
-                <div className="col-2">
-                  <Form.Group controlId="portada">
-                    <Form.Label>Portada</Form.Label>
-                    <img className="mini" src={fileUrl}></img>
-                    <br></br>
-                    <Form.File name="portada" accept="image/*" ref={register()} onChange={processImage} />
-                  </Form.Group>
-                </div>
-                <div className="col-5">
-                  <Form.Group controlId="titulo">
-                    <Form.Label>Titulo</Form.Label>
-                    <Form.Control name="titulo" type="text" ref={register()} />
-                  </Form.Group>
-                  <Form.Group controlId="autor">
-                    <Form.Label>Autor</Form.Label>
-                    <Form.Control name="autor" type="text" ref={register()} />
-                  </Form.Group>
-                  <Form.Group controlId="tema1">
-                    <Form.Label>Tema 1</Form.Label>
-                    <Form.Control name="tema1" type="text" ref={register()} />
-                  </Form.Group>
-                  <Form.Group controlId="tema2">
-                    <Form.Label>Tema 2</Form.Label>
-                    <Form.Control name="tema2" type="text" ref={register()} />
-                  </Form.Group>
-                </div>
-                <div className="col-5">
-                  <Form.Group controlId="entidad">
-                    <Form.Label>Entidad</Form.Label>
-                    <Form.Control name="entidad" type="text" ref={register()} />
-                  </Form.Group>
-                  <Form.Group controlId="municipio">
-                    <Form.Label>Municipio</Form.Label>
-                    <Form.Control name="municipio" type="text" ref={register()} />
-                  </Form.Group>
-                  <Form.Group controlId="idgeo">
-                    <Form.Label>ID Geográfico</Form.Label>
-                    <Form.Control name="idgeo" type="text" ref={register()} />
-                  </Form.Group>
-                  <Form.Group controlId="serie">
-                    <Form.Label>Serie</Form.Label>
-                    <Form.Control name="serie" type="text" ref={register()} />
-                  </Form.Group>
-
-                </div>
-
-              </div>
-              <div className="row text-center">
-                <div className="col-6">
-                  <Button variant="outline-secondary" className="btn-admin" type="submit">Guardar</Button>
-                </div>
-                <div className="col-6">
-                  <Button variant="outline-danger" className="btn-admin" onClick={MuestraDescarga}>Cancelar</Button>
-                </div>
-              </div>
-            </Form>
-          </Tab>
-          <Tab eventKey="hcargas" title="Historial de cargas">
-            <br></br>
-            <div className="row text-center">
-              <div className="col-12 table-wrapper-scroll-y my-custom-scrollbar">
-                <table className="table table-bordered table-striped mb-0">
-                  <thead className="thead-dark">
-                    <tr>
-                      <th>Nombre</th>
-                      <th>Fecha</th>
-                      <th>Estatus</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {
-                      dataPub.map((todo) => {
-                        return (
-                          <tr key={todo.value}>
-                            <td>{todo.nombre}</td>
-                            <td>{todo.date}</td>
-                            <td>{todo.status}</td>
-                          </tr>
-                        )
-                      })
-                    }
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <br></br>
-            <br></br>
-            <div className="row text-center">
-              <div className="col-12">
-                <Button variant="outline-danger" className="btn-admin" onClick={MuestraCarga}>Cancelar</Button>
-              </div>
-            </div>
-          </Tab>
-        </Tabs>
-      </Modal.Body>
-    </Modal >
-
-
     <div className="row">
       {renderData(currentItems)}
     </div>
     <div className="row">
       <div className="col-4">
-        <p><b className="number-cd">{data.length}</b> Resultados en el sistema</p>
+        {
+          totalD != 0 ? (
+            <p><b className="number-cd">{totalD}</b> Resultados en el sistema</p>
+          ) : (
+            <p><b className="number-cd">{data.length}</b> Resultados en el sistema</p>
+          )
+        }
       </div>
       <div className="col-5 col-md-5 col-lg-5">
         <ul className="pageNumbers">
@@ -684,21 +679,27 @@ function PaginationComponent(props) {
       </div>
 
       <div className="col-1 text-center">
-        <OverlayTrigger overlay={<Tooltip>Consulta CVS</Tooltip>}>
-          <a onClick={descargarCVS}><FontAwesomeIcon size="3x" icon={faFileCsv} /></a>
+        <OverlayTrigger overlay={<Tooltip>{`Exportar Consulta a CSV`}</Tooltip>}>
+          <Button onClick={descargarCVS} variant="link">
+            <FontAwesomeIcon size="3x" icon={faFileCsv} />
+          </Button>
         </OverlayTrigger>
       </div>
       <div className="col-1 text-center">
-        <OverlayTrigger overlay={<Tooltip>Consulta PDF</Tooltip>}>
-          <a onClick={descargaDoc}><FontAwesomeIcon size="3x" icon={faFilePdf} /></a>
+        <OverlayTrigger overlay={<Tooltip>{`Exportar Consulta a PDF`}</Tooltip>}>
+          <Button onClick={descargaDoc} variant="link">
+            <FontAwesomeIcon size="3x" icon={faFilePdf} />
+          </Button>
         </OverlayTrigger>
       </div>
       <div className="col-1 text-center">
         {
-          usuarioCookie != null && (
-            <OverlayTrigger overlay={<Tooltip>Cargar Documento</Tooltip>}>
-              <Link href="/consulta-documental/metadatos">
-                <a href="/consulta-documental/metadatos"><FontAwesomeIcon size="3x" icon={faUpload} /></a>
+          userDetails.id != undefined && (
+            <OverlayTrigger overlay={<Tooltip>{`Registrar Documento`}</Tooltip>}>
+              <Link href="/consulta-documental/registro">
+                <Button variant="link">
+                  <FontAwesomeIcon size="3x" icon={faUpload} />
+                </Button>
               </Link>
             </OverlayTrigger>
           )

@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+//Consulta Tableros e Indicadores
 export async function getByFilterTableros(csrfToken,filter){
     let jsonRequest = JSON.stringify(filter);
     let requestHeaders = { "Content-Type": "application/json" };
@@ -181,7 +182,6 @@ export async function getLocalidadesByIdEntidadAndIdMunicipio(idEntidad,idMunici
         .then((data) =>{return data;})
         .catch(error => console.log(error));
 }
-
 export async function getLocalidadesByTablero(csrfToken,id){
     var request = id
     let jsonRequest = JSON.stringify(request);
@@ -199,6 +199,173 @@ export async function getLocalidadesByTablero(csrfToken,id){
         .then(function (response) {
             var data = response.data;
             return data;
+        })
+        .catch(function (error) {
+            console.log(error)
+        });
+    return data;
+}
+
+//Administración GeoEstadistica
+export async function getTablasDisponiblesAdmonGeoEstadistica(csrfToken){
+    let requestHeaders = { "Content-Type": "application/json" };
+    if(csrfToken=== undefined || csrfToken.headerName=== undefined)return [];
+    requestHeaders[`${csrfToken.headerName}`] = csrfToken.token;
+    let config = {
+        method: "post",
+        url: `${process.env.ruta}/wa/prot/administracion-geoEstadistica/getTablasDisponibles`,
+        headers: requestHeaders,
+        withCredentials: true
+        };
+    var data = axios(config)
+        .then(function (response) {
+            return response.data;
+        })
+        .catch(function (error) {
+            console.log(error)
+        });
+    return data;
+}
+export async function getColumnasDeTabla(csrfToken,table){
+    let jsonRequest = JSON.stringify(table);
+    let requestHeaders = { "Content-Type": "application/json" };
+    if(csrfToken=== undefined || csrfToken.headerName=== undefined)return [];
+    requestHeaders[`${csrfToken.headerName}`] = csrfToken.token;
+    let config = {
+        method: "post",
+        url: `${process.env.ruta}/wa/prot/administracion-geoEstadistica/getColumnasDeTabla`,
+        headers: requestHeaders,
+        withCredentials: true,
+        data: jsonRequest
+        };
+    var data = axios(config)
+        .then(function (response) {
+            return response.data;
+        })
+        .catch(function (error) {
+            console.log(error)
+        });
+    return data;
+}
+export async function insertaPreRegistroAdministracionGeoEstadistica(csrfToken,preRegistro){
+    let jsonRequest = JSON.stringify(preRegistro);
+    let requestHeaders = { "Content-Type": "application/json" };
+    if(csrfToken=== undefined || csrfToken.headerName=== undefined)return [];
+    requestHeaders[`${csrfToken.headerName}`] = csrfToken.token;
+    let config = {
+        method: "post",
+        url: `${process.env.ruta}/wa/prot/administracion-geoEstadistica/insertCatProdEstadisticos`,
+        headers: requestHeaders,
+        withCredentials: true,
+        data: jsonRequest
+        };
+    var data = axios(config)
+        .then(function (response) {
+            return response.data;
+        })
+        .catch(function (error) {
+            console.log(error)
+        });
+    return data;
+}
+export async function getByIdCatProdEstadisticos(csrfToken,id){
+    let jsonRequest = JSON.stringify({id:id});
+    let requestHeaders = { "Content-Type": "application/json" };
+    if(csrfToken=== undefined || csrfToken.headerName=== undefined)return [];
+    requestHeaders[`${csrfToken.headerName}`] = csrfToken.token;
+    let config = {
+        method: "post",
+        url: `${process.env.ruta}/wa/prot/administracion-geoEstadistica/getByIdCatProdEstadisticos`,
+        headers: requestHeaders,
+        withCredentials: true,
+        data: id
+        };
+    var data = axios(config)
+        .then(function (response) {
+            return response.data;
+        })
+        .catch(function (error) {
+            console.log(error)
+        });
+    return data;
+}
+export async function getByTablaCatColumnasProdest(csrfToken,tabla){
+    let requestHeaders = { "Content-Type": "application/json" };
+    if(csrfToken=== undefined || csrfToken.headerName=== undefined)return [];
+    requestHeaders[`${csrfToken.headerName}`] = csrfToken.token;
+    let config = {
+        method: "post",
+        url: `${process.env.ruta}/wa/prot/administracion-geoEstadistica/catColumnasProdest/getByTabla`,
+        headers: requestHeaders,
+        withCredentials: true,
+        data: tabla
+        };
+    var data = axios(config)
+        .then(function (response) {
+            return response.data;
+        })
+        .catch(function (error) {
+            console.log(error)
+        });
+    return data;
+}
+export async function findAllCatProdEstadisticos(csrfToken){
+    let requestHeaders = { "Content-Type": "application/json" };
+    if(csrfToken=== undefined || csrfToken.headerName=== undefined)return [];
+    requestHeaders[`${csrfToken.headerName}`] = csrfToken.token;
+    let config = {
+        method: "post",
+        url: `${process.env.ruta}/wa/prot/administracion-geoEstadistica/findAllCatProdEstadisticos`,
+        headers: requestHeaders,
+        withCredentials: true
+        };
+    var data = axios(config)
+        .then(function (response) {
+            var data = response.data;
+            data.sort((a, b) => (a.id < b.id) ? 1 : ((b.id < a.id) ? -1 : 0))
+            return data;
+        })
+        .catch(function (error) {
+            console.log(error)
+        });
+    return data;
+}
+export async function updateCatProdEstadisticos(csrfToken,catProdEstadisticos){
+    let jsonRequest = JSON.stringify(catProdEstadisticos);
+    let requestHeaders = { "Content-Type": "application/json" };
+    if(csrfToken=== undefined || csrfToken.headerName=== undefined)return [];
+    requestHeaders[`${csrfToken.headerName}`] = csrfToken.token;
+    let config = {
+        method: "post",
+        url: `${process.env.ruta}/wa/prot/administracion-geoEstadistica/updateCatProdEstadisticos`,
+        headers: requestHeaders,
+        withCredentials: true,
+        data: jsonRequest
+        };
+    var data = axios(config)
+        .then(function (response) {
+            return response.data;
+        })
+        .catch(function (error) {
+            console.log(error)
+        });
+    return data;
+}
+export async function updateCatColumnasProdest(csrfToken,catColumnasProdest){
+    let jsonRequest = JSON.stringify(catColumnasProdest);
+    let requestHeaders = { "Content-Type": "application/json" };
+    if(csrfToken=== undefined || csrfToken.headerName=== undefined)return [];
+    requestHeaders[`${csrfToken.headerName}`] = csrfToken.token;
+    let config = {
+        method: "post",
+        url: `${process.env.ruta}/wa/prot/administracion-geoEstadistica/updateCatColumnasProdest`,
+        headers: requestHeaders,
+        withCredentials: true,
+        data: jsonRequest
+        };
+    var data = axios(config)
+        .then(function (response) {
+            return response.data;
         })
         .catch(function (error) {
             console.log(error)
